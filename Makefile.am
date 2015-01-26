@@ -10,6 +10,9 @@ openfortivpn_CFLAGS = -Wall -std=gnu99
 confdir=$(sysconfdir)/openfortivpn
 conf_DATA = etc/openfortivpn/config
 
+install-data-hook:
+	chmod 0600 $(sysconfdir)/openfortivpn/config
+
 dist_man_MANS = doc/openfortivpn.1
 
 EXTRA_DIST = LICENSE README.md
