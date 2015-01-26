@@ -15,16 +15,10 @@ Examples
   openfortivpn vpn-gateway:8443 --username=foo --password=bar
   ```
 
-* Don't add VPN nameservers to /etc/resolv.conf:
+* Don't set IP routes and don't add VPN nameservers to `/etc/resolv.conf`:
 
   ```
-  openfortivpn vpn-gateway:8443 -u foo -p bar --no-dns
-  ```
-
-* Log pppd output in file `pppd.log`:
-
-  ```
-  openfortivpn vpn-gateway:8443 -u foo -p bar --pppd-log=pppd.log
+  openfortivpn vpn-gateway:8443 -u foo -p bar --no-routes --no-dns
   ```
 
 * Using a config file:
@@ -42,8 +36,8 @@ Examples
   password = bar
   ```
 
-Build from source
------------------
+Building from source
+--------------------
 
 1.  Install build dependencies.
 
