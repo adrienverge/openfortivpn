@@ -1,0 +1,54 @@
+.TH OPENFORTIVPN 1 "January 26, 2015" ""
+
+.SH NAME
+openfortivpn \- Client for SSL VPN tunnels
+
+.SH SYNOPSIS
+.B openfortivpn
+\fI<host>\fR:\fI<port>\fR
+\fB\-u\fR \fI<user>\fR
+\fB\-p\fR \fI<pass>\fR
+[\fB\-\-no-routes\fR]
+[\fB\-\-no-dns\fR]
+[\fB\-\-pppd-log\fR]
+[\fB\-v|\-q\fR]
+.br
+.B openfortivpn
+\-\-help
+.br
+.B openfortivpn
+\-\-version
+
+.SH DESCRIPTION
+.B openfortivpn
+connects to a VPN by setting up a tunnel to the gateway at
+\fI<host>\fR:\fI<port>\fR.
+
+.SH OPTIONS
+.TP
+\fB\-\-help\fR
+Show this help message and exit.
+.TP
+\fB\-\-version\fR
+Show version and exit.
+.TP
+\fB\-u \fI<user>\fR, \fB\-\-username=\fI<user>\fR
+VPN account username.
+.TP
+\fB\-p \fI<pass>\fR, \fB\-\-password=\fI<pass>\fR
+VPN account password.
+.TP
+\fB\-\-no-routes\fR
+Do not try to configure IP routes through the VPN when tunnel is up.
+.TP
+\fB\-\-no-dns\fR
+Do not add VPN nameservers in /etc/resolv.conf when tunnel is up.
+.TP
+\fB\-\-pppd-log=\fI<filename>\fR
+Set pppd in debug mode and save its logs into \fI<filename>\fR.
+.TP
+\fB\-v\fR
+Increase verbosity. Can be used multiple times to be even more verbose.
+.TP
+\fB\-q\fR
+Decrease verbosity. Can be used multiple times to be even less verbose.
