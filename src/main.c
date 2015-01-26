@@ -34,9 +34,10 @@
 #define HELP \
 USAGE \
 "\n" \
-"Client for SSL VPN tunnels.\n" \
+"Client for PPP+SSL VPN tunnel services.\n" \
 "openfortivpn connects to a VPN by setting up a tunnel to the gateway at\n" \
-"<host>:<port>.\n" \
+"<host>:<port>. It spawns a pppd process and operates the communication between\n" \
+"the gateway and this process.\n" \
 "\n" \
 "Options:\n" \
 "  -h --help                     Show this help message and exit.\n" \
