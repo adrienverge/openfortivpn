@@ -41,9 +41,9 @@ Building from source
 
 1.  Install build dependencies.
 
-    * Fedora: `openssl-devel`
-    * Ubuntu: `libssl-dev`
-    * Arch Linux: `openssl`
+    * Fedora: `automake` `autoconf` `openssl-devel`
+    * Ubuntu: `automake` `autoconf` `libssl-dev`
+    * Arch Linux: `automake` `autoconf` `openssl`
 
 2.  Build and install.
 
