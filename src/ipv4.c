@@ -385,12 +385,10 @@ int ipv4_del_nameservers_from_resolv_conf(struct tunnel *tunnel)
 	strcpy(ns2, "nameserver ");
 	strncat(ns2, inet_ntoa(tunnel->nameserver2), 15);
 
-	fclose(file);
-	file = fopen("/etc/resolv.conf", "w");
+	file = freopen("/etc/resolv.conf", "w", file);
 	if (file == NULL) {
-		log_error("fopen: %s\n", strerror(errno));
-		free(buffer);
-		return 1;
+		log_error("freopen: %s\n", strerror(errno));
+		goto err_free;
 	}
 
 	for (line = strtok(buffer, "\n"); line != NULL; line = strtok(NULL, "\n")) {

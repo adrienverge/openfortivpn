@@ -27,6 +27,21 @@ Examples
   openfortivpn vpn-gateway:8443 -u foo -p bar --pppd-log=pppd.log
   ```
 
+* Using a config file:
+
+  ```
+  openfortivpn
+  ```
+
+  With `/etc/openfortivpn/config` containing:
+
+  ```
+  host = vpn-gateway
+  port = 8443
+  username = foo
+  password = bar
+  ```
+
 Build from source
 -----------------
 
@@ -40,7 +55,7 @@ Build from source
 
     ```
     aclocal && autoconf && automake --add-missing
-    ./configure
+    ./configure --prefix=/
     make
     sudo make install
     ```

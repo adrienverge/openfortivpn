@@ -5,12 +5,13 @@ openfortivpn \- Client for PPP+SSL VPN tunnel services
 
 .SH SYNOPSIS
 .B openfortivpn
-\fI<host>\fR:\fI<port>\fR
-\fB\-u\fR \fI<user>\fR
-\fB\-p\fR \fI<pass>\fR
+[\fI<host>\fR:\fI<port>\fR]
+[\fB\-u\fR \fI<user>\fR]
+[\fB\-p\fR \fI<pass>\fR]
 [\fB\-\-no-routes\fR]
 [\fB\-\-no-dns\fR]
-[\fB\-\-pppd-log=\fI<filename>\fR]
+[\fB\-\-pppd-log=\fI<file>\fR]
+[\fB\-c\fR \fI<file>\fR]
 [\fB\-v|\-q\fR]
 .br
 .B openfortivpn
@@ -32,6 +33,9 @@ Show this help message and exit.
 \fB\-\-version\fR
 Show version and exit.
 .TP
+\fB\-c \fI<file>\fR, \fB\-\-config=\fI<file>\fR
+Specify a custom config file (default: /etc/openfortivpn/config).
+.TP
 \fB\-u \fI<user>\fR, \fB\-\-username=\fI<user>\fR
 VPN account username.
 .TP
@@ -44,11 +48,27 @@ Do not try to configure IP routes through the VPN when tunnel is up.
 \fB\-\-no-dns\fR
 Do not add VPN nameservers in /etc/resolv.conf when tunnel is up.
 .TP
-\fB\-\-pppd-log=\fI<filename>\fR
-Set pppd in debug mode and save its logs into \fI<filename>\fR.
+\fB\-\-pppd-log=\fI<file>\fR
+Set pppd in debug mode and save its logs into \fI<file>\fR.
 .TP
 \fB\-v\fR
 Increase verbosity. Can be used multiple times to be even more verbose.
 .TP
 \fB\-q\fR
 Decrease verbosity. Can be used multiple times to be even less verbose.
+
+.SH CONFIG FILE
+Options can be taken from a configuration file. Options passed in the command
+line will override those from the config file, though. The default config file
+is /etc/openfortivpn/config, but this can be set using the \fB\-c\fR option.
+.TP
+A config file looks like:
+# this is a comment
+.br
+host = vpn-gateway
+.br
+port = 8443
+.br
+username = foo
+.br
+password = bar

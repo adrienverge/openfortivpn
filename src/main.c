@@ -19,15 +19,16 @@
 #include <stdio.h>
 #include <getopt.h>
 
+#include "config.h"
 #include "log.h"
 #include "tunnel.h"
 
 #define VERSION "1.0.0"
 
 #define USAGE \
-"Usage: openfortivpn <host>:<port> -u <user> -p <pass>\n" \
-"                    [--no-routes] [--no-dns] [--pppd-log=<filename>]\n" \
-"                    [-v|-q]\n" \
+"Usage: openfortivpn [<host>:<port>] [-u <user>] [-p <pass>]\n" \
+"                    [--no-routes] [--no-dns] [--pppd-log=<file>]\n" \
+"                    [-c <file>] [-v|-q]\n" \
 "       openfortivpn --help\n" \
 "       openfortivpn --version\n"
 
@@ -42,29 +43,45 @@ USAGE \
 "Options:\n" \
 "  -h --help                     Show this help message and exit.\n" \
 "  --version                     Show version and exit.\n" \
+"  -c <file>, --config=<file>    Specify a custom config file (default:\n" \
+"                                /etc/openfortivpn/config).\n" \
 "  -u <user>, --username=<user>  VPN account username.\n" \
 "  -p <pass>, --password=<pass>  VPN account password.\n" \
 "  --no-routes                   Do not try to configure IP routes through the\n" \
 "                                VPN when tunnel is up.\n" \
 "  --no-dns                      Do not add VPN nameservers in /etc/resolv.conf\n" \
 "                                when tunnel is up.\n" \
-"  --pppd-log=<filename>         Set pppd in debug mode and save its logs into\n" \
-"                                <filename>.\n" \
+"  --pppd-log=<file>             Set pppd in debug mode and save its logs into\n" \
+"                                <file>.\n" \
 "  -v                            Increase verbosity. Can be used multiple times\n" \
 "                                to be even more verbose.\n" \
 "  -q                            Decrease verbosity. Can be used multiple times\n" \
-"                                to be even less verbose.\n"
- 
+"                                to be even less verbose.\n" \
+"\n" \
+"Config file:\n" \
+"  Options can be taken from a configuration file. Options passed in the\n" \
+"  command line will override those from the config file, though. The default\n" \
+"  config file is /etc/openfortivpn/config, but this can be set using the -c\n" \
+"  option. A config file looks like:\n" \
+"      # this is a comment\n" \
+"      host = vpn-gateway\n" \
+"      port = 8443\n" \
+"      username = foo\n" \
+"      password = bar\n"
+
 int main(int argc, char **argv)
 {
 	struct vpn_config cfg;
-	int c;
+	char *config_file = "/etc/openfortivpn/config";
+	char *host, *username = NULL, *password = NULL;
 	char *port_str;
 	long int port;
 
 	// Set defaults
-	cfg.username = NULL;
-	cfg.password = NULL;
+	cfg.gateway_host[0] = '\0';
+	cfg.gateway_port = 0;
+	cfg.username[0] = '\0';
+	cfg.password[0] = '\0';
 	cfg.set_routes = 1;
 	cfg.set_dns = 1;
 	cfg.pppd_log = NULL;
@@ -72,6 +89,7 @@ int main(int argc, char **argv)
 	struct option long_options[] = {
 		{"help",          no_argument,       0, 'h'},
 		{"version",       no_argument,       0, 0},
+		{"config",        required_argument, 0, 'c'},
 		{"username",      required_argument, 0, 'u'},
 		{"password",      required_argument, 0, 'p'},
 		{"no-routes",     no_argument, &cfg.set_routes, 0},
@@ -82,9 +100,9 @@ int main(int argc, char **argv)
 
 	while (1) {
 		/* getopt_long stores the option index here. */
-		int option_index = 0;
+		int c, option_index = 0;
 
-		c = getopt_long(argc, argv, "hvqu:p:",
+		c = getopt_long(argc, argv, "hvqc:u:p:",
 		long_options, &option_index);
 
 		/* Detect the end of the options. */
@@ -116,58 +134,77 @@ int main(int argc, char **argv)
 		case 'q':
 			decrease_verbosity();
 			break;
+		case 'c':
+			config_file = optarg;
+			break;
 		case 'u':
-			cfg.username = optarg;
+			username = optarg;
 			break;
 		case 'p':
-			cfg.password = optarg;
+			password = optarg;
 			break;
 		default:
 			goto user_error;
 		}
 	}
 
-	if (optind != argc - 1)
+	if (optind < argc - 1 || optind > argc)
 		goto user_error;
+
+	// Load config file
+	if (config_file[0] != '\0') {
+		if (load_config(config_file, &cfg) == 0)
+			log_info("Loaded config file \"%s\".\n",
+				 config_file);
+		else
+			log_warn("Could not load config file \"%s\".\n",
+				 config_file);
+	}
+
+	// Read host and port from the command line
+	if (optind == argc - 1) {
+		host = argv[optind++];
+		port_str = strchr(host, ':');
+		if (port_str == NULL) {
+			fprintf(stderr, "Specify a valid host:port couple.\n");
+			goto user_error;
+		}
+		port_str[0] = '\0';
+		strncpy(cfg.gateway_host, host, FIELD_SIZE - 1);
+		port_str++;
+		port = strtol(port_str, NULL, 0);
+		if (port <= 0 || port > 65535) {
+			fprintf(stderr, "Specify a valid port.\n");
+			goto user_error;
+		}
+		cfg.gateway_port = port;
+	}
+	// Read username and password from the command line
+	if (username != NULL)
+		strncpy(cfg.username, username, FIELD_SIZE - 1);
+	if (password != NULL)
+		strncpy(cfg.password, password, FIELD_SIZE - 1);
 
 	// Check host and port
-	cfg.gateway_host = argv[optind++];
-	port_str = strchr(cfg.gateway_host, ':');
-	if (port_str == NULL) {
-		fprintf(stderr, "Specify a valid host:port.\n");
+	if (cfg.gateway_host[0] == '\0' || cfg.gateway_port == 0) {
+		fprintf(stderr, "Specify a valid host:port couple.\n");
 		goto user_error;
 	}
-	port_str[0] = '\0';
-	port_str++;
-	port = strtol(port_str, NULL, 0);
-	if (port <= 0 || port > 65535) {
-		fprintf(stderr, "Specify a valid port.\n");
-		goto user_error;
-	}
-	cfg.gateway_port = port;
-
 	// Check username
-	if (cfg.username == NULL) {
+	if (cfg.username[0] == '\0') {
 		fprintf(stderr, "Specify an username.\n");
 		goto user_error;
-		//char *env = getenv("VPN_USERNAME");
-		//if (env == NULL) {
-		//	fprintf(stderr, "Specify an username.\n");
-		//	goto user_error;
-		//}
-		//cfg.username = env;
 	}
 	// Check password
-	if (cfg.password == NULL) {
+	if (cfg.password[0] == '\0') {
 		fprintf(stderr, "Specify a password.\n");
 		goto user_error;
-		//char *env = getenv("VPN_PASSWORD");
-		//if (env == NULL) {
-		//	fprintf(stderr, "Specify a password.\n");
-		//	goto user_error;
-		//}
-		//cfg.password = env;
 	}
+
+	log_debug("Config host = \"%s\"\n", cfg.gateway_host);
+	log_debug("Config port = \"%d\"\n", cfg.gateway_port);
+	log_debug("Config username = \"%s\"\n", cfg.username);
+	log_debug("Config password = \"%s\"\n", "********");
 
 	if (geteuid() != 0)
 		log_warn("This process was not spawned with root "

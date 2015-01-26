@@ -26,25 +26,10 @@
 #include <netinet/in.h>
 #include <semaphore.h>
 
+#include "config.h"
 #include "hdlc.h"
 #include "io.h"
 #include "ipv4.h"
-
-#define COOKIE_SIZE (12 + 3 * (64 + 3))
-
-struct vpn_config {
-	char 		*gateway_host;
-	struct in_addr	gateway_ip;
-	uint16_t	gateway_port;
-	char		*username;
-	char		*password;
-	char		cookie[COOKIE_SIZE + 1];
-	//int		fortigate_version;
-	//int		exclusive_routing;
-	int		set_routes;
-	int		set_dns;
-	char		*pppd_log;
-};
 
 enum tunnel_state {
 	STATE_DOWN,
