@@ -54,6 +54,19 @@ Building from source
     sudo make install
     ```
 
+Running as root?
+----------------
+
+openfortivpn needs elevated privileges at three steps during tunnel set up:
+
+* when spawning a `/usr/sbin/pppd` process;
+* when setting IP routes through VPN (when the tunnel is up);
+* when adding nameservers to `/etc/resolv.conf` (when the tunnel is up).
+
+For these reasons, you may need to use `sudo openfortivpn`. If you need it to
+be usable by non-sudoer users, you might consider adding an entry in
+`/etc/sudoers`.
+
 Contributing
 ------------
 
