@@ -30,16 +30,24 @@ Examples
 Build from source
 -----------------
 
-```
-aclocal && \
-  autoconf && \
-  automake --add-missing && \
-  ./configure
-make
-sudo make install
-```
+1.  Install build dependencies.
 
-Hacking
--------
+    * Fedora: `openssl-devel`
+    * Ubuntu: `libssl-dev`
+    * Arch Linux: `openssl`
+
+2.  Build and install.
+
+    ```
+    aclocal && autoconf && automake --add-missing
+    ./configure
+    make
+    sudo make install
+    ```
+
+Contributing
+------------
+
+Feel free to make pull requests!
 
 C coding style should follow the [Linux kernel Documentation/CodingStyle](http://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/tree/Documentation/CodingStyle?id=refs/heads/master).
