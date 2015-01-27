@@ -51,7 +51,7 @@ Building from source
 
     ```
     aclocal && autoconf && automake --add-missing
-    ./configure --prefix=/
+    ./configure --prefix=/usr --sysconfdir=/etc
     make
     sudo make install
     ```
