@@ -21,6 +21,17 @@
 #include <net/route.h>
 #include <string.h>
 
+struct ipv4_config {
+	struct in_addr	ip_addr;
+
+	struct in_addr	ns1_addr;
+	struct in_addr	ns2_addr;
+
+	struct rtentry	def_rt; // default route
+	struct rtentry	gtw_rt; // route to access VPN gateway
+	struct rtentry	ppp_rt; // new default route through VPN
+};
+
 #define route_dest(route) \
 	(((struct sockaddr_in *) &(route)->rt_dst)->sin_addr)
 #define route_mask(route) \

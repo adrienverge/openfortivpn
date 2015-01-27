@@ -50,17 +50,11 @@ struct tunnel {
 	pid_t	pppd_pty;
 	char	ppp_iface[ROUTE_IFACE_LEN];
 
-	int		ssl_socket;
-	SSL_CTX		*ssl_context;
-	SSL		*ssl_handle;
+	int	ssl_socket;
+	SSL_CTX	*ssl_context;
+	SSL	*ssl_handle;
 
-	struct in_addr ip_addr;
-	struct in_addr nameserver1;
-	struct in_addr nameserver2;
-
-	struct rtentry default_route;
-	struct rtentry gtw_route;
-	struct rtentry ppp_route;
+	struct ipv4_config ipv4;
 
 	int (*on_ppp_if_up)(struct tunnel *);
 	int (*on_ppp_if_down)(struct tunnel *);

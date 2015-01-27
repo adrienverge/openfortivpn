@@ -85,6 +85,7 @@ int main(int argc, char **argv)
 	cfg.set_routes = 1;
 	cfg.set_dns = 1;
 	cfg.pppd_log = NULL;
+	cfg.verify_cert = 1;
 
 	struct option long_options[] = {
 		{"help",          no_argument,       0, 'h'},

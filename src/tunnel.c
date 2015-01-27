@@ -144,8 +144,10 @@ int ppp_interface_is_up(struct tunnel *tunnel)
 	}
 
 	for (ifa = ifap; ifa != NULL; ifa = ifa->ifa_next) {
-		if (strstr(ifa->ifa_name, "ppp") != NULL && ifa->ifa_flags & IFF_UP) {
-			strncpy(tunnel->ppp_iface, ifa->ifa_name, ROUTE_IFACE_LEN - 1);
+		if (strstr(ifa->ifa_name, "ppp") != NULL
+		    && ifa->ifa_flags & IFF_UP) {
+			strncpy(tunnel->ppp_iface, ifa->ifa_name,
+				ROUTE_IFACE_LEN - 1);
 			log_debug("Interface %s is UP.\n", tunnel->ppp_iface);
 
 			freeifaddrs(ifap);
@@ -165,7 +167,8 @@ static int get_gateway_host_ip(struct tunnel *tunnel)
 		return 1;
 	}
 
-	tunnel->config->gateway_ip = *((struct in_addr *) host->h_addr_list[0]);
+	tunnel->config->gateway_ip = *((struct in_addr *)
+				       host->h_addr_list[0]);
 	return 0;
 }
 
@@ -188,7 +191,7 @@ static int tcp_connect(struct tunnel *tunnel)
 	server.sin_addr = tunnel->config->gateway_ip;
 	bzero(&(server.sin_zero), 8);
 
-	ret = connect(handle, (struct sockaddr *) &server, sizeof(struct sockaddr));
+	ret = connect(handle, (struct sockaddr *) &server, sizeof(server));
 	if (ret == -1) {
 		log_error("connect: %s\n", strerror(errno));
 		return -1;
@@ -206,9 +209,8 @@ static int ssl_connect(struct tunnel *tunnel)
 	tunnel->ssl_context = NULL;
 
 	tunnel->ssl_socket = tcp_connect(tunnel);
-	if (tunnel->ssl_socket == -1) {
+	if (tunnel->ssl_socket == -1)
 		return 1;
-	}
 
 	// Register the error strings for libcrypto & libssl
 	SSL_load_error_strings();
@@ -217,43 +219,37 @@ static int ssl_connect(struct tunnel *tunnel)
 
 	tunnel->ssl_context = SSL_CTX_new(SSLv23_client_method());
 	if (tunnel->ssl_context == NULL) {
-		log_error("SSL_CTX_new: %s\n", ERR_error_string(ERR_peek_last_error(), NULL));
+		log_error("SSL_CTX_new: %s\n",
+			  ERR_error_string(ERR_peek_last_error(), NULL));
 		return 1;
 	}
 
-	//tunnel->ssl_bio = BIO_new_ssl_connect(tunnel->ssl_context);
-	//BIO_get_ssl(tunnel->ssl_bio, &tunnel->ssl_handle);
-	//if (!tunnel->ssl_handle)
-	//	return 1;
-	//SSL_set_mode(tunnel->ssl_handle, SSL_MODE_AUTO_RETRY);
-	///* Attempt to connect */
-	//BIO_set_conn_hostname(tunnel->ssl_bio, "62.23.54.234:10443");
-	//if (BIO_do_connect(tunnel->ssl_bio) < 1) {
-	//	BIO_free(tunnel->ssl_bio);
-	//	return 1;
-	//}
-
 	tunnel->ssl_handle = SSL_new(tunnel->ssl_context);
 	if (tunnel->ssl_handle == NULL) {
-		log_error("SSL_new: %s\n", ERR_error_string(ERR_peek_last_error(), NULL));
+		log_error("SSL_new: %s\n",
+			  ERR_error_string(ERR_peek_last_error(), NULL));
 		return 1;
 	}
 
 	if (!SSL_set_fd(tunnel->ssl_handle, tunnel->ssl_socket)) {
-		log_error("SSL_set_fd: %s\n", ERR_error_string(ERR_peek_last_error(), NULL));
+		log_error("SSL_set_fd: %s\n",
+			  ERR_error_string(ERR_peek_last_error(), NULL));
 		return 1;
 	}
 
 	// Initiate SSL handshake
 	if (SSL_connect(tunnel->ssl_handle) != 1) {
-		log_error("SSL_connect: %s\n", ERR_error_string(ERR_peek_last_error(), NULL));
+		log_error("SSL_connect: %s\n",
+			  ERR_error_string(ERR_peek_last_error(), NULL));
 		return 1;
 	}
+	SSL_set_mode(tunnel->ssl_handle, SSL_MODE_AUTO_RETRY);
 
 	// TODO:
 	//if (SSL_get_verify_result(tunnel->ssl_context) != X509_V_OK) {
 
-	// Disable SIGPIPE (occurs when trying to write to an already-closed socket).
+	// Disable SIGPIPE (occurs when trying to write to an already-closed
+	// socket).
 	signal(SIGPIPE, SIG_IGN);
 
 	return 0;
@@ -266,7 +262,6 @@ static void ssl_disconnect(struct tunnel *tunnel)
 {
 	SSL_shutdown(tunnel->ssl_handle);
 	SSL_free(tunnel->ssl_handle);
-	//BIO_free(tunnel->ssl_bio);
 	SSL_CTX_free(tunnel->ssl_context);
 	close(tunnel->ssl_socket);
 }
@@ -279,8 +274,8 @@ int run_tunnel(struct vpn_config *config)
 	tunnel.config = config;
 	tunnel.on_ppp_if_up = on_ppp_if_up;
 	tunnel.on_ppp_if_down = on_ppp_if_down;
-	tunnel.nameserver1.s_addr = 0;
-	tunnel.nameserver2.s_addr = 0;
+	tunnel.ipv4.ns1_addr.s_addr = 0;
+	tunnel.ipv4.ns2_addr.s_addr = 0;
 
 	tunnel.state = STATE_DOWN;
 
@@ -295,7 +290,8 @@ int run_tunnel(struct vpn_config *config)
 		goto err_ssl;
 	log_info("Connected to gateway.\n");
 
-	// Step 2: connect to the HTTP interface and authenticate to get a cookie
+	// Step 2: connect to the HTTP interface and authenticate to get a
+	// cookie
 	ret = auth_log_in(&tunnel);
 	if (ret > 0) {
 		log_error("Gateway answered: permission denied.\n");

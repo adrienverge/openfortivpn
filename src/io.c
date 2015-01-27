@@ -398,11 +398,15 @@ err_free_buf:
 	 && pkt_data(packet)[4] == 0x00 \
 	 && pkt_data(packet)[5] == 0x04)
 
-static inline void set_tunnel_ips(struct tunnel *tunnel, struct ppp_packet *packet)
+static inline void set_tunnel_ips(struct tunnel *tunnel,
+				  struct ppp_packet *packet)
 {
-	memcpy(&tunnel->ip_addr.s_addr, &pkt_data(packet)[8], sizeof(uint32_t));
-	memcpy(&tunnel->nameserver1.s_addr, &pkt_data(packet)[14], sizeof(uint32_t));
-	memcpy(&tunnel->nameserver2.s_addr, &pkt_data(packet)[20], sizeof(uint32_t));
+	memcpy(&tunnel->ipv4.ip_addr.s_addr, &pkt_data(packet)[8],
+	       sizeof(uint32_t));
+	memcpy(&tunnel->ipv4.ns1_addr.s_addr, &pkt_data(packet)[14],
+	       sizeof(uint32_t));
+	memcpy(&tunnel->ipv4.ns2_addr.s_addr, &pkt_data(packet)[20],
+	       sizeof(uint32_t));
 }
 
 /*
@@ -476,11 +480,11 @@ static void *ssl_read(void *arg)
 				char line[128];
 				set_tunnel_ips(tunnel, packet);
 				strcpy(line, "[");
-				strcat(line, inet_ntoa(tunnel->ip_addr));
+				strcat(line, inet_ntoa(tunnel->ipv4.ip_addr));
 				strcat(line, "], ns [");
-				strcat(line, inet_ntoa(tunnel->nameserver1));
+				strcat(line, inet_ntoa(tunnel->ipv4.ns1_addr));
 				strcat(line, ", ");
-				strcat(line, inet_ntoa(tunnel->nameserver2));
+				strcat(line, inet_ntoa(tunnel->ipv4.ns2_addr));
 				strcat(line, "]");
 				log_info("Got addresses: %s\n", line);
 			} else if (packet_is_end_negociation(packet)) {

@@ -190,9 +190,9 @@ int ipv4_del_route(struct rtentry *route)
 
 int ipv4_set_tunnel_routes(struct tunnel *tunnel)
 {
-	struct rtentry *def_rt = &tunnel->default_route;
-	struct rtentry *gtw_rt = &tunnel->gtw_route;
-	struct rtentry *ppp_rt = &tunnel->ppp_route;
+	struct rtentry *def_rt = &tunnel->ipv4.def_rt;
+	struct rtentry *gtw_rt = &tunnel->ipv4.gtw_rt;
+	struct rtentry *ppp_rt = &tunnel->ipv4.ppp_rt;
 
 	log_info("Setting new routes...\n");
 
@@ -251,9 +251,9 @@ err_destroy:
 
 int ipv4_restore_routes(struct tunnel *tunnel)
 {
-	struct rtentry *def_rt = &tunnel->default_route;
-	struct rtentry *gtw_rt = &tunnel->gtw_route;
-	struct rtentry *ppp_rt = &tunnel->ppp_route;
+	struct rtentry *def_rt = &tunnel->ipv4.def_rt;
+	struct rtentry *gtw_rt = &tunnel->ipv4.gtw_rt;
+	struct rtentry *ppp_rt = &tunnel->ipv4.ppp_rt;
 
 	log_info("Restoring routes...\n");
 
@@ -276,7 +276,7 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 	char ns1[27], ns2[27]; // 11 + 15 + 1
 	char *buffer, *line;
 
-	if (tunnel->nameserver1.s_addr == 0)
+	if (tunnel->ipv4.ns1_addr.s_addr == 0)
 		return 1;
 
 	file = fopen("/etc/resolv.conf", "r+");
@@ -303,10 +303,10 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 	}
 
 	strcpy(ns1, "nameserver ");
-	strncat(ns1, inet_ntoa(tunnel->nameserver1), 15);
-	if (tunnel->nameserver2.s_addr != 0) {
+	strncat(ns1, inet_ntoa(tunnel->ipv4.ns1_addr), 15);
+	if (tunnel->ipv4.ns2_addr.s_addr != 0) {
 		strcpy(ns2, "nameserver ");
-		strncat(ns2, inet_ntoa(tunnel->nameserver2), 15);
+		strncat(ns2, inet_ntoa(tunnel->ipv4.ns2_addr), 15);
 	} else {
 		ns2[0] = '\0';
 	}
@@ -330,7 +330,7 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 	rewind(file);
 	strcat(ns1, "\n");
 	fputs(ns1, file);
-	if (tunnel->nameserver2.s_addr != 0) {
+	if (tunnel->ipv4.ns2_addr.s_addr != 0) {
 		strcat(ns2, "\n");
 		fputs(ns2, file);
 	}
@@ -354,7 +354,7 @@ int ipv4_del_nameservers_from_resolv_conf(struct tunnel *tunnel)
 	char ns1[27], ns2[27]; // 11 + 15 + 1
 	char *buffer, *line;
 
-	if (tunnel->nameserver1.s_addr == 0)
+	if (tunnel->ipv4.ns1_addr.s_addr == 0)
 		return 1;
 
 	file = fopen("/etc/resolv.conf", "r+");
@@ -381,9 +381,9 @@ int ipv4_del_nameservers_from_resolv_conf(struct tunnel *tunnel)
 	}
 
 	strcpy(ns1, "nameserver ");
-	strncat(ns1, inet_ntoa(tunnel->nameserver1), 15);
+	strncat(ns1, inet_ntoa(tunnel->ipv4.ns1_addr), 15);
 	strcpy(ns2, "nameserver ");
-	strncat(ns2, inet_ntoa(tunnel->nameserver2), 15);
+	strncat(ns2, inet_ntoa(tunnel->ipv4.ns2_addr), 15);
 
 	file = freopen("/etc/resolv.conf", "w", file);
 	if (file == NULL) {

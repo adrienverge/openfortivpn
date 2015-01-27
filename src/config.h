@@ -35,6 +35,7 @@ struct vpn_config {
 	int		set_routes;
 	int		set_dns;
 	char		*pppd_log;
+	int		verify_cert;
 };
 
 int load_config(const char *filename, struct vpn_config *cfg);
