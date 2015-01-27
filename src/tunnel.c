@@ -200,6 +200,76 @@ static int tcp_connect(struct tunnel *tunnel)
 	return handle;
 }
 
+static int ssl_verify_cert(struct tunnel *tunnel)
+{
+	int ret = -1;
+	unsigned char digest[SHA256LEN];
+	unsigned len;
+	struct x509_digest *elem;
+	char digest_str[SHA256STRLEN], *subject, *issuer;
+	char *line;
+	int i;
+
+	X509 *cert = SSL_get_peer_certificate(tunnel->ssl_handle);
+	if (cert == NULL) {
+		log_error("Unable to get gateway certificate.\n");
+		return 1;
+	}
+
+	// Try to validate certificate using local PKI
+	if (SSL_get_verify_result(tunnel->ssl_handle) == X509_V_OK) {
+		log_debug("Gateway certificate validation succeeded.\n");
+		ret = 0;
+		goto free_cert;
+	}
+	log_debug("Gateway certificate validation failed.\n");
+
+	// If validation failed, check if cert is in the white list
+	if (X509_digest(cert, EVP_sha256(), digest, &len) <= 0
+	    || len != SHA256LEN) {
+		log_error("Could not compute certificate sha256 digest.\n");
+		goto free_cert;
+	}
+	// Encode digest in base16
+	for (i = 0; i < SHA256LEN; i++)
+		sprintf(&digest_str[2 * i], "%02x", digest[i]);
+	// Is it in whitelist?
+	for (elem = tunnel->config->cert_whitelist; elem != NULL;
+	     elem = elem->next)
+		if (memcmp(digest_str, elem->data, SHA256STRLEN) == 0)
+			break;
+	if (elem != NULL) { // break before end of loop
+		log_debug("Gateway certificate digest found in white list.\n");
+		ret = 0;
+		goto free_cert;
+	}
+
+	subject = X509_NAME_oneline(X509_get_subject_name(cert), NULL, 0);
+	issuer = X509_NAME_oneline(X509_get_issuer_name(cert), NULL, 0);
+
+	log_error("Gateway certificate validation failed, and the certificate "
+		  "digest in not in the local whitelist. If you trust it, "
+		  "rerun with:\n");
+	log_error("    --trusted-cert %s\n", digest_str);
+	log_error("or add this line to your config file:\n");
+	log_error("    trusted-cert = %s\n", digest_str);
+	log_error("Gateway certificate:\n");
+	log_error("    subject:\n");
+	for (line = strtok(subject, "/"); line != NULL;
+	     line = strtok(NULL, "/"))
+		log_error("        %s\n", line);
+	log_error("    issuer:\n");
+	for (line = strtok(issuer, "/"); line != NULL;
+	     line = strtok(NULL, "/"))
+		log_error("        %s\n", line);
+	log_error("    sha256 digest:\n");
+	log_error("        %s\n", digest_str);
+
+free_cert:
+	X509_free(cert);
+	return ret;
+}
+
 /*
  * Connects to the gateway and initiate a SSL session.
  */
@@ -236,6 +306,7 @@ static int ssl_connect(struct tunnel *tunnel)
 			  ERR_error_string(ERR_peek_last_error(), NULL));
 		return 1;
 	}
+	SSL_set_mode(tunnel->ssl_handle, SSL_MODE_AUTO_RETRY);
 
 	// Initiate SSL handshake
 	if (SSL_connect(tunnel->ssl_handle) != 1) {
@@ -245,8 +316,9 @@ static int ssl_connect(struct tunnel *tunnel)
 	}
 	SSL_set_mode(tunnel->ssl_handle, SSL_MODE_AUTO_RETRY);
 
-	// TODO:
-	//if (SSL_get_verify_result(tunnel->ssl_context) != X509_V_OK) {
+	if (tunnel->config->verify_cert)
+		if (ssl_verify_cert(tunnel))
+			return 1;
 
 	// Disable SIGPIPE (occurs when trying to write to an already-closed
 	// socket).

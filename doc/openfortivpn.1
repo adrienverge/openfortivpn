@@ -10,6 +10,7 @@ openfortivpn \- Client for PPP+SSL VPN tunnel services
 [\fB\-p\fR \fI<pass>\fR]
 [\fB\-\-no-routes\fR]
 [\fB\-\-no-dns\fR]
+[\fB\-\-trusted-cert=\fI<digest>\fR]
 [\fB\-\-pppd-log=\fI<file>\fR]
 [\fB\-c\fR \fI<file>\fR]
 [\fB\-v|\-q\fR]
@@ -48,6 +49,12 @@ Do not try to configure IP routes through the VPN when tunnel is up.
 \fB\-\-no-dns\fR
 Do not add VPN nameservers in /etc/resolv.conf when tunnel is up.
 .TP
+\fB\-\-trusted-cert=\fI<digest>\fR
+Trust a given gateway. If classical SSL certificate validation fails, the
+gateway certificate will be matched against this value. \fI<digest>\fR is the
+X509 certificate's sha256 sum. This option can be used multiple times to trust
+several certificates.
+.TP
 \fB\-\-pppd-log=\fI<file>\fR
 Set pppd in debug mode and save its logs into \fI<file>\fR.
 .TP
@@ -72,3 +79,7 @@ port = 8443
 username = foo
 .br
 password = bar
+.br
+trusted-cert = certificatedigest4daa8c5fe6c...
+.br
+trusted-cert = othercertificatedigest6631bf...

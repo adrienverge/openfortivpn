@@ -26,7 +26,32 @@
 #include "config.h"
 #include "log.h"
 
-int load_config(const char *filename, struct vpn_config *cfg)
+/*
+ * Adds a sha256 digest to the list of trusted certificates.
+ */
+int add_trusted_cert(struct vpn_config *cfg, const char *digest)
+{
+	struct x509_digest *last, *new;
+
+	new = malloc(sizeof(struct x509_digest));
+	if (new == NULL)
+		return 1;
+
+	new->next = NULL;
+	strncpy(new->data, digest, SHA256STRLEN - 1);
+
+	if (cfg->cert_whitelist == NULL) {
+		cfg->cert_whitelist = new;
+	} else {
+		for (last = cfg->cert_whitelist; last->next != NULL;
+		     last = last->next) ;
+		last->next = new;
+	}
+
+	return 0;
+}
+
+int load_config(struct vpn_config *cfg, const char *filename)
 {
 	int ret = -1;
 	FILE *file;
@@ -103,13 +128,22 @@ int load_config(const char *filename, struct vpn_config *cfg)
 			if (port <= 0 || port > 65535) {
 				log_warn("Bad port in config file: \"%d\".\n",
 					 port);
-				goto err_free;
+				continue;
 			}
 			cfg->gateway_port = port;
 		} else if (strcmp(key, "username") == 0) {
 			strncpy(cfg->username, val, FIELD_SIZE - 1);
 		} else if (strcmp(key, "password") == 0) {
 			strncpy(cfg->password, val, FIELD_SIZE - 1);
+		} else if (strcmp(key, "trusted-cert") == 0) {
+			if (strlen(val) != SHA256STRLEN)
+				log_warn("Bad certificate sha256 digest in "
+					 "config file: \"%s\".\n", val);
+				continue;
+			}
+			if (add_trusted_cert(cfg, val)) {
+				log_warn("Could not add certificate digest to "
+					 "whitelist.\n");
 		} else {
 			log_warn("Bad key in config file: \"%s\".\n", key);
 			goto err_free;

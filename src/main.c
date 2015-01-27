@@ -28,7 +28,7 @@
 #define USAGE \
 "Usage: openfortivpn [<host>:<port>] [-u <user>] [-p <pass>]\n" \
 "                    [--no-routes] [--no-dns] [--pppd-log=<file>]\n" \
-"                    [-c <file>] [-v|-q]\n" \
+"                    [--trusted-cert=<digest>] [-c <file>] [-v|-q]\n" \
 "       openfortivpn --help\n" \
 "       openfortivpn --version\n"
 
@@ -51,6 +51,12 @@ USAGE \
 "                                VPN when tunnel is up.\n" \
 "  --no-dns                      Do not add VPN nameservers in /etc/resolv.conf\n" \
 "                                when tunnel is up.\n" \
+"  --trusted-cert=<digest>       Trust a given gateway. If classical SSL\n" \
+"                                certificate validation fails, the gateway\n" \
+"                                certificate will be matched against this value.\n" \
+"                                <digest> is the X509 certificate's sha256 sum.\n" \
+"                                This option can be used multiple times to trust\n" \
+"                                several certificates.\n" \
 "  --pppd-log=<file>             Set pppd in debug mode and save its logs into\n" \
 "                                <file>.\n" \
 "  -v                            Increase verbosity. Can be used multiple times\n" \
@@ -67,10 +73,13 @@ USAGE \
 "      host = vpn-gateway\n" \
 "      port = 8443\n" \
 "      username = foo\n" \
-"      password = bar\n"
+"      password = bar\n" \
+"      trusted-cert = certificatedigest4daa8c5fe6c...\n" \
+"      trusted-cert = othercertificatedigest6631bf...\n"
 
 int main(int argc, char **argv)
 {
+	int ret = EXIT_FAILURE;
 	struct vpn_config cfg;
 	char *config_file = "/etc/openfortivpn/config";
 	char *host, *username = NULL, *password = NULL;
@@ -78,13 +87,9 @@ int main(int argc, char **argv)
 	long int port;
 
 	// Set defaults
-	cfg.gateway_host[0] = '\0';
-	cfg.gateway_port = 0;
-	cfg.username[0] = '\0';
-	cfg.password[0] = '\0';
+	init_vpn_config(&cfg);
 	cfg.set_routes = 1;
 	cfg.set_dns = 1;
-	cfg.pppd_log = NULL;
 	cfg.verify_cert = 1;
 
 	struct option long_options[] = {
@@ -95,6 +100,7 @@ int main(int argc, char **argv)
 		{"password",      required_argument, 0, 'p'},
 		{"no-routes",     no_argument, &cfg.set_routes, 0},
 		{"no-dns",        no_argument, &cfg.set_dns, 0},
+		{"trusted-cert",  required_argument, 0, 0},
 		{"pppd-log",      required_argument, 0, 0},
 		{0, 0, 0, 0}
 	};
@@ -118,17 +124,26 @@ int main(int argc, char **argv)
 			if (strcmp(long_options[option_index].name,
 				   "version") == 0) {
 				printf(VERSION "\n");
-				exit(EXIT_SUCCESS);
+				ret = EXIT_SUCCESS;
+				goto exit;
 			}
 			if (strcmp(long_options[option_index].name,
 				   "pppd-log") == 0) {
 				cfg.pppd_log = optarg;
 				break;
 			}
+			if (strcmp(long_options[option_index].name,
+				   "trusted-cert") == 0) {
+				if (add_trusted_cert(&cfg, optarg))
+					log_warn("Could not add certificate "
+						 "digest to whitelist.\n");
+				break;
+			}
 			goto user_error;
 		case 'h':
 			printf(HELP);
-			exit(EXIT_SUCCESS);
+			ret = EXIT_SUCCESS;
+			goto exit;
 		case 'v':
 			increase_verbosity();
 			break;
@@ -154,7 +169,7 @@ int main(int argc, char **argv)
 
 	// Load config file
 	if (config_file[0] != '\0') {
-		if (load_config(config_file, &cfg) == 0)
+		if (load_config(&cfg, config_file) == 0)
 			log_info("Loaded config file \"%s\".\n",
 				 config_file);
 		else
@@ -194,6 +209,7 @@ int main(int argc, char **argv)
 	// Check username
 	if (cfg.username[0] == '\0') {
 		fprintf(stderr, "Specify an username.\n");
+			fprintf(stderr, USAGE);
 		goto user_error;
 	}
 	// Check password
@@ -211,11 +227,13 @@ int main(int argc, char **argv)
 		log_warn("This process was not spawned with root "
 				"privileges, this will probably not work.\n");
 
-	if (run_tunnel(&cfg) != 0)
-		exit(EXIT_FAILURE);
-        exit(EXIT_SUCCESS);
+	if (run_tunnel(&cfg) == 0)
+		ret = EXIT_SUCCESS;
+	goto exit;
 
 user_error:
 	fprintf(stderr, USAGE);
-	exit(EXIT_FAILURE);
+exit:
+	destroy_vpn_config(&cfg);
+	exit(ret);
 }
