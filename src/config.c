@@ -134,12 +134,12 @@ int load_config(struct vpn_config *cfg, const char *filename)
 		} else if (strcmp(key, "password") == 0) {
 			strncpy(cfg->password, val, FIELD_SIZE - 1);
 		} else if (strcmp(key, "trusted-cert") == 0) {
-			if (strlen(val) != SHA256STRLEN)
+			if (strlen(val) != SHA256STRLEN - 1) {
 				log_warn("Bad certificate sha256 digest in "
 					 "config file: \"%s\".\n", val);
 				continue;
 			}
-			if (add_trusted_cert(cfg, val)) {
+			if (add_trusted_cert(cfg, val))
 				log_warn("Could not add certificate digest to "
 					 "whitelist.\n");
 		} else {
