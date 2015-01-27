@@ -21,6 +21,11 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#define ERR_HDLC_BUFFER_TOO_SMALL	-1
+#define ERR_HDLC_NO_FRAME_FOUND		-2
+#define ERR_HDLC_INVALID_FRAME		-3
+#define ERR_HDLC_BAD_CHECKSUM		-4
+
 /*
  * These macros are used to help decide how much to malloc before encoding or
  * decoding. They over-evaluate the output size so it is sure the output will

@@ -257,7 +257,8 @@ static void *pppd_read(void *arg)
 			ssize_t frm_len, pktsize;
 			struct ppp_packet *packet, *repacket;
 
-			if ((frm_len = hdlc_find_frame(buf, off_w, &off_r)) == 0)
+			if ((frm_len = hdlc_find_frame(buf, off_w, &off_r))
+			    == ERR_HDLC_NO_FRAME_FOUND)
 				break;
 
 			pktsize = estimated_decoded_size(frm_len);
@@ -270,7 +271,12 @@ static void *pppd_read(void *arg)
 			pktsize = hdlc_decode(&buf[off_r], frm_len,
 					      pkt_data(packet), pktsize);
 			if (pktsize < 0) {
-				log_error("Failed to decode PPP packet from HDLC frame.\n");
+				log_error("Failed to decode PPP packet from "
+					  "HDLC frame (%s).\n",
+					  (pktsize == ERR_HDLC_BAD_CHECKSUM ?
+					   "bad checksum" :
+					   (pktsize == ERR_HDLC_INVALID_FRAME ?
+					    "invalid frame" : "unknown")));
 				goto exit;
 			}
 			// Reduce the malloc'ed area now that we know the
@@ -337,7 +343,8 @@ static void *pppd_write(void *arg)
 		len = hdlc_encode(hdlc_buffer, hdlc_bufsize,
 				  pkt_data(packet), packet->len);
 		if (len < 0) {
-			log_error("Failed to encode PPP packet into HDLC frame.\n");
+			log_error("Failed to encode PPP packet into HDLC "
+				  "frame.\n");
 			goto err_free_buf;
 		}
 

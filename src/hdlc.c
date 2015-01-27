@@ -16,7 +16,6 @@
  */
 
 #include "hdlc.h"
-#include "log.h"
 
 #define in_sending_accm(byte) \
 	((byte) < 0x20 || (byte) == 0x7e || (byte) == 0x7d)
@@ -81,7 +80,8 @@ static int need_flag_sequence = 1;
  * @param[in]  packet   the buffer containing the packet
  * @param[in]  pktsize  the input packet size
  * @return              the number of bytes written to the buffer (i.e. the
- *                      HDLC-encoded frame length) or -1 in case of error
+ *                      HDLC-encoded frame length) or ERR_HDLC_BUFFER_TOO_SMALL
+ *                      if the output buffer is too small
  */
 ssize_t hdlc_encode(uint8_t *frame, size_t frmsize,
 		    uint8_t *packet, size_t pktsize)
@@ -93,7 +93,7 @@ ssize_t hdlc_encode(uint8_t *frame, size_t frmsize,
 	uint8_t byte;
 
 	if (frmsize < 7)
-		return -1;
+		return ERR_HDLC_BUFFER_TOO_SMALL;
 
 	if (need_flag_sequence)
 		frame[written++] = 0x7e; // FlagSequence
@@ -110,7 +110,7 @@ ssize_t hdlc_encode(uint8_t *frame, size_t frmsize,
 		byte = packet[i];
 
 		if (frmsize < written + 2)
-			return -1;
+			return ERR_HDLC_BUFFER_TOO_SMALL;
 		if (in_sending_accm(byte) || in_sending_accm(byte & 0x7f)
 		    || byte == 0x7f) {
 			frame[written++] = 0x7d;
@@ -121,7 +121,7 @@ ssize_t hdlc_encode(uint8_t *frame, size_t frmsize,
 	}
 
 	if (frmsize < written + 3)
-		return -1;
+		return ERR_HDLC_BUFFER_TOO_SMALL;
 
 	// Escape and write checksum
 	byte = (checksum ^ 0xffff) & 0xff;
@@ -150,8 +150,8 @@ ssize_t hdlc_encode(uint8_t *frame, size_t frmsize,
 /*
  * Finds the first frame in a buffer, starting search at start.
  *
- * Return 0 if no frame is found. Otherwise, returns the first frame length and
- * sets start to its beginning offset in the buffer.
+ * Return ERR_HDLC_NO_FRAME_FOUND if no frame is found. Otherwise, returns the
+ * first frame length and sets start to its beginning offset in the buffer.
  */
 ssize_t hdlc_find_frame(uint8_t *buffer, size_t bufsize, off_t *start)
 {
@@ -165,7 +165,7 @@ ssize_t hdlc_find_frame(uint8_t *buffer, size_t bufsize, off_t *start)
 		}
 	}
 	if (s == -1)
-		return 0;
+		return ERR_HDLC_NO_FRAME_FOUND;
 
 	// Discard empty packets
 	while (s < bufsize - 2 && buffer[s] == 0x7e)
@@ -179,7 +179,7 @@ ssize_t hdlc_find_frame(uint8_t *buffer, size_t bufsize, off_t *start)
 		}
 	}
 	if (e == -1)
-		return 0;
+		return ERR_HDLC_NO_FRAME_FOUND;
 
 	*start = s;
 	return e - s;
@@ -195,7 +195,7 @@ ssize_t hdlc_find_frame(uint8_t *buffer, size_t bufsize, off_t *start)
  * @param[out] packet   the buffer to store the decoded packet
  * @param[in]  pktsize  the output packet buffer size
  * @return              the number of bytes written to the output packet
- *                      buffer, or -1 in case of error
+ *                      buffer, or < 0 in case of error
  */
 ssize_t hdlc_decode(uint8_t *frame, size_t frmsize,
 		    uint8_t *packet, size_t pktsize)
@@ -208,7 +208,7 @@ ssize_t hdlc_decode(uint8_t *frame, size_t frmsize,
 	uint16_t checksum;
 
 	if (frmsize < 5)
-		return -1;
+		return ERR_HDLC_INVALID_FRAME;
 
 	// Remove AddressControlPrefix (0xff 0x03, escaped)
 	if (frame[0] == 0xff && frame[1] == 0x7d && frame[2] == 0x23) {
@@ -222,7 +222,7 @@ ssize_t hdlc_decode(uint8_t *frame, size_t frmsize,
 
 		if (byte == 0x7d) { // ControlEscape
 			if (in_escape)
-				return -1;
+				return ERR_HDLC_INVALID_FRAME;
 			in_escape = 1;
 			continue;
 		} else if (in_escape) {
@@ -232,26 +232,23 @@ ssize_t hdlc_decode(uint8_t *frame, size_t frmsize,
 			continue; // Drop characters possibly introduced by DCE
 		}
 		if (written >= pktsize)
-			return -1;
+			return ERR_HDLC_BUFFER_TOO_SMALL;
 		packet[written++] = byte;
 	}
 	if (in_escape)
-		return -1;
+		return ERR_HDLC_INVALID_FRAME;
 
-	if (written < 3) {
-		log_warn("Received packet too small.\n");
-		return -1;
-	}
+	if (written < 3)
+		return ERR_HDLC_INVALID_FRAME;
+
 	// Control checksum validity and remove it from packet
 	if (has_address_control_prefix)
 		checksum = 0x3de3; // Precomputed checksum for { 0xff, 0x03 }
 	else
 		checksum = 0xffff;
 	checksum = frame_checksum_16bit(checksum, packet, written);
-	if (checksum != 0xf0b8) {
-		log_warn("Bad checksum: %04x.\n", checksum);
-		return -1;
-	}
+	if (checksum != 0xf0b8)
+		return ERR_HDLC_BAD_CHECKSUM;
 	written -= 2;
 
 	return written;
