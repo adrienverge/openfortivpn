@@ -19,7 +19,6 @@
 #define _IPV4_H
 
 #include <net/route.h>
-#include <string.h>
 
 struct ipv4_config {
 	struct in_addr	ip_addr;

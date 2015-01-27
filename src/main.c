@@ -16,8 +16,6 @@
  */
 
 #include <getopt.h>
-#include <stdint.h>
-#include <stdio.h>
 #include <termios.h>
 
 #include "config.h"

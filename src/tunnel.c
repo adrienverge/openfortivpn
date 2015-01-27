@@ -15,28 +15,16 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#include <netdb.h>
-#include <errno.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <sys/socket.h>
-#include <stdlib.h>
-#include <pty.h>
-#include <unistd.h>
 #include <fcntl.h>
-#include <string.h>
-#include <signal.h>
-#include <openssl/err.h>
 #include <ifaddrs.h>
+#include <netdb.h>
 #include <net/if.h>
+#include <openssl/err.h>
+#include <pty.h>
+#include <sys/wait.h>
 
 #include "http.h"
-#include "io.h"
-#include "ipv4.h"
 #include "log.h"
-#include "tunnel.h"
 
 static int on_ppp_if_up(struct tunnel *tunnel)
 {

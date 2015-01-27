@@ -18,10 +18,6 @@
 #ifndef _IO_H
 #define _IO_H
 
-#include <pthread.h>
-#include <stdint.h>
-#include <unistd.h>
-
 /*
  * For performance reasons, we store the 6-byte header used by the SSL
  * communication right in front of the real PPP packet data. This way,

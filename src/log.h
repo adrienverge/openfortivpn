@@ -19,7 +19,6 @@
 #define _LOG_H
 
 #include <stdint.h>
-#include <stddef.h>
 
 enum log_verbosity {
 	LOG_MUTE,

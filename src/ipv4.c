@@ -15,22 +15,14 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <arpa/inet.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <sys/types.h>
 #include <sys/ioctl.h>
-#include <stdio.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
+#include <sys/stat.h>
 
-#include "ipv4.h"
 #include "log.h"
 #include "tunnel.h"
 

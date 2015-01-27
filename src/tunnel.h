@@ -18,16 +18,11 @@
 #ifndef _TUNNEL_H
 #define _TUNNEL_H
 
-#include <sys/types.h>
-#include <stdint.h>
-#include <unistd.h>
-#include <pthread.h>
 #include <openssl/ssl.h>
-#include <netinet/in.h>
 #include <semaphore.h>
+#include <unistd.h>
 
 #include "config.h"
-#include "hdlc.h"
 #include "io.h"
 #include "ipv4.h"
 
