@@ -127,14 +127,16 @@ ssize_t hdlc_encode(uint8_t *frame, size_t frmsize,
 
 	// Escape and write checksum
 	byte = (checksum ^ 0xffff) & 0xff;
-	if (in_sending_accm(byte) || in_sending_accm(byte & 0x7f) || byte == 0x7f) {
+	if (in_sending_accm(byte) || in_sending_accm(byte & 0x7f)
+	    || byte == 0x7f) {
 		frame[written++] = 0x7d;
 		frame[written++] = byte ^ 0x20;
 	} else {
 		frame[written++] = byte;
 	}
 	byte = (checksum ^ 0xffff) >> 8;
-	if (in_sending_accm(byte) || in_sending_accm(byte & 0x7f) || byte == 0x7f) {
+	if (in_sending_accm(byte) || in_sending_accm(byte & 0x7f)
+	    || byte == 0x7f) {
 		frame[written++] = 0x7d;
 		frame[written++] = byte ^ 0x20;
 	} else {
@@ -202,16 +204,18 @@ ssize_t hdlc_decode(uint8_t *frame, size_t frmsize,
 {
 	off_t start = 0;
 	ssize_t written = 0;
-	uint8_t address_control_prefix[] = { 0, 0 };
+	int has_address_control_prefix = 0;
 	int i;
 	int in_escape;
 	uint16_t checksum;
 
+	if (frmsize < 5)
+		return -1;
+
 	// Remove AddressControlPrefix (0xff 0x03, escaped)
-	if (frmsize >= 5 && frame[0] == 0xff && frame[1] == 0x7d && frame[2] == 0x23) {
+	if (frame[0] == 0xff && frame[1] == 0x7d && frame[2] == 0x23) {
 		start += 3;
-		address_control_prefix[0] = 0xff;
-		address_control_prefix[1] = 0x03;
+		has_address_control_prefix = 1;
 	}
 
 	in_escape = 0;
@@ -241,9 +245,10 @@ ssize_t hdlc_decode(uint8_t *frame, size_t frmsize,
 		return -1;
 	}
 	// Control checksum validity and remove it from packet
-	checksum = 0xffff;
-	if (address_control_prefix[0])
-		checksum = frame_checksum_16bit(checksum, address_control_prefix, 2);
+	if (has_address_control_prefix)
+		checksum = 0x3de3; // Precomputed checksum for { 0xff, 0x03 }
+	else
+		checksum = 0xffff;
 	checksum = frame_checksum_16bit(checksum, packet, written);
 	if (checksum != 0xf0b8) {
 		log_warn("Bad checksum: %04x.\n", checksum);

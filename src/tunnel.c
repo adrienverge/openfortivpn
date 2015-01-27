@@ -49,7 +49,7 @@ static int on_ppp_if_up(struct tunnel *tunnel)
 	}
 
 	if (tunnel->config->set_dns) {
-		log_info("Setting new name servers...\n");
+		log_info("Adding VPN nameservers...\n");
 		ipv4_add_nameservers_to_resolv_conf(tunnel);
 	}
 
@@ -69,7 +69,9 @@ static int on_ppp_if_down(struct tunnel *tunnel)
 	}
 
 	if (tunnel->config->set_dns) {
-		log_info("Restoring name servers...\n");
+		// TODO: if the nameservers were already present, don't delete
+		// them at the end.
+		log_info("Removing VPN nameservers...\n");
 		ipv4_del_nameservers_from_resolv_conf(tunnel);
 	}
 
