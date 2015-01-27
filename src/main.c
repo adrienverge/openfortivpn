@@ -15,9 +15,10 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <getopt.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <getopt.h>
+#include <termios.h>
 
 #include "config.h"
 #include "log.h"
@@ -76,6 +77,37 @@ USAGE \
 "      password = bar\n" \
 "      trusted-cert = certificatedigest4daa8c5fe6c...\n" \
 "      trusted-cert = othercertificatedigest6631bf...\n"
+
+static void read_password(const char *prompt, char *pass, size_t len)
+{
+	int masked = 0;
+	struct termios oldt, newt;
+	int i;
+
+	printf("%s", prompt);
+
+	// Try to hide user input
+	if (tcgetattr(STDIN_FILENO, &oldt) == 0) {
+		newt = oldt;
+		newt.c_lflag &= ~(ICANON | ECHO);
+		tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+		masked = 1;
+	}
+
+	for (i = 0; i < len - 1; i++) {
+		char c = getchar();
+		if (c == '\n' || c == EOF)
+			break;
+		pass[i] = c;
+	}
+	pass[i] = '\0';
+
+	if (masked) {
+		tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+	}
+
+	printf("\n");
+}
 
 int main(int argc, char **argv)
 {
@@ -167,6 +199,11 @@ int main(int argc, char **argv)
 	if (optind < argc - 1 || optind > argc)
 		goto user_error;
 
+	if (password != NULL)
+		log_warn("You should not pass the password on the command "
+			 "line. Type it interactively or use a config file "
+			 "instead.\n");
+
 	// Load config file
 	if (config_file[0] != '\0') {
 		if (load_config(&cfg, config_file) == 0)
@@ -209,9 +246,12 @@ int main(int argc, char **argv)
 	// Check username
 	if (cfg.username[0] == '\0') {
 		fprintf(stderr, "Specify an username.\n");
-			fprintf(stderr, USAGE);
 		goto user_error;
 	}
+	// If no password given, interactively ask user
+	if (cfg.password[0] == '\0')
+		read_password("VPN account password: ", cfg.password,
+			      FIELD_SIZE);
 	// Check password
 	if (cfg.password[0] == '\0') {
 		fprintf(stderr, "Specify a password.\n");

@@ -12,7 +12,7 @@ Examples
 * Simply connect to a VPN:
 
   ```
-  openfortivpn vpn-gateway:8443 --username=foo --password=bar
+  openfortivpn vpn-gateway:8443 --username=foo
   ```
 
 * Don't set IP routes and don't add VPN nameservers to `/etc/resolv.conf`:

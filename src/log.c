@@ -66,6 +66,7 @@ void do_log(int verbosity, const char *format, ...)
 	va_end(args);
 
 	printf("\033[0;0m");
+	fflush(stdout);
 
 	pthread_mutex_unlock(&mutex);
 }
