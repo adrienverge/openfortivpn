@@ -276,6 +276,8 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 	char ns1[27], ns2[27]; // 11 + 15 + 1
 	char *buffer, *line;
 
+	tunnel->ipv4.ns_are_new = 1;
+
 	if (tunnel->ipv4.ns1_addr.s_addr == 0)
 		return 1;
 
@@ -311,9 +313,12 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 		ns2[0] = '\0';
 	}
 
-	for (line = strtok(buffer, "\n"); line != NULL; line = strtok(NULL, "\n")) {
+	for (line = strtok(buffer, "\n"); line != NULL;
+	     line = strtok(NULL, "\n")) {
 		if (strcmp(line, ns1) == 0) {
-			log_warn("Nameserver already present in /etc/resolv.conf.\n");
+			tunnel->ipv4.ns_are_new = 0;
+			log_debug("Nameservers already present in "
+				  "/etc/resolv.conf.\n");
 			ret = 0;
 			goto err_free;
 		}
@@ -353,6 +358,11 @@ int ipv4_del_nameservers_from_resolv_conf(struct tunnel *tunnel)
 	struct stat stat;
 	char ns1[27], ns2[27]; // 11 + 15 + 1
 	char *buffer, *line;
+
+	// If nameservers were already there before setting up tunnel,
+	// don't delete them from /etc/resolv.conf
+	if (!tunnel->ipv4.ns_are_new)
+		return 0;
 
 	if (tunnel->ipv4.ns1_addr.s_addr == 0)
 		return 1;
