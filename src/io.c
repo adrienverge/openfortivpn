@@ -17,12 +17,12 @@
 
 #include <arpa/inet.h>
 #include <netinet/tcp.h>
-#include <openssl/err.h>
 #include <pthread.h>
 #include <signal.h>
 
 #include "hdlc.h"
 #include "log.h"
+#include "ssl.h"
 #include "tunnel.h"
 
 #define PKT_BUF_SZ 0x1000
@@ -56,101 +56,6 @@ static void destroy_ssl_locks()
 	for (i = 0; i < CRYPTO_num_locks(); i++)
 		pthread_mutex_destroy(&(lockarray[i]));
 	OPENSSL_free(lockarray);
-}
-
-/*
- * Reads data from the SSL connection.
- *
- * Returns:
- *   >0   in case of success (number of bytes transfered),
- *   0    if the caller should try again,
- *   -1   in case of error.
- */
-static int safe_ssl_read(SSL *ssl, uint8_t *buf, int bufsize)
-{
-	int ret, code;
-
-	ret = SSL_read(ssl, buf, bufsize);
-	if (ret > 0)
-		return ret;
-
-	if (SSL_get_shutdown(ssl) & SSL_RECEIVED_SHUTDOWN) {
-		log_error("SSL_read: connection closed by gateway.\n");
-		return -1;
-	}
-
-	code = SSL_get_error(ssl, ret);
-	if (code == SSL_ERROR_WANT_READ || code == SSL_ERROR_WANT_WRITE)
-		return 0; // The caller should try again
-
-	if (code == SSL_ERROR_ZERO_RETURN)
-		log_error("SSL_read: connection closed (SSL_ERROR_ZERO_RETURN).\n");
-	else if (code == SSL_ERROR_WANT_X509_LOOKUP)
-		log_error("SSL_read: connection closed (SSL_ERROR_WANT_X509_LOOKUP).\n");
-	else if (code == SSL_ERROR_SYSCALL && errno == EPIPE)
-		log_error("SSL_read: connection closed (SIGPIPE).\n");
-	else if (code == SSL_ERROR_SYSCALL &&
-			(errno == EAGAIN || errno == ERESTART || errno == EINTR))
-		return 0;
-	else if (code == SSL_ERROR_SYSCALL /* 5 */) {
-		log_error("SSL_read: connection closed (SSL_ERROR_SYSCALL).\n");
-		if (ERR_get_error() != 0)
-			log_error("SSL_read: %s\n",
-			ERR_error_string(ERR_peek_last_error(), NULL));
-		else if (ret == 0)
-			log_error("SSL_read: an EOF was observed that violates the protocol.\n");
-		else if (errno == EAGAIN)
-			return 0;
-		else
-			log_error("%s\n", strerror(errno));
-	} else if (code == SSL_ERROR_SSL)
-		log_error("SSL_read: connection closed (SSL_ERROR_SSL).\n");
-	else
-		log_error("SSL_read: error (code %d)\n", code);
-	return -1;
-
-}
-
-/*
- * Writes data to the SSL connection.
- *
- * Since SSL_MODE_ENABLE_PARTIAL_WRITE is not set by default (see
- * SSL_get_mode), SSL_write() will only report success once the complete chunk
- * has been written.
- *
- * Returns:
- *   >0   in case of success (number of bytes transfered),
- *   0    if the caller should try again,
- *   -1   in case of error.
- */
-static int safe_ssl_write(SSL *ssl, const uint8_t *buf, int n) 
-{
-	int ret, code;
-
-	ret = SSL_write(ssl, buf, n);
-	if (ret > 0)
-		return ret;
-
-	if (SSL_get_shutdown(ssl) & SSL_RECEIVED_SHUTDOWN) {
-		log_error("SSL_write: connection closed by gateway.\n");
-		return -1;
-	}
-
-	code = SSL_get_error(ssl, ret);
-	if (code == SSL_ERROR_WANT_READ || code == SSL_ERROR_WANT_WRITE)
-		return 0; // The caller should try again
-
-	if (code == SSL_ERROR_ZERO_RETURN)
-		log_error("SSL_write: connection closed (SSL_ERROR_ZERO_RETURN).\n");
-	else if (code == SSL_ERROR_WANT_X509_LOOKUP)
-		log_error("SSL_write: connection closed (SSL_ERROR_WANT_X509_LOOKUP).\n");
-	else if (code == SSL_ERROR_SYSCALL && errno == EPIPE)
-		log_error("SSL_write: connection closed (SIGPIPE).\n");
-	else if (code == SSL_ERROR_SSL)
-		log_error("SSL_write: connection closed (SSL_ERROR_SSL).\n");
-	else
-		log_error("SSL_write: error (code %d)\n", code);
-	return -1;
 }
 
 /*
@@ -423,16 +328,15 @@ static void *ssl_read(void *arg)
 
 	while (1) {
 		struct ppp_packet *packet;
-		int n, ret;
+		int ret;
 		uint8_t header[6];
 		uint16_t total, magic, size;
 
-		n= 0;
-		while (n < 6) {
-			ret = safe_ssl_read(tunnel->ssl_handle, &header[n], 6 - n);
-			if (ret < 0)
-				goto exit;
-			n += ret;
+		ret = safe_ssl_read_all(tunnel->ssl_handle, header, 6);
+		if (ret < 0) {
+			log_debug("Error reading from SSL connection (%s).\n",
+				  err_ssl_str(ret));
+			goto exit;
 		}
 
 		total = header[0] << 8 | header[1];
@@ -448,11 +352,6 @@ static void *ssl_read(void *arg)
 			break;
 		}
 
-		//if (6 + size > PKT_BUF_SZ) {
-		//	log_error("Receiving packet too large (%d bytes).\n", 6 + size);
-		//	break;
-		//}
-
 		packet = malloc(sizeof(struct ppp_packet) + 6 + size);
 		if (packet == NULL) {
 			log_error("malloc failed\n");
@@ -461,15 +360,13 @@ static void *ssl_read(void *arg)
 		memcpy(pkt_header(packet), header, 6);
 		packet->len = size;
 
-		n = 0;
-		while (n < size) {
-			ret = safe_ssl_read(tunnel->ssl_handle, &pkt_data(packet)[n],
-					size - n);
-			if (ret < 0) {
-				free(packet);
-				goto exit;
-			}
-			n += ret;
+		ret = safe_ssl_read_all(tunnel->ssl_handle, pkt_data(packet),
+					size);
+		if (ret < 0) {
+			log_debug("Error reading from SSL connection (%s).\n",
+				  err_ssl_str(ret));
+			free(packet);
+			goto exit;
 		}
 
 		log_debug("gateway ---> pppd (%d bytes)\n", packet->len);
@@ -526,9 +423,11 @@ static void *ssl_write(void *arg)
 
 		do {
 		       	ret = safe_ssl_write(tunnel->ssl_handle,
-					packet->content, 6 + packet->len);
+					     packet->content, 6 + packet->len);
 		} while (ret == 0);
 		if (ret < 0) {
+			log_debug("Error writing to SSL connection (%s).\n",
+				  err_ssl_str(ret));
 			free(packet);
 			break;
 		}
