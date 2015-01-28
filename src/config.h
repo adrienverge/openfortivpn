@@ -18,7 +18,27 @@
 #ifndef _CONFIG_H
 #define _CONFIG_H
 
+#include <errno.h>
 #include <netinet/in.h>
+#include <string.h>
+
+#define ERR_CFG_SEE_ERRNO	-1
+#define ERR_CFG_EMPTY_FILE	-2
+#define ERR_CFG_NO_MEM		-3
+#define ERR_CFG_CANNOT_READ	-4
+
+static inline const char *err_cfg_str(int code)
+{
+	if (code == ERR_CFG_SEE_ERRNO)
+		return strerror(errno);
+	else if (code == ERR_CFG_EMPTY_FILE)
+		return "Empty file";
+	else if (code == ERR_CFG_NO_MEM)
+		return "No memory";
+	else if (code == ERR_CFG_CANNOT_READ)
+		return "Cannot read file";
+	return "unknown";
+}
 
 #define SHA256LEN	(256 / 8)
 #define SHA256STRLEN	(2 * SHA256LEN + 1)

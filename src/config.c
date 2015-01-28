@@ -15,10 +15,8 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <sys/stat.h>
 
 #include "config.h"
@@ -33,7 +31,7 @@ int add_trusted_cert(struct vpn_config *cfg, const char *digest)
 
 	new = malloc(sizeof(struct x509_digest));
 	if (new == NULL)
-		return 1;
+		return ERR_CFG_NO_MEM;
 
 	new->next = NULL;
 	strncpy(new->data, digest, SHA256STRLEN - 1);
@@ -49,6 +47,13 @@ int add_trusted_cert(struct vpn_config *cfg, const char *digest)
 	return 0;
 }
 
+/*
+ * Reads filename contents and fill cfg with its values.
+ *
+ * @param[out] cfg       the struct vpn_config to store configuration values
+ * @param[in]  filename  the file to read values from
+ * @return               0 if successful, or < 0 in case of error
+ */
 int load_config(struct vpn_config *cfg, const char *filename)
 {
 	int ret = -1;
@@ -57,27 +62,27 @@ int load_config(struct vpn_config *cfg, const char *filename)
 	char *buffer, *line;
 
 	file = fopen(filename, "r");
-	if (file == NULL) {
-		log_error("fopen: %s\n", strerror(errno));
-		return 1;
-	}
+	if (file == NULL)
+		return ERR_CFG_SEE_ERRNO;
 
 	if (fstat(fileno(file), &stat) == -1) {
-		log_error("fstat: %s\n", strerror(errno));
+		ret = ERR_CFG_SEE_ERRNO;
 		goto err_close;
 	}
-	if (stat.st_size == 0)
+	if (stat.st_size == 0) {
+		ret = ERR_CFG_EMPTY_FILE;
 		goto err_close;
+	}
 
 	buffer = malloc(stat.st_size);
 	if (buffer == NULL) {
-		log_error("malloc failed.\n");
+		ret = ERR_CFG_NO_MEM;
 		goto err_close;
 	}
 
 	// Copy all file contents at once
 	if (fread(buffer, stat.st_size, 1, file) != 1) {
-		log_error("fread failed\n");
+		ret = ERR_CFG_CANNOT_READ;
 		goto err_free;
 	}
 
@@ -93,8 +98,8 @@ int load_config(struct vpn_config *cfg, const char *filename)
 		// Expect something like: "key = value"
 		equals = strchr(line, '=');
 		if (equals == NULL) {
-			log_warn("Bad line in config file.\n");
-			goto err_free;
+			log_warn("Bad line in config file: \"%s\".\n", line);
+			continue;
 		}
 		equals[0] = '\0';
 		key = line;

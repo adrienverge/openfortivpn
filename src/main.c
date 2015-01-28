@@ -206,12 +206,12 @@ int main(int argc, char **argv)
 
 	// Load config file
 	if (config_file[0] != '\0') {
-		if (load_config(&cfg, config_file) == 0)
-			log_info("Loaded config file \"%s\".\n",
-				 config_file);
+		ret = load_config(&cfg, config_file);
+		if (ret == 0)
+			log_debug("Loaded config file \"%s\".\n", config_file);
 		else
-			log_warn("Could not load config file \"%s\".\n",
-				 config_file);
+			log_warn("Could not load config file \"%s\" (%s).\n",
+				 config_file, err_cfg_str(ret));
 	}
 
 	// Read host and port from the command line
@@ -219,7 +219,7 @@ int main(int argc, char **argv)
 		host = argv[optind++];
 		port_str = strchr(host, ':');
 		if (port_str == NULL) {
-			fprintf(stderr, "Specify a valid host:port couple.\n");
+			log_error("Specify a valid host:port couple.\n");
 			goto user_error;
 		}
 		port_str[0] = '\0';
@@ -227,7 +227,7 @@ int main(int argc, char **argv)
 		port_str++;
 		port = strtol(port_str, NULL, 0);
 		if (port <= 0 || port > 65535) {
-			fprintf(stderr, "Specify a valid port.\n");
+			log_error("Specify a valid port.\n");
 			goto user_error;
 		}
 		cfg.gateway_port = port;
@@ -240,12 +240,12 @@ int main(int argc, char **argv)
 
 	// Check host and port
 	if (cfg.gateway_host[0] == '\0' || cfg.gateway_port == 0) {
-		fprintf(stderr, "Specify a valid host:port couple.\n");
+		log_error("Specify a valid host:port couple.\n");
 		goto user_error;
 	}
 	// Check username
 	if (cfg.username[0] == '\0') {
-		fprintf(stderr, "Specify an username.\n");
+		log_error("Specify an username.\n");
 		goto user_error;
 	}
 	// If no password given, interactively ask user
@@ -254,7 +254,7 @@ int main(int argc, char **argv)
 			      FIELD_SIZE);
 	// Check password
 	if (cfg.password[0] == '\0') {
-		fprintf(stderr, "Specify a password.\n");
+		log_error("Specify a password.\n");
 		goto user_error;
 	}
 
