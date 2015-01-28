@@ -20,12 +20,21 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "log.h"
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
-enum log_verbosity loglevel = LOG_INFO;
+enum log_verbosity loglevel;
+
+static int is_a_tty = 0;
+
+void init_logging()
+{
+	loglevel = LOG_INFO;
+	is_a_tty = isatty(STDOUT_FILENO);
+}
 
 void increase_verbosity()
 {
@@ -46,26 +55,28 @@ void do_log(int verbosity, const char *format, ...)
 
 	switch (verbosity) {
 	case LOG_ERROR:
-		printf("\033[0;91mERROR:  ");
+		printf("%sERROR:  ", is_a_tty ? "\033[0;91m" : "");
 		break;
 	case LOG_WARN:
-		printf("\033[0;93mWARN:   ");
+		printf("%sWARN:   ", is_a_tty ? "\033[0;93m" : "");
 		break;
 	case LOG_INFO:
-		printf("\033[0;97mINFO:   ");
+		printf("%sINFO:   ", is_a_tty ? "\033[0;97m" : "");
 		break;
 	case LOG_DEBUG:
-		printf("\033[0;90mDEBUG:  ");
+		printf("%sDEBUG:  ", is_a_tty ? "\033[0;90m" : "");
 		break;
 	default:
-		printf("\033[0;0m        ");
+		printf("        ");
 	}
 
 	va_start(args, format);
 	vprintf(format, args);
 	va_end(args);
 
-	printf("\033[0;0m");
+	if (is_a_tty)
+		printf("\033[0;0m");
+
 	fflush(stdout);
 
 	pthread_mutex_unlock(&mutex);

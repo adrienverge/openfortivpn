@@ -31,6 +31,8 @@ enum log_verbosity {
 
 extern enum log_verbosity loglevel;
 
+void init_logging();
+
 void increase_verbosity();
 void decrease_verbosity();
 

@@ -116,6 +116,8 @@ int main(int argc, char **argv)
 	char *port_str;
 	long int port;
 
+	init_logging();
+
 	// Set defaults
 	init_vpn_config(&cfg);
 	cfg.set_routes = 1;
