@@ -305,24 +305,29 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 
 	file = fopen("/etc/resolv.conf", "r+");
 	if (file == NULL) {
-		log_error("fopen: %s\n", strerror(errno));
+		log_warn("Could not open /etc/resolv.conf (%s).\n",
+			 strerror(errno));
 		return 1;
 	}
 
 	if (fstat(fileno(file), &stat) == -1) {
-		log_error("fstat: %s\n", strerror(errno));
+		log_warn("Could not stat /etc/resolv.conf (%s).\n",
+			 strerror(errno));
 		goto err_close;
 	}
+	// TODO
+	//if (stat.st_size == 0)
 
 	buffer = malloc(stat.st_size);
 	if (buffer == NULL) {
-		log_error("malloc failed.\n");
+		log_warn("Could not read /etc/resolv.conf (%s).\n",
+			 "Not enough memory");
 		goto err_close;
 	}
 
 	// Copy all file contents at once
 	if (fread(buffer, stat.st_size, 1, file) != 1) {
-		log_error("fread failed\n");
+		log_warn("Could not read /etc/resolv.conf.\n");
 		goto err_free;
 	}
 
@@ -350,7 +355,7 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 
 	rewind(file);
 	if (fread(buffer, stat.st_size, 1, file) != 1) {
-		log_error("fread failed\n");
+		log_warn("Could not read /etc/resolv.conf.\n");
 		goto err_free;
 	}
 
@@ -391,24 +396,27 @@ int ipv4_del_nameservers_from_resolv_conf(struct tunnel *tunnel)
 
 	file = fopen("/etc/resolv.conf", "r+");
 	if (file == NULL) {
-		log_error("fopen: %s\n", strerror(errno));
+		log_warn("Could not open /etc/resolv.conf (%s).\n",
+			 strerror(errno));
 		return 1;
 	}
 
 	if (fstat(fileno(file), &stat) == -1) {
-		log_error("fstat: %s\n", strerror(errno));
+		log_warn("Could not stat /etc/resolv.conf (%s).\n",
+			 strerror(errno));
 		goto err_close;
 	}
 
 	buffer = malloc(stat.st_size);
 	if (buffer == NULL) {
-		log_error("malloc failed.\n");
+		log_warn("Could not read /etc/resolv.conf (%s).\n",
+			 "Not enough memory");
 		goto err_close;
 	}
 
 	// Copy all file contents at once
 	if (fread(buffer, stat.st_size, 1, file) != 1) {
-		log_error("fread failed\n");
+		log_warn("Could not read /etc/resolv.conf.\n");
 		goto err_free;
 	}
 
@@ -419,7 +427,8 @@ int ipv4_del_nameservers_from_resolv_conf(struct tunnel *tunnel)
 
 	file = freopen("/etc/resolv.conf", "w", file);
 	if (file == NULL) {
-		log_error("freopen: %s\n", strerror(errno));
+		log_warn("Could not reopen /etc/resolv.conf (%s).\n",
+			 strerror(errno));
 		goto err_free;
 	}
 
