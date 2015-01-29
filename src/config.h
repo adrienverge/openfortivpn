@@ -34,7 +34,7 @@ static inline const char *err_cfg_str(int code)
 	else if (code == ERR_CFG_EMPTY_FILE)
 		return "Empty file";
 	else if (code == ERR_CFG_NO_MEM)
-		return "No memory";
+		return "Not enough memory";
 	else if (code == ERR_CFG_CANNOT_READ)
 		return "Cannot read file";
 	return "unknown";

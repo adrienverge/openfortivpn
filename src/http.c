@@ -17,88 +17,101 @@
 
 #include "http.h"
 #include "log.h"
+#include "ssl.h"
 
 #define BUFSZ 0x1000
 
 /*
- * Send data to the HTTP server.
+ * Sends data to the HTTP server.
+ *
+ * @param[in] request  the data to send to the server
+ * @return    1        in case of success
+ *            < 0      in case of error
  */
 int http_send(struct tunnel *tunnel, const char *request, ...)
 {
 	va_list args;
 	char buffer[BUFSZ];
 	int length;
+	int n = 0;
 
 	va_start(args, request);
 	length = vsnprintf(buffer, BUFSZ, request, args);
 	va_end(args);
 
-	if (length < 0) {
-		log_error("vsnprintf output error\n");
-		return 1;
-	} else if (length == BUFSZ) {
-		log_error("vsnprintf error: request too long\n");
-		return 1;
+	if (length < 0)
+		return ERR_HTTP_INVALID;
+	else if (length == BUFSZ)
+		return ERR_HTTP_TOO_LONG;
+
+	while (n == 0)
+		n = safe_ssl_write(tunnel->ssl_handle, (uint8_t *) buffer,
+				   length);
+	if (n < 0) {
+		log_warn("Error writing to SSL connection (%s).\n",
+			 err_ssl_str(n));
+		return ERR_HTTP_SSL;
 	}
 
-	//log_info("%s\n", buffer);
-
-	//if (BIO_write(tunnel->ssl_bio, buffer, length) < length) {
-	//	log_error("BIO_write error\n");
-	if (SSL_write(tunnel->ssl_handle, buffer, length) < length) {
-		log_error("SSL_write error\n");
-		return 1;
-	}
-
-	return 0;
+	return 1;
 }
 
 /*
  * Receives data from the HTTP server.
  *
- * If response is not NULL, sets it to a the new allocated buffer containing
- * the answer.
+ * @param[out] response  if not NULL, this pointer is set to reference
+ *                       the new allocated buffer containing the data
+ *                       sent by the server
+ * @return     1         in case of success
+ *             < 0       in case of error
  */
 int http_receive(struct tunnel *tunnel, char **response)
 {
 	char *buffer, *res;
-	int n;
+	int n = 0;
 
 	buffer = malloc(BUFSZ);
 	if (buffer == NULL)
-		return 1;
+		return ERR_HTTP_NO_MEM;
 
-	n = SSL_read(tunnel->ssl_handle, buffer, BUFSZ - 1);
-	//n = BIO_read(tunnel->ssl_bio, buffer, BUFSZ - 1);
-	if (n <= 0)
-		goto err;
+	while (n == 0)
+		n = safe_ssl_read(tunnel->ssl_handle, (uint8_t *) buffer,
+				  BUFSZ - 1);
+	if (n < 0) {
+		log_warn("Error reading from SSL connection (%s).\n",
+			 err_ssl_str(n));
+		free(buffer);
+		return ERR_HTTP_SSL;
+	}
 
 	if (response == NULL) {
 		free(buffer);
-		return 0;
+		return 1;
 	}
 
 	res = realloc(buffer, n + 1);
-	if (res == NULL)
-		goto err;
+	if (res == NULL) {
+		free(buffer);
+		return ERR_HTTP_NO_MEM;
+	}
 	res[n] = '\0';
 	*response = res;
-	return 0;
-
-err:
-	free(buffer);
 	return 1;
 }
 
 /*
  * Sends and receives data from the HTTP server.
  *
- * If response is not NULL, sets it to a the new allocated buffer containing
- * the answer.
+ * @param[out] response  if not NULL, this pointer is set to reference
+ *                       the new allocated buffer containing the data
+ *                       sent by the server
+ * @return     1         in case of success
+ *             < 0       in case of error
  */
 static int http_request(struct tunnel *tunnel, const char *method,
-		const char *uri, const char *data, char **response)
+			const char *uri, const char *data, char **response)
 {
+	int ret;
 	char template[] =
 		"%s %s HTTP/1.1\r\n"
 		"Host: %s:%d\r\n"
@@ -110,53 +123,63 @@ static int http_request(struct tunnel *tunnel, const char *method,
 		"Content-Length: %d\r\n"
 		"\r\n%s";
 
-	if (http_send(tunnel, template, method, uri,
-		tunnel->config->gateway_host, tunnel->config->gateway_port,
-		tunnel->config->cookie, strlen(data), data))
-		return 1;
-	if (http_receive(tunnel, response))
-		return 1;
+	ret = http_send(tunnel, template, method, uri,
+			tunnel->config->gateway_host,
+			tunnel->config->gateway_port, tunnel->config->cookie,
+			strlen(data), data);
+	if (ret != 1)
+		return ret;
 
-	return 0;
+	return http_receive(tunnel, response);
 }
 
+/*
+ * Authenticates to gateway by sending username and password.
+ *
+ * @return  1   in case of success
+ *          < 0 in case of error
+ */
 int auth_log_in(struct tunnel *tunnel)
 {
-	int ret = -1;
+	int ret;
 	char data[256];
 	char *res, *line, *end;
 
 	tunnel->config->cookie[0] = '\0';
 
 	snprintf(data, 256, "username=%s&credential=%s&realm=&ajax=1"
-		"&redir=%%2Fremote%%2Findex&just_logged_in=1",
-		tunnel->config->username, tunnel->config->password);
+		 "&redir=%%2Fremote%%2Findex&just_logged_in=1",
+		 tunnel->config->username, tunnel->config->password);
 
-	if (http_request(tunnel, "POST", "/remote/logincheck", data, &res))
-		return -1;
-	//log_info("%s\n", res);
+	ret = http_request(tunnel, "POST", "/remote/logincheck", data, &res);
+	if (ret != 1)
+		return ret;
 
-	if (strncmp(res, "HTTP/1.1 200 OK\r\n", 17))
+	if (strncmp(res, "HTTP/1.1 200 OK\r\n", 17)) {
+		ret = ERR_HTTP_BAD_RES_CODE;
 		goto end;
+	}
 
+	ret = ERR_HTTP_NO_COOKIE;
 	// Look for cookie in the headers
 	line = strtok(res, "\r\n\r\n");
 	while (line != NULL) {
 		if (strncmp(line, "Set-Cookie: SVPNCOOKIE=", 23) == 0) {
 			line = &line[12];
 			if (line[11] == ';' || line[11] == '\0') {
-				log_warn("Empty cookie\n");
+				log_debug("Empty cookie.\n");
 			} else {
 				end = strstr(line, ";");
 				if (end != NULL)
 					end[0] = '\0';
-				strncpy(tunnel->config->cookie, line, COOKIE_SIZE);
-				ret = 0;
+				strncpy(tunnel->config->cookie, line,
+					COOKIE_SIZE);
+				ret = 1; // success
 				goto end;
 			}
 		} else if (strstr(line, "permission_denied denied") ||
-				strstr(line, "Permission denied")) {
-			ret = 1;
+			   strstr(line, "Permission denied")) {
+			ret = ERR_HTTP_PERMISSION;
 			goto end;
 		}
 		line = strtok(NULL, "\r\n");
@@ -168,18 +191,14 @@ end:
 
 int auth_log_out(struct tunnel *tunnel)
 {
-	if (http_request(tunnel, "GET", "/remote/logout", "", NULL))
-		return 1;
-
-	return 0;
+	return http_request(tunnel, "GET", "/remote/logout", "", NULL);
 }
 
 int auth_request_vpn_allocation(struct tunnel *tunnel)
 {
-	if (http_request(tunnel, "GET", "/remote/index", "", NULL))
-		return 1;
-	if (http_request(tunnel, "GET", "/remote/fortisslvpn", "", NULL))
-		return 1;
+	int ret = http_request(tunnel, "GET", "/remote/index", "", NULL);
+	if (ret != 1)
+		return ret;
 
-	return 0;
+	return http_request(tunnel, "GET", "/remote/fortisslvpn", "", NULL);
 }

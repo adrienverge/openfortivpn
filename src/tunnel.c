@@ -353,19 +353,22 @@ int run_tunnel(struct vpn_config *config)
 	// Step 2: connect to the HTTP interface and authenticate to get a
 	// cookie
 	ret = auth_log_in(&tunnel);
-	if (ret > 0) {
-		log_error("Gateway answered: permission denied.\n");
-		goto err_log_in;
-	} else if (ret < 0) {
-		log_error("Could not authenticate to gateway.\n");
+	if (ret != 1) {
+		log_error("Could not authenticate to gateway (%s).\n",
+			  err_http_str(ret));
+		ret = 1;
 		goto err_log_in;
 	}
 	log_info("Authenticated.\n");
 	log_debug("Cookie: %s\n", config->cookie);
 
 	ret = auth_request_vpn_allocation(&tunnel);
-	if (ret)
+	if (ret != 1) {
+		log_error("VPN allocation request failed (%s).\n",
+			  err_http_str(ret));
+		ret = 1;
 		goto err_vpn_alloc;
+	}
 	log_info("Remote gateway has allocated a VPN.\n");
 
 	// Step 3: run a pppd process
@@ -374,13 +377,16 @@ int run_tunnel(struct vpn_config *config)
 		goto err_vpn_alloc;
 
 	// Step 4: ask gateway to start tunneling
-	ret = http_send(&tunnel,
-		"GET /remote/sslvpn-tunnel HTTP/1.1\r\n"
-		"Host: sslvpn\r\n"
-		"Cookie: %s\r\n"
-		"Connection: Keep-Alive\r\n\r\n", tunnel.config->cookie);
-	if (ret)
+	ret = http_send(&tunnel, "GET /remote/sslvpn-tunnel HTTP/1.1\r\n"
+				 "Host: sslvpn\r\n"
+				 "Cookie: %s\r\n"
+				 "Connection: Keep-Alive\r\n\r\n",
+			tunnel.config->cookie);
+	if (ret != 1) {
+		log_error("Could not start tunnel (%s).\n", err_http_str(ret));
+		ret = 1;
 		goto err_start_tunnel;
+	}
 
 	tunnel.state = STATE_CONNECTING;
 	ret = 0;
