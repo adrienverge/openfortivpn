@@ -55,10 +55,10 @@ void do_log(int verbosity, const char *format, ...)
 
 	switch (verbosity) {
 	case LOG_ERROR:
-		printf("%sERROR:  ", is_a_tty ? "\033[0;91m" : "");
+		printf("%sERROR:  ", is_a_tty ? "\033[0;31m" : "");
 		break;
 	case LOG_WARN:
-		printf("%sWARN:   ", is_a_tty ? "\033[0;93m" : "");
+		printf("%sWARN:   ", is_a_tty ? "\033[0;33m" : "");
 		break;
 	case LOG_INFO:
 		printf("%sINFO:   ", is_a_tty ? "\033[0;97m" : "");
