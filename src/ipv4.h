@@ -20,6 +20,29 @@
 
 #include <net/route.h>
 
+#define ERR_IPV4_SEE_ERRNO	-1
+#define ERR_IPV4_NO_MEM		-2
+#define ERR_IPV4_PERMISSION	-3
+#define ERR_IPV4_NO_SUCH_ROUTE	-4
+#define ERR_IPV4_PROC_NET_ROUTE	-5
+
+static inline const char *err_ipv4_str(int code)
+{
+	if (code == ERR_IPV4_SEE_ERRNO)
+		return strerror(errno);
+	else if (code == ERR_IPV4_NO_MEM)
+		return "Not enough memory";
+	else if (code == ERR_IPV4_PERMISSION)
+		return "Permission denied";
+	else if (code == ERR_IPV4_NO_SUCH_ROUTE)
+		return "Route not found";
+	else if (code == ERR_IPV4_PROC_NET_ROUTE)
+		return "Parsing /proc/net/route failed";
+	return "unknown";
+}
+
+#define ROUTE_IFACE_LEN 32
+
 struct ipv4_config {
 	struct in_addr	ip_addr;
 
@@ -40,34 +63,6 @@ struct ipv4_config {
 	(((struct sockaddr_in *) &(route)->rt_gateway)->sin_addr)
 #define route_iface(route) \
 	((route)->rt_dev)
-
-#define ROUTE_IFACE_LEN 32
-
-static inline int route_init(struct rtentry *route)
-{
-	memset(route, 0, sizeof(*route));
-
-	route_iface(route) = malloc(ROUTE_IFACE_LEN);
-	if (route_iface(route) == NULL)
-		return 1;
-	route_iface(route)[0] = '\0';
-
-	((struct sockaddr_in *) &(route)->rt_dst)->sin_family = AF_INET;
-	((struct sockaddr_in *) &(route)->rt_genmask)->sin_family = AF_INET;
-	((struct sockaddr_in *) &(route)->rt_gateway)->sin_family = AF_INET;
-
-	return 0;
-}
-
-static inline int route_destroy(struct rtentry *route)
-{
-	free(route_iface(route));
-	return 0;
-}
-
-int ipv4_get_route(struct rtentry *route);
-int ipv4_set_route(struct rtentry *route);
-int ipv4_del_route(struct rtentry *route);
 
 struct tunnel;
 

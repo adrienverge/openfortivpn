@@ -28,12 +28,11 @@
 
 static int on_ppp_if_up(struct tunnel *tunnel)
 {
-	log_info("ppp interface is up.\n");
+	log_info("Interface %s is UP.\n", tunnel->ppp_iface);
 
 	if (tunnel->config->set_routes) {
-		if (ipv4_set_tunnel_routes(tunnel))
-			log_warn("Error setting IP routes.\n");
-			//return 1;
+		log_info("Setting new routes...\n");
+		ipv4_set_tunnel_routes(tunnel);
 	}
 
 	if (tunnel->config->set_dns) {
@@ -51,14 +50,11 @@ static int on_ppp_if_down(struct tunnel *tunnel)
 	log_info("Setting ppp interface down.\n");
 
 	if (tunnel->config->set_routes) {
-		if (ipv4_restore_routes(tunnel))
-			log_warn("Error restoring IP routes.\n");
-			//return 1;
+		log_info("Restoring routes...\n");
+		ipv4_restore_routes(tunnel);
 	}
 
 	if (tunnel->config->set_dns) {
-		// TODO: if the nameservers were already present, don't delete
-		// them at the end.
 		log_info("Removing VPN nameservers...\n");
 		ipv4_del_nameservers_from_resolv_conf(tunnel);
 	}
@@ -136,8 +132,6 @@ int ppp_interface_is_up(struct tunnel *tunnel)
 		    && ifa->ifa_flags & IFF_UP) {
 			strncpy(tunnel->ppp_iface, ifa->ifa_name,
 				ROUTE_IFACE_LEN - 1);
-			log_debug("Interface %s is UP.\n", tunnel->ppp_iface);
-
 			freeifaddrs(ifap);
 			return 1;
 		}

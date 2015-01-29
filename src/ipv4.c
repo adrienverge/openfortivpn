@@ -36,7 +36,7 @@ static char show_route_buffer[SHOW_ROUTE_BUFFER_SIZE];
  *
  * Warning: the returned buffer is static, so multiple calls will overwrite it.
  */
-char *ipv4_show_route(struct rtentry *route)
+static char *ipv4_show_route(struct rtentry *route)
 {
 	strcpy(show_route_buffer, "to ");
 	strncat(show_route_buffer, inet_ntoa(route_dest(route)), 15);
@@ -54,42 +54,70 @@ char *ipv4_show_route(struct rtentry *route)
 	return show_route_buffer;
 }
 
-/*
- * Takes a struct rtentry pointer with dest and mask set, and fills gtw and iface.
- */
-int ipv4_get_route(struct rtentry *route)
+static inline int route_init(struct rtentry *route)
 {
-	int ret = 1;
+	memset(route, 0, sizeof(*route));
+
+	route_iface(route) = malloc(ROUTE_IFACE_LEN);
+	if (route_iface(route) == NULL)
+		return ERR_IPV4_NO_MEM;
+	route_iface(route)[0] = '\0';
+
+	((struct sockaddr_in *) &(route)->rt_dst)->sin_family = AF_INET;
+	((struct sockaddr_in *) &(route)->rt_genmask)->sin_family = AF_INET;
+	((struct sockaddr_in *) &(route)->rt_gateway)->sin_family = AF_INET;
+
+	return 0;
+}
+
+static inline int route_destroy(struct rtentry *route)
+{
+	free(route_iface(route));
+	return 0;
+}
+
+/*
+ * Finds system IP route to a destination.
+ *
+ * The passed route must have dest and mask set. If the route is found, the
+ * function fills the gtw and iface properties.
+ */
+static int ipv4_get_route(struct rtentry *route)
+{
 	size_t size;
 	int fd;
 	char buffer[0x1000];
 	char *start, *line;
 	char *saveptr1 = NULL, *saveptr2 = NULL;
 
+	log_debug("ip route show %s\n", ipv4_show_route(route));
+
 	// Cannot stat, mmap not lseek this special /proc file
 	fd = open("/proc/net/route", O_RDONLY);
 	if (fd == -1) {
-		log_error("open: %s\n", strerror(errno));
-		return 1;
+		return ERR_IPV4_SEE_ERRNO;
 	}
 
 	if ((size = read(fd, buffer, 0x1000 - 1)) == -1) {
-		log_error("read: %s\n", strerror(errno));
-		return 1;
-	} else if (size == 0) {
-		log_error("/proc/net/route is empty.\n");
-		goto err_close;
+		close(fd);
+		return ERR_IPV4_SEE_ERRNO;
+	}
+	close(fd);
+	if (size == 0) {
+		log_debug("/proc/net/route is empty.\n");
+		return ERR_IPV4_PROC_NET_ROUTE;
 	}
 	buffer[size] = '\0';
 
 	// Skip first line
 	start = index(buffer, '\n');
 	if (start == NULL) {
-		log_error("/proc/net/route is malformed.\n");
-		goto err_close;
+		log_debug("/proc/net/route is malformed.\n");
+		return ERR_IPV4_PROC_NET_ROUTE;
 	}
 	start++;
 
+	// Look for the route
 	line = strtok_r(start, "\n", &saveptr1);
 	while (line != NULL) {
 		char *iface;
@@ -110,7 +138,7 @@ int ipv4_get_route(struct rtentry *route)
 		irtt = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
 
 		if (dest == route_dest(route).s_addr &&
-				mask == route_mask(route).s_addr) {
+		    mask == route_mask(route).s_addr) {
 			// Requested route has been found
 			route_gtw(route).s_addr = gtw;
 			route->rt_flags = flags;
@@ -118,42 +146,35 @@ int ipv4_get_route(struct rtentry *route)
 			route->rt_mtu = mtu;
 			route->rt_window = window;
 			route->rt_irtt = irtt;
-			strncpy(route_iface(route), iface, ROUTE_IFACE_LEN - 1);
-			ret = 0;
-			break;
+			strncpy(route_iface(route), iface,
+				ROUTE_IFACE_LEN - 1);
+			return 0;
 		}
 		line = strtok_r(NULL, "\n", &saveptr1);
 	}
+	log_debug("Route not found.\n");
 
-	if (ret != 0)
-		log_error("Route not found: %s\n", ipv4_show_route(route));
-
-err_close:
-	close(fd);
-
-	return ret;
+	return ERR_IPV4_NO_SUCH_ROUTE;
 }
 
-int ipv4_set_route(struct rtentry *route)
+static int ipv4_set_route(struct rtentry *route)
 {
 	int sockfd;
 
 	log_debug("ip route add %s\n", ipv4_show_route(route));
 
-	if ((sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP)) < 0) {
-		log_error("socket: %s\n", strerror(errno));
-		return 1;
-	}
+	if ((sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP)) < 0)
+		return ERR_IPV4_SEE_ERRNO;
 	if (ioctl(sockfd, SIOCADDRT, route) == -1) {
-		log_error("ioctl(SIOCADDRT): %s\n", strerror(errno));
-		return 1;
+		close(sockfd);
+		return ERR_IPV4_SEE_ERRNO;
 	}
 	close(sockfd);
 
 	return 0;
 }
 
-int ipv4_del_route(struct rtentry *route)
+static int ipv4_del_route(struct rtentry *route)
 {
 	struct rtentry tmp;
 	int sockfd;
@@ -167,13 +188,11 @@ int ipv4_del_route(struct rtentry *route)
 	tmp.rt_window = 0;
 	tmp.rt_irtt = 0;
 
-	if ((sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP)) < 0) {
-		log_error("socket: %s\n", strerror(errno));
-		return 1;
-	}
+	if ((sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP)) < 0)
+		return ERR_IPV4_SEE_ERRNO;
 	if (ioctl(sockfd, SIOCDELRT, &tmp) == -1) {
-		log_error("ioctl(SIOCDELRT): %s\n", strerror(errno));
-		return 1;
+		close(sockfd);
+		return ERR_IPV4_SEE_ERRNO;
 	}
 	close(sockfd);
 
@@ -182,21 +201,24 @@ int ipv4_del_route(struct rtentry *route)
 
 int ipv4_set_tunnel_routes(struct tunnel *tunnel)
 {
+	int ret;
 	struct rtentry *def_rt = &tunnel->ipv4.def_rt;
 	struct rtentry *gtw_rt = &tunnel->ipv4.gtw_rt;
 	struct rtentry *ppp_rt = &tunnel->ipv4.ppp_rt;
 
-	log_info("Setting new routes...\n");
-
-	// Back up default route
 	route_init(def_rt);
 	route_init(ppp_rt);
 
+	// Back up default route
 	route_dest(def_rt).s_addr = inet_addr("0.0.0.0");
 	route_mask(def_rt).s_addr = inet_addr("0.0.0.0");
 
-	if (ipv4_get_route(def_rt))
+	ret = ipv4_get_route(def_rt);
+	if (ret != 0) {
+		log_warn("Could not get current default route (%s).\n",
+			 err_ipv4_str(ret));
 		goto err_destroy;
+	}
 
 	// Set the default route as the route to the tunnel gateway
 	memcpy(gtw_rt, def_rt, sizeof(*gtw_rt));
@@ -206,15 +228,19 @@ int ipv4_set_tunnel_routes(struct tunnel *tunnel)
 	gtw_rt->rt_metric = 0;
 
 	log_debug("Setting route to tunnel gateway...\n");
-	if (ipv4_set_route(gtw_rt))
-		log_warn("Could not set route to tunnel gateway.\n");
-		//goto err_destroy;
+	ret = ipv4_set_route(gtw_rt);
+	if (ret == ERR_IPV4_SEE_ERRNO && errno == EEXIST)
+		log_warn("Route to gateway exists already.\n");
+	else if (ret != 0)
+		log_warn("Could not set route to tunnel gateway (%s).\n",
+			 err_ipv4_str(ret));
 
 	// Delete the current default route
 	log_debug("Deleting the current default route...\n");
-	if (ipv4_del_route(def_rt))
-		log_warn("Could not delete the current default route.\n");
-		//goto err_del_gtw_rt;
+	ret = ipv4_del_route(def_rt);
+	if (ret != 0)
+		log_warn("Could not delete the current default route (%s).\n",
+			 err_ipv4_str(ret));
 
 	// Set the new default route
 	// ip route add to 0/0 dev ppp0
@@ -224,35 +250,39 @@ int ipv4_set_tunnel_routes(struct tunnel *tunnel)
 	strncpy(route_iface(ppp_rt), tunnel->ppp_iface, ROUTE_IFACE_LEN - 1);
 
 	log_debug("Setting new default route...\n");
-	if (ipv4_set_route(ppp_rt))
-		log_warn("Could not set the new default route.\n");
-		//goto err_reset_def_rt;
+	ret = ipv4_set_route(ppp_rt);
+	if (ret == ERR_IPV4_SEE_ERRNO && errno == EEXIST)
+		log_warn("Default route exists already.\n");
+	else if (ret != 0)
+		log_warn("Could not set the new default route (%s).\n",
+			 err_ipv4_str(ret));
 
 	return 0;
 
-//err_reset_def_rt:
-//	ipv4_set_route(def_rt);
-//err_del_gtw_rt:
-//	ipv4_del_route(gtw_rt);
 err_destroy:
 	route_destroy(ppp_rt);
 	route_destroy(def_rt);
 
-	return 1;
+	return ret;
 }
 
 int ipv4_restore_routes(struct tunnel *tunnel)
 {
+	int ret;
 	struct rtentry *def_rt = &tunnel->ipv4.def_rt;
 	struct rtentry *gtw_rt = &tunnel->ipv4.gtw_rt;
 	struct rtentry *ppp_rt = &tunnel->ipv4.ppp_rt;
 
-	log_info("Restoring routes...\n");
-
-	ipv4_del_route(ppp_rt);
+	ret = ipv4_del_route(ppp_rt);
+	if (ret != 0)
+		log_warn("Could not delete route through tunnel (%s).\n",
+			 err_ipv4_str(ret));
 	// Apparently the default route is automaticallly restored
 	//ipv4_set_route(def_rt);
-	ipv4_del_route(gtw_rt);
+	ret = ipv4_del_route(gtw_rt);
+	if (ret != 0)
+		log_warn("Could not delete route to gateway (%s).\n",
+			 err_ipv4_str(ret));
 
 	route_destroy(ppp_rt);
 	route_destroy(def_rt);
