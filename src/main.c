@@ -22,7 +22,7 @@
 #include "log.h"
 #include "tunnel.h"
 
-#define VERSION "1.0.0"
+#define VERSION "1.0.1"
 
 #define USAGE \
 "Usage: openfortivpn [<host>:<port>] [-u <user>] [-p <pass>]\n" \
