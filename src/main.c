@@ -22,8 +22,6 @@
 #include "log.h"
 #include "tunnel.h"
 
-#define VERSION "1.0.1"
-
 #define USAGE \
 "Usage: openfortivpn [<host>:<port>] [-u <user>] [-p <pass>]\n" \
 "                    [--no-routes] [--no-dns] [--pppd-log=<file>]\n" \
