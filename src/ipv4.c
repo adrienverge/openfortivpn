@@ -280,7 +280,10 @@ int ipv4_restore_routes(struct tunnel *tunnel)
 
 	// Restore the default route
 	// It seems to not be automatically restored on all linux distributions
-	ipv4_set_route(def_rt);
+	ret = ipv4_set_route(def_rt);
+	if (ret != 0)
+		log_warn("Could not restore default route (%s). Already restored?\n",
+			err_ipv4_str(ret));
 
 	ret = ipv4_del_route(gtw_rt);
 	if (ret != 0)
