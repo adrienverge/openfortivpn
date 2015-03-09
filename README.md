@@ -45,6 +45,7 @@ Building from source
 
     * Fedora: `automake` `autoconf` `openssl-devel`
     * Ubuntu: `automake` `autoconf` `libssl-dev`
+    * Debian: `gcc` `automake` `autoconf` `libssl-dev`
     * Arch Linux: `automake` `autoconf` `openssl`
 
 2.  Build and install.
