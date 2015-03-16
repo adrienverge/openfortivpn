@@ -47,6 +47,14 @@ Building from source
     * Ubuntu: `automake` `autoconf` `libssl-dev`
     * Debian: `gcc` `automake` `autoconf` `libssl-dev`
     * Arch Linux: `automake` `autoconf` `openssl`
+    * Gentoo Linux: `net-dialup/ppp`
+
+  You may have those kernel modules compiled on your system:
+
+  ```
+  CONFIG_PPP=m
+  CONFIG_PPP_ASYNC=m
+  ```
 
 2.  Build and install.
 
@@ -69,6 +77,14 @@ openfortivpn needs elevated privileges at three steps during tunnel set up:
 For these reasons, you may need to use `sudo openfortivpn`. If you need it to
 be usable by non-sudoer users, you might consider adding an entry in
 `/etc/sudoers`.
+
+For example:
+`visudo -f /etc/sudoers.d/openfortivpn`
+```
+Cmnd_Alias  OPENFORTIVPN = /usr/bin/openfortivpn
+
+%adm       ALL = (ALL) OPENFORTIVPN
+```
 
 Contributing
 ------------
