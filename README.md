@@ -49,7 +49,7 @@ Building from source
     * Arch Linux: `automake` `autoconf` `openssl`
     * Gentoo Linux: `net-dialup/ppp`
 
-  You may have those kernel modules compiled on your system:
+  If You manage your kernel yourself, ensure to compile those modules:
 
   ```
   CONFIG_PPP=m
