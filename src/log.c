@@ -100,7 +100,7 @@ void do_log_packet(const char *prefix, size_t len, const uint8_t *packet)
 	}
 	strcpy(pos - 1, "\n");
 
-	printf(str);
+	puts(str);
 
 	free(str);
 }
