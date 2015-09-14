@@ -25,7 +25,8 @@
 #define USAGE \
 "Usage: openfortivpn [<host>:<port>] [-u <user>] [-p <pass>]\n" \
 "                    [--no-routes] [--no-dns] [--pppd-log=<file>]\n" \
-"                    [--trusted-cert=<digest>] [-c <file>] [-v|-q]\n" \
+"                    [--plugin=<file>] [--trusted-cert=<digest>]\n" \
+"                    [-c <file>] [-v|-q]\n" \
 "       openfortivpn --help\n" \
 "       openfortivpn --version\n"
 
@@ -56,6 +57,8 @@ USAGE \
 "                                several certificates.\n" \
 "  --pppd-log=<file>             Set pppd in debug mode and save its logs into\n" \
 "                                <file>.\n" \
+"  --plugin=<file>               Use specified pppd plugin instead of configuring\n"\
+"                                resolver and routes directly.\n" \
 "  -v                            Increase verbosity. Can be used multiple times\n" \
 "                                to be even more verbose.\n" \
 "  -q                            Decrease verbosity. Can be used multiple times\n" \
@@ -132,6 +135,7 @@ int main(int argc, char **argv)
 		{"no-dns",        no_argument, &cfg.set_dns, 0},
 		{"trusted-cert",  required_argument, 0, 0},
 		{"pppd-log",      required_argument, 0, 0},
+		{"plugin",        required_argument, 0, 0},
 		{0, 0, 0, 0}
 	};
 
@@ -160,6 +164,11 @@ int main(int argc, char **argv)
 			if (strcmp(long_options[option_index].name,
 				   "pppd-log") == 0) {
 				cfg.pppd_log = optarg;
+				break;
+			}
+			if (strcmp(long_options[option_index].name,
+				   "plugin") == 0) {
+				cfg.plugin = optarg;
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
