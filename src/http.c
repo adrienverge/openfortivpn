@@ -92,7 +92,8 @@ int http_receive(struct tunnel *tunnel, char **response)
 				free(buffer);
 				return ERR_HTTP_SSL;
 			}
-			if (bytes_read >= 4 && !memcmp(buffer, "\r\n\r\n", 4))
+			if (bytes_read >= 4
+			    && !memcmp(&buffer[bytes_read - 4], "\r\n\r\n", 4))
 				break;
 		}
 	}
