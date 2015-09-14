@@ -69,6 +69,7 @@ int http_receive(struct tunnel *tunnel, char **response)
 {
 	char *buffer, *res;
 	int n = 0;
+	int bytes_read = 0;
 
 	buffer = malloc(BUFSZ);
 	if (buffer == NULL)
@@ -77,6 +78,25 @@ int http_receive(struct tunnel *tunnel, char **response)
 	while (n == 0)
 		n = safe_ssl_read(tunnel->ssl_handle, (uint8_t *) buffer,
 				  BUFSZ - 1);
+
+	if (n > 0) {
+		bytes_read = n;
+		while ((n = safe_ssl_read(tunnel->ssl_handle,
+		                          (uint8_t *) buffer + bytes_read,
+		                          BUFSZ - 1 - bytes_read))) {
+			if (n < 0)
+				break;
+			bytes_read += n;
+			if (bytes_read == BUFSZ - 1) {
+				log_warn("Response too big");
+				free(buffer);
+				return ERR_HTTP_SSL;
+			}
+			if (bytes_read >= 4 && !memcmp(buffer, "\r\n\r\n", 4))
+				break;
+		}
+	}
+
 	if (n < 0) {
 		log_warn("Error reading from SSL connection (%s).\n",
 			 err_ssl_str(n));
@@ -89,12 +109,13 @@ int http_receive(struct tunnel *tunnel, char **response)
 		return 1;
 	}
 
-	res = realloc(buffer, n + 1);
+	res = realloc(buffer, bytes_read + 1);
 	if (res == NULL) {
 		free(buffer);
 		return ERR_HTTP_NO_MEM;
 	}
-	res[n] = '\0';
+	res[bytes_read] = '\0';
+
 	*response = res;
 	return 1;
 }
