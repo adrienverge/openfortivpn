@@ -315,6 +315,33 @@ static inline void set_tunnel_ips(struct tunnel *tunnel,
 	       sizeof(uint32_t));
 }
 
+#define printable_char(c) \
+    (c == '\t' || c == '\n' || (c >= ' ' && c <= '~'))
+
+static void debug_bad_packet(struct tunnel *tunnel, uint8_t *header)
+{
+	uint8_t buffer[256];
+	int size, i;
+
+	memcpy(buffer, header, 6 * sizeof(uint8_t));
+
+	size = safe_ssl_read(tunnel->ssl_handle, &buffer[6], 256 - 6);
+	if (size < 0)
+		return;
+	size += 6;
+
+	// Print hex dump
+	do_log_packet("  (hex) ", size, buffer);
+
+	// then print the raw string, after escaping non-displayable chars
+	for (i = 0; i < size; i++)
+		if (!printable_char((char) buffer[i]))
+			buffer[i] = '.';
+	buffer[i] = buffer[256 - 1] = '\0';
+
+	printf("  (raw) %s\n", (char *) buffer);
+}
+
 /*
  * Thread to read bytes from the SSL socket, convert them to ppp packets and add
  * them to the 'ssl_to_pty' pool.
@@ -343,12 +370,8 @@ static void *ssl_read(void *arg)
 		magic = header[2] << 8 | header[3];
 		size = header[4] << 8 | header[5];
 		if (magic != 0x5050 || total != size + 6) {
-			log_error("Received bad header from gateway: "
-					"%04x %04x %04x\n", total, magic, size);
-			if (strncmp((char *) header, "HTTP/1", 6) == 0) {
-				log_warn("Looks like a HTTP 403.\n");
-				//log_warn("%s\n", header);
-			}
+			log_error("Received bad header from gateway:\n");
+			debug_bad_packet(tunnel, header);
 			break;
 		}
 
