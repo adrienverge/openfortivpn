@@ -24,7 +24,7 @@
 
 #include "log.h"
 
-static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t mutex;
 
 enum log_verbosity loglevel;
 
@@ -32,8 +32,13 @@ static int is_a_tty = 0;
 
 void init_logging()
 {
+	pthread_mutexattr_t mutexattr;
 	loglevel = LOG_INFO;
 	is_a_tty = isatty(STDOUT_FILENO);
+
+	pthread_mutexattr_init(&mutexattr);
+	pthread_mutexattr_setrobust(&mutexattr, PTHREAD_MUTEX_ROBUST);
+	pthread_mutex_init(&mutex, &mutexattr);
 }
 
 void increase_verbosity()
