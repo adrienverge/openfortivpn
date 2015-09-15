@@ -25,8 +25,8 @@
 #define USAGE \
 "Usage: openfortivpn [<host>:<port>] [-u <user>] [-p <pass>]\n" \
 "                    [--no-routes] [--no-dns] [--pppd-log=<file>]\n" \
-"                    [--plugin=<file>] [--trusted-cert=<digest>]\n" \
-"                    [-c <file>] [-v|-q]\n" \
+"                    [--plugin=<file>] [--ca-file=<file>]\n" \
+"                    [--trusted-cert=<digest>] [-c <file>] [-v|-q]\n" \
 "       openfortivpn --help\n" \
 "       openfortivpn --version\n"
 
@@ -49,6 +49,9 @@ USAGE \
 "                                VPN when tunnel is up.\n" \
 "  --no-dns                      Do not add VPN nameservers in /etc/resolv.conf\n" \
 "                                when tunnel is up.\n" \
+"  --ca-file=<file>              Use specified PEM-encoded certificate bundle\n" \
+"                                instead of system-wide store to verify the gateway\n" \
+"                                certificate.\n" \
 "  --trusted-cert=<digest>       Trust a given gateway. If classical SSL\n" \
 "                                certificate validation fails, the gateway\n" \
 "                                certificate will be matched against this value.\n" \
@@ -133,6 +136,7 @@ int main(int argc, char **argv)
 		{"password",      required_argument, 0, 'p'},
 		{"no-routes",     no_argument, &cfg.set_routes, 0},
 		{"no-dns",        no_argument, &cfg.set_dns, 0},
+		{"ca-file",       required_argument, 0, 0},
 		{"trusted-cert",  required_argument, 0, 0},
 		{"pppd-log",      required_argument, 0, 0},
 		{"plugin",        required_argument, 0, 0},
@@ -169,6 +173,11 @@ int main(int argc, char **argv)
 			if (strcmp(long_options[option_index].name,
 				   "plugin") == 0) {
 				cfg.plugin = optarg;
+				break;
+			}
+			if (strcmp(long_options[option_index].name,
+				   "ca-file") == 0) {
+				cfg.ca_file = optarg;
 				break;
 			}
 			if (strcmp(long_options[option_index].name,

@@ -294,6 +294,14 @@ static int ssl_connect(struct tunnel *tunnel)
 		return 1;
 	}
 
+	if (tunnel->config->ca_file) {
+		if (!SSL_CTX_load_verify_locations(tunnel->ssl_context, tunnel->config->ca_file, NULL)) {
+			log_error("SSL_CTX_load_verify_locations: %s\n",
+				  ERR_error_string(ERR_peek_last_error(), NULL));
+			return 1;
+		}
+	}
+
 	tunnel->ssl_handle = SSL_new(tunnel->ssl_context);
 	if (tunnel->ssl_handle == NULL) {
 		log_error("SSL_new: %s\n",

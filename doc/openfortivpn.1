@@ -50,6 +50,10 @@ Do not try to configure IP routes through the VPN when tunnel is up.
 \fB\-\-no-dns\fR
 Do not add VPN nameservers in /etc/resolv.conf when tunnel is up.
 .TP
+\fB\-\-ca-file=\fI<file>\fR
+Use specified PEM-encoded certificate bundle instead of system-wide store to
+verify the gateway certificate.
+.TP
 \fB\-\-trusted-cert=\fI<digest>\fR
 Trust a given gateway. If classical SSL certificate validation fails, the
 gateway certificate will be matched against this value. \fI<digest>\fR is the
