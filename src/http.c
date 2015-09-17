@@ -87,8 +87,9 @@ int http_receive(struct tunnel *tunnel, char **response)
 			if (n < 0)
 				break;
 			bytes_read += n;
+
 			if (bytes_read == BUFSZ - 1) {
-				log_warn("Response too big");
+				log_warn("Response too big\n");
 				free(buffer);
 				return ERR_HTTP_SSL;
 			}
