@@ -19,7 +19,7 @@
 #include "log.h"
 #include "ssl.h"
 
-#define BUFSZ 0x1000
+#define BUFSZ 0x8000
 
 /*
  * Sends data to the HTTP server.
