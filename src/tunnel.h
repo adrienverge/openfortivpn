@@ -57,6 +57,8 @@ struct tunnel {
 
 int ppp_interface_is_up(struct tunnel *tunnel);
 
+int ssl_connect(struct tunnel *tunnel);
+
 int run_tunnel(struct vpn_config *config);
 
 #endif

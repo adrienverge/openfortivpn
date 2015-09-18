@@ -262,12 +262,28 @@ free_cert:
 }
 
 /*
- * Connects to the gateway and initiate a SSL session.
+ * Destroy and free the SSL connection to the gateway.
  */
-static int ssl_connect(struct tunnel *tunnel)
+static void ssl_disconnect(struct tunnel *tunnel)
 {
+	if (!tunnel->ssl_handle)
+		return;
+
+	SSL_shutdown(tunnel->ssl_handle);
+	SSL_free(tunnel->ssl_handle);
+	SSL_CTX_free(tunnel->ssl_context);
+	close(tunnel->ssl_socket);
+
 	tunnel->ssl_handle = NULL;
 	tunnel->ssl_context = NULL;
+}
+
+/*
+ * Connects to the gateway and initiate a SSL session.
+ */
+int ssl_connect(struct tunnel *tunnel)
+{
+	ssl_disconnect (tunnel);
 
 	tunnel->ssl_socket = tcp_connect(tunnel);
 	if (tunnel->ssl_socket == -1)
@@ -318,17 +334,6 @@ static int ssl_connect(struct tunnel *tunnel)
 	return 0;
 }
 
-/*
- * Destroy and free the SSL connection to the gateway.
- */
-static void ssl_disconnect(struct tunnel *tunnel)
-{
-	SSL_shutdown(tunnel->ssl_handle);
-	SSL_free(tunnel->ssl_handle);
-	SSL_CTX_free(tunnel->ssl_context);
-	close(tunnel->ssl_socket);
-}
-
 int run_tunnel(struct vpn_config *config)
 {
 	int ret;
@@ -339,18 +344,20 @@ int run_tunnel(struct vpn_config *config)
 	tunnel.on_ppp_if_down = on_ppp_if_down;
 	tunnel.ipv4.ns1_addr.s_addr = 0;
 	tunnel.ipv4.ns2_addr.s_addr = 0;
+	tunnel.ssl_handle = NULL;
+	tunnel.ssl_context = NULL;
 
 	tunnel.state = STATE_DOWN;
 
 	// Step 0: get gateway host IP
 	ret = get_gateway_host_ip(&tunnel);
 	if (ret)
-		goto err_ssl;
+		goto err_tunnel;
 
 	// Step 1: open a SSL connection to the gateway
 	ret = ssl_connect(&tunnel);
 	if (ret)
-		goto err_ssl;
+		goto err_tunnel;
 	log_info("Connected to gateway.\n");
 
 	// Step 2: connect to the HTTP interface and authenticate to get a
@@ -360,7 +367,7 @@ int run_tunnel(struct vpn_config *config)
 		log_error("Could not authenticate to gateway (%s).\n",
 			  err_http_str(ret));
 		ret = 1;
-		goto err_log_in;
+		goto err_tunnel;
 	}
 	log_info("Authenticated.\n");
 	log_debug("Cookie: %s\n", config->cookie);
@@ -370,16 +377,19 @@ int run_tunnel(struct vpn_config *config)
 		log_error("VPN allocation request failed (%s).\n",
 			  err_http_str(ret));
 		ret = 1;
-		goto err_vpn_alloc;
+		goto err_tunnel;
 	}
 	log_info("Remote gateway has allocated a VPN.\n");
 
 	// Step 3: run a pppd process
 	ret = pppd_run(&tunnel);
 	if (ret)
-		goto err_vpn_alloc;
+		goto err_tunnel;
 
 	// Step 4: ask gateway to start tunneling
+	ret = ssl_connect(&tunnel);
+	if (ret)
+		goto err_tunnel;
 	ret = http_send(&tunnel, "GET /remote/sslvpn-tunnel HTTP/1.1\r\n"
 				 "Host: sslvpn\r\n"
 				 "Cookie: %s\r\n"
@@ -406,14 +416,16 @@ int run_tunnel(struct vpn_config *config)
 err_start_tunnel:
 	pppd_terminate(&tunnel);
 	log_info("Terminated pppd.\n");
-err_vpn_alloc:
-	auth_log_out(&tunnel);
-	log_info("Logged out.\n");
-err_log_in:
-	ssl_disconnect(&tunnel);
+err_tunnel:
 	log_info("Closed connection to gateway.\n");
-err_ssl:
 	tunnel.state = STATE_DOWN;
+
+	if (ssl_connect(&tunnel)) {
+		log_info("Could not log out.\n");
+	} else {
+		auth_log_out(&tunnel);
+		log_info("Logged out.\n");
+	}
 
 	return ret;
 }

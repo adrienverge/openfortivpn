@@ -19,7 +19,7 @@
 #include "log.h"
 #include "ssl.h"
 
-#define BUFSZ 0x1000
+#define BUFSZ 0x8000
 
 /*
  * Sends data to the HTTP server.
@@ -48,8 +48,8 @@ int http_send(struct tunnel *tunnel, const char *request, ...)
 		n = safe_ssl_write(tunnel->ssl_handle, (uint8_t *) buffer,
 				   length);
 	if (n < 0) {
-		log_warn("Error writing to SSL connection (%s).\n",
-			 err_ssl_str(n));
+		log_debug("Error writing to SSL connection (%s).\n",
+			  err_ssl_str(n));
 		return ERR_HTTP_SSL;
 	}
 
@@ -75,31 +75,28 @@ int http_receive(struct tunnel *tunnel, char **response)
 	if (buffer == NULL)
 		return ERR_HTTP_NO_MEM;
 
-	while (n == 0)
-		n = safe_ssl_read(tunnel->ssl_handle, (uint8_t *) buffer,
-				  BUFSZ - 1);
-
-	if (n > 0) {
-		bytes_read = n;
-		while ((n = safe_ssl_read(tunnel->ssl_handle,
-		                          (uint8_t *) buffer + bytes_read,
-		                          BUFSZ - 1 - bytes_read))) {
-			if (n < 0)
-				break;
+	do {
+		n = safe_ssl_read(tunnel->ssl_handle,
+				  (uint8_t *) buffer + bytes_read,
+				  BUFSZ - 1 - bytes_read);
+		if (n > 0) {
 			bytes_read += n;
+
+			if (bytes_read >= 4
+			    && !memcmp(&buffer[bytes_read - 4], "\r\n\r\n", 4))
+				break;
+
 			if (bytes_read == BUFSZ - 1) {
-				log_warn("Response too big");
+				log_warn("Response too big\n");
 				free(buffer);
 				return ERR_HTTP_SSL;
 			}
-			if (bytes_read >= 4 && !memcmp(buffer, "\r\n\r\n", 4))
-				break;
 		}
-	}
+	} while (n >= 0);
 
 	if (n < 0) {
-		log_warn("Error reading from SSL connection (%s).\n",
-			 err_ssl_str(n));
+		log_debug("Error reading from SSL connection (%s).\n",
+			  err_ssl_str(n));
 		free(buffer);
 		return ERR_HTTP_SSL;
 	}
@@ -120,17 +117,8 @@ int http_receive(struct tunnel *tunnel, char **response)
 	return 1;
 }
 
-/*
- * Sends and receives data from the HTTP server.
- *
- * @param[out] response  if not NULL, this pointer is set to reference
- *                       the new allocated buffer containing the data
- *                       sent by the server
- * @return     1         in case of success
- *             < 0       in case of error
- */
-static int http_request(struct tunnel *tunnel, const char *method,
-			const char *uri, const char *data, char **response)
+static int do_http_request(struct tunnel *tunnel, const char *method,
+			   const char *uri, const char *data, char **response)
 {
 	int ret;
 	char template[] =
@@ -152,6 +140,30 @@ static int http_request(struct tunnel *tunnel, const char *method,
 		return ret;
 
 	return http_receive(tunnel, response);
+}
+/*
+ * Sends and receives data from the HTTP server.
+ *
+ * @param[out] response  if not NULL, this pointer is set to reference
+ *                       the new allocated buffer containing the data
+ *                       sent by the server
+ * @return     1         in case of success
+ *             < 0       in case of error
+ */
+static int http_request(struct tunnel *tunnel, const char *method,
+			const char *uri, const char *data, char **response)
+{
+	int ret = do_http_request (tunnel, method, uri, data, response);
+
+	if (ret == ERR_HTTP_SSL) {
+		ssl_connect (tunnel);
+		ret = do_http_request (tunnel, method, uri, data, response);
+	}
+
+	if (ret != 1)
+		log_warn("Error issuing %s request\n", uri);
+
+	return ret;
 }
 
 /*
