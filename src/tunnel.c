@@ -200,6 +200,10 @@ static int ssl_verify_cert(struct tunnel *tunnel)
 	char digest_str[SHA256STRLEN], *subject, *issuer;
 	char *line;
 	int i;
+	X509_NAME *subj;
+	char common_name[FIELD_SIZE];
+
+	SSL_set_verify(tunnel->ssl_handle, SSL_VERIFY_PEER, NULL);
 
 	X509 *cert = SSL_get_peer_certificate(tunnel->ssl_handle);
 	if (cert == NULL) {
@@ -207,8 +211,13 @@ static int ssl_verify_cert(struct tunnel *tunnel)
 		return 1;
 	}
 
+	subj = X509_get_subject_name(cert);
+
 	// Try to validate certificate using local PKI
-	if (SSL_get_verify_result(tunnel->ssl_handle) == X509_V_OK) {
+	if (subj
+            && X509_NAME_get_text_by_NID(subj, NID_commonName, common_name, FIELD_SIZE) > 0
+            && strncasecmp(common_name, tunnel->config->gateway_host, FIELD_SIZE) == 0
+	    && SSL_get_verify_result(tunnel->ssl_handle) == X509_V_OK) {
 		log_debug("Gateway certificate validation succeeded.\n");
 		ret = 0;
 		goto free_cert;
@@ -235,7 +244,7 @@ static int ssl_verify_cert(struct tunnel *tunnel)
 		goto free_cert;
 	}
 
-	subject = X509_NAME_oneline(X509_get_subject_name(cert), NULL, 0);
+	subject = X509_NAME_oneline(subj, NULL, 0);
 	issuer = X509_NAME_oneline(X509_get_issuer_name(cert), NULL, 0);
 
 	log_error("Gateway certificate validation failed, and the certificate "
@@ -299,6 +308,14 @@ int ssl_connect(struct tunnel *tunnel)
 		log_error("SSL_CTX_new: %s\n",
 			  ERR_error_string(ERR_peek_last_error(), NULL));
 		return 1;
+	}
+
+	if (tunnel->config->ca_file) {
+		if (!SSL_CTX_load_verify_locations(tunnel->ssl_context, tunnel->config->ca_file, NULL)) {
+			log_error("SSL_CTX_load_verify_locations: %s\n",
+				  ERR_error_string(ERR_peek_last_error(), NULL));
+			return 1;
+		}
 	}
 
 	tunnel->ssl_handle = SSL_new(tunnel->ssl_context);
