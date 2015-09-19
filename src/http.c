@@ -56,6 +56,23 @@ int http_send(struct tunnel *tunnel, const char *request, ...)
 	return 1;
 }
 
+char *
+find_header (char *res, char *header)
+{
+	char *line = res;
+
+	while (memcmp (line, "\r\n", 2)) {
+		int line_len = (char *)memmem (line, BUFSZ, "\r\n", 2) - line;
+		int head_len = strlen (header);
+
+		if (line_len > head_len && !strncasecmp (line, header, head_len))
+			return line + head_len;
+		line += line_len + 2;
+	}
+
+	return NULL;
+}
+
 /*
  * Receives data from the HTTP server.
  *
@@ -99,6 +116,14 @@ int http_receive(struct tunnel *tunnel, char **response)
 			  err_ssl_str(n));
 		free(buffer);
 		return ERR_HTTP_SSL;
+	}
+
+	if (memmem(&buffer[header_size], bytes_read - header_size,
+	    "<!--sslvpnerrmsgkey=sslvpn_login_permission_denied-->", 53) ||
+	    memmem(buffer, header_size, "permission_denied denied", 24) ||
+            memmem(buffer, header_size, "Permission denied", 17)) {
+		free(buffer);
+		return ERR_HTTP_PERMISSION;
 	}
 
 	if (response == NULL) {
@@ -194,14 +219,15 @@ int auth_log_in(struct tunnel *tunnel)
 	}
 
 	ret = ERR_HTTP_NO_COOKIE;
-	// Look for cookie in the headers
-	line = strtok(res, "\r\n\r\n");
-	while (line != NULL) {
-		if (strncmp(line, "Set-Cookie: SVPNCOOKIE=", 23) == 0) {
-			line = &line[12];
+
+	line = find_header (res, "Set-Cookie: ");
+	if (line) {
+		if (strncmp(line, "SVPNCOOKIE=", 11) == 0) {
 			if (line[11] == ';' || line[11] == '\0') {
 				log_debug("Empty cookie.\n");
 			} else {
+				end = strstr(line, "\r");
+				end[0] = '\0';
 				end = strstr(line, ";");
 				if (end != NULL)
 					end[0] = '\0';
@@ -210,13 +236,9 @@ int auth_log_in(struct tunnel *tunnel)
 				ret = 1; // success
 				goto end;
 			}
-		} else if (strstr(line, "permission_denied denied") ||
-			   strstr(line, "Permission denied")) {
-			ret = ERR_HTTP_PERMISSION;
-			goto end;
 		}
-		line = strtok(NULL, "\r\n");
 	}
+
 end:
 	free(res);
 	return ret;
