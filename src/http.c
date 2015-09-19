@@ -87,6 +87,8 @@ int http_receive(struct tunnel *tunnel, char **response)
 	char *buffer, *res;
 	int n = 0;
 	int bytes_read = 0;
+	int header_size = 0;
+	int content_size = 0;
 
 	buffer = malloc(BUFSZ);
 	if (buffer == NULL)
@@ -97,11 +99,25 @@ int http_receive(struct tunnel *tunnel, char **response)
 				  (uint8_t *) buffer + bytes_read,
 				  BUFSZ - 1 - bytes_read);
 		if (n > 0) {
+			char *eoh;
+
 			bytes_read += n;
 
-			if (bytes_read >= 4
-			    && !memcmp(&buffer[bytes_read - 4], "\r\n\r\n", 4))
-				break;
+			if (header_size) {
+				/* We saw the whole header, let's check if the body is done as well */
+				if (content_size && bytes_read >= header_size + content_size)
+					break;
+			} else {
+				/* Did we see the header end? Then get the body size. */
+				eoh = memmem (buffer, bytes_read, "\r\n\r\n", 4);
+				if (eoh) {
+					char *header = find_header (buffer, "Content-Length: ");
+
+					header_size = eoh - buffer + 4;
+					if (header)
+						content_size = atoi(header);
+				}
+			}
 
 			if (bytes_read == BUFSZ - 1) {
 				log_warn("Response too big\n");
@@ -111,7 +127,7 @@ int http_receive(struct tunnel *tunnel, char **response)
 		}
 	} while (n >= 0);
 
-	if (n < 0) {
+	if (!header_size) {
 		log_debug("Error reading from SSL connection (%s).\n",
 			  err_ssl_str(n));
 		free(buffer);

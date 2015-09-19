@@ -8,6 +8,7 @@ AM_INIT_AUTOMAKE([foreign subdir-objects])
 
 # Checks for programs.
 AC_PROG_CC
+AC_GNU_SOURCE
 
 AM_SILENT_RULES([yes])
 
@@ -33,7 +34,7 @@ AC_TYPE_UINT8_T
 # Checks for library functions.
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
-AC_CHECK_FUNCS([bzero gethostbyname inet_ntoa memmove memset select socket strerror strstr strtol])
+AC_CHECK_FUNCS([bzero gethostbyname inet_ntoa memmove memset memmem select socket strerror strstr strtol])
 
 #AC_CONFIG_FILES([Makefile])
 AC_OUTPUT(Makefile)
