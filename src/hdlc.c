@@ -18,7 +18,8 @@
 #include "hdlc.h"
 
 #define in_sending_accm(byte) \
-	((byte) < 0x20 || (byte) == 0x7e || (byte) == 0x7d)
+	((byte) < 0x20 || ((byte) & 0x7f) == 0x7d || ((byte) & 0x7f) == 0x7e)
+
 #define in_receiving_accm(byte) \
 	((byte) < 0x20)
 
@@ -111,8 +112,7 @@ ssize_t hdlc_encode(uint8_t *frame, size_t frmsize,
 
 		if (frmsize < written + 2)
 			return ERR_HDLC_BUFFER_TOO_SMALL;
-		if (in_sending_accm(byte) || in_sending_accm(byte & 0x7f)
-		    || byte == 0x7f) {
+		if (in_sending_accm(byte)) {
 			frame[written++] = 0x7d;
 			frame[written++] = byte ^ 0x20;
 		} else {
@@ -125,16 +125,14 @@ ssize_t hdlc_encode(uint8_t *frame, size_t frmsize,
 
 	// Escape and write checksum
 	byte = (checksum ^ 0xffff) & 0xff;
-	if (in_sending_accm(byte) || in_sending_accm(byte & 0x7f)
-	    || byte == 0x7f) {
+	if (in_sending_accm(byte)) {
 		frame[written++] = 0x7d;
 		frame[written++] = byte ^ 0x20;
 	} else {
 		frame[written++] = byte;
 	}
 	byte = (checksum ^ 0xffff) >> 8;
-	if (in_sending_accm(byte) || in_sending_accm(byte & 0x7f)
-	    || byte == 0x7f) {
+	if (in_sending_accm(byte)) {
 		frame[written++] = 0x7d;
 		frame[written++] = byte ^ 0x20;
 	} else {
