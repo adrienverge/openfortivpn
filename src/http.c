@@ -89,6 +89,7 @@ int http_receive(struct tunnel *tunnel, char **response)
 	int bytes_read = 0;
 	int header_size = 0;
 	int content_size = 0;
+	int chunked = 0;
 
 	buffer = malloc(BUFSZ);
 	if (buffer == NULL)
@@ -103,19 +104,31 @@ int http_receive(struct tunnel *tunnel, char **response)
 
 			bytes_read += n;
 
-			if (header_size) {
-				/* We saw the whole header, let's check if the body is done as well */
-				if (content_size && bytes_read >= header_size + content_size)
-					break;
-			} else {
+			if (!header_size) {
 				/* Did we see the header end? Then get the body size. */
 				eoh = memmem (buffer, bytes_read, "\r\n\r\n", 4);
 				if (eoh) {
-					char *header = find_header (buffer, "Content-Length: ");
+					char *header;
 
+					header = find_header (buffer, "Content-Length: ");
 					header_size = eoh - buffer + 4;
 					if (header)
 						content_size = atoi(header);
+
+					if (find_header (buffer, "Transfer-Encoding: chunked"))
+						chunked = 1;
+				}
+			}
+
+			if (header_size) {
+				/* We saw the whole header, let's check if the body is done as well */
+				if (chunked) {
+					/* Last chunk terminator. Done naively. */
+					if (bytes_read >= 7 && !memcmp (&buffer[bytes_read - 7], "\r\n0\r\n\r\n", 7))
+						break;
+				} else {
+					if (bytes_read >= header_size + content_size)
+						break;
 				}
 			}
 
