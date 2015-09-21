@@ -204,7 +204,7 @@ static int do_http_request(struct tunnel *tunnel, const char *method,
  * @return     1         in case of success
  *             < 0       in case of error
  */
-static int http_request(struct tunnel *tunnel, const char *method,
+int http_request(struct tunnel *tunnel, const char *method,
 			const char *uri, const char *data, char **response)
 {
 	int ret = do_http_request (tunnel, method, uri, data, response);

@@ -407,6 +407,11 @@ int run_tunnel(struct vpn_config *config)
 	ret = ssl_connect(&tunnel);
 	if (ret)
 		goto err_tunnel;
+
+        ret = http_request(&tunnel, "GET", "/remote/fortisslvpn_xml", "", NULL);
+        if (ret != 1)
+                return ret;
+
 	ret = http_send(&tunnel, "GET /remote/sslvpn-tunnel HTTP/1.1\n"
 				 "Host: sslvpn\n"
 				 "Cookie: %s\n\n%c",
