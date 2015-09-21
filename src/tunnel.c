@@ -77,12 +77,13 @@ static int pppd_run(struct tunnel *tunnel)
 		log_error("forkpty: %s\n", strerror(errno));
 		return 1;
 	} else if (pid == 0) {
-		int i = 15;
+		int i = 16;
+
 		char *args[] = {
 			"/usr/sbin/pppd", "38400", "noipdefault", "noaccomp",
-			"noauth", "default-asyncmap", "nopcomp",
+			"noauth", "default-asyncmap", "nopcomp", "receive-all",
 			"nodefaultroute", ":1.1.1.1", "nodetach",
-			"lcp-max-configure", "40", "usepeerdns", "mru", "1024",
+			"lcp-max-configure", "40", "usepeerdns", "mru", "1354",
 			NULL, NULL, NULL,
 			NULL, NULL, NULL };
 		if (tunnel->config->pppd_log) {
