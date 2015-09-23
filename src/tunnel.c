@@ -407,10 +407,9 @@ int run_tunnel(struct vpn_config *config)
 	ret = ssl_connect(&tunnel);
 	if (ret)
 		goto err_tunnel;
-	ret = http_send(&tunnel, "GET /remote/sslvpn-tunnel HTTP/1.1\r\n"
-				 "Host: sslvpn\r\n"
-				 "Cookie: %s\r\n"
-				 "Connection: Keep-Alive\r\n\r\n%c",
+	ret = http_send(&tunnel, "GET /remote/sslvpn-tunnel HTTP/1.1\n"
+				 "Host: sslvpn\n"
+				 "Cookie: %s\n\n%c",
 			tunnel.config->cookie, '\0');
 	if (ret != 1) {
 		log_error("Could not start tunnel (%s).\n", err_http_str(ret));
