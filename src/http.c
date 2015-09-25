@@ -56,6 +56,23 @@ int http_send(struct tunnel *tunnel, const char *request, ...)
 	return 1;
 }
 
+char *
+find_header (char *res, char *header)
+{
+	char *line = res;
+
+	while (memcmp (line, "\r\n", 2)) {
+		int line_len = (char *)memmem (line, BUFSZ, "\r\n", 2) - line;
+		int head_len = strlen (header);
+
+		if (line_len > head_len && !strncasecmp (line, header, head_len))
+			return line + head_len;
+		line += line_len + 2;
+	}
+
+	return NULL;
+}
+
 /*
  * Receives data from the HTTP server.
  *
@@ -70,6 +87,9 @@ int http_receive(struct tunnel *tunnel, char **response)
 	char *buffer, *res;
 	int n = 0;
 	int bytes_read = 0;
+	int header_size = 0;
+	int content_size = 0;
+	int chunked = 0;
 
 	buffer = malloc(BUFSZ);
 	if (buffer == NULL)
@@ -80,11 +100,37 @@ int http_receive(struct tunnel *tunnel, char **response)
 				  (uint8_t *) buffer + bytes_read,
 				  BUFSZ - 1 - bytes_read);
 		if (n > 0) {
+			char *eoh;
+
 			bytes_read += n;
 
-			if (bytes_read >= 4
-			    && !memcmp(&buffer[bytes_read - 4], "\r\n\r\n", 4))
-				break;
+			if (!header_size) {
+				/* Did we see the header end? Then get the body size. */
+				eoh = memmem (buffer, bytes_read, "\r\n\r\n", 4);
+				if (eoh) {
+					char *header;
+
+					header = find_header (buffer, "Content-Length: ");
+					header_size = eoh - buffer + 4;
+					if (header)
+						content_size = atoi(header);
+
+					if (find_header (buffer, "Transfer-Encoding: chunked"))
+						chunked = 1;
+				}
+			}
+
+			if (header_size) {
+				/* We saw the whole header, let's check if the body is done as well */
+				if (chunked) {
+					/* Last chunk terminator. Done naively. */
+					if (bytes_read >= 7 && !memcmp (&buffer[bytes_read - 7], "\r\n0\r\n\r\n", 7))
+						break;
+				} else {
+					if (bytes_read >= header_size + content_size)
+						break;
+				}
+			}
 
 			if (bytes_read == BUFSZ - 1) {
 				log_warn("Response too big\n");
@@ -94,11 +140,19 @@ int http_receive(struct tunnel *tunnel, char **response)
 		}
 	} while (n >= 0);
 
-	if (n < 0) {
+	if (!header_size) {
 		log_debug("Error reading from SSL connection (%s).\n",
 			  err_ssl_str(n));
 		free(buffer);
 		return ERR_HTTP_SSL;
+	}
+
+	if (memmem(&buffer[header_size], bytes_read - header_size,
+	    "<!--sslvpnerrmsgkey=sslvpn_login_permission_denied-->", 53) ||
+	    memmem(buffer, header_size, "permission_denied denied", 24) ||
+            memmem(buffer, header_size, "Permission denied", 17)) {
+		free(buffer);
+		return ERR_HTTP_PERMISSION;
 	}
 
 	if (response == NULL) {
@@ -150,7 +204,7 @@ static int do_http_request(struct tunnel *tunnel, const char *method,
  * @return     1         in case of success
  *             < 0       in case of error
  */
-static int http_request(struct tunnel *tunnel, const char *method,
+int http_request(struct tunnel *tunnel, const char *method,
 			const char *uri, const char *data, char **response)
 {
 	int ret = do_http_request (tunnel, method, uri, data, response);
@@ -194,14 +248,15 @@ int auth_log_in(struct tunnel *tunnel)
 	}
 
 	ret = ERR_HTTP_NO_COOKIE;
-	// Look for cookie in the headers
-	line = strtok(res, "\r\n\r\n");
-	while (line != NULL) {
-		if (strncmp(line, "Set-Cookie: SVPNCOOKIE=", 23) == 0) {
-			line = &line[12];
+
+	line = find_header (res, "Set-Cookie: ");
+	if (line) {
+		if (strncmp(line, "SVPNCOOKIE=", 11) == 0) {
 			if (line[11] == ';' || line[11] == '\0') {
 				log_debug("Empty cookie.\n");
 			} else {
+				end = strstr(line, "\r");
+				end[0] = '\0';
 				end = strstr(line, ";");
 				if (end != NULL)
 					end[0] = '\0';
@@ -210,13 +265,9 @@ int auth_log_in(struct tunnel *tunnel)
 				ret = 1; // success
 				goto end;
 			}
-		} else if (strstr(line, "permission_denied denied") ||
-			   strstr(line, "Permission denied")) {
-			ret = ERR_HTTP_PERMISSION;
-			goto end;
 		}
-		line = strtok(NULL, "\r\n");
 	}
+
 end:
 	free(res);
 	return ret;
