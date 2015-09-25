@@ -66,6 +66,8 @@ struct vpn_config {
 	char	*plugin;
 
 	char	                *ca_file;
+	char	                *user_cert;
+	char	                *user_key;
 	int			verify_cert;
 	struct x509_digest	*cert_whitelist;
 };
@@ -79,6 +81,8 @@ struct vpn_config {
 		(cfg)->pppd_log = NULL; \
 		(cfg)->plugin = NULL; \
 		(cfg)->ca_file = NULL; \
+		(cfg)->user_cert = NULL; \
+		(cfg)->user_key = NULL; \
 		(cfg)->cert_whitelist = NULL; \
 	} while (0)
 

@@ -330,6 +330,32 @@ int ssl_connect(struct tunnel *tunnel)
 		}
 	}
 
+	if (tunnel->config->user_cert) {
+		if (!SSL_CTX_use_certificate_file(tunnel->ssl_context, tunnel->config->user_cert,
+		    SSL_FILETYPE_PEM)) {
+			log_error("SSL_CTX_use_certificate_file: %s\n",
+				  ERR_error_string(ERR_peek_last_error(), NULL));
+			return 1;
+		}
+	}
+
+	if (tunnel->config->user_key) {
+		if (!SSL_CTX_use_PrivateKey_file(tunnel->ssl_context, tunnel->config->user_key,
+		    SSL_FILETYPE_PEM)) {
+			log_error("SSL_CTX_use_PrivateKey_file: %s\n",
+				  ERR_error_string(ERR_peek_last_error(), NULL));
+			return 1;
+		}
+	}
+
+	if (tunnel->config->user_cert && tunnel->config->user_key) {
+		if (!SSL_CTX_check_private_key(tunnel->ssl_context)) {
+			log_error("SSL_CTX_check_private_key: %s\n",
+				  ERR_error_string(ERR_peek_last_error(), NULL));
+			return 1;
+		}
+	}
+
 	tunnel->ssl_handle = SSL_new(tunnel->ssl_context);
 	if (tunnel->ssl_handle == NULL) {
 		log_error("SSL_new: %s\n",
