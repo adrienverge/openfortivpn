@@ -16,8 +16,10 @@
  */
 
 #include "http.h"
+#include "xml.h"
 #include "log.h"
 #include "ssl.h"
+#include "ipv4.h"
 
 #define BUFSZ 0x8000
 
@@ -204,7 +206,7 @@ static int do_http_request(struct tunnel *tunnel, const char *method,
  * @return     1         in case of success
  *             < 0       in case of error
  */
-int http_request(struct tunnel *tunnel, const char *method,
+static int http_request(struct tunnel *tunnel, const char *method,
 			const char *uri, const char *data, char **response)
 {
 	int ret = do_http_request (tunnel, method, uri, data, response);
@@ -285,4 +287,51 @@ int auth_request_vpn_allocation(struct tunnel *tunnel)
 		return ret;
 
 	return http_request(tunnel, "GET", "/remote/fortisslvpn", "", NULL);
+}
+
+int auth_get_config(struct tunnel *tunnel)
+{
+	char *buffer;
+	char *val;
+	char *dest, *mask, *gateway;
+	int ret;
+
+	ret = http_request(tunnel, "GET", "/remote/fortisslvpn_xml", "", &buffer);
+	if (ret != 1)
+		return ret;
+
+	// Skip the HTTP header
+	buffer = strstr(buffer, "\r\n\r\n");
+
+	// The address of a local end of a router
+	val = xml_find('<', "assigned-addr", buffer, 1);
+	gateway = xml_get(xml_find(' ', "ipv4=", val, 1));
+	if (!gateway) {
+		log_warn("No gateway address\n");
+		return ret;
+	}
+
+	// Routes the tunnel wants to push
+	val = xml_find('<', "split-tunnel-info", buffer, 1);
+	while ((val = xml_find('<', "addr", val, 2))) {
+		dest = xml_get(xml_find(' ', "ip=", val, 1));
+		if (!dest) {
+			log_warn("No ip address for a route\n");
+			continue;
+		}
+
+		mask = xml_get(xml_find(' ', "mask=", val, 1));
+		if (!mask) {
+			log_warn("No mask for a route\n");
+			free(dest);
+			continue;
+		}
+
+		ipv4_add_split_vpn_route(tunnel, dest, mask, gateway);
+		free(dest);
+		free(mask);
+	}
+
+	free(gateway);
+	return ret;
 }

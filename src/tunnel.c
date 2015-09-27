@@ -415,15 +415,14 @@ int run_tunnel(struct vpn_config *config)
 	if (ret)
 		goto err_tunnel;
 
-	// Step 4: ask gateway to start tunneling
 	ret = ssl_connect(&tunnel);
 	if (ret)
 		goto err_tunnel;
 
-        ret = http_request(&tunnel, "GET", "/remote/fortisslvpn_xml", "", NULL);
-        if (ret != 1)
-                return ret;
+	// Step 4: get configuration
+	auth_get_config(&tunnel);
 
+	// Step 5: ask gateway to start tunneling
 	ret = http_send(&tunnel, "GET /remote/sslvpn-tunnel HTTP/1.1\n"
 				 "Host: sslvpn\n"
 				 "Cookie: %s\n\n%c",
@@ -437,7 +436,7 @@ int run_tunnel(struct vpn_config *config)
 	tunnel.state = STATE_CONNECTING;
 	ret = 0;
 
-	// Step 5: perform io between pppd and the gateway, while tunnel is up
+	// Step 6: perform io between pppd and the gateway, while tunnel is up
 	io_loop(&tunnel);
 
 	if (tunnel.state == STATE_UP)
