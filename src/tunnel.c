@@ -30,6 +30,7 @@
 #include <ifaddrs.h>
 #include <netdb.h>
 #include <net/if.h>
+#include <arpa/inet.h>
 #include <openssl/err.h>
 #include <pty.h>
 #include <sys/wait.h>
@@ -172,6 +173,8 @@ static int get_gateway_host_ip(struct tunnel *tunnel)
 
 	tunnel->config->gateway_ip = *((struct in_addr *)
 				       host->h_addr_list[0]);
+	setenv("VPN_GATEWAY", inet_ntoa(tunnel->config->gateway_ip), 0);
+
 	return 0;
 }
 
@@ -410,17 +413,17 @@ int run_tunnel(struct vpn_config *config)
 	}
 	log_info("Remote gateway has allocated a VPN.\n");
 
-	// Step 3: run a pppd process
-	ret = pppd_run(&tunnel);
-	if (ret)
-		goto err_tunnel;
-
 	ret = ssl_connect(&tunnel);
 	if (ret)
 		goto err_tunnel;
 
-	// Step 4: get configuration
+	// Step 3: get configuration
 	auth_get_config(&tunnel);
+
+	// Step 4: run a pppd process
+	ret = pppd_run(&tunnel);
+	if (ret)
+		goto err_tunnel;
 
 	// Step 5: ask gateway to start tunneling
 	ret = http_send(&tunnel, "GET /remote/sslvpn-tunnel HTTP/1.1\n"
