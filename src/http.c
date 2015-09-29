@@ -289,27 +289,23 @@ int auth_request_vpn_allocation(struct tunnel *tunnel)
 	return http_request(tunnel, "GET", "/remote/fortisslvpn", "", NULL);
 }
 
-int auth_get_config(struct tunnel *tunnel)
+static int parse_xml_config(struct tunnel *tunnel, const char *buffer)
 {
-	char *buffer;
 	const char *val;
 	char *dest, *mask, *gateway;
-	int ret;
 
-	ret = http_request(tunnel, "GET", "/remote/fortisslvpn_xml", "", &buffer);
-	if (ret != 1)
-		return ret;
+	if (strncmp(buffer, "HTTP/1.1 200 OK\r\n", 17))
+		return ERR_HTTP_BAD_RES_CODE;
 
 	// Skip the HTTP header
-	val = strstr(buffer, "\r\n\r\n");
+	buffer = strstr(buffer, "\r\n\r\n");
 
 	// The address of a local end of a router
-	val = xml_find('<', "assigned-addr", val, 1);
+	val = xml_find('<', "assigned-addr", buffer, 1);
 	gateway = xml_get(xml_find(' ', "ipv4=", val, 1));
 	if (!gateway) {
 		log_warn("No gateway address\n");
-		free(buffer);
-		return ret;
+		return 1;
 	}
 
 	// Routes the tunnel wants to push
@@ -335,6 +331,71 @@ int auth_get_config(struct tunnel *tunnel)
 	}
 
 	free(gateway);
-	free(buffer);
+
+	return 1;
+}
+
+static
+int parse_config(struct tunnel *tunnel, const char *buffer)
+{
+	char *c;
+
+	buffer = strcasestr(buffer, "NAME=\"text6\"");
+	if (!buffer)
+		return 1;
+	buffer = strcasestr(buffer, "VALUE=\"");
+	if (!buffer)
+		return 1;
+	buffer += 7;
+
+	do {
+		char dest[16], mask[16];
+
+		c = strchr(buffer, '/');
+		if (!c) {
+			log_warn("Expected a /<mask>\n");
+			return 1;
+		}
+		memcpy(dest, buffer, c - buffer);
+		dest[c - buffer] = '\0';
+		buffer = c + 1;
+
+		c = strchr(buffer, ',');
+		if (!c)
+			c = strchr(buffer, '"');
+		if (!c) {
+			log_warn("Expected a <mask>, or <mask>\"\n");
+			return 1;
+		}
+		memcpy(mask, buffer, c - buffer);
+		mask[c - buffer] = '\0';
+		buffer = c + 1;
+
+		ipv4_add_split_vpn_route(tunnel, dest, mask, "");
+
+	} while (*c == ',');
+
+	return 1;
+}
+
+int auth_get_config(struct tunnel *tunnel)
+{
+	char *buffer;
+	int ret;
+
+	ret = http_request(tunnel, "GET", "/remote/fortisslvpn_xml", "", &buffer);
+	if (ret == 1) {
+		ret = parse_xml_config(tunnel, buffer);
+		free (buffer);
+	}
+	if (ret == 1)
+		return ret;
+
+	ret = http_request(tunnel, "GET", "/remote/fortisslvpn", "", &buffer);
+	if (ret == 1) {
+		ret = parse_config(tunnel, buffer);
+		free (buffer);
+	}
+
 	return ret;
 }
