@@ -42,6 +42,7 @@ static inline const char *err_ipv4_str(int code)
 }
 
 #define ROUTE_IFACE_LEN 32
+#define MAX_SPLIT_ROUTES 32
 
 struct ipv4_config {
 	struct in_addr	ip_addr;
@@ -49,10 +50,12 @@ struct ipv4_config {
 	struct in_addr	ns1_addr;
 	struct in_addr	ns2_addr;
 	int		ns_are_new; // were ns already in /etc/resolv.conf?
+	int		split_routes;
 
 	struct rtentry	def_rt; // default route
 	struct rtentry	gtw_rt; // route to access VPN gateway
 	struct rtentry	ppp_rt; // new default route through VPN
+	struct rtentry	split_rt[MAX_SPLIT_ROUTES]; // split VPN routes
 };
 
 #define route_dest(route) \
@@ -66,6 +69,7 @@ struct ipv4_config {
 
 struct tunnel;
 
+int ipv4_add_split_vpn_route(struct tunnel *tunnel, char *dest, char *mask, char *gateway);
 int ipv4_set_tunnel_routes(struct tunnel *tunnel);
 int ipv4_restore_routes(struct tunnel *tunnel);
 

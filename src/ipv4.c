@@ -199,7 +199,46 @@ static int ipv4_del_route(struct rtentry *route)
 	return 0;
 }
 
-int ipv4_set_tunnel_routes(struct tunnel *tunnel)
+int
+ipv4_add_split_vpn_route(struct tunnel *tunnel, char *dest, char *mask, char *gateway)
+{
+	struct rtentry *route;
+
+	if (tunnel->ipv4.split_routes == MAX_SPLIT_ROUTES)
+		return ERR_IPV4_NO_MEM;
+
+	route = &tunnel->ipv4.split_rt[tunnel->ipv4.split_routes++];
+
+	route_init(route);
+	route_dest(route).s_addr = inet_addr(dest);
+	route_mask(route).s_addr = inet_addr(mask);
+	route_gtw(route).s_addr = inet_addr(gateway);
+	route->rt_flags |= RTF_GATEWAY;
+
+	return 0;
+
+}
+
+static int ipv4_set_split_routes(struct tunnel *tunnel)
+{
+	int i;
+	struct rtentry *route;
+	int ret;
+
+	for (i = 0; i < tunnel->ipv4.split_routes; i++) {
+		route = &tunnel->ipv4.split_rt[i];
+		strncpy(route_iface(route), tunnel->ppp_iface, ROUTE_IFACE_LEN - 1);
+		ret = ipv4_set_route(route);
+		if (ret == ERR_IPV4_SEE_ERRNO && errno == EEXIST)
+			log_warn("Route to gateway exists already.\n");
+		else if (ret != 0)
+			log_warn("Could not set route to tunnel gateway (%s).\n",
+				 err_ipv4_str(ret));
+	}
+	return 0;
+}
+
+static int ipv4_set_default_routes(struct tunnel *tunnel)
 {
 	int ret;
 	struct rtentry *def_rt = &tunnel->ipv4.def_rt;
@@ -266,12 +305,23 @@ err_destroy:
 	return ret;
 }
 
+int ipv4_set_tunnel_routes(struct tunnel *tunnel)
+{
+	if (tunnel->ipv4.split_routes)
+		return ipv4_set_split_routes (tunnel);
+	else
+		return ipv4_set_default_routes (tunnel);
+}
+
 int ipv4_restore_routes(struct tunnel *tunnel)
 {
 	int ret;
 	struct rtentry *def_rt = &tunnel->ipv4.def_rt;
 	struct rtentry *gtw_rt = &tunnel->ipv4.gtw_rt;
 	struct rtentry *ppp_rt = &tunnel->ipv4.ppp_rt;
+
+	if (tunnel->ipv4.split_routes)
+		return 0;
 
 	ret = ipv4_del_route(ppp_rt);
 	if (ret != 0)
