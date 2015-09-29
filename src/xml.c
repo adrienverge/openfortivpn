@@ -35,8 +35,7 @@
  * @return	a string immediately following the needle if found,
  * 		%NULL otherwise.
  */
-char *
-xml_find(char t, char *needle, char *buf, int nest)
+const char *xml_find(char t, const char *needle, const char *buf, int nest)
 {
 	int i;
 
@@ -67,8 +66,7 @@ xml_find(char t, char *needle, char *buf, int nest)
  * @return	%NULL in case of an error, a character string with
  * 		ownership passed upon success
  */
-char *
-xml_get(char *buf)
+char *xml_get(const char *buf)
 {
 	char val[16];	// Just enough to hold an IPv4 address
 	char quote;

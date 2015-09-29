@@ -292,7 +292,7 @@ int auth_request_vpn_allocation(struct tunnel *tunnel)
 int auth_get_config(struct tunnel *tunnel)
 {
 	char *buffer;
-	char *val;
+	const char *val;
 	char *dest, *mask, *gateway;
 	char env_var[21];
 	int ret;
