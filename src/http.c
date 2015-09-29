@@ -303,13 +303,14 @@ int auth_get_config(struct tunnel *tunnel)
 		return ret;
 
 	// Skip the HTTP header
-	buffer = strstr(buffer, "\r\n\r\n");
+	val = strstr(buffer, "\r\n\r\n");
 
 	// The address of a local end of a router
-	val = xml_find('<', "assigned-addr", buffer, 1);
+	val = xml_find('<', "assigned-addr", val, 1);
 	gateway = xml_get(xml_find(' ', "ipv4=", val, 1));
 	if (!gateway) {
 		log_warn("No gateway address\n");
+		free(buffer);
 		return ret;
 	}
 
@@ -348,5 +349,6 @@ int auth_get_config(struct tunnel *tunnel)
 		log_warn("Too many routes\n");
 
 	free(gateway);
+	free(buffer);
 	return ret;
 }
