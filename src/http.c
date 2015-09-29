@@ -294,9 +294,7 @@ int auth_get_config(struct tunnel *tunnel)
 	char *buffer;
 	const char *val;
 	char *dest, *mask, *gateway;
-	char env_var[21];
 	int ret;
-	int i = 0;
 
 	ret = http_request(tunnel, "GET", "/remote/fortisslvpn_xml", "", &buffer);
 	if (ret != 1)
@@ -332,21 +330,9 @@ int auth_get_config(struct tunnel *tunnel)
 
 		ipv4_add_split_vpn_route(tunnel, dest, mask, gateway);
 
-		if (i < 100) {
-			sprintf(env_var, "VPN_ROUTE_DEST_%d", i);
-			setenv(env_var, dest, 0);
-			sprintf(env_var, "VPN_ROUTE_MASK_%d", i);
-			setenv(env_var, mask, 0);
-			sprintf(env_var, "VPN_ROUTE_GATEWAY_%d", i);
-			setenv(env_var, gateway, 0);
-			i++;
-		}
-
 		free(dest);
 		free(mask);
 	}
-	if (i >= 100)
-		log_warn("Too many routes\n");
 
 	free(gateway);
 	free(buffer);
