@@ -418,7 +418,13 @@ int run_tunnel(struct vpn_config *config)
 		goto err_tunnel;
 
 	// Step 3: get configuration
-	auth_get_config(&tunnel);
+	ret = auth_get_config(&tunnel);
+	if (ret != 1) {
+		log_error("Could not get VPN configuration (%s).\n",
+			  err_http_str(ret));
+		ret = 1;
+		goto err_tunnel;
+	}
 
 	// Step 4: run a pppd process
 	ret = pppd_run(&tunnel);

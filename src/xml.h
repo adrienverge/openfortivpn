@@ -20,7 +20,7 @@
 
 #include "tunnel.h"
 
-char *xml_find (char t, char *tag, char *buf, int nest);
-char *xml_get (char *buf);
+const char *xml_find (char t, const char *tag, const char *buf, int nest);
+char *xml_get (const char *buf);
 
 #endif

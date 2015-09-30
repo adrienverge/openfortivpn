@@ -299,13 +299,11 @@ err_free_buf:
 }
 
 #define packet_is_ip_plus_dns(packet) \
-	((packet)->len >= 24 \
+	((packet)->len >= 12 \
 	 && pkt_data(packet)[0] == 0x80 \
 	 && pkt_data(packet)[1] == 0x21 \
 	 && pkt_data(packet)[2] == 0x02 \
-	 && pkt_data(packet)[6] == 0x03 \
-	 && pkt_data(packet)[12] == 0x81 \
-	 && pkt_data(packet)[18] == 0x83)
+	 && pkt_data(packet)[6] == 0x03)
 
 #define packet_is_end_negociation(packet) \
 	((packet)->len == 6 \
@@ -320,10 +318,14 @@ static inline void set_tunnel_ips(struct tunnel *tunnel,
 {
 	memcpy(&tunnel->ipv4.ip_addr.s_addr, &pkt_data(packet)[8],
 	       sizeof(uint32_t));
-	memcpy(&tunnel->ipv4.ns1_addr.s_addr, &pkt_data(packet)[14],
-	       sizeof(uint32_t));
-	memcpy(&tunnel->ipv4.ns2_addr.s_addr, &pkt_data(packet)[20],
-	       sizeof(uint32_t));
+	if (packet->len >= 18 && pkt_data(packet)[12] == 0x81) {
+		memcpy(&tunnel->ipv4.ns1_addr.s_addr, &pkt_data(packet)[14],
+		       sizeof(uint32_t));
+	}
+	if (packet->len >= 24 && pkt_data(packet)[18] == 0x83) {
+		memcpy(&tunnel->ipv4.ns2_addr.s_addr, &pkt_data(packet)[20],
+		       sizeof(uint32_t));
+	}
 }
 
 #define printable_char(c) \

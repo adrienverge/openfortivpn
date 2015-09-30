@@ -203,9 +203,19 @@ int
 ipv4_add_split_vpn_route(struct tunnel *tunnel, char *dest, char *mask, char *gateway)
 {
 	struct rtentry *route;
+	char env_var[21];
 
 	if (tunnel->ipv4.split_routes == MAX_SPLIT_ROUTES)
 		return ERR_IPV4_NO_MEM;
+
+	sprintf(env_var, "VPN_ROUTE_DEST_%d", tunnel->ipv4.split_routes);
+	setenv(env_var, dest, 0);
+	sprintf(env_var, "VPN_ROUTE_MASK_%d", tunnel->ipv4.split_routes);
+	setenv(env_var, mask, 0);
+	if (*gateway) {
+		sprintf(env_var, "VPN_ROUTE_GATEWAY_%d", tunnel->ipv4.split_routes);
+		setenv(env_var, gateway, 0);
+	}
 
 	route = &tunnel->ipv4.split_rt[tunnel->ipv4.split_routes++];
 
@@ -216,7 +226,6 @@ ipv4_add_split_vpn_route(struct tunnel *tunnel, char *dest, char *mask, char *ga
 	route->rt_flags |= RTF_GATEWAY;
 
 	return 0;
-
 }
 
 static int ipv4_set_split_routes(struct tunnel *tunnel)
@@ -228,6 +237,8 @@ static int ipv4_set_split_routes(struct tunnel *tunnel)
 	for (i = 0; i < tunnel->ipv4.split_routes; i++) {
 		route = &tunnel->ipv4.split_rt[i];
 		strncpy(route_iface(route), tunnel->ppp_iface, ROUTE_IFACE_LEN - 1);
+		if (route_gtw(route).s_addr == -1)
+			route_gtw(route).s_addr = tunnel->ipv4.ip_addr.s_addr;
 		ret = ipv4_set_route(route);
 		if (ret == ERR_IPV4_SEE_ERRNO && errno == EEXIST)
 			log_warn("Route to gateway exists already.\n");
