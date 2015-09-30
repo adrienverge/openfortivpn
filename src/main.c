@@ -26,6 +26,7 @@
 "Usage: openfortivpn [<host>:<port>] [-u <user>] [-p <pass>]\n" \
 "                    [--no-routes] [--no-dns] [--pppd-log=<file>]\n" \
 "                    [--plugin=<file>] [--ca-file=<file>]\n" \
+"                    [--user-cert=<file>] [--user-key=<file>]\n" \
 "                    [--trusted-cert=<digest>] [-c <file>] [-v|-q]\n" \
 "       openfortivpn --help\n" \
 "       openfortivpn --version\n"
@@ -52,6 +53,10 @@ USAGE \
 "  --ca-file=<file>              Use specified PEM-encoded certificate bundle\n" \
 "                                instead of system-wide store to verify the gateway\n" \
 "                                certificate.\n" \
+"  --user-cert=<file>            Use specified PEM-encoded certificate if the server\n" \
+"                                requires authentication with a certificate.\n" \
+"  --user-key=<file>             Use specified PEM-encoded key if the server if the\n" \
+"                                server requires authentication with a certificate.\n" \
 "  --trusted-cert=<digest>       Trust a given gateway. If classical SSL\n" \
 "                                certificate validation fails, the gateway\n" \
 "                                certificate will be matched against this value.\n" \
@@ -137,6 +142,8 @@ int main(int argc, char **argv)
 		{"no-routes",     no_argument, &cfg.set_routes, 0},
 		{"no-dns",        no_argument, &cfg.set_dns, 0},
 		{"ca-file",       required_argument, 0, 0},
+		{"user-cert",     required_argument, 0, 0},
+		{"user-key",      required_argument, 0, 0},
 		{"trusted-cert",  required_argument, 0, 0},
 		{"pppd-log",      required_argument, 0, 0},
 		{"plugin",        required_argument, 0, 0},
@@ -178,6 +185,16 @@ int main(int argc, char **argv)
 			if (strcmp(long_options[option_index].name,
 				   "ca-file") == 0) {
 				cfg.ca_file = optarg;
+				break;
+			}
+			if (strcmp(long_options[option_index].name,
+				   "user-cert") == 0) {
+				cfg.user_cert = optarg;
+				break;
+			}
+			if (strcmp(long_options[option_index].name,
+				   "user-key") == 0) {
+				cfg.user_key = optarg;
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
