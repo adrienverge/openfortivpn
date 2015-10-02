@@ -82,7 +82,7 @@ char *xml_get(const char *buf)
 	for (i = 1; buf[i]; i++) {
 		if (buf[i] == quote)
 			break;
-		if (i == 15) {
+		if (i == 16) {
 			log_warn("Value too long in config XML\n");
 			break;
 		}
