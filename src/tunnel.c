@@ -103,9 +103,9 @@ static int pppd_run(struct tunnel *tunnel)
 			args[i++] = "logfile";
 			args[i++] = tunnel->config->pppd_log;
 		}
-		if (tunnel->config->plugin) {
+		if (tunnel->config->pppd_plugin) {
 			args[i++] = "plugin";
-			args[i++] = tunnel->config->plugin;
+			args[i++] = tunnel->config->pppd_plugin;
 		}
 
 		close(tunnel->ssl_socket);

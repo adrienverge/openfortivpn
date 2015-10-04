@@ -63,7 +63,7 @@ struct vpn_config {
 	int	set_dns;
 
 	char	*pppd_log;
-	char	*plugin;
+	char	*pppd_plugin;
 
 	char	                *ca_file;
 	char	                *user_cert;
@@ -79,7 +79,7 @@ struct vpn_config {
 		(cfg)->username[0] = '\0'; \
 		(cfg)->password[0] = '\0'; \
 		(cfg)->pppd_log = NULL; \
-		(cfg)->plugin = NULL; \
+		(cfg)->pppd_plugin = NULL; \
 		(cfg)->ca_file = NULL; \
 		(cfg)->user_cert = NULL; \
 		(cfg)->user_key = NULL; \

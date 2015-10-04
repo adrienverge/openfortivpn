@@ -25,7 +25,7 @@
 #define USAGE \
 "Usage: openfortivpn [<host>:<port>] [-u <user>] [-p <pass>]\n" \
 "                    [--no-routes] [--no-dns] [--pppd-log=<file>]\n" \
-"                    [--plugin=<file>] [--ca-file=<file>]\n" \
+"                    [--pppd-plugin=<file>] [--ca-file=<file>]\n" \
 "                    [--user-cert=<file>] [--user-key=<file>]\n" \
 "                    [--trusted-cert=<digest>] [-c <file>] [-v|-q]\n" \
 "       openfortivpn --help\n" \
@@ -65,7 +65,7 @@ USAGE \
 "                                several certificates.\n" \
 "  --pppd-log=<file>             Set pppd in debug mode and save its logs into\n" \
 "                                <file>.\n" \
-"  --plugin=<file>               Use specified pppd plugin instead of configuring\n"\
+"  --pppd-plugin=<file>          Use specified pppd plugin instead of configuring\n"\
 "                                resolver and routes directly.\n" \
 "  -v                            Increase verbosity. Can be used multiple times\n" \
 "                                to be even more verbose.\n" \
@@ -146,7 +146,8 @@ int main(int argc, char **argv)
 		{"user-key",      required_argument, 0, 0},
 		{"trusted-cert",  required_argument, 0, 0},
 		{"pppd-log",      required_argument, 0, 0},
-		{"plugin",        required_argument, 0, 0},
+		{"pppd-plugin",   required_argument, 0, 0},
+		{"plugin",        required_argument, 0, 0}, // deprecated
 		{0, 0, 0, 0}
 	};
 
@@ -178,8 +179,15 @@ int main(int argc, char **argv)
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
+				   "pppd-plugin") == 0) {
+				cfg.pppd_plugin = optarg;
+				break;
+			}
+			// --plugin is deprecated, --pppd-plugin should be used
+			if (cfg.pppd_plugin == NULL &&
+			    strcmp(long_options[option_index].name,
 				   "plugin") == 0) {
-				cfg.plugin = optarg;
+				cfg.pppd_plugin = optarg;
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
