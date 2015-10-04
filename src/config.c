@@ -74,7 +74,7 @@ int load_config(struct vpn_config *cfg, const char *filename)
 		goto err_close;
 	}
 
-	buffer = malloc(stat.st_size);
+	buffer = malloc(stat.st_size + 1);
 	if (buffer == NULL) {
 		ret = ERR_CFG_NO_MEM;
 		goto err_close;
@@ -85,6 +85,8 @@ int load_config(struct vpn_config *cfg, const char *filename)
 		ret = ERR_CFG_CANNOT_READ;
 		goto err_free;
 	}
+
+	buffer[stat.st_size] = '\0';
 
 	// Read line by line
 	for (line = strtok(buffer, "\n"); line != NULL;
