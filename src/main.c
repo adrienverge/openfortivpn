@@ -85,7 +85,7 @@ USAGE \
 "      trusted-cert = certificatedigest4daa8c5fe6c...\n" \
 "      trusted-cert = othercertificatedigest6631bf...\n"
 
-static void read_password(const char *prompt, char *pass, size_t len)
+void read_password(const char *prompt, char *pass, size_t len)
 {
 	int masked = 0;
 	struct termios oldt, newt;
