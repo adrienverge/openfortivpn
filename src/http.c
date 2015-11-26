@@ -20,6 +20,7 @@
 #include "log.h"
 #include "ssl.h"
 #include "ipv4.h"
+#include "main.h"
 
 #define BUFSZ 0x8000
 
@@ -223,6 +224,63 @@ static int http_request(struct tunnel *tunnel, const char *method,
 }
 
 /*
+ * Read value for key from a string like 'key1=value1,key2=value2'.
+ *
+ * @return  1   in case of success
+ *          < 0 in case of error
+ */
+static int get_value_from_response(char *buf, char *keyname, char *retbuf, int retbuflen) {
+	char *pos;
+	int keynamelen;
+	int outpos;
+
+	keynamelen = strlen(keyname);
+	pos = strstr(buf, keyname);
+	if (pos == NULL) {
+		return(-1);
+	}
+
+	pos = pos + keynamelen;
+	outpos = 0;
+	while (isalnum(*pos)) {
+		if (outpos >= retbuflen) {
+			return(-2);
+		}
+		retbuf[outpos] = *pos;
+		pos++;
+		outpos++;
+	}
+	retbuf[outpos] = '\0';
+	return(1);
+}
+
+static int get_auth_cookie(struct tunnel *tunnel, char *buf) {
+	int ret;
+	char *line, *end;
+
+	ret = ERR_HTTP_NO_COOKIE;
+
+	line = find_header (buf, "Set-Cookie: ");
+	if (line) {
+		if (strncmp(line, "SVPNCOOKIE=", 11) == 0) {
+			if (line[11] == ';' || line[11] == '\0') {
+				log_debug("Empty cookie.\n");
+			} else {
+				end = strstr(line, "\r");
+				end[0] = '\0';
+				end = strstr(line, ";");
+				if (end != NULL)
+					end[0] = '\0';
+				strncpy(tunnel->config->cookie, line,
+					COOKIE_SIZE);
+				ret = 1; // success
+			}
+		}
+	}
+	return(ret);
+}
+
+/*
  * Authenticates to gateway by sending username and password.
  *
  * @return  1   in case of success
@@ -231,8 +289,13 @@ static int http_request(struct tunnel *tunnel, const char *method,
 int auth_log_in(struct tunnel *tunnel)
 {
 	int ret;
+	char reqid[32];
+	char polid[32];
+	char group[128];
 	char data[256];
-	char *res, *line, *end;
+	char token[128];
+	char tokenresponse[256];
+	char *res;
 
 	tunnel->config->cookie[0] = '\0';
 
@@ -249,25 +312,36 @@ int auth_log_in(struct tunnel *tunnel)
 		goto end;
 	}
 
-	ret = ERR_HTTP_NO_COOKIE;
 
-	line = find_header (res, "Set-Cookie: ");
-	if (line) {
-		if (strncmp(line, "SVPNCOOKIE=", 11) == 0) {
-			if (line[11] == ';' || line[11] == '\0') {
-				log_debug("Empty cookie.\n");
-			} else {
-				end = strstr(line, "\r");
-				end[0] = '\0';
-				end = strstr(line, ";");
-				if (end != NULL)
-					end[0] = '\0';
-				strncpy(tunnel->config->cookie, line,
-					COOKIE_SIZE);
-				ret = 1; // success
-				goto end;
-			}
+	ret = get_auth_cookie(tunnel, res);
+
+	if (ret == ERR_HTTP_NO_COOKIE) {
+		// Do we need to do two-factor authentication?
+		ret = get_value_from_response(res, "tokeninfo=", token, 128);
+		if (ret != 1 || strlen(token) < 1) {
+			// No SVPNCOOKIE and no tokeninfo, return error.
+			ret = ERR_HTTP_NO_COOKIE;
+			goto end;
 		}
+		get_value_from_response(res, "grp=", group, 128);
+		get_value_from_response(res, "reqid=", reqid, 32);
+		get_value_from_response(res, "polid=", polid, 32);
+
+		read_password("2factor authentication token: ", tokenresponse, 255);
+
+		snprintf(data, 256, "username=%s&realm=&reqid=%s&polid=%s&grp=%s"
+			"&code=%s&code2=&redir=%%2Fremote%%2Findex&just_logged_in=1",
+			 tunnel->config->username, reqid, polid, group, tokenresponse);
+		ret = http_request(tunnel, "POST", "/remote/logincheck", data, &res);
+		if (ret != 1)
+			return ret;
+
+		if (strncmp(res, "HTTP/1.1 200 OK\r\n", 17)) {
+			ret = ERR_HTTP_BAD_RES_CODE;
+			goto end;
+		}
+
+		ret = get_auth_cookie(tunnel, res);
 	}
 
 end:
