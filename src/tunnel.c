@@ -97,7 +97,8 @@ static int pppd_run(struct tunnel *tunnel)
 			"nodefaultroute", ":1.1.1.1", "nodetach",
 			"lcp-max-configure", "40", "usepeerdns", "mru", "1354",
 			NULL, NULL, NULL,
-			NULL, NULL, NULL };
+			NULL, NULL, NULL
+		};
 		if (tunnel->config->pppd_log) {
 			args[i++] = "debug";
 			args[i++] = "logfile";
@@ -153,7 +154,7 @@ int ppp_interface_is_up(struct tunnel *tunnel)
 		if (strstr(ifa->ifa_name, "ppp") != NULL
 		    && ifa->ifa_flags & IFF_UP) {
 			strncpy(tunnel->ppp_iface, ifa->ifa_name,
-				ROUTE_IFACE_LEN - 1);
+			        ROUTE_IFACE_LEN - 1);
 			freeifaddrs(ifap);
 			return 1;
 		}
@@ -172,7 +173,7 @@ static int get_gateway_host_ip(struct tunnel *tunnel)
 	}
 
 	tunnel->config->gateway_ip = *((struct in_addr *)
-				       host->h_addr_list[0]);
+	                               host->h_addr_list[0]);
 	setenv("VPN_GATEWAY", inet_ntoa(tunnel->config->gateway_ip), 0);
 
 	return 0;
@@ -230,8 +231,10 @@ static int ssl_verify_cert(struct tunnel *tunnel)
 
 	// Try to validate certificate using local PKI
 	if (subj
-            && X509_NAME_get_text_by_NID(subj, NID_commonName, common_name, FIELD_SIZE) > 0
-            && strncasecmp(common_name, tunnel->config->gateway_host, FIELD_SIZE) == 0
+	    && X509_NAME_get_text_by_NID(subj, NID_commonName, common_name,
+	                                 FIELD_SIZE) > 0
+	    && strncasecmp(common_name, tunnel->config->gateway_host,
+	                   FIELD_SIZE) == 0
 	    && SSL_get_verify_result(tunnel->ssl_handle) == X509_V_OK) {
 		log_debug("Gateway certificate validation succeeded.\n");
 		ret = 0;
@@ -263,8 +266,8 @@ static int ssl_verify_cert(struct tunnel *tunnel)
 	issuer = X509_NAME_oneline(X509_get_issuer_name(cert), NULL, 0);
 
 	log_error("Gateway certificate validation failed, and the certificate "
-		  "digest in not in the local whitelist. If you trust it, "
-		  "rerun with:\n");
+	          "digest in not in the local whitelist. If you trust it, "
+	          "rerun with:\n");
 	log_error("    --trusted-cert %s\n", digest_str);
 	log_error("or add this line to your config file:\n");
 	log_error("    trusted-cert = %s\n", digest_str);
@@ -321,32 +324,39 @@ int ssl_connect(struct tunnel *tunnel)
 	tunnel->ssl_context = SSL_CTX_new(SSLv23_client_method());
 	if (tunnel->ssl_context == NULL) {
 		log_error("SSL_CTX_new: %s\n",
-			  ERR_error_string(ERR_peek_last_error(), NULL));
+		          ERR_error_string(ERR_peek_last_error(), NULL));
 		return 1;
 	}
 
 	if (tunnel->config->ca_file) {
-		if (!SSL_CTX_load_verify_locations(tunnel->ssl_context, tunnel->config->ca_file, NULL)) {
+		if (!SSL_CTX_load_verify_locations(
+		            tunnel->ssl_context,
+		            tunnel->config->ca_file, NULL)) {
 			log_error("SSL_CTX_load_verify_locations: %s\n",
-				  ERR_error_string(ERR_peek_last_error(), NULL));
+			          ERR_error_string(ERR_peek_last_error(),
+			                           NULL));
 			return 1;
 		}
 	}
 
 	if (tunnel->config->user_cert) {
-		if (!SSL_CTX_use_certificate_file(tunnel->ssl_context, tunnel->config->user_cert,
-		    SSL_FILETYPE_PEM)) {
+		if (!SSL_CTX_use_certificate_file(
+		            tunnel->ssl_context, tunnel->config->user_cert,
+		            SSL_FILETYPE_PEM)) {
 			log_error("SSL_CTX_use_certificate_file: %s\n",
-				  ERR_error_string(ERR_peek_last_error(), NULL));
+			          ERR_error_string(ERR_peek_last_error(),
+			                           NULL));
 			return 1;
 		}
 	}
 
 	if (tunnel->config->user_key) {
-		if (!SSL_CTX_use_PrivateKey_file(tunnel->ssl_context, tunnel->config->user_key,
-		    SSL_FILETYPE_PEM)) {
+		if (!SSL_CTX_use_PrivateKey_file(
+		            tunnel->ssl_context, tunnel->config->user_key,
+		            SSL_FILETYPE_PEM)) {
 			log_error("SSL_CTX_use_PrivateKey_file: %s\n",
-				  ERR_error_string(ERR_peek_last_error(), NULL));
+			          ERR_error_string(ERR_peek_last_error(),
+			                           NULL));
 			return 1;
 		}
 	}
@@ -354,7 +364,7 @@ int ssl_connect(struct tunnel *tunnel)
 	if (tunnel->config->user_cert && tunnel->config->user_key) {
 		if (!SSL_CTX_check_private_key(tunnel->ssl_context)) {
 			log_error("SSL_CTX_check_private_key: %s\n",
-				  ERR_error_string(ERR_peek_last_error(), NULL));
+			          ERR_error_string(ERR_peek_last_error(), NULL));
 			return 1;
 		}
 	}
@@ -362,13 +372,13 @@ int ssl_connect(struct tunnel *tunnel)
 	tunnel->ssl_handle = SSL_new(tunnel->ssl_context);
 	if (tunnel->ssl_handle == NULL) {
 		log_error("SSL_new: %s\n",
-			  ERR_error_string(ERR_peek_last_error(), NULL));
+		          ERR_error_string(ERR_peek_last_error(), NULL));
 		return 1;
 	}
 
 	if (!SSL_set_fd(tunnel->ssl_handle, tunnel->ssl_socket)) {
 		log_error("SSL_set_fd: %s\n",
-			  ERR_error_string(ERR_peek_last_error(), NULL));
+		          ERR_error_string(ERR_peek_last_error(), NULL));
 		return 1;
 	}
 	SSL_set_mode(tunnel->ssl_handle, SSL_MODE_AUTO_RETRY);
@@ -376,7 +386,7 @@ int ssl_connect(struct tunnel *tunnel)
 	// Initiate SSL handshake
 	if (SSL_connect(tunnel->ssl_handle) != 1) {
 		log_error("SSL_connect: %s\n",
-			  ERR_error_string(ERR_peek_last_error(), NULL));
+		          ERR_error_string(ERR_peek_last_error(), NULL));
 		return 1;
 	}
 	SSL_set_mode(tunnel->ssl_handle, SSL_MODE_AUTO_RETRY);
@@ -423,7 +433,7 @@ int run_tunnel(struct vpn_config *config)
 	ret = auth_log_in(&tunnel);
 	if (ret != 1) {
 		log_error("Could not authenticate to gateway (%s).\n",
-			  err_http_str(ret));
+		          err_http_str(ret));
 		ret = 1;
 		goto err_tunnel;
 	}
@@ -433,7 +443,7 @@ int run_tunnel(struct vpn_config *config)
 	ret = auth_request_vpn_allocation(&tunnel);
 	if (ret != 1) {
 		log_error("VPN allocation request failed (%s).\n",
-			  err_http_str(ret));
+		          err_http_str(ret));
 		ret = 1;
 		goto err_tunnel;
 	}
@@ -447,7 +457,7 @@ int run_tunnel(struct vpn_config *config)
 	ret = auth_get_config(&tunnel);
 	if (ret != 1) {
 		log_error("Could not get VPN configuration (%s).\n",
-			  err_http_str(ret));
+		          err_http_str(ret));
 		ret = 1;
 		goto err_tunnel;
 	}
@@ -458,10 +468,11 @@ int run_tunnel(struct vpn_config *config)
 		goto err_tunnel;
 
 	// Step 5: ask gateway to start tunneling
-	ret = http_send(&tunnel, "GET /remote/sslvpn-tunnel HTTP/1.1\n"
-				 "Host: sslvpn\n"
-				 "Cookie: %s\n\n%c",
-			tunnel.config->cookie, '\0');
+	ret = http_send(&tunnel,
+	                "GET /remote/sslvpn-tunnel HTTP/1.1\n"
+	                "Host: sslvpn\n"
+	                "Cookie: %s\n\n%c",
+	                tunnel.config->cookie, '\0');
 	if (ret != 1) {
 		log_error("Could not start tunnel (%s).\n", err_http_str(ret));
 		ret = 1;

@@ -147,7 +147,7 @@ static int ipv4_get_route(struct rtentry *route)
 			route->rt_window = window;
 			route->rt_irtt = irtt;
 			strncpy(route_iface(route), iface,
-				ROUTE_IFACE_LEN - 1);
+			        ROUTE_IFACE_LEN - 1);
 			return 0;
 		}
 		line = strtok_r(NULL, "\n", &saveptr1);
@@ -199,8 +199,8 @@ static int ipv4_del_route(struct rtentry *route)
 	return 0;
 }
 
-int
-ipv4_add_split_vpn_route(struct tunnel *tunnel, char *dest, char *mask, char *gateway)
+int ipv4_add_split_vpn_route(struct tunnel *tunnel, char *dest, char *mask,
+                             char *gateway)
 {
 	struct rtentry *route;
 	char env_var[21];
@@ -213,7 +213,8 @@ ipv4_add_split_vpn_route(struct tunnel *tunnel, char *dest, char *mask, char *ga
 	sprintf(env_var, "VPN_ROUTE_MASK_%d", tunnel->ipv4.split_routes);
 	setenv(env_var, mask, 0);
 	if (*gateway) {
-		sprintf(env_var, "VPN_ROUTE_GATEWAY_%d", tunnel->ipv4.split_routes);
+		sprintf(env_var, "VPN_ROUTE_GATEWAY_%d",
+		        tunnel->ipv4.split_routes);
 		setenv(env_var, gateway, 0);
 	}
 
@@ -236,7 +237,8 @@ static int ipv4_set_split_routes(struct tunnel *tunnel)
 
 	for (i = 0; i < tunnel->ipv4.split_routes; i++) {
 		route = &tunnel->ipv4.split_rt[i];
-		strncpy(route_iface(route), tunnel->ppp_iface, ROUTE_IFACE_LEN - 1);
+		strncpy(route_iface(route), tunnel->ppp_iface,
+		        ROUTE_IFACE_LEN - 1);
 		if (route_gtw(route).s_addr == -1)
 			route_gtw(route).s_addr = tunnel->ipv4.ip_addr.s_addr;
 		ret = ipv4_set_route(route);
@@ -244,7 +246,7 @@ static int ipv4_set_split_routes(struct tunnel *tunnel)
 			log_warn("Route to gateway exists already.\n");
 		else if (ret != 0)
 			log_warn("Could not set route to tunnel gateway (%s).\n",
-				 err_ipv4_str(ret));
+			         err_ipv4_str(ret));
 	}
 	return 0;
 }
@@ -266,7 +268,7 @@ static int ipv4_set_default_routes(struct tunnel *tunnel)
 	ret = ipv4_get_route(def_rt);
 	if (ret != 0) {
 		log_warn("Could not get current default route (%s).\n",
-			 err_ipv4_str(ret));
+		         err_ipv4_str(ret));
 		goto err_destroy;
 	}
 
@@ -283,14 +285,14 @@ static int ipv4_set_default_routes(struct tunnel *tunnel)
 		log_warn("Route to gateway exists already.\n");
 	else if (ret != 0)
 		log_warn("Could not set route to tunnel gateway (%s).\n",
-			 err_ipv4_str(ret));
+		         err_ipv4_str(ret));
 
 	// Delete the current default route
 	log_debug("Deleting the current default route...\n");
 	ret = ipv4_del_route(def_rt);
 	if (ret != 0)
 		log_warn("Could not delete the current default route (%s).\n",
-			 err_ipv4_str(ret));
+		         err_ipv4_str(ret));
 
 	// Set the new default route
 	// ip route add to 0/0 dev ppp0
@@ -305,7 +307,7 @@ static int ipv4_set_default_routes(struct tunnel *tunnel)
 		log_warn("Default route exists already.\n");
 	else if (ret != 0)
 		log_warn("Could not set the new default route (%s).\n",
-			 err_ipv4_str(ret));
+		         err_ipv4_str(ret));
 
 	return 0;
 
@@ -337,19 +339,19 @@ int ipv4_restore_routes(struct tunnel *tunnel)
 	ret = ipv4_del_route(ppp_rt);
 	if (ret != 0)
 		log_warn("Could not delete route through tunnel (%s).\n",
-			 err_ipv4_str(ret));
+		         err_ipv4_str(ret));
 
 	// Restore the default route
 	// It seems to not be automatically restored on all linux distributions
 	ret = ipv4_set_route(def_rt);
 	if (ret != 0)
 		log_warn("Could not restore default route (%s). Already restored?\n",
-			err_ipv4_str(ret));
+		         err_ipv4_str(ret));
 
 	ret = ipv4_del_route(gtw_rt);
 	if (ret != 0)
 		log_warn("Could not delete route to gateway (%s).\n",
-			 err_ipv4_str(ret));
+		         err_ipv4_str(ret));
 
 	route_destroy(ppp_rt);
 	route_destroy(def_rt);
@@ -373,13 +375,13 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 	file = fopen("/etc/resolv.conf", "r+");
 	if (file == NULL) {
 		log_warn("Could not open /etc/resolv.conf (%s).\n",
-			 strerror(errno));
+		         strerror(errno));
 		return 1;
 	}
 
 	if (fstat(fileno(file), &stat) == -1) {
 		log_warn("Could not stat /etc/resolv.conf (%s).\n",
-			 strerror(errno));
+		         strerror(errno));
 		goto err_close;
 	}
 	// TODO
@@ -388,7 +390,7 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 	buffer = malloc(stat.st_size);
 	if (buffer == NULL) {
 		log_warn("Could not read /etc/resolv.conf (%s).\n",
-			 "Not enough memory");
+		         "Not enough memory");
 		goto err_close;
 	}
 
@@ -412,7 +414,7 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 		if (strcmp(line, ns1) == 0) {
 			tunnel->ipv4.ns_are_new = 0;
 			log_debug("Nameservers already present in "
-				  "/etc/resolv.conf.\n");
+			          "/etc/resolv.conf.\n");
 			ret = 0;
 			goto err_free;
 		}
@@ -464,20 +466,20 @@ int ipv4_del_nameservers_from_resolv_conf(struct tunnel *tunnel)
 	file = fopen("/etc/resolv.conf", "r+");
 	if (file == NULL) {
 		log_warn("Could not open /etc/resolv.conf (%s).\n",
-			 strerror(errno));
+		         strerror(errno));
 		return 1;
 	}
 
 	if (fstat(fileno(file), &stat) == -1) {
 		log_warn("Could not stat /etc/resolv.conf (%s).\n",
-			 strerror(errno));
+		         strerror(errno));
 		goto err_close;
 	}
 
 	buffer = malloc(stat.st_size);
 	if (buffer == NULL) {
 		log_warn("Could not read /etc/resolv.conf (%s).\n",
-			 "Not enough memory");
+		         "Not enough memory");
 		goto err_close;
 	}
 
@@ -495,7 +497,7 @@ int ipv4_del_nameservers_from_resolv_conf(struct tunnel *tunnel)
 	file = freopen("/etc/resolv.conf", "w", file);
 	if (file == NULL) {
 		log_warn("Could not reopen /etc/resolv.conf (%s).\n",
-			 strerror(errno));
+		         strerror(errno));
 		goto err_free;
 	}
 

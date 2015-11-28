@@ -85,7 +85,7 @@ static int need_flag_sequence = 1;
  *                      if the output buffer is too small
  */
 ssize_t hdlc_encode(uint8_t *frame, size_t frmsize,
-		    uint8_t *packet, size_t pktsize)
+                    uint8_t *packet, size_t pktsize)
 {
 	ssize_t written = 0;
 	uint16_t checksum;
@@ -196,7 +196,7 @@ ssize_t hdlc_find_frame(uint8_t *buffer, size_t bufsize, off_t *start)
  *                      buffer, or < 0 in case of error
  */
 ssize_t hdlc_decode(uint8_t *frame, size_t frmsize,
-		    uint8_t *packet, size_t pktsize)
+                    uint8_t *packet, size_t pktsize)
 {
 	off_t start = 0;
 	ssize_t written = 0;

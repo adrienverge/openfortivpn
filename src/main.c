@@ -156,7 +156,7 @@ int main(int argc, char **argv)
 		int c, option_index = 0;
 
 		c = getopt_long(argc, argv, "hvqc:u:p:",
-		long_options, &option_index);
+		                long_options, &option_index);
 
 		/* Detect the end of the options. */
 		if (c == -1)
@@ -168,48 +168,48 @@ int main(int argc, char **argv)
 			if (long_options[option_index].flag != 0)
 				break;
 			if (strcmp(long_options[option_index].name,
-				   "version") == 0) {
+			           "version") == 0) {
 				printf(VERSION "\n");
 				ret = EXIT_SUCCESS;
 				goto exit;
 			}
 			if (strcmp(long_options[option_index].name,
-				   "pppd-log") == 0) {
+			           "pppd-log") == 0) {
 				cfg.pppd_log = optarg;
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
-				   "pppd-plugin") == 0) {
+			           "pppd-plugin") == 0) {
 				cfg.pppd_plugin = optarg;
 				break;
 			}
 			// --plugin is deprecated, --pppd-plugin should be used
 			if (cfg.pppd_plugin == NULL &&
 			    strcmp(long_options[option_index].name,
-				   "plugin") == 0) {
+			           "plugin") == 0) {
 				cfg.pppd_plugin = optarg;
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
-				   "ca-file") == 0) {
+			           "ca-file") == 0) {
 				cfg.ca_file = optarg;
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
-				   "user-cert") == 0) {
+			           "user-cert") == 0) {
 				cfg.user_cert = optarg;
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
-				   "user-key") == 0) {
+			           "user-key") == 0) {
 				cfg.user_key = optarg;
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
-				   "trusted-cert") == 0) {
+			           "trusted-cert") == 0) {
 				if (add_trusted_cert(&cfg, optarg))
 					log_warn("Could not add certificate "
-						 "digest to whitelist.\n");
+					         "digest to whitelist.\n");
 				break;
 			}
 			goto user_error;
@@ -242,8 +242,8 @@ int main(int argc, char **argv)
 
 	if (password != NULL)
 		log_warn("You should not pass the password on the command "
-			 "line. Type it interactively or use a config file "
-			 "instead.\n");
+		         "line. Type it interactively or use a config file "
+		         "instead.\n");
 
 	// Load config file
 	if (config_file[0] != '\0') {
@@ -252,7 +252,7 @@ int main(int argc, char **argv)
 			log_debug("Loaded config file \"%s\".\n", config_file);
 		else
 			log_warn("Could not load config file \"%s\" (%s).\n",
-				 config_file, err_cfg_str(ret));
+			         config_file, err_cfg_str(ret));
 	}
 
 	// Read host and port from the command line
@@ -292,7 +292,7 @@ int main(int argc, char **argv)
 	// If no password given, interactively ask user
 	if (cfg.password[0] == '\0')
 		read_password("VPN account password: ", cfg.password,
-			      FIELD_SIZE);
+		              FIELD_SIZE);
 	// Check password
 	if (cfg.password[0] == '\0') {
 		log_error("Specify a password.\n");
@@ -306,7 +306,7 @@ int main(int argc, char **argv)
 
 	if (geteuid() != 0)
 		log_warn("This process was not spawned with root "
-				"privileges, this will probably not work.\n");
+		         "privileges, this will probably not work.\n");
 
 	if (run_tunnel(&cfg) == 0)
 		ret = EXIT_SUCCESS;

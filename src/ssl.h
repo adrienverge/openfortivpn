@@ -149,4 +149,3 @@ static inline int safe_ssl_write(SSL *ssl, const uint8_t *buf, int n)
 
 	return handle_ssl_error(ssl, ret);
 }
-
