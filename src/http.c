@@ -15,6 +15,8 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <string.h>
+
 #include "http.h"
 #include "xml.h"
 #include "log.h"
@@ -48,26 +50,25 @@ int http_send(struct tunnel *tunnel, const char *request, ...)
 
 	while (n == 0)
 		n = safe_ssl_write(tunnel->ssl_handle, (uint8_t *) buffer,
-				   length);
+		                   length);
 	if (n < 0) {
 		log_debug("Error writing to SSL connection (%s).\n",
-			  err_ssl_str(n));
+		          err_ssl_str(n));
 		return ERR_HTTP_SSL;
 	}
 
 	return 1;
 }
 
-char *
-find_header (char *res, char *header)
+char *find_header(char *res, char *header)
 {
 	char *line = res;
 
-	while (memcmp (line, "\r\n", 2)) {
-		int line_len = (char *)memmem (line, BUFSZ, "\r\n", 2) - line;
+	while (memcmp(line, "\r\n", 2)) {
+		int line_len = (char *) memmem(line, BUFSZ, "\r\n", 2) - line;
 		int head_len = strlen (header);
 
-		if (line_len > head_len && !strncasecmp (line, header, head_len))
+		if (line_len > head_len && !strncasecmp(line, header, head_len))
 			return line + head_len;
 		line += line_len + 2;
 	}
@@ -99,8 +100,8 @@ int http_receive(struct tunnel *tunnel, char **response)
 
 	do {
 		n = safe_ssl_read(tunnel->ssl_handle,
-				  (uint8_t *) buffer + bytes_read,
-				  BUFSZ - 1 - bytes_read);
+		                  (uint8_t *) buffer + bytes_read,
+		                  BUFSZ - 1 - bytes_read);
 		if (n > 0) {
 			char *eoh;
 
@@ -108,25 +109,29 @@ int http_receive(struct tunnel *tunnel, char **response)
 
 			if (!header_size) {
 				/* Did we see the header end? Then get the body size. */
-				eoh = memmem (buffer, bytes_read, "\r\n\r\n", 4);
+				eoh = memmem(buffer, bytes_read, "\r\n\r\n", 4);
 				if (eoh) {
 					char *header;
 
-					header = find_header (buffer, "Content-Length: ");
+					header = find_header(buffer, "Content-Length: ");
 					header_size = eoh - buffer + 4;
 					if (header)
 						content_size = atoi(header);
 
-					if (find_header (buffer, "Transfer-Encoding: chunked"))
+					if (find_header(buffer,
+					                "Transfer-Encoding: chunked"))
 						chunked = 1;
 				}
 			}
 
 			if (header_size) {
-				/* We saw the whole header, let's check if the body is done as well */
+				/* We saw the whole header, let's check if the
+				 * body is done as well */
 				if (chunked) {
 					/* Last chunk terminator. Done naively. */
-					if (bytes_read >= 7 && !memcmp (&buffer[bytes_read - 7], "\r\n0\r\n\r\n", 7))
+					if (bytes_read >= 7 &&
+					    !memcmp(&buffer[bytes_read - 7],
+					            "\r\n0\r\n\r\n", 7))
 						break;
 				} else {
 					if (bytes_read >= header_size + content_size)
@@ -144,15 +149,15 @@ int http_receive(struct tunnel *tunnel, char **response)
 
 	if (!header_size) {
 		log_debug("Error reading from SSL connection (%s).\n",
-			  err_ssl_str(n));
+		          err_ssl_str(n));
 		free(buffer);
 		return ERR_HTTP_SSL;
 	}
 
 	if (memmem(&buffer[header_size], bytes_read - header_size,
-	    "<!--sslvpnerrmsgkey=sslvpn_login_permission_denied-->", 53) ||
+	           "<!--sslvpnerrmsgkey=sslvpn_login_permission_denied-->", 53) ||
 	    memmem(buffer, header_size, "permission_denied denied", 24) ||
-            memmem(buffer, header_size, "Permission denied", 17)) {
+	    memmem(buffer, header_size, "Permission denied", 17)) {
 		free(buffer);
 		return ERR_HTTP_PERMISSION;
 	}
@@ -174,24 +179,23 @@ int http_receive(struct tunnel *tunnel, char **response)
 }
 
 static int do_http_request(struct tunnel *tunnel, const char *method,
-			   const char *uri, const char *data, char **response)
+                           const char *uri, const char *data, char **response)
 {
 	int ret;
-	char template[] =
-		"%s %s HTTP/1.1\r\n"
-		"Host: %s:%d\r\n"
-		"User-Agent: Mozilla/5.0 SV1\r\n"
-		"Accept: text/plain\r\n"
-		"Accept-Encoding: identify\r\n"
-		"Content-Type: application/x-www-form-urlencoded\r\n"
-		"Cookie: %s\r\n"
-		"Content-Length: %d\r\n"
-		"\r\n%s";
+	char *template = ("%s %s HTTP/1.1\r\n"
+	                  "Host: %s:%d\r\n"
+	                  "User-Agent: Mozilla/5.0 SV1\r\n"
+	                  "Accept: text/plain\r\n"
+	                  "Accept-Encoding: identify\r\n"
+	                  "Content-Type: application/x-www-form-urlencoded\r\n"
+	                  "Cookie: %s\r\n"
+	                  "Content-Length: %d\r\n"
+	                  "\r\n%s");
 
 	ret = http_send(tunnel, template, method, uri,
-			tunnel->config->gateway_host,
-			tunnel->config->gateway_port, tunnel->config->cookie,
-			strlen(data), data);
+	                tunnel->config->gateway_host,
+	                tunnel->config->gateway_port, tunnel->config->cookie,
+	                strlen(data), data);
 	if (ret != 1)
 		return ret;
 
@@ -207,7 +211,7 @@ static int do_http_request(struct tunnel *tunnel, const char *method,
  *             < 0       in case of error
  */
 static int http_request(struct tunnel *tunnel, const char *method,
-			const char *uri, const char *data, char **response)
+                        const char *uri, const char *data, char **response)
 {
 	int ret = do_http_request (tunnel, method, uri, data, response);
 
@@ -237,8 +241,8 @@ int auth_log_in(struct tunnel *tunnel)
 	tunnel->config->cookie[0] = '\0';
 
 	snprintf(data, 256, "username=%s&credential=%s&realm=&ajax=1"
-		 "&redir=%%2Fremote%%2Findex&just_logged_in=1",
-		 tunnel->config->username, tunnel->config->password);
+	         "&redir=%%2Fremote%%2Findex&just_logged_in=1",
+	         tunnel->config->username, tunnel->config->password);
 
 	ret = http_request(tunnel, "POST", "/remote/logincheck", data, &res);
 	if (ret != 1)
@@ -263,7 +267,7 @@ int auth_log_in(struct tunnel *tunnel)
 				if (end != NULL)
 					end[0] = '\0';
 				strncpy(tunnel->config->cookie, line,
-					COOKIE_SIZE);
+				        COOKIE_SIZE);
 				ret = 1; // success
 				goto end;
 			}

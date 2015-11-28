@@ -132,7 +132,7 @@ int load_config(struct vpn_config *cfg, const char *filename)
 			long int port = strtol(val, NULL, 0);
 			if (port <= 0 || port > 65535) {
 				log_warn("Bad port in config file: \"%d\".\n",
-					 port);
+				         port);
 				continue;
 			}
 			cfg->gateway_port = port;
@@ -143,12 +143,12 @@ int load_config(struct vpn_config *cfg, const char *filename)
 		} else if (strcmp(key, "trusted-cert") == 0) {
 			if (strlen(val) != SHA256STRLEN - 1) {
 				log_warn("Bad certificate sha256 digest in "
-					 "config file: \"%s\".\n", val);
+				         "config file: \"%s\".\n", val);
 				continue;
 			}
 			if (add_trusted_cert(cfg, val))
 				log_warn("Could not add certificate digest to "
-					 "whitelist.\n");
+				         "whitelist.\n");
 		} else {
 			log_warn("Bad key in config file: \"%s\".\n", key);
 			goto err_free;
