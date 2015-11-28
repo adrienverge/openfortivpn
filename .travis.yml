@@ -1,0 +1,12 @@
+language: c
+sudo: false
+addons:
+  apt:
+    packages:
+    - autoconf
+    - automake
+script:
+  - >
+      aclocal && autoconf && automake --add-missing
+      && ./configure --prefix=/usr --sysconfdir=/etc
+      && make
