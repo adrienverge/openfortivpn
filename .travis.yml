@@ -3,9 +3,11 @@ sudo: false
 addons:
   apt:
     packages:
+    - astyle
     - autoconf
     - automake
 script:
+  - ./tests/lint/run.sh
   - >
       aclocal && autoconf && automake --add-missing
       && ./configure --prefix=/usr --sysconfdir=/etc
