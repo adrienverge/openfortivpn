@@ -16,12 +16,14 @@
  */
 
 #include <string.h>
+#include <ctype.h>
 
 #include "http.h"
 #include "xml.h"
 #include "log.h"
 #include "ssl.h"
 #include "ipv4.h"
+#include "userinput.h"
 
 #define BUFSZ 0x8000
 
@@ -227,35 +229,47 @@ static int http_request(struct tunnel *tunnel, const char *method,
 }
 
 /*
- * Authenticates to gateway by sending username and password.
+ *  Read value for key from a string like 'key1=value1,key2=value2'.
  *
- * @return  1   in case of success
- *          < 0 in case of error
+ *  @return  1   in case of success
+ *           -1  key not found
+ *           -2  value too large for buffer
  */
-int auth_log_in(struct tunnel *tunnel)
+static int get_value_from_response(char *buf, char *keyname, char *retbuf,
+                                   int retbuflen)
 {
-	int ret;
-	char data[256];
-	char *res, *line, *end;
+	char *pos;
+	int keynamelen;
+	int outpos;
 
-	tunnel->config->cookie[0] = '\0';
-
-	snprintf(data, 256, "username=%s&credential=%s&realm=&ajax=1"
-	         "&redir=%%2Fremote%%2Findex&just_logged_in=1",
-	         tunnel->config->username, tunnel->config->password);
-
-	ret = http_request(tunnel, "POST", "/remote/logincheck", data, &res);
-	if (ret != 1)
-		return ret;
-
-	if (strncmp(res, "HTTP/1.1 200 OK\r\n", 17)) {
-		ret = ERR_HTTP_BAD_RES_CODE;
-		goto end;
+	keynamelen = strlen(keyname);
+	pos = strstr(buf, keyname);
+	if (pos == NULL) {
+		return -1;
 	}
+
+	pos = pos + keynamelen;
+	outpos = 0;
+	while (isalnum(*pos)) {
+		if (outpos >= retbuflen) {
+			return -2;
+		}
+		retbuf[outpos] = *pos;
+		pos++;
+		outpos++;
+	}
+	retbuf[outpos] = '\0';
+	return 1;
+}
+
+static int get_auth_cookie(struct tunnel *tunnel, char *buf)
+{
+	int ret = 0;
+	char *line, *end;
 
 	ret = ERR_HTTP_NO_COOKIE;
 
-	line = find_header (res, "Set-Cookie: ");
+	line = find_header (buf, "Set-Cookie: ");
 	if (line) {
 		if (strncmp(line, "SVPNCOOKIE=", 11) == 0) {
 			if (line[11] == ';' || line[11] == '\0') {
@@ -269,9 +283,79 @@ int auth_log_in(struct tunnel *tunnel)
 				strncpy(tunnel->config->cookie, line,
 				        COOKIE_SIZE);
 				ret = 1; // success
-				goto end;
 			}
 		}
+	}
+	return ret;
+}
+
+/*
+ * Authenticates to gateway by sending username and password.
+ *
+ * @return  1   in case of success
+ *          < 0 in case of error
+ */
+int auth_log_in(struct tunnel *tunnel)
+{
+	int ret;
+	char reqid[32], polid[32], group[128];
+	char data[256], token[128], tokenresponse[256];
+	char *res;
+
+	tunnel->config->cookie[0] = '\0';
+
+	snprintf(data, 256, "username=%s&credential=%s&realm=&ajax=1"
+	         "&redir=%%2Fremote%%2Findex&just_logged_in=1",
+	         tunnel->config->username, tunnel->config->password);
+
+	ret = http_request(tunnel, "POST", "/remote/logincheck", data, &res);
+	if (ret != 1)
+		goto end;
+
+	if (strncmp(res, "HTTP/1.1 200 OK\r\n", 17)) {
+		ret = ERR_HTTP_BAD_RES_CODE;
+		goto end;
+	}
+	ret = get_auth_cookie(tunnel, res);
+	if (ret == ERR_HTTP_NO_COOKIE) {
+		/* If the response body includes a tokeninfo= parameter,
+		 * it means the VPN gateway expects two-factor authentication.
+		 * It sends a one-time authentication credential for example
+		 * by email or SMS, and expects to receive it back in the
+		 * second authentication stage. No SVPNCOOKIE will be provided
+		 * until after the second call to /remote/logincheck.
+		 *
+		 * If we receive neither a tokeninfo= parameter nor an
+		 * SVPNCOOKIE, it means our authentication attempt was
+		 * rejected.
+		 */
+
+		ret = get_value_from_response(res, "tokeninfo=", token, 128);
+		if (ret != 1 || strlen(token) < 1) {
+			// No SVPNCOOKIE and no tokeninfo, return error.
+			ret = ERR_HTTP_NO_COOKIE;
+			goto end;
+		}
+		// Two-factor authentication needed.
+		get_value_from_response(res, "grp=", group, 128);
+		get_value_from_response(res, "reqid=", reqid, 32);
+		get_value_from_response(res, "polid=", polid, 32);
+
+		read_password("2factor authentication token: ", tokenresponse, 255);
+
+		snprintf(data, 256, "username=%s&realm=&reqid=%s&polid=%s&grp=%s"
+		         "&code=%s&code2=&redir=%%2Fremote%%2Findex&just_logged_in=1",
+		         tunnel->config->username, reqid, polid, group, tokenresponse);
+		ret = http_request(tunnel, "POST", "/remote/logincheck", data, &res);
+		if (ret != 1)
+			goto end;
+
+		if (strncmp(res, "HTTP/1.1 200 OK\r\n", 17)) {
+			ret = ERR_HTTP_BAD_RES_CODE;
+			goto end;
+		}
+
+		ret = get_auth_cookie(tunnel, res);
 	}
 
 end:
