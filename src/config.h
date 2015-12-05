@@ -49,7 +49,7 @@ struct x509_digest {
 };
 
 #define FIELD_SIZE	64
-#define COOKIE_SIZE	240
+#define COOKIE_SIZE	300
 
 struct vpn_config {
 	char 		gateway_host[FIELD_SIZE];
