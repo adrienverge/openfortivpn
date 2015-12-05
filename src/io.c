@@ -130,7 +130,7 @@ static void *pppd_read(void *arg)
 	struct tunnel *tunnel = (struct tunnel *) arg;
 	uint8_t buf[PKT_BUF_SZ];
 	int first_time = 1;
-	ssize_t off_r, off_w;
+	off_t off_r, off_w;
 	fd_set read_fd;
 
 	FD_ZERO(&read_fd);
