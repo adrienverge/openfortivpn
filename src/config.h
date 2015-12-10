@@ -58,6 +58,7 @@ struct vpn_config {
 	char		username[FIELD_SIZE];
 	char		password[FIELD_SIZE];
 	char		cookie[COOKIE_SIZE + 1];
+	char            realm[FIELD_SIZE];
 
 	int	set_routes;
 	int	set_dns;
@@ -76,6 +77,7 @@ struct vpn_config {
 	do { \
 		(cfg)->gateway_host[0] = '\0'; \
 		(cfg)->gateway_port = 0; \
+		(cfg)->realm[0] = '\0'; \
 		(cfg)->username[0] = '\0'; \
 		(cfg)->password[0] = '\0'; \
 		(cfg)->pppd_log = NULL; \

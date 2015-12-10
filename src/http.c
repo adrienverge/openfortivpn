@@ -16,7 +16,6 @@
  */
 
 #include <string.h>
-#include <ctype.h>
 
 #include "http.h"
 #include "xml.h"
@@ -250,14 +249,16 @@ static int get_value_from_response(char *buf, char *keyname, char *retbuf,
 
 	pos = pos + keynamelen;
 	outpos = 0;
-	while (isalnum(*pos)) {
+	for (outpos = 0;
+	     (pos[0] != '=' && pos[0] != '&' && pos[0] != '\n' &&
+	      pos[0] != '\0'); outpos++) {
 		if (outpos >= retbuflen) {
 			return -2;
 		}
 		retbuf[outpos] = *pos;
 		pos++;
-		outpos++;
 	}
+
 	retbuf[outpos] = '\0';
 	return 1;
 }
@@ -304,9 +305,10 @@ int auth_log_in(struct tunnel *tunnel)
 
 	tunnel->config->cookie[0] = '\0';
 
-	snprintf(data, 256, "username=%s&credential=%s&realm=&ajax=1"
+	snprintf(data, 256, "username=%s&credential=%s&realm=%s&ajax=1"
 	         "&redir=%%2Fremote%%2Findex&just_logged_in=1",
-	         tunnel->config->username, tunnel->config->password);
+	         tunnel->config->username, tunnel->config->password,
+	         tunnel->config->realm);
 
 	ret = http_request(tunnel, "POST", "/remote/logincheck", data, &res);
 	if (ret != 1)
@@ -343,9 +345,11 @@ int auth_log_in(struct tunnel *tunnel)
 
 		read_password("2factor authentication token: ", tokenresponse, 255);
 
-		snprintf(data, 256, "username=%s&realm=&reqid=%s&polid=%s&grp=%s"
+		snprintf(data, 256, "username=%s&realm=%s&reqid=%s&polid=%s&grp=%s"
 		         "&code=%s&code2=&redir=%%2Fremote%%2Findex&just_logged_in=1",
-		         tunnel->config->username, reqid, polid, group, tokenresponse);
+		         tunnel->config->username, tunnel->config->realm, reqid, polid,
+		         group, tokenresponse);
+
 		ret = http_request(tunnel, "POST", "/remote/logincheck", data, &res);
 		if (ret != 1)
 			goto end;

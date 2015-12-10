@@ -15,6 +15,12 @@ Examples
   openfortivpn vpn-gateway:8443 --username=foo
   ```
 
+* Connect to a VPN using an authentication realm:
+
+  ```
+  openfortivpn vpn-gateway:8443 --username=foo --realm=bar
+  ```
+
 * Don't set IP routes and don't add VPN nameservers to `/etc/resolv.conf`:
 
   ```
