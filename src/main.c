@@ -16,11 +16,11 @@
  */
 
 #include <getopt.h>
-#include <termios.h>
 
 #include "config.h"
 #include "log.h"
 #include "tunnel.h"
+#include "userinput.h"
 
 #define USAGE \
 "Usage: openfortivpn [<host>:<port>] [-u <user>] [-p <pass>]\n" \
@@ -84,37 +84,6 @@ USAGE \
 "      password = bar\n" \
 "      trusted-cert = certificatedigest4daa8c5fe6c...\n" \
 "      trusted-cert = othercertificatedigest6631bf...\n"
-
-static void read_password(const char *prompt, char *pass, size_t len)
-{
-	int masked = 0;
-	struct termios oldt, newt;
-	int i;
-
-	printf("%s", prompt);
-
-	// Try to hide user input
-	if (tcgetattr(STDIN_FILENO, &oldt) == 0) {
-		newt = oldt;
-		newt.c_lflag &= ~(ICANON | ECHO);
-		tcsetattr(STDIN_FILENO, TCSANOW, &newt);
-		masked = 1;
-	}
-
-	for (i = 0; i < len - 1; i++) {
-		char c = getchar();
-		if (c == '\n' || c == EOF)
-			break;
-		pass[i] = c;
-	}
-	pass[i] = '\0';
-
-	if (masked) {
-		tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
-	}
-
-	printf("\n");
-}
 
 int main(int argc, char **argv)
 {
