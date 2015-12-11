@@ -228,39 +228,44 @@ static int http_request(struct tunnel *tunnel, const char *method,
 }
 
 /*
- *  Read value for key from a string like 'key1=value1,key2=value2'.
+ * Read value for key from a string like "key1=value1&key2=value2".
+ * The `key` arg is supposed to contains the final "=".
  *
- *  @return  1   in case of success
- *           -1  key not found
- *           -2  value too large for buffer
+ * @return  1   in case of success
+ *          -1  key not found
+ *          -2  value too large for buffer
+ *          -3  if no memory
  */
-static int get_value_from_response(char *buf, char *keyname, char *retbuf,
-                                   int retbuflen)
+static int get_value_from_response(const char *buf, const char *key,
+                                   char *retbuf, size_t retbuflen)
 {
-	char *pos;
-	int keynamelen;
-	int outpos;
+	int ret;
+	char *tokens, *kv_pair;
+	size_t keylen = strlen(key);
 
-	keynamelen = strlen(keyname);
-	pos = strstr(buf, keyname);
-	if (pos == NULL) {
-		return -1;
-	}
+	tokens = strdup(buf);
+	if (tokens == NULL)
+		return -3;
 
-	pos = pos + keynamelen;
-	outpos = 0;
-	for (outpos = 0;
-	     (pos[0] != '=' && pos[0] != '&' && pos[0] != '\n' &&
-	      pos[0] != '\0'); outpos++) {
-		if (outpos >= retbuflen) {
-			return -2;
+	ret = -1;
+
+	kv_pair = strtok(tokens, "&,\r\n");
+	for (; kv_pair != NULL; kv_pair = strtok(NULL, "&,\r\n")) {
+		if (strncmp(key, kv_pair, keylen) == 0) {
+			char *val = &kv_pair[keylen];
+
+			if (strlen(val) > retbuflen - 1) {  // value too long
+				ret = -2;
+			} else {
+				strcpy(retbuf, val);
+				ret = 1;
+			}
+			break;
 		}
-		retbuf[outpos] = *pos;
-		pos++;
 	}
 
-	retbuf[outpos] = '\0';
-	return 1;
+	free(tokens);
+	return ret;
 }
 
 static int get_auth_cookie(struct tunnel *tunnel, char *buf)
