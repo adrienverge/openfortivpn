@@ -24,10 +24,11 @@
 
 #define USAGE \
 "Usage: openfortivpn [<host>:<port>] [-u <user>] [-p <pass>]\n" \
-"                    [--no-routes] [--no-dns] [--pppd-log=<file>]\n" \
-"                    [--pppd-plugin=<file>] [--ca-file=<file>]\n" \
-"                    [--user-cert=<file>] [--user-key=<file>]\n" \
-"                    [--trusted-cert=<digest>] [-c <file>] [-v|-q]\n" \
+"                    [--realm=<realm>] [--no-routes] [--no-dns]\n" \
+"                    [--pppd-log=<file>] [--pppd-plugin=<file>]\n" \
+"                    [--ca-file=<file>] [--user-cert=<file>]\n" \
+"                    [--user-key=<file>] [--trusted-cert=<digest>]\n" \
+"                    [-c <file>] [-v|-q]\n" \
 "       openfortivpn --help\n" \
 "       openfortivpn --version\n"
 
@@ -49,6 +50,7 @@ USAGE \
 "  --no-routes                   Do not try to configure IP routes through the\n" \
 "                                VPN when tunnel is up.\n" \
 "  --no-dns                      Do not add VPN nameservers in /etc/resolv.conf\n" \
+"  --realm=<realm>               Use specified authentication realm on VPN gateway\n" \
 "                                when tunnel is up.\n" \
 "  --ca-file=<file>              Use specified PEM-encoded certificate bundle\n" \
 "                                instead of system-wide store to verify the gateway\n" \
@@ -106,6 +108,7 @@ int main(int argc, char **argv)
 		{"help",          no_argument,       0, 'h'},
 		{"version",       no_argument,       0, 0},
 		{"config",        required_argument, 0, 'c'},
+		{"realm",         required_argument, 0, 0},
 		{"username",      required_argument, 0, 'u'},
 		{"password",      required_argument, 0, 'p'},
 		{"no-routes",     no_argument, &cfg.set_routes, 0},
@@ -172,6 +175,11 @@ int main(int argc, char **argv)
 			if (strcmp(long_options[option_index].name,
 			           "user-key") == 0) {
 				cfg.user_key = optarg;
+				break;
+			}
+			if (strcmp(long_options[option_index].name,
+			           "realm") == 0) {
+				strncpy(cfg.realm, optarg, FIELD_SIZE - 1);
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
@@ -269,6 +277,7 @@ int main(int argc, char **argv)
 	}
 
 	log_debug("Config host = \"%s\"\n", cfg.gateway_host);
+	log_debug("Config realm = \"%s\"\n", cfg.realm);
 	log_debug("Config port = \"%d\"\n", cfg.gateway_port);
 	log_debug("Config username = \"%s\"\n", cfg.username);
 	log_debug("Config password = \"%s\"\n", "********");
