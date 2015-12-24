@@ -61,9 +61,9 @@ int http_send(struct tunnel *tunnel, const char *request, ...)
 	return 1;
 }
 
-static char *find_header(char *res, char *header)
+static const char *find_header(const char *res, const char *header)
 {
-	char *line = res;
+	const char *line = res;
 
 	while (memcmp(line, "\r\n", 2)) {
 		int line_len = (char *) memmem(line, BUFSZ, "\r\n", 2) - line;
@@ -104,7 +104,7 @@ int http_receive(struct tunnel *tunnel, char **response)
 		                  (uint8_t *) buffer + bytes_read,
 		                  BUFSZ - 1 - bytes_read);
 		if (n > 0) {
-			char *eoh;
+			const char *eoh;
 
 			bytes_read += n;
 
@@ -112,7 +112,7 @@ int http_receive(struct tunnel *tunnel, char **response)
 				/* Did we see the header end? Then get the body size. */
 				eoh = memmem(buffer, bytes_read, "\r\n\r\n", 4);
 				if (eoh) {
-					char *header;
+					const char *header;
 
 					header = find_header(buffer, "Content-Length: ");
 					header_size = eoh - buffer + 4;
@@ -271,7 +271,8 @@ static int get_value_from_response(const char *buf, const char *key,
 static int get_auth_cookie(struct tunnel *tunnel, char *buf)
 {
 	int ret = 0;
-	char *line, *end;
+	const char *line;
+	char *end;
 
 	ret = ERR_HTTP_NO_COOKIE;
 
