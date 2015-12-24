@@ -15,6 +15,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <ctype.h>
 #include <string.h>
 
 #include "http.h"
@@ -25,6 +26,34 @@
 #include "userinput.h"
 
 #define BUFSZ 0x8000
+
+/*
+ * URL-encodes a string for HTTP requests.
+ *
+ * The dest buffer size MUST be at least strlen(str) * 3 + 1.
+ *
+ * @param[out] dest  the buffer to write the URL-encoded string
+ * @param[in]  str   the input string to be escaped
+ */
+static void url_encode(char *dest, const char *str)
+{
+	while (*str != '\0') {
+		if (isalnum(*str) || *str == '-' || *str == '_'
+		    || *str == '.' || *str == '~')
+			*dest++ = *str;
+		else if (*str == ' ')
+			*dest++ = '+';
+		else {
+			static char hex[] = "0123456789abcdef";
+
+			*dest++ = '%';
+			*dest++ = hex[*str >> 4];
+			*dest++ = hex[*str & 15];
+		}
+		str++;
+	}
+	*dest = '\0';
+}
 
 /*
  * Sends data to the HTTP server.
@@ -305,16 +334,22 @@ static int get_auth_cookie(struct tunnel *tunnel, char *buf)
 int auth_log_in(struct tunnel *tunnel)
 {
 	int ret;
+	char username[3 * FIELD_SIZE + 1];
+	char password[3 * FIELD_SIZE + 1];
+	char realm[3 * FIELD_SIZE + 1];
 	char reqid[32], polid[32], group[128];
 	char data[256], token[128], tokenresponse[256];
 	char *res;
+
+	url_encode(username, tunnel->config->username);
+	url_encode(password, tunnel->config->password);
+	url_encode(realm, tunnel->config->realm);
 
 	tunnel->config->cookie[0] = '\0';
 
 	snprintf(data, 256, "username=%s&credential=%s&realm=%s&ajax=1"
 	         "&redir=%%2Fremote%%2Findex&just_logged_in=1",
-	         tunnel->config->username, tunnel->config->password,
-	         tunnel->config->realm);
+	         username, password, realm);
 
 	ret = http_request(tunnel, "POST", "/remote/logincheck", data, &res);
 	if (ret != 1)
@@ -353,8 +388,7 @@ int auth_log_in(struct tunnel *tunnel)
 
 		snprintf(data, 256, "username=%s&realm=%s&reqid=%s&polid=%s&grp=%s"
 		         "&code=%s&code2=&redir=%%2Fremote%%2Findex&just_logged_in=1",
-		         tunnel->config->username, tunnel->config->realm, reqid, polid,
-		         group, tokenresponse);
+		         username, realm, reqid, polid, group, tokenresponse);
 
 		ret = http_request(tunnel, "POST", "/remote/logincheck", data, &res);
 		if (ret != 1)
