@@ -61,7 +61,7 @@ int http_send(struct tunnel *tunnel, const char *request, ...)
 	return 1;
 }
 
-char *find_header(char *res, char *header)
+static char *find_header(char *res, char *header)
 {
 	char *line = res;
 
