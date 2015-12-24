@@ -36,7 +36,7 @@ void read_password(const char *prompt, char *pass, size_t len)
 		masked = 1;
 	}
 
-	for (i = 0; i < len - 1; i++) {
+	for (i = 0; i < len; i++) {
 		char c = getchar();
 		if (c == '\n' || c == EOF)
 			break;

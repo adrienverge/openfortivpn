@@ -217,7 +217,7 @@ static int ssl_verify_cert(struct tunnel *tunnel)
 	char *line;
 	int i;
 	X509_NAME *subj;
-	char common_name[FIELD_SIZE];
+	char common_name[FIELD_SIZE + 1];
 
 	SSL_set_verify(tunnel->ssl_handle, SSL_VERIFY_PEER, NULL);
 

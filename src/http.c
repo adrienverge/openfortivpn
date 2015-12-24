@@ -276,7 +276,7 @@ static int get_auth_cookie(struct tunnel *tunnel, char *buf)
 
 	ret = ERR_HTTP_NO_COOKIE;
 
-	line = find_header (buf, "Set-Cookie: ");
+	line = find_header(buf, "Set-Cookie: ");
 	if (line) {
 		if (strncmp(line, "SVPNCOOKIE=", 11) == 0) {
 			if (line[11] == ';' || line[11] == '\0') {
@@ -287,8 +287,8 @@ static int get_auth_cookie(struct tunnel *tunnel, char *buf)
 				end = strstr(line, ";");
 				if (end != NULL)
 					end[0] = '\0';
-				strncpy(tunnel->config->cookie, line,
-				        COOKIE_SIZE);
+				strncpy(tunnel->config->cookie, line, COOKIE_SIZE);
+				tunnel->config->cookie[COOKIE_SIZE] = '\0';
 				ret = 1; // success
 			}
 		}

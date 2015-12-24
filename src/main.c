@@ -179,7 +179,8 @@ int main(int argc, char **argv)
 			}
 			if (strcmp(long_options[option_index].name,
 			           "realm") == 0) {
-				strncpy(cfg.realm, optarg, FIELD_SIZE - 1);
+				strncpy(cfg.realm, optarg, FIELD_SIZE);
+				cfg.realm[FIELD_SIZE] = '\0';
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
@@ -241,7 +242,8 @@ int main(int argc, char **argv)
 			goto user_error;
 		}
 		port_str[0] = '\0';
-		strncpy(cfg.gateway_host, host, FIELD_SIZE - 1);
+		strncpy(cfg.gateway_host, host, FIELD_SIZE);
+		cfg.gateway_host[FIELD_SIZE] = '\0';
 		port_str++;
 		port = strtol(port_str, NULL, 0);
 		if (port <= 0 || port > 65535) {
@@ -251,10 +253,14 @@ int main(int argc, char **argv)
 		cfg.gateway_port = port;
 	}
 	// Read username and password from the command line
-	if (username != NULL)
-		strncpy(cfg.username, username, FIELD_SIZE - 1);
-	if (password != NULL)
-		strncpy(cfg.password, password, FIELD_SIZE - 1);
+	if (username != NULL) {
+		strncpy(cfg.username, username, FIELD_SIZE);
+		cfg.username[FIELD_SIZE] = '\0';
+	}
+	if (password != NULL) {
+		strncpy(cfg.password, password, FIELD_SIZE);
+		cfg.password[FIELD_SIZE] = '\0';
+	}
 
 	// Check host and port
 	if (cfg.gateway_host[0] == '\0' || cfg.gateway_port == 0) {

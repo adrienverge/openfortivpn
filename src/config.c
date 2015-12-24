@@ -127,7 +127,8 @@ int load_config(struct vpn_config *cfg, const char *filename)
 		}
 
 		if (strcmp(key, "host") == 0) {
-			strncpy(cfg->gateway_host, val, FIELD_SIZE - 1);
+			strncpy(cfg->gateway_host, val, FIELD_SIZE);
+			cfg->gateway_host[FIELD_SIZE] = '\0';
 		} else if (strcmp(key, "port") == 0) {
 			long int port = strtol(val, NULL, 0);
 			if (port <= 0 || port > 65535) {
@@ -138,8 +139,10 @@ int load_config(struct vpn_config *cfg, const char *filename)
 			cfg->gateway_port = port;
 		} else if (strcmp(key, "username") == 0) {
 			strncpy(cfg->username, val, FIELD_SIZE - 1);
+			cfg->username[FIELD_SIZE] = '\0';
 		} else if (strcmp(key, "password") == 0) {
 			strncpy(cfg->password, val, FIELD_SIZE - 1);
+			cfg->password[FIELD_SIZE] = '\0';
 		} else if (strcmp(key, "trusted-cert") == 0) {
 			if (strlen(val) != SHA256STRLEN - 1) {
 				log_warn("Bad certificate sha256 digest in "
