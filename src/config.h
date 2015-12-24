@@ -99,4 +99,6 @@ int add_trusted_cert(struct vpn_config *cfg, const char *digest);
 
 int load_config(struct vpn_config *cfg, const char *filename);
 
+int strtob(const char *str);
+
 #endif

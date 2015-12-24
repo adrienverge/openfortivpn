@@ -18,6 +18,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
+#include <string.h>
+#include <ctype.h>
 
 #include "config.h"
 #include "log.h"
@@ -143,6 +145,22 @@ int load_config(struct vpn_config *cfg, const char *filename)
 		} else if (strcmp(key, "password") == 0) {
 			strncpy(cfg->password, val, FIELD_SIZE - 1);
 			cfg->password[FIELD_SIZE] = '\0';
+		} else if (strcmp(key, "set-dns") == 0) {
+			int set_dns = strtob(val);
+			if (set_dns < 0) {
+				log_warn("Bad set-dns in config file: \"%s\".\n",
+				         val);
+				continue;
+			}
+			cfg->set_dns = set_dns;
+		} else if (strcmp(key, "set-routes") == 0) {
+			int set_routes = strtob(val);
+			if (set_routes < 0) {
+				log_warn("Bad set-routes in config file: \"%s\".\n",
+				         val);
+				continue;
+			}
+			cfg->set_routes = set_routes;
 		} else if (strcmp(key, "trusted-cert") == 0) {
 			if (strlen(val) != SHA256STRLEN - 1) {
 				log_warn("Bad certificate sha256 digest in "
@@ -166,4 +184,29 @@ err_close:
 	fclose(file);
 
 	return ret;
+}
+
+/*
+ * Converts string to bool int
+ *
+ * @params[in] str  the string to read from
+ * @return          0 or 1 if successful, < 0 if unrecognized value
+ */
+int strtob(const char* str)
+{
+	if (strlen(str) == 0) {
+		return 0;
+	} else if (strcasecmp(str, "true") == 0) {
+		return 1;
+	} else if (strcasecmp(str, "false") == 0) {
+		return 0;
+	} else if (isdigit(str[0]) == 0) {
+		return -1;
+	}
+
+	long int i = strtol(str, NULL, 0);
+	if (i < 0 || i > 1) {
+		return -1;
+	}
+	return i;
 }
