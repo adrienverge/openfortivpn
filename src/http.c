@@ -374,7 +374,7 @@ int auth_log_in(struct tunnel *tunnel)
 		 */
 
 		ret = get_value_from_response(res, "tokeninfo=", token, 128);
-		if (ret != 1 || strlen(token) < 1) {
+		if (ret != 1) {
 			// No SVPNCOOKIE and no tokeninfo, return error.
 			ret = ERR_HTTP_NO_COOKIE;
 			goto end;
