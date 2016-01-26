@@ -516,7 +516,6 @@ int auth_get_config(struct tunnel *tunnel)
 	int ret;
 
 	ret = http_request(tunnel, "GET", "/remote/fortisslvpn_xml", "", &buffer);
-
 	if (ret == 1) {
 		ret = parse_xml_config(tunnel, buffer);
 		free (buffer);

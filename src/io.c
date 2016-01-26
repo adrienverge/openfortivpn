@@ -1,4 +1,5 @@
-/* *  Copyright (C) 2015 Adrien Vergé
+/* 
+ *  Copyright (C) 2015 Adrien Vergé
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -153,7 +154,6 @@ static void *pppd_read(void *arg)
 		int sel;
 
 		sel = select(tunnel->pppd_pty + 1, &read_fd, NULL, NULL, NULL);
-
 		if (sel == -1) {
 			log_error("select: %s\n", strerror(errno));
 			break;
@@ -161,9 +161,7 @@ static void *pppd_read(void *arg)
 			log_warn("select returned 0\n");
 			continue;
 		}
-
 		n = read(tunnel->pppd_pty, &buf[off_w], PKT_BUF_SZ - off_w);
-
 		if (n == -1) {
 			log_error("read: %s\n", strerror(errno));
 			break;

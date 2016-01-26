@@ -491,7 +491,6 @@ int run_tunnel(struct vpn_config *config)
 		ret = 1;
 		goto err_start_tunnel;
 	}
-	log_info("Started tunneling.\n");
 
 	tunnel.state = STATE_CONNECTING;
 	ret = 0;
