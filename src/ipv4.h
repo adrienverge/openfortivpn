@@ -34,7 +34,7 @@ struct rtentry
         short           rt_metric;      /* +1 for binary compatibility! */
         char            *rt_dev;        /* forcing the device at add    */
         unsigned long   rt_mss;         /* per route MTU/Window         */
-        unsigned long   rt_mtu;         /* compatibility 		 */ 
+        unsigned long   rt_mtu;         /* compatibility 		*/ 
         unsigned long   rt_window;      /* Window clamping              */
         unsigned short  rt_irtt;        /* Initial RTT                  */
 };

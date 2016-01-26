@@ -173,7 +173,7 @@ static void *pppd_read(void *arg)
 #ifndef __APPLE__
 			sem_post(&sem_pppd_ready);
 #else
-            dispatch_semaphore_signal(sem_pppd_ready);
+			dispatch_semaphore_signal(sem_pppd_ready);
 #endif
 			first_time = 0;
 		}
@@ -187,10 +187,8 @@ static void *pppd_read(void *arg)
 			struct ppp_packet *packet, *repacket;
 
 			if ((frm_len = hdlc_find_frame(buf, off_w, &off_r))
-			    == ERR_HDLC_NO_FRAME_FOUND) {
-                //log_error("ERR_HDLC_NO_FRAME_FOUND: '%s' %d %d\n", buf, off_w, off_r);
+			    == ERR_HDLC_NO_FRAME_FOUND)
 				break;
-            }
 
 			pktsize = estimated_decoded_size(frm_len);
 			packet = malloc(sizeof(*packet) + 6 + pktsize);
@@ -240,7 +238,7 @@ exit:
 #ifndef __APPLE__
 	sem_post(&sem_stop_io);
 #else
-    dispatch_semaphore_signal(sem_stop_io);
+	dispatch_semaphore_signal(sem_stop_io);
 #endif
 	return NULL;
 }
@@ -261,7 +259,7 @@ static void *pppd_write(void *arg)
 #ifndef __APPLE__
 	sem_wait(&sem_pppd_ready);
 #else
-    dispatch_semaphore_wait(sem_pppd_ready, DISPATCH_TIME_FOREVER);
+	dispatch_semaphore_wait(sem_pppd_ready, DISPATCH_TIME_FOREVER);
 #endif
 
 	log_debug("pppd_write thread\n");
@@ -453,9 +451,9 @@ static void *ssl_read(void *arg)
 				log_info("Got addresses: %s\n", line);
 			} else if (packet_is_end_negociation(packet)) {
 #ifndef __APPLE__
-                sem_post(&sem_if_config);
+				sem_post(&sem_if_config);
 #else
-                dispatch_semaphore_signal(sem_if_config);
+				dispatch_semaphore_signal(sem_if_config);
 #endif
 			}
 		}
@@ -532,7 +530,7 @@ static void *if_config(void *arg)
 #ifndef __APPLE__
 	sem_wait(&sem_if_config);
 #else
-    dispatch_semaphore_wait(sem_if_config, DISPATCH_TIME_FOREVER);
+	dispatch_semaphore_wait(sem_if_config, DISPATCH_TIME_FOREVER);
 #endif
 
 	while (1) {
@@ -569,9 +567,9 @@ static void sig_handler(int signo)
 {
 	if (signo == SIGINT) {
 #ifndef __APPLE__
-        sem_post(&sem_stop_io);
+		sem_post(&sem_stop_io);
 #else
-        dispatch_semaphore_signal(sem_stop_io);
+		dispatch_semaphore_signal(sem_stop_io);
 #endif
     }
 }
@@ -591,9 +589,9 @@ int io_loop(struct tunnel *tunnel)
 	sem_init(&sem_if_config, 0, 0);
 	sem_init(&sem_stop_io, 0, 0);
 #else
-    sem_pppd_ready = dispatch_semaphore_create(0); 
-    sem_if_config = dispatch_semaphore_create(0); 
-    sem_stop_io = dispatch_semaphore_create(0); 
+	sem_pppd_ready = dispatch_semaphore_create(0); 
+	sem_if_config = dispatch_semaphore_create(0); 
+	sem_stop_io = dispatch_semaphore_create(0); 
 #endif
 
 	init_ppp_packet_pool(&tunnel->ssl_to_pty_pool);
@@ -643,7 +641,7 @@ int io_loop(struct tunnel *tunnel)
 #ifndef __APPLE__
 	sem_wait(&sem_stop_io);
 #else
-    dispatch_semaphore_wait(sem_stop_io, DISPATCH_TIME_FOREVER);
+	dispatch_semaphore_wait(sem_stop_io, DISPATCH_TIME_FOREVER);
 #endif
 
 	log_info("Cancelling threads...\n");
@@ -669,9 +667,9 @@ int io_loop(struct tunnel *tunnel)
 	sem_destroy(&sem_if_config);
 	sem_destroy(&sem_pppd_ready);
 #else  
-    dispatch_release(sem_stop_io);
-    dispatch_release(sem_if_config);
-    dispatch_release(sem_pppd_ready);
+	dispatch_release(sem_stop_io);
+	dispatch_release(sem_if_config);
+	dispatch_release(sem_pppd_ready);
 #endif
 
 	return 0;
