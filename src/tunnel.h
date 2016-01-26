@@ -30,12 +30,18 @@
 #define _TUNNEL_H
 
 #include <openssl/ssl.h>
+#ifndef __APPLE__
 #include <semaphore.h>
+#endif
 #include <unistd.h>
 
 #include "config.h"
 #include "io.h"
 #include "ipv4.h"
+
+#ifdef __APPLE__
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#endif
 
 enum tunnel_state {
 	STATE_DOWN,
