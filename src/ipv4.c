@@ -172,29 +172,23 @@ static int ipv4_set_route(struct rtentry *route)
 	}
 	close(sockfd);
 #else
-    char cmd[SHOW_ROUTE_BUFFER_SIZE];
+	char cmd[SHOW_ROUTE_BUFFER_SIZE];
 
-    strcpy(cmd, "route -n add -net ");
-    strncat(cmd, inet_ntoa(route_dest(route)), 15);
-    strcat(cmd, " -netmask ");
-    strncat(cmd, inet_ntoa(route_mask(route)), 15);
-    if (route->rt_flags & RTF_GATEWAY) {
-        strcat(cmd, " ");
-        strncat(cmd, inet_ntoa(route_gtw(route)), 15);
-    }
-/*
-    if (route_iface(route)[0] != '\0') {
-        strcat(cmd, " dev ");
-        strncat(cmd, route_iface(route), ROUTE_IFACE_LEN - 1);
-    }
-*/
+	strcpy(cmd, "route -n add -net ");
+	strncat(cmd, inet_ntoa(route_dest(route)), 15);
+	strcat(cmd, " -netmask ");
+	strncat(cmd, inet_ntoa(route_mask(route)), 15);
+	if (route->rt_flags & RTF_GATEWAY) {
+		strcat(cmd, " ");
+		strncat(cmd, inet_ntoa(route_gtw(route)), 15);
+	}
 
 	log_debug("%s\n", cmd);
 
-    int res = system(cmd);
-    if (res == -1) {
+	int res = system(cmd);
+	if (res == -1) {
 		return ERR_IPV4_SEE_ERRNO;
-    }
+	}
 #endif
 
 	return 0;
@@ -223,21 +217,21 @@ static int ipv4_del_route(struct rtentry *route)
 	}
 	close(sockfd);
 #else
-    char cmd[SHOW_ROUTE_BUFFER_SIZE];
+	char cmd[SHOW_ROUTE_BUFFER_SIZE];
 
-    strcpy(cmd, "route -n delete ");
-    strncat(cmd, inet_ntoa(route_dest(route)), 15);
-    strcat(cmd, " -netmask ");
-    strncat(cmd, inet_ntoa(route_mask(route)), 15);
+	strcpy(cmd, "route -n delete ");
+	strncat(cmd, inet_ntoa(route_dest(route)), 15);
+	strcat(cmd, " -netmask ");
+	strncat(cmd, inet_ntoa(route_mask(route)), 15);
 
 	log_debug("%s\n", cmd);
 
-    int res = system(cmd);
-    if (res == -1) {
+	int res = system(cmd);
+	if (res == -1) {
 		return ERR_IPV4_SEE_ERRNO;
-    }
+	}
 #endif
-	return 0;
+		return 0;
 }
 
 int ipv4_add_split_vpn_route(struct tunnel *tunnel, char *dest, char *mask,
