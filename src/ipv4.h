@@ -20,15 +20,6 @@
 
 #ifdef __APPLE__
 
-#ifndef SIOCADDRT
-#define SIOCADDRT _IOW('r', 10, struct rtentry)
-#endif
-
-#ifndef SIOCDELRT
-#define	SIOCDELRT	_IOW('r', 11, struct rtentry)	/* delete route */
-#endif
-
-
 /* This structure gets passed by the SIOCADDRT and SIOCDELRT calls. */
 struct rtentry 
 {
@@ -43,7 +34,7 @@ struct rtentry
         short           rt_metric;      /* +1 for binary compatibility! */
         char            *rt_dev;        /* forcing the device at add    */
         unsigned long   rt_mss;         /* per route MTU/Window         */
-        unsigned long   rt_mtu;         /* compatibility 		*/ 
+        unsigned long   rt_mtu;         /* compatibility 		 */ 
         unsigned long   rt_window;      /* Window clamping              */
         unsigned short  rt_irtt;        /* Initial RTT                  */
 };
