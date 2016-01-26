@@ -31,6 +31,10 @@
 #include <openssl/ssl.h>
 #include <string.h>
 
+#ifdef __APPLE__
+#define ERESTART -1
+#endif
+
 #define ERR_SSL_AGAIN		0
 #define ERR_SSL_CLOSED		-1
 #define ERR_SSL_CERT		-2

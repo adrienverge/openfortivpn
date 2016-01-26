@@ -37,7 +37,9 @@ void init_logging()
 	is_a_tty = isatty(STDOUT_FILENO);
 
 	pthread_mutexattr_init(&mutexattr);
+#ifndef __APPLE__
 	pthread_mutexattr_setrobust(&mutexattr, PTHREAD_MUTEX_ROBUST);
+#endif
 	pthread_mutex_init(&mutex, &mutexattr);
 }
 
@@ -69,7 +71,11 @@ void do_log(int verbosity, const char *format, ...)
 		printf("%sINFO:   ", is_a_tty ? "\033[0;97m" : "");
 		break;
 	case LOG_DEBUG:
+#ifdef __APPLE__
+		printf("%sDEBUG:  ", is_a_tty ? "\033[0;33m" : "");
+#else
 		printf("%sDEBUG:  ", is_a_tty ? "\033[0;90m" : "");
+#endif
 		break;
 	default:
 		printf("        ");
