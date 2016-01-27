@@ -32,6 +32,7 @@
 #include <string.h>
 
 #ifdef __APPLE__
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #define ERESTART -1
 #endif
 

@@ -37,6 +37,10 @@
 #include "io.h"
 #include "ipv4.h"
 
+#ifdef __APPLE__
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
 enum tunnel_state {
 	STATE_DOWN,
 	STATE_CONNECTING,
