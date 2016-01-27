@@ -613,11 +613,14 @@ int io_loop(struct tunnel *tunnel)
 	setsockopt(tunnel->ssl_socket, IPPROTO_TCP, TCP_NODELAY,
 	           (char *) &tcp_nodelay_flag, sizeof(int));
 
+// on osx this prevents the program from being stopped with ctrl-c
+#ifndef __APPLE__
 	// Disable SIGINT for the future spawned threads
 	sigset_t sigset, oldset;
 	sigemptyset(&sigset);
 	sigaddset(&sigset, SIGINT);
 	pthread_sigmask(SIG_BLOCK, &sigset, &oldset);
+#endif
 
 	// Set signal handler
 	if (signal(SIGINT, sig_handler) == SIG_ERR)
@@ -634,8 +637,10 @@ int io_loop(struct tunnel *tunnel)
 	if (pthread_create(&if_config_thread, NULL, if_config, tunnel))
 		goto err_thread;
 
+#ifndef __APPLE__
 	// Restore the signal for the main thread
 	pthread_sigmask(SIG_SETMASK, &oldset, NULL);
+#endif
 
 	// Wait for one of the thread to ask termination
 #ifndef __APPLE__
