@@ -435,7 +435,7 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 		strcat(ns2, "\n");
 		fputs(ns2, file);
 	}
-	fputs(buffer, file);
+	fwrite(buffer, stat.st_size, 1, file);
 
 	ret = 0;
 
