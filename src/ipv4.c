@@ -212,7 +212,7 @@ int ipv4_add_split_vpn_route(struct tunnel *tunnel, char *dest, char *mask,
 	setenv(env_var, dest, 0);
 	sprintf(env_var, "VPN_ROUTE_MASK_%d", tunnel->ipv4.split_routes);
 	setenv(env_var, mask, 0);
-	if (*gateway) {
+	if (gateway != NULL) {
 		sprintf(env_var, "VPN_ROUTE_GATEWAY_%d",
 		        tunnel->ipv4.split_routes);
 		setenv(env_var, gateway, 0);
@@ -223,8 +223,12 @@ int ipv4_add_split_vpn_route(struct tunnel *tunnel, char *dest, char *mask,
 	route_init(route);
 	route_dest(route).s_addr = inet_addr(dest);
 	route_mask(route).s_addr = inet_addr(mask);
-	route_gtw(route).s_addr = inet_addr(gateway);
-	route->rt_flags |= RTF_GATEWAY;
+	if (gateway != NULL) {
+		route_gtw(route).s_addr = inet_addr(gateway);
+		route->rt_flags |= RTF_GATEWAY;
+	} else {
+		strncpy(route_iface(route), tunnel->ppp_iface, ROUTE_IFACE_LEN - 1);
+	}
 
 	return 0;
 }

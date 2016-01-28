@@ -436,8 +436,7 @@ static int parse_xml_config(struct tunnel *tunnel, const char *buffer)
 	val = xml_find('<', "assigned-addr", buffer, 1);
 	gateway = xml_get(xml_find(' ', "ipv4=", val, 1));
 	if (!gateway) {
-		log_warn("No gateway address\n");
-		return 1;
+		log_warn("No gateway address, using interface for routing\n");
 	}
 
 	// Routes the tunnel wants to push
@@ -503,7 +502,7 @@ int parse_config(struct tunnel *tunnel, const char *buffer)
 		mask[c - buffer] = '\0';
 		buffer = c + 1;
 
-		ipv4_add_split_vpn_route(tunnel, dest, mask, "");
+		ipv4_add_split_vpn_route(tunnel, dest, mask, NULL);
 
 	} while (*c == ',');
 
