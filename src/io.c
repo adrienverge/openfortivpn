@@ -1,4 +1,4 @@
-/*
+/* 
  *  Copyright (C) 2015 Adrien Vergé
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -31,6 +31,7 @@
 #include <pthread.h>
 #include <signal.h>
 #ifdef __APPLE__
+<<<<<<< HEAD
 /* Mac OS X defines sem_init but actually does not implement them */
 #include <dispatch/dispatch.h>
 
@@ -40,6 +41,9 @@ typedef dispatch_semaphore_t	sem_t;
 #define sem_post(psem)		dispatch_semaphore_signal(*psem)
 #define sem_wait(psem)		dispatch_semaphore_wait(*psem, DISPATCH_TIME_FOREVER)
 #define sem_destroy(psem)	dispatch_release(*psem)
+=======
+#include <dispatch/dispatch.h>
+>>>>>>> 44d19d947aad698b6df33a5c09a495c8c180888e
 #endif
 
 #include "hdlc.h"
@@ -128,9 +132,15 @@ static struct ppp_packet *pool_pop(struct ppp_packet_pool *pool)
 	return first;
 }
 
+#ifndef __APPLE__
 static sem_t sem_pppd_ready;
 static sem_t sem_if_config;
 static sem_t sem_stop_io;
+#else
+static dispatch_semaphore_t sem_pppd_ready;
+static dispatch_semaphore_t sem_if_config;
+static dispatch_semaphore_t sem_stop_io;
+#endif
 
 /*
  * Thread to read bytes from the pppd pty, convert them to ppp packets and add
@@ -172,7 +182,11 @@ static void *pppd_read(void *arg)
 			continue;
 		} else if (first_time) {
 			// pppd did talk, now we can write to it if we want
+#ifndef __APPLE__
 			sem_post(&sem_pppd_ready);
+#else
+			dispatch_semaphore_signal(sem_pppd_ready);
+#endif
 			first_time = 0;
 		}
 		off_w += n;
@@ -233,7 +247,11 @@ static void *pppd_read(void *arg)
 
 exit:
 	// Send message to main thread to stop other threads
+#ifndef __APPLE__
 	sem_post(&sem_stop_io);
+#else
+	dispatch_semaphore_signal(sem_stop_io);
+#endif
 	return NULL;
 }
 
@@ -250,7 +268,11 @@ static void *pppd_write(void *arg)
 	FD_SET(tunnel->pppd_pty, &write_fd);
 
 	// Write for pppd to talk first, otherwise unpredictable
+#ifndef __APPLE__
 	sem_wait(&sem_pppd_ready);
+#else
+	dispatch_semaphore_wait(sem_pppd_ready, DISPATCH_TIME_FOREVER);
+#endif
 
 	log_debug("pppd_write thread\n");
 
@@ -308,7 +330,11 @@ err_free_buf:
 	}
 
 	// Send message to main thread to stop other threads
-	sem_post(&sem_stop_io);
+#ifndef __APPLE__
+    sem_post(&sem_stop_io);
+#else
+    dispatch_semaphore_signal(sem_stop_io);
+#endif
 	return NULL;
 }
 
@@ -436,14 +462,22 @@ static void *ssl_read(void *arg)
 				strcat(line, "]");
 				log_info("Got addresses: %s\n", line);
 			} else if (packet_is_end_negociation(packet)) {
+#ifndef __APPLE__
 				sem_post(&sem_if_config);
+#else
+				dispatch_semaphore_signal(sem_if_config);
+#endif
 			}
 		}
 	}
 
 exit:
 	// Send message to main thread to stop other threads
-	sem_post(&sem_stop_io);
+#ifndef __APPLE__
+    sem_post(&sem_stop_io);
+#else
+    dispatch_semaphore_signal(sem_stop_io);
+#endif
 	return NULL;
 }
 
@@ -485,7 +519,11 @@ static void *ssl_write(void *arg)
 	}
 
 	// Send message to main thread to stop other threads
-	sem_post(&sem_stop_io);
+#ifndef __APPLE__
+    sem_post(&sem_stop_io);
+#else
+    dispatch_semaphore_signal(sem_stop_io);
+#endif
 	return NULL;
 }
 
@@ -501,7 +539,11 @@ static void *if_config(void *arg)
 	log_debug("if_config thread\n");
 
 	// Wait for the right moment to configure IP interface
+#ifndef __APPLE__
 	sem_wait(&sem_if_config);
+#else
+	dispatch_semaphore_wait(sem_if_config, DISPATCH_TIME_FOREVER);
+#endif
 
 	while (1) {
 		if (ppp_interface_is_up(tunnel)) {
@@ -525,15 +567,28 @@ static void *if_config(void *arg)
 	return NULL;
 error:
 	// Send message to main thread to stop other threads
-	sem_post(&sem_stop_io);
+#ifndef __APPLE__
+    sem_post(&sem_stop_io);
+#else
+    dispatch_semaphore_signal(sem_stop_io);
+#endif
 	return NULL;
 }
 
 static void sig_handler(int signo)
 {
 	if (signo == SIGINT) {
+<<<<<<< HEAD
 		sem_post(&sem_stop_io);
 	}
+=======
+#ifndef __APPLE__
+		sem_post(&sem_stop_io);
+#else
+		dispatch_semaphore_signal(sem_stop_io);
+#endif
+    }
+>>>>>>> 44d19d947aad698b6df33a5c09a495c8c180888e
 }
 
 int io_loop(struct tunnel *tunnel)
@@ -546,9 +601,15 @@ int io_loop(struct tunnel *tunnel)
 	pthread_t ssl_write_thread;
 	pthread_t if_config_thread;
 
+#ifndef __APPLE__
 	sem_init(&sem_pppd_ready, 0, 0);
 	sem_init(&sem_if_config, 0, 0);
 	sem_init(&sem_stop_io, 0, 0);
+#else
+	sem_pppd_ready = dispatch_semaphore_create(0); 
+	sem_if_config = dispatch_semaphore_create(0); 
+	sem_stop_io = dispatch_semaphore_create(0); 
+#endif
 
 	init_ppp_packet_pool(&tunnel->ssl_to_pty_pool);
 	init_ppp_packet_pool(&tunnel->pty_to_ssl_pool);
@@ -599,7 +660,11 @@ int io_loop(struct tunnel *tunnel)
 #endif
 
 	// Wait for one of the thread to ask termination
+#ifndef __APPLE__
 	sem_wait(&sem_stop_io);
+#else
+	dispatch_semaphore_wait(sem_stop_io, DISPATCH_TIME_FOREVER);
+#endif
 
 	log_info("Cancelling threads...\n");
 	pthread_cancel(if_config_thread);
@@ -619,9 +684,15 @@ int io_loop(struct tunnel *tunnel)
 	destroy_ppp_packet_pool(&tunnel->pty_to_ssl_pool);
 	destroy_ppp_packet_pool(&tunnel->ssl_to_pty_pool);
 
+#ifndef __APPLE__
 	sem_destroy(&sem_stop_io);
 	sem_destroy(&sem_if_config);
 	sem_destroy(&sem_pppd_ready);
+#else  
+	dispatch_release(sem_stop_io);
+	dispatch_release(sem_if_config);
+	dispatch_release(sem_pppd_ready);
+#endif
 
 	return 0;
 
