@@ -30,6 +30,19 @@
 #include <netinet/tcp.h>
 #include <pthread.h>
 #include <signal.h>
+#ifdef __APPLE__
+/* Mac OS X defines sem_init but actually does not implement them */
+#include <dispatch/dispatch.h>
+
+typedef dispatch_semaphore_t	sem_t;
+
+#define sem_init(psem,x,val)	*psem = dispatch_semaphore_create(val)
+#define sem_post(psem)		dispatch_semaphore_signal(*psem)
+#define sem_wait(psem)		dispatch_semaphore_wait(*psem, \
+					DISPATCH_TIME_FOREVER)
+
+#define sem_destroy(psem)	dispatch_release(*psem)
+#endif
 
 #include "hdlc.h"
 #include "log.h"
@@ -557,11 +570,14 @@ int io_loop(struct tunnel *tunnel)
 	setsockopt(tunnel->ssl_socket, IPPROTO_TCP, TCP_NODELAY,
 	           (char *) &tcp_nodelay_flag, sizeof(int));
 
+// on osx this prevents the program from being stopped with ctrl-c
+#ifndef __APPLE__
 	// Disable SIGINT for the future spawned threads
 	sigset_t sigset, oldset;
 	sigemptyset(&sigset);
 	sigaddset(&sigset, SIGINT);
 	pthread_sigmask(SIG_BLOCK, &sigset, &oldset);
+#endif
 
 	// Set signal handler
 	if (signal(SIGINT, sig_handler) == SIG_ERR)
@@ -578,8 +594,10 @@ int io_loop(struct tunnel *tunnel)
 	if (pthread_create(&if_config_thread, NULL, if_config, tunnel))
 		goto err_thread;
 
+#ifndef __APPLE__
 	// Restore the signal for the main thread
 	pthread_sigmask(SIG_SETMASK, &oldset, NULL);
+#endif
 
 	// Wait for one of the thread to ask termination
 	sem_wait(&sem_stop_io);
