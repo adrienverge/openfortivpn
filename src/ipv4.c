@@ -159,6 +159,7 @@ static int ipv4_get_route(struct rtentry *route)
 
 static int ipv4_set_route(struct rtentry *route)
 {
+#ifndef __APPLE__
 	int sockfd;
 
 	log_debug("ip route add %s\n", ipv4_show_route(route));
@@ -170,12 +171,35 @@ static int ipv4_set_route(struct rtentry *route)
 		return ERR_IPV4_SEE_ERRNO;
 	}
 	close(sockfd);
+#else
+	char cmd[SHOW_ROUTE_BUFFER_SIZE];
+
+	strcpy(cmd, "route -n add -net ");
+	strncat(cmd, inet_ntoa(route_dest(route)), 15);
+	strcat(cmd, " -netmask ");
+	strncat(cmd, inet_ntoa(route_mask(route)), 15);
+	if (route->rt_flags & RTF_GATEWAY) {
+		strcat(cmd, " ");
+		strncat(cmd, inet_ntoa(route_gtw(route)), 15);
+	} else {
+		strcat(cmd, " -interface ");
+		strcat(cmd, route_iface(route));
+	}
+
+	log_debug("%s\n", cmd);
+
+	int res = system(cmd);
+	if (res == -1) {
+		return ERR_IPV4_SEE_ERRNO;
+	}
+#endif
 
 	return 0;
 }
 
 static int ipv4_del_route(struct rtentry *route)
 {
+#ifndef __APPLE__
 	struct rtentry tmp;
 	int sockfd;
 
@@ -195,7 +219,21 @@ static int ipv4_del_route(struct rtentry *route)
 		return ERR_IPV4_SEE_ERRNO;
 	}
 	close(sockfd);
+#else
+	char cmd[SHOW_ROUTE_BUFFER_SIZE];
 
+	strcpy(cmd, "route -n delete ");
+	strncat(cmd, inet_ntoa(route_dest(route)), 15);
+	strcat(cmd, " -netmask ");
+	strncat(cmd, inet_ntoa(route_mask(route)), 15);
+
+	log_debug("%s\n", cmd);
+
+	int res = system(cmd);
+	if (res == -1) {
+		return ERR_IPV4_SEE_ERRNO;
+	}
+#endif
 	return 0;
 }
 

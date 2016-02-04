@@ -31,6 +31,21 @@
 #include <openssl/ssl.h>
 #include <string.h>
 
+#ifdef __APPLE__
+/*
+ * Get rid of OSX 10.7 and greater deprecation warnings
+ * see for instance https://wiki.openssl.org/index.php/Hostname_validation
+ * this pragma selectively suppresses this type of warnings in clang
+ */
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+/*
+ * ERESTART is one of the recoverable errors which might be returned.
+ * However, in OSX this constant is not defined in errno.h so we define
+ * a dummy value here.
+ */
+#define ERESTART -1
+#endif
+
 #define ERR_SSL_AGAIN		0
 #define ERR_SSL_CLOSED		-1
 #define ERR_SSL_CERT		-2

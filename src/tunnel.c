@@ -32,7 +32,11 @@
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <openssl/err.h>
+#ifndef __APPLE__
 #include <pty.h>
+#else
+#include <util.h>
+#endif
 #include <sys/wait.h>
 #include <assert.h>
 
@@ -79,6 +83,7 @@ static int pppd_run(struct tunnel *tunnel)
 {
 	pid_t pid;
 	int amaster;
+#ifndef __APPLE__
 	struct termios termp;
 
 	termp.c_cflag = B9600;
@@ -86,6 +91,10 @@ static int pppd_run(struct tunnel *tunnel)
 	termp.c_cc[VMIN] = 1;
 
 	pid = forkpty(&amaster, NULL, &termp, NULL);
+#else
+	pid = forkpty(&amaster, NULL, NULL, NULL);
+#endif
+
 	if (pid == -1) {
 		log_error("forkpty: %s\n", strerror(errno));
 		return 1;
@@ -446,6 +455,10 @@ int run_tunnel(struct vpn_config *config)
 	struct tunnel tunnel;
 
 	memset(&tunnel, 0, sizeof(tunnel));
+#ifdef __APPLE__
+	// initialize value
+	tunnel.ipv4.split_routes = 0;
+#endif
 	tunnel.config = config;
 	tunnel.on_ppp_if_up = on_ppp_if_up;
 	tunnel.on_ppp_if_down = on_ppp_if_down;
