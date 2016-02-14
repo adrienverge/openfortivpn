@@ -58,14 +58,15 @@ struct ipv4_config {
 	struct rtentry	split_rt[MAX_SPLIT_ROUTES]; // split VPN routes
 };
 
-#define route_dest(route) \
-	(((struct sockaddr_in *) &(route)->rt_dst)->sin_addr)
-#define route_mask(route) \
-	(((struct sockaddr_in *) &(route)->rt_genmask)->sin_addr)
-#define route_gtw(route) \
-	(((struct sockaddr_in *) &(route)->rt_gateway)->sin_addr)
-#define route_iface(route) \
-	((route)->rt_dev)
+// Dummy function to make gcc 6 happy
+static inline struct sockaddr_in *cast_addr(struct sockaddr *addr)
+{
+	return (struct sockaddr_in *) addr;
+}
+#define route_dest(route)  (cast_addr(&(route)->rt_dst)->sin_addr)
+#define route_mask(route)  (cast_addr(&(route)->rt_genmask)->sin_addr)
+#define route_gtw(route)   (cast_addr(&(route)->rt_gateway)->sin_addr)
+#define route_iface(route) ((route)->rt_dev)
 
 struct tunnel;
 

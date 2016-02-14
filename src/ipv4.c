@@ -63,9 +63,9 @@ static inline int route_init(struct rtentry *route)
 		return ERR_IPV4_NO_MEM;
 	route_iface(route)[0] = '\0';
 
-	((struct sockaddr_in *) &(route)->rt_dst)->sin_family = AF_INET;
-	((struct sockaddr_in *) &(route)->rt_genmask)->sin_family = AF_INET;
-	((struct sockaddr_in *) &(route)->rt_gateway)->sin_family = AF_INET;
+	cast_addr(&(route)->rt_dst)->sin_family = AF_INET;
+	cast_addr(&(route)->rt_genmask)->sin_family = AF_INET;
+	cast_addr(&(route)->rt_gateway)->sin_family = AF_INET;
 
 	return 0;
 }
