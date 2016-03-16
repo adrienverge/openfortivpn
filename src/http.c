@@ -469,7 +469,7 @@ static int parse_xml_config(struct tunnel *tunnel, const char *buffer)
 static
 int parse_config(struct tunnel *tunnel, const char *buffer)
 {
-	char *c;
+	char *c, *end;
 
 	buffer = strcasestr(buffer, "NAME=\"text6\"");
 	if (!buffer)
@@ -479,12 +479,19 @@ int parse_config(struct tunnel *tunnel, const char *buffer)
 		return 1;
 	buffer += 7;
 
+	end = strchr(buffer, '"');
+	if (end == NULL || end == buffer) {
+		log_info("No split VPN route\n");
+		return 1;
+	}
+
 	do {
 		char dest[16], mask[16];
 
 		c = strchr(buffer, '/');
-		if (!c) {
-			log_warn("Expected a /<mask>\n");
+		if (c == NULL || c >= end || c - buffer > 15) {
+			log_warn("Wrong addresses in split VPN route: "
+			         "expected <dest>/<mask>\n");
 			return 1;
 		}
 		memcpy(dest, buffer, c - buffer);
@@ -492,10 +499,12 @@ int parse_config(struct tunnel *tunnel, const char *buffer)
 		buffer = c + 1;
 
 		c = strchr(buffer, ',');
-		if (!c)
-			c = strchr(buffer, '"');
-		if (!c) {
-			log_warn("Expected a <mask>, or <mask>\"\n");
+		if (c == NULL || c > end)
+			c = end;
+
+		if (c - buffer > 15) {
+			log_warn("Wrong addresses in split VPN route: "
+			         "expected <dest>/<mask>\n");
 			return 1;
 		}
 		memcpy(mask, buffer, c - buffer);
@@ -504,7 +513,7 @@ int parse_config(struct tunnel *tunnel, const char *buffer)
 
 		ipv4_add_split_vpn_route(tunnel, dest, mask, NULL);
 
-	} while (*c == ',');
+	} while (c < end && *c == ',');
 
 	return 1;
 }
