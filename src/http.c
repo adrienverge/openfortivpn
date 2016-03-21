@@ -339,7 +339,7 @@ int auth_log_in(struct tunnel *tunnel)
 	char realm[3 * FIELD_SIZE + 1];
 	char reqid[32], polid[32], group[128];
 	char data[256], token[128], tokenresponse[256];
-	char *res;
+	char *res = NULL;
 
 	url_encode(username, tunnel->config->username);
 	url_encode(password, tunnel->config->password);
