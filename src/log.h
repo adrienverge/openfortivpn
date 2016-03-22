@@ -21,12 +21,12 @@
 #include <stdint.h>
 
 enum log_verbosity {
-	LOG_MUTE,
-	LOG_ERROR,
-	LOG_WARN,
-	LOG_INFO,
-	LOG_DEBUG,
-	LOG_DEBUG_PACKETS
+        LOG_MUTE,
+        LOG_ERROR,
+        LOG_WARN,
+        LOG_INFO,
+        LOG_DEBUG,
+        LOG_DEBUG_PACKETS
 };
 
 extern enum log_verbosity loglevel;
