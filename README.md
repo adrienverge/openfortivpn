@@ -94,6 +94,10 @@ Cmnd_Alias  OPENFORTIVPN = /usr/bin/openfortivpn
 %adm       ALL = (ALL) OPENFORTIVPN
 ```
 
+**Warning**: Make sure only trsuted users can run openfortivpn as root! As
+described in #54, a malicious user could use `--ppp-plugin` and `--ppd-log`
+options to divert the program's behaviour.
+
 Contributing
 ------------
 
