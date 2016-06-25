@@ -37,10 +37,10 @@ void read_password(const char *prompt, char *pass, size_t len)
 	}
 
 	for (i = 0; i < len; i++) {
-		char c = getchar();
+		int c = getchar();
 		if (c == '\n' || c == EOF)
 			break;
-		pass[i] = c;
+		pass[i] = (char) c;
 	}
 	pass[i] = '\0';
 
