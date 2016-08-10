@@ -95,7 +95,8 @@ static int pppd_run(struct tunnel *tunnel)
 			"/usr/sbin/pppd", "38400", "noipdefault", "noaccomp",
 			"noauth", "default-asyncmap", "nopcomp", "receive-all",
 			"nodefaultroute", ":1.1.1.1", "nodetach",
-			"lcp-max-configure", "40", "usepeerdns", "mru", "1354",
+			"lcp-max-configure", "40", "mru", "1354",
+			tunnel->config->pppd_use_peerdns ?  "usepeerdns" : NULL,
 			NULL, NULL, NULL,
 			NULL, NULL, NULL
 		};
