@@ -24,7 +24,8 @@
 
 #define USAGE \
 "Usage: openfortivpn [<host>:<port>] [-u <user>] [-p <pass>]\n" \
-"                    [--realm=<realm>] [--no-routes] [--no-dns]\n" \
+"                    [--realm=<realm>] [--no-routes]\n" \
+"                    [--no-dns] [--pppd-no-peerdns]\n" \
 "                    [--pppd-log=<file>] [--pppd-plugin=<file>]\n" \
 "                    [--ca-file=<file>] [--user-cert=<file>]\n" \
 "                    [--user-key=<file>] [--trusted-cert=<digest>]\n" \
@@ -65,6 +66,8 @@ USAGE \
 "                                <digest> is the X509 certificate's sha256 sum.\n" \
 "                                This option can be used multiple times to trust\n" \
 "                                several certificates.\n" \
+"  --pppd-no-peerdns             Do not ask peer ppp server for DNS addresses\n" \
+"                                and do not make pppd rewrite /etc/resolv.conf\n" \
 "  --pppd-log=<file>             Set pppd in debug mode and save its logs into\n" \
 "                                <file>.\n" \
 "  --pppd-plugin=<file>          Use specified pppd plugin instead of configuring\n"\
@@ -113,6 +116,7 @@ int main(int argc, char **argv)
 		{"password",      required_argument, 0, 'p'},
 		{"no-routes",     no_argument, &cfg.set_routes, 0},
 		{"no-dns",        no_argument, &cfg.set_dns, 0},
+		{"pppd-no-peerdns", no_argument, &cfg.pppd_use_peerdns, 0},
 		{"ca-file",       required_argument, 0, 0},
 		{"user-cert",     required_argument, 0, 0},
 		{"user-key",      required_argument, 0, 0},
