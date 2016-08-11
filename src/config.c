@@ -37,6 +37,7 @@ int add_trusted_cert(struct vpn_config *cfg, const char *digest)
 
 	new->next = NULL;
 	strncpy(new->data, digest, SHA256STRLEN - 1);
+	new->data [SHA256STRLEN - 1] = '\0';
 
 	if (cfg->cert_whitelist == NULL) {
 		cfg->cert_whitelist = new;

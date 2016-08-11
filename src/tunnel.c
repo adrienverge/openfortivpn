@@ -251,10 +251,11 @@ static int ssl_verify_cert(struct tunnel *tunnel)
 	// Encode digest in base16
 	for (i = 0; i < SHA256LEN; i++)
 		sprintf(&digest_str[2 * i], "%02x", digest[i]);
+	digest_str [SHA256STRLEN - 1] = '\0';
 	// Is it in whitelist?
 	for (elem = tunnel->config->cert_whitelist; elem != NULL;
 	     elem = elem->next)
-		if (memcmp(digest_str, elem->data, SHA256STRLEN) == 0)
+		if (memcmp(digest_str, elem->data, SHA256STRLEN - 1) == 0)
 			break;
 	if (elem != NULL) { // break before end of loop
 		log_debug("Gateway certificate digest found in white list.\n");
