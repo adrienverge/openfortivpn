@@ -195,6 +195,14 @@ int load_config(struct vpn_config *cfg, const char *filename)
 				continue;
 			}
 			cfg->pppd_use_peerdns = pppd_use_peerdns;
+		} else if (strcmp(key, "use-syslog") == 0) {
+			int use_syslog = strtob(val);
+			if (use_syslog < 0) {
+				log_warn("Bad use-syslog in config file: \"%s\".\n",
+				         val);
+				continue;
+			}
+			cfg->use_syslog = use_syslog;
 		} else if (strcmp(key, "trusted-cert") == 0) {
 			if (strlen(val) != SHA256STRLEN - 1) {
 				log_warn("Bad certificate sha256 digest in "

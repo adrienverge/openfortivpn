@@ -21,19 +21,36 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <syslog.h>
 
 #include "log.h"
 
 static pthread_mutex_t mutex;
+static int do_syslog = 0;
 
 enum log_verbosity loglevel;
 
 static int is_a_tty = 0;
 
+struct log_param_s {
+	const char *prefix;
+	const char *color_string;
+	int syslog_prio;
+};
+
+static struct log_param_s log_params [OFV_LOG_DEBUG_PACKETS + 1] = {
+	{ "        ", "",           LOG_ERR},
+	{ "ERROR:  ", "\033[0;31m", LOG_ERR},
+	{ "WARN:   ", "\033[0;33m", LOG_WARNING},
+	{ "INFO:   ", "\033[0;97m", LOG_INFO},
+	{ "DEBUG:  ", "\033[0;90m", LOG_DEBUG},
+	{ "DEBUG:  ", "\033[0;90m", LOG_DEBUG},
+};
+
 void init_logging()
 {
 	pthread_mutexattr_t mutexattr;
-	loglevel = LOG_INFO;
+	loglevel = OFV_LOG_INFO;
 	is_a_tty = isatty(STDOUT_FILENO);
 
 	pthread_mutexattr_init(&mutexattr);
@@ -41,48 +58,53 @@ void init_logging()
 	pthread_mutex_init(&mutex, &mutexattr);
 }
 
+void set_syslog (int use_syslog)
+{
+	if (!use_syslog)
+		return;
+	do_syslog = use_syslog;
+	openlog ("openfortivpn", LOG_PID, LOG_DAEMON);
+}
+
 void increase_verbosity()
 {
-	if (loglevel < LOG_DEBUG_PACKETS)
+	if (loglevel < OFV_LOG_DEBUG_PACKETS)
 		loglevel++;
 }
 void decrease_verbosity()
 {
-	if (loglevel > LOG_MUTE)
+	if (loglevel > OFV_LOG_MUTE)
 		loglevel--;
 }
 
 void do_log(int verbosity, const char *format, ...)
 {
 	va_list args;
+	struct log_param_s *lp = NULL;
 
 	pthread_mutex_lock(&mutex);
 
-	switch (verbosity) {
-	case LOG_ERROR:
-		printf("%sERROR:  ", is_a_tty ? "\033[0;31m" : "");
-		break;
-	case LOG_WARN:
-		printf("%sWARN:   ", is_a_tty ? "\033[0;33m" : "");
-		break;
-	case LOG_INFO:
-		printf("%sINFO:   ", is_a_tty ? "\033[0;97m" : "");
-		break;
-	case LOG_DEBUG:
-		printf("%sDEBUG:  ", is_a_tty ? "\033[0;90m" : "");
-		break;
-	default:
-		printf("        ");
-	}
+	// Use sane default if wrong verbosity specified
+	if (verbosity > OFV_LOG_DEBUG || verbosity < 0)
+		verbosity = OFV_LOG_MUTE;
+	lp = &log_params [verbosity];
+
+	if (!do_syslog)
+		printf ("%s%s", is_a_tty ? lp->color_string : "", lp->prefix);
 
 	va_start(args, format);
-	vprintf(format, args);
+	if (do_syslog)
+		vsyslog (lp->syslog_prio, format, args);
+	else
+		vprintf(format, args);
 	va_end(args);
 
-	if (is_a_tty)
-		printf("\033[0;0m");
+	if (!do_syslog) {
+		if (is_a_tty)
+			printf("\033[0;0m");
 
-	fflush(stdout);
+		fflush(stdout);
+	}
 
 	pthread_mutex_unlock(&mutex);
 }
@@ -105,7 +127,10 @@ void do_log_packet(const char *prefix, size_t len, const uint8_t *packet)
 	}
 	strcpy(pos - 1, "\n");
 
-	puts(str);
+	if (do_syslog)
+		syslog (LOG_DEBUG, "%s", str);
+	else
+		puts(str);
 
 	free(str);
 }
