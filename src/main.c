@@ -169,17 +169,17 @@ int main(int argc, char **argv)
 			}
 			if (strcmp(long_options[option_index].name,
 			           "ca-file") == 0) {
-				cfg.ca_file = optarg;
+				cfg.ca_file = strdup(optarg);
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
 			           "user-cert") == 0) {
-				cfg.user_cert = optarg;
+				cfg.user_cert = strdup(optarg);
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
 			           "user-key") == 0) {
-				cfg.user_key = optarg;
+				cfg.user_key = strdup(optarg);
 				break;
 			}
 			if (strcmp(long_options[option_index].name,

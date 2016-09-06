@@ -95,7 +95,10 @@ struct vpn_config {
 		struct x509_digest *tmp = (cfg)->cert_whitelist->next; \
 		free((cfg)->cert_whitelist); \
 		(cfg)->cert_whitelist = tmp; \
-	}
+	} \
+	free((cfg)->ca_file); \
+	free((cfg)->user_cert); \
+	free((cfg)->user_key);
 
 int add_trusted_cert(struct vpn_config *cfg, const char *digest);
 
