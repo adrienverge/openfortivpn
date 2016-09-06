@@ -179,7 +179,7 @@ static int get_gateway_host_ip(struct tunnel *tunnel)
 {
 	struct hostent *host = gethostbyname(tunnel->config->gateway_host);
 	if (host == NULL) {
-		log_error("gethostbyname: %s\n", strerror(h_errno));
+		log_error("gethostbyname: %s\n", hstrerror(h_errno));
 		return 1;
 	}
 
