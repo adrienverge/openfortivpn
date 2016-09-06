@@ -84,7 +84,7 @@ static int strtob(const char* str)
  */
 int load_config(struct vpn_config *cfg, const char *filename)
 {
-	int ret = -1;
+	int ret = ERR_CFG_UNKNOWN;
 	FILE *file;
 	struct stat stat;
 	char *buffer, *line;
