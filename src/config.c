@@ -84,7 +84,7 @@ static int strtob(const char* str)
  */
 int load_config(struct vpn_config *cfg, const char *filename)
 {
-	int ret = -1;
+	int ret = ERR_CFG_UNKNOWN;
 	FILE *file;
 	struct stat stat;
 	char *buffer, *line;
@@ -204,6 +204,13 @@ int load_config(struct vpn_config *cfg, const char *filename)
 			if (add_trusted_cert(cfg, val))
 				log_warn("Could not add certificate digest to "
 				         "whitelist.\n");
+
+		} else if (strcmp(key, "ca-file") == 0) {
+			cfg->ca_file = strdup(val);
+		} else if (strcmp(key, "user-cert") == 0) {
+			cfg->user_cert = strdup(val);
+		} else if (strcmp(key, "user-key") == 0) {
+			cfg->user_key = strdup(val);
 		} else {
 			log_warn("Bad key in config file: \"%s\".\n", key);
 			goto err_free;

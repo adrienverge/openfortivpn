@@ -22,9 +22,10 @@
 #include <netinet/in.h>
 #include <string.h>
 
-#define ERR_CFG_SEE_ERRNO	-1
-#define ERR_CFG_EMPTY_FILE	-2
-#define ERR_CFG_NO_MEM		-3
+#define ERR_CFG_UNKNOWN		-1
+#define ERR_CFG_SEE_ERRNO	-2
+#define ERR_CFG_EMPTY_FILE	-3
+#define ERR_CFG_NO_MEM		-4
 #define ERR_CFG_CANNOT_READ	-4
 
 static inline const char *err_cfg_str(int code)
@@ -94,7 +95,10 @@ struct vpn_config {
 		struct x509_digest *tmp = (cfg)->cert_whitelist->next; \
 		free((cfg)->cert_whitelist); \
 		(cfg)->cert_whitelist = tmp; \
-	}
+	} \
+	free((cfg)->ca_file); \
+	free((cfg)->user_cert); \
+	free((cfg)->user_key);
 
 int add_trusted_cert(struct vpn_config *cfg, const char *digest);
 
