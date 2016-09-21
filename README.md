@@ -73,6 +73,17 @@ Building from source
     sudo make install
     ```
 
+  On macOS :
+  ```
+  brew install automake autoconf homebrew/versions/openssl101
+  aclocal && autoconf && automake --add-missing
+  ./configure --prefix=/usr/local --sysconfdir=/etc
+  export CPPFLAGS="-I/usr/local/opt/openssl101/include"
+  export LDFLAGS="-L/usr/local/opt/openssl101/lib"
+  make
+  sudo make install
+  ```
+
 Running as root?
 ----------------
 
