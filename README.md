@@ -56,6 +56,7 @@ Building from source
     * Debian: `gcc` `automake` `autoconf` `libssl-dev`
     * Arch Linux: `automake` `autoconf` `openssl`
     * Gentoo Linux: `net-dialup/ppp`
+    * macOS: `automake` `autoconf` `homebrew/versions/openssl101`
 
   If You manage your kernel yourself, ensure to compile those modules:
 
