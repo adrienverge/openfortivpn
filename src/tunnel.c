@@ -381,11 +381,35 @@ int ssl_connect(struct tunnel *tunnel)
 		}
 	}
 
+	if (!tunnel->config->insecure_ssl) {
+		long sslctxopt = SSL_OP_NO_SSLv3 | SSL_OP_NO_COMPRESSION;
+		long checkopt;
+
+		checkopt = SSL_CTX_set_options(tunnel->ssl_context, sslctxopt);
+		if ((checkopt & sslctxopt) != sslctxopt) {
+			log_error("SSL_CTX_set_options didn't set opt: %s\n",
+			          ERR_error_string(ERR_peek_last_error(), NULL));
+			return 1;
+		}
+	}
+
 	tunnel->ssl_handle = SSL_new(tunnel->ssl_context);
 	if (tunnel->ssl_handle == NULL) {
 		log_error("SSL_new: %s\n",
 		          ERR_error_string(ERR_peek_last_error(), NULL));
 		return 1;
+	}
+
+	if (!tunnel->config->insecure_ssl && !tunnel->config->cipher_list) {
+		char *cipher_list = "HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4";
+
+		if (tunnel->config->cipher_list)
+			cipher_list = tunnel->config->cipher_list;
+		if (!SSL_set_cipher_list(tunnel->ssl_handle, cipher_list)) {
+			log_error("SSL_set_cipher_list failed: %s\n",
+			          ERR_error_string(ERR_peek_last_error(), NULL));
+			return 1;
+		}
 	}
 
 	if (!SSL_set_fd(tunnel->ssl_handle, tunnel->ssl_socket)) {
@@ -397,7 +421,9 @@ int ssl_connect(struct tunnel *tunnel)
 
 	// Initiate SSL handshake
 	if (SSL_connect(tunnel->ssl_handle) != 1) {
-		log_error("SSL_connect: %s\n",
+		log_error("SSL_connect: %s\n"
+		          "You might want to try --insecure-ssl or specify "
+		          "a different --cipher-list\n",
 		          ERR_error_string(ERR_peek_last_error(), NULL));
 		return 1;
 	}

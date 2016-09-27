@@ -1,4 +1,4 @@
-.TH OPENFORTIVPN 1 "January 26, 2015" ""
+.TH OPENFORTIVPN 1 "September 28, 2016" ""
 
 .SH NAME
 openfortivpn \- Client for PPP+SSL VPN tunnel services
@@ -72,6 +72,20 @@ gateway certificate will be matched against this value. \fI<digest>\fR is the
 X509 certificate's sha256 sum. This option can be used multiple times to trust
 several certificates.
 .TP
+\fB\-\-insecure-ssl\fR
+Do not disable insecure SSL protocols/ciphers.
+If your server requires a specific cipher, consider using \fB\-\-cipher-list\fR
+instead.
+.TP
+\fB\-\-cipher-list=\fI<ciphers>\fR
+Openssl ciphers to use. If default does not work, you can try alternatives
+such as HIGH:!MD5:!RC4 or as suggested by the Cipher: line in the output of
+\fBopenssl\fP(1) (e.g. AES256-GCM-SHA384):
+
+$ openssl s_client -connect \fI<host:port>\fR
+
+(default: HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4)
+.TP
 \fB\-\-pppd-log=\fI<file>\fR
 Set pppd in debug mode and save its logs into \fI<file>\fR.
 .TP
@@ -108,3 +122,7 @@ trusted-cert = othercertificatedigest6631bf...
 set-dns = 1
 .br
 set-routes = 1
+.br
+insecure-ssl = 0
+.br
+cipher-list = HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4

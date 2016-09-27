@@ -66,6 +66,13 @@ USAGE \
 "                                <digest> is the X509 certificate's sha256 sum.\n" \
 "                                This option can be used multiple times to trust\n" \
 "                                several certificates.\n" \
+"  --insecure-ssl                Do not disable insecure SSL protocols/ciphers.\n" \
+"                                If your server requires a specific cipher, consider\n" \
+"                                using --cipher-list instead.\n" \
+"  --cipher-list=<ciphers>       Openssl ciphers to use. If default does not work\n" \
+"                                you can try with the cipher suggested in the output\n" \
+"                                of 'openssl s_client -connect <host:port>'\n" \
+"                                (e.g. AES256-GCM-SHA384)\n" \
 "  --pppd-no-peerdns             Do not ask peer ppp server for DNS addresses\n" \
 "                                and do not make pppd rewrite /etc/resolv.conf\n" \
 "  --pppd-log=<file>             Set pppd in debug mode and save its logs into\n" \
@@ -106,6 +113,7 @@ int main(int argc, char **argv)
 	cfg.set_routes = 1;
 	cfg.set_dns = 1;
 	cfg.verify_cert = 1;
+	cfg.insecure_ssl = 0;
 	cfg.pppd_use_peerdns = 1;
 
 	struct option long_options[] = {
@@ -122,6 +130,8 @@ int main(int argc, char **argv)
 		{"user-cert",       required_argument, 0, 0},
 		{"user-key",        required_argument, 0, 0},
 		{"trusted-cert",    required_argument, 0, 0},
+		{"insecure-ssl",    no_argument, &cfg.insecure_ssl, 1},
+		{"cipher-list",     required_argument, 0, 0},
 		{"pppd-log",        required_argument, 0, 0},
 		{"pppd-plugin",     required_argument, 0, 0},
 		{"plugin",          required_argument, 0, 0}, // deprecated
@@ -193,6 +203,11 @@ int main(int argc, char **argv)
 				if (add_trusted_cert(&cfg, optarg))
 					log_warn("Could not add certificate "
 					         "digest to whitelist.\n");
+				break;
+			}
+			if (strcmp(long_options[option_index].name,
+			           "cipher-list") == 0) {
+				cfg.cipher_list = strdup(optarg);
 				break;
 			}
 			goto user_error;
