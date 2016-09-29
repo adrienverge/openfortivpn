@@ -211,6 +211,16 @@ int load_config(struct vpn_config *cfg, const char *filename)
 			cfg->user_cert = strdup(val);
 		} else if (strcmp(key, "user-key") == 0) {
 			cfg->user_key = strdup(val);
+		} else if (strcmp(key, "insecure-ssl") == 0) {
+			int insecure_ssl = strtob(val);
+			if (insecure_ssl < 0) {
+				log_warn("Bad insecure-ssl in config file: \"%s\".\n",
+				         val);
+				continue;
+			}
+			cfg->insecure_ssl = insecure_ssl;
+		} else if (strcmp(key, "cipher-list") == 0) {
+			cfg->cipher_list = strdup(val);
 		} else {
 			log_warn("Bad key in config file: \"%s\".\n", key);
 			goto err_free;
