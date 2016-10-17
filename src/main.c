@@ -34,8 +34,6 @@
 "       openfortivpn --version\n"
 
 #define HELP \
-USAGE \
-"\n" \
 "Client for PPP+SSL VPN tunnel services.\n" \
 "openfortivpn connects to a VPN by setting up a tunnel to the gateway at\n" \
 "<host>:<port>. It spawns a pppd process and operates the communication between\n" \
@@ -220,6 +218,8 @@ int main(int argc, char **argv)
 			}
 			goto user_error;
 		case 'h':
+			printf(USAGE);
+			printf("\n");
 			printf(HELP);
 			ret = EXIT_SUCCESS;
 			goto exit;
