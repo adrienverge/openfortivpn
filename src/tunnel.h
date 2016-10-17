@@ -38,10 +38,10 @@
 #include "ipv4.h"
 
 enum tunnel_state {
-	STATE_DOWN,
-	STATE_CONNECTING,
-	STATE_UP,
-	STATE_DISCONNECTING
+        STATE_DOWN,
+        STATE_CONNECTING,
+        STATE_UP,
+        STATE_DISCONNECTING
 };
 
 struct tunnel {

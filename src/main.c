@@ -101,7 +101,7 @@
 "      user-cert = /etc/openfortivpn/user-key.pem\n" \
 "      user-key = /etc/openfortivpn/user-cert.pem\n" \
 "      insecure-ssl = 0\n" \
-"      cipher-list =  HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4\n" 
+"      cipher-list = HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4\n"
 
 int main(int argc, char **argv)
 {
