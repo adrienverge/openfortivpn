@@ -1,4 +1,4 @@
-.TH OPENFORTIVPN 1 "September 28, 2016" ""
+.TH OPENFORTIVPN 1 "November 10, 2016" ""
 
 .SH NAME
 openfortivpn \- Client for PPP+SSL VPN tunnel services
@@ -43,7 +43,7 @@ Show this help message and exit.
 Show version and exit.
 .TP
 \fB\-c \fI<file>\fR, \fB\-\-config=\fI<file>\fR
-Specify a custom config file (default: /etc/openfortivpn/config).
+Specify a custom config file (default: @SYSCONFDIR@/openfortivpn/config).
 .TP
 \fB\-u \fI<user>\fR, \fB\-\-username=\fI<user>\fR
 VPN account username.
@@ -94,7 +94,7 @@ $ openssl s_client -connect \fI<host:port>\fR
 (default: HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4)
 .TP
 \fB\-\-pppd-no-peerdns\fR
-Do not ask peer ppp server for DNS addresses and do not make pppd rewrite 
+Do not ask peer ppp server for DNS addresses and do not make pppd rewrite
 /etc/resolv.conf.
 .TP
 \fB\-\-pppd-log=\fI<file>\fR
@@ -113,7 +113,7 @@ Decrease verbosity. Can be used multiple times to be even less verbose.
 .SH CONFIG FILE
 Options can be taken from a configuration file. Options passed in the command
 line will override those from the config file, though. The default config file
-is /etc/openfortivpn/config, but this can be set using the \fB\-c\fR option.
+is @SYSCONFDIR@/openfortivpn/config, but this can be set using the \fB\-c\fR option.
 .TP
 A config file looks like:
 # this is a comment
@@ -126,17 +126,17 @@ username = foo
 .br
 password = bar
 .br
-user-cert = /etc/openfortivpn/user-cert.pem
+user-cert = @SYSCONFDIR@/openfortivpn/user-cert.pem
 .br
-user-key =/etc/openfortivpn/user-key.pem
+user-key = @SYSCONFDIR@/openfortivpn/user-key.pem
 .br
 trusted-cert = certificatedigest4daa8c5fe6c...
 .br
 trusted-cert = othercertificatedigest6631bf...
 .br
-# This would specify a ca bundle instead of system-wide store 
+# This would specify a ca bundle instead of system-wide store
 .br
-# ca-file = /etc/openfortivpn/ca-bundle.pem
+# ca-file = @SYSCONFDIR@/openfortivpn/ca-bundle.pem
 .br
 set-dns = 1
 .br
