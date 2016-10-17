@@ -48,11 +48,11 @@ USAGE \
 "                                /etc/openfortivpn/config).\n" \
 "  -u <user>, --username=<user>  VPN account username.\n" \
 "  -p <pass>, --password=<pass>  VPN account password.\n" \
+"  --realm=<realm>               Use specified authentication realm on VPN gateway\n" \
+"                                when tunnel is up.\n" \
 "  --no-routes                   Do not try to configure IP routes through the\n" \
 "                                VPN when tunnel is up.\n" \
 "  --no-dns                      Do not add VPN nameservers in /etc/resolv.conf\n" \
-"  --realm=<realm>               Use specified authentication realm on VPN gateway\n" \
-"                                when tunnel is up.\n" \
 "  --ca-file=<file>              Use specified PEM-encoded certificate bundle\n" \
 "                                instead of system-wide store to verify the gateway\n" \
 "                                certificate.\n" \
@@ -95,7 +95,15 @@ USAGE \
 "      username = foo\n" \
 "      password = bar\n" \
 "      trusted-cert = certificatedigest4daa8c5fe6c...\n" \
-"      trusted-cert = othercertificatedigest6631bf...\n"
+"      trusted-cert = othercertificatedigest6631bf...\n" \
+"      set-dns = 1\n" \
+"      set-routes = 1\n" \
+"      pppd-use-peerdns = 1\n" \
+"      ca-file = /etc/openfortivpn/ca-bundle.pem\n" \
+"      user-cert = /etc/openfortivpn/user-key.pem\n" \
+"      user-key = /etc/openfortivpn/user-cert.pem\n" \
+"      insecure-ssl = 0\n" \
+"      cipher-list =  HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4\n" 
 
 int main(int argc, char **argv)
 {
