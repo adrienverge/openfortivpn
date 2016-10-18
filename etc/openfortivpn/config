@@ -1,14 +1,5 @@
-# config file for openfortivpn
+# config file for openfortivpn, see man openfortivpn(1)
 host =
 port =
 username =
 password =
-# set-dns =
-# set-routes =
-# pppd-use-peerdns =
-# trusted-cert =
-# ca-file =
-# user-cert =
-# user-key =
-# insecure-ssl =
-# cipher-list =

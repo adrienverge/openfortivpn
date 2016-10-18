@@ -86,7 +86,7 @@
 "  Options can be taken from a configuration file. Options passed in the\n" \
 "  command line will override those from the config file, though. The default\n" \
 "  config file is /etc/openfortivpn/config, but this can be set using the -c\n" \
-"  option. A config file looks like:\n" \
+"  option. A simple config file example looks like:\n" \
 "      # this is a comment\n" \
 "      host = vpn-gateway\n" \
 "      port = 8443\n" \
@@ -94,14 +94,7 @@
 "      password = bar\n" \
 "      trusted-cert = certificatedigest4daa8c5fe6c...\n" \
 "      trusted-cert = othercertificatedigest6631bf...\n" \
-"      set-dns = 1\n" \
-"      set-routes = 1\n" \
-"      pppd-use-peerdns = 1\n" \
-"      ca-file = /etc/openfortivpn/ca-bundle.pem\n" \
-"      user-cert = /etc/openfortivpn/user-key.pem\n" \
-"      user-key = /etc/openfortivpn/user-cert.pem\n" \
-"      insecure-ssl = 0\n" \
-"      cipher-list = HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4\n"
+"  For a full-featured config see man openfortivpn(1). \n"
 
 int main(int argc, char **argv)
 {
@@ -221,6 +214,7 @@ int main(int argc, char **argv)
 			printf(USAGE);
 			printf("\n");
 			printf(HELP);
+			printf("\n");
 			ret = EXIT_SUCCESS;
 			goto exit;
 		case 'v':
