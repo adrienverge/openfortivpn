@@ -8,9 +8,16 @@ openfortivpn \- Client for PPP+SSL VPN tunnel services
 [\fI<host>\fR:\fI<port>\fR]
 [\fB\-u\fR \fI<user>\fR]
 [\fB\-p\fR \fI<pass>\fR]
+[\fB\-\-realm=\fI<realm>\fR]
 [\fB\-\-no-routes\fR]
 [\fB\-\-no-dns\fR]
+[\fB\-\-ca-file=\fI<file>\fR]
+[\fB\-\-user-cert=\fI<file>\fR]
+[\fB\-\-user-key=\fI<file>\fR]
 [\fB\-\-trusted-cert=\fI<digest>\fR]
+[\fB\-\-insecure-ssl\fR]
+[\fB\-\-cipher-list=\fI<ciphers>\fR]
+[\fB\-\-pppd-no-peerdns\fR]
 [\fB\-\-pppd-log=\fI<file>\fR]
 [\fB\-\-pppd-plugin=\fI<file>\fR]
 [\fB\-c\fR \fI<file>\fR]
@@ -86,6 +93,10 @@ $ openssl s_client -connect \fI<host:port>\fR
 
 (default: HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4)
 .TP
+\fB\-\-pppd-no-peerdns\fR
+Do not ask peer ppp server for DNS addresses and do not make pppd rewrite 
+/etc/resolv.conf.
+.TP
 \fB\-\-pppd-log=\fI<file>\fR
 Set pppd in debug mode and save its logs into \fI<file>\fR.
 .TP
@@ -115,13 +126,23 @@ username = foo
 .br
 password = bar
 .br
+user-cert = /etc/openfortivpn/user-cert.pem
+.br
+user-key =/etc/openfortivpn/user-key.pem
+.br
 trusted-cert = certificatedigest4daa8c5fe6c...
 .br
 trusted-cert = othercertificatedigest6631bf...
 .br
+# This would specify a ca bundle instead of system-wide store 
+.br
+# ca-file = /etc/openfortivpn/ca-bundle.pem
+.br
 set-dns = 1
 .br
 set-routes = 1
+.br
+pppd-use-peerdns = 1
 .br
 insecure-ssl = 0
 .br

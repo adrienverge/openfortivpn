@@ -1,4 +1,4 @@
-# config file for openfortivpn
+# config file for openfortivpn, see man openfortivpn(1)
 host =
 port =
 username =

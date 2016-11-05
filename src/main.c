@@ -34,8 +34,6 @@
 "       openfortivpn --version\n"
 
 #define HELP \
-USAGE \
-"\n" \
 "Client for PPP+SSL VPN tunnel services.\n" \
 "openfortivpn connects to a VPN by setting up a tunnel to the gateway at\n" \
 "<host>:<port>. It spawns a pppd process and operates the communication between\n" \
@@ -48,11 +46,11 @@ USAGE \
 "                                /etc/openfortivpn/config).\n" \
 "  -u <user>, --username=<user>  VPN account username.\n" \
 "  -p <pass>, --password=<pass>  VPN account password.\n" \
+"  --realm=<realm>               Use specified authentication realm on VPN gateway\n" \
+"                                when tunnel is up.\n" \
 "  --no-routes                   Do not try to configure IP routes through the\n" \
 "                                VPN when tunnel is up.\n" \
 "  --no-dns                      Do not add VPN nameservers in /etc/resolv.conf\n" \
-"  --realm=<realm>               Use specified authentication realm on VPN gateway\n" \
-"                                when tunnel is up.\n" \
 "  --ca-file=<file>              Use specified PEM-encoded certificate bundle\n" \
 "                                instead of system-wide store to verify the gateway\n" \
 "                                certificate.\n" \
@@ -88,14 +86,15 @@ USAGE \
 "  Options can be taken from a configuration file. Options passed in the\n" \
 "  command line will override those from the config file, though. The default\n" \
 "  config file is /etc/openfortivpn/config, but this can be set using the -c\n" \
-"  option. A config file looks like:\n" \
+"  option. A simple config file example looks like:\n" \
 "      # this is a comment\n" \
 "      host = vpn-gateway\n" \
 "      port = 8443\n" \
 "      username = foo\n" \
 "      password = bar\n" \
 "      trusted-cert = certificatedigest4daa8c5fe6c...\n" \
-"      trusted-cert = othercertificatedigest6631bf...\n"
+"      trusted-cert = othercertificatedigest6631bf...\n" \
+"  For a full-featured config see man openfortivpn(1). \n"
 
 int main(int argc, char **argv)
 {
@@ -212,7 +211,10 @@ int main(int argc, char **argv)
 			}
 			goto user_error;
 		case 'h':
+			printf(USAGE);
+			printf("\n");
 			printf(HELP);
+			printf("\n");
 			ret = EXIT_SUCCESS;
 			goto exit;
 		case 'v':
