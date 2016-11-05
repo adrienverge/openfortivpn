@@ -46,8 +46,13 @@ Examples
   trusted-cert = e46d4aff08ba6914e64daa85bc6112a422fa7ce16631bff0b592a28556f993db
   ```
 
-Building from source
---------------------
+Installing
+----------
+
+openfortivpn is packaged for Fedora, Gentoo and NixOS under the package name
+`openfortivpn`.
+
+For other distros, you'll need to build and install from source:
 
 1.  Install build dependencies.
 
