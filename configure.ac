@@ -36,5 +36,9 @@ AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([bzero gethostbyname inet_ntoa memmove memset memmem select socket strerror strstr strtol])
 
+AC_DEFINE_UNQUOTED([SYSCONFDIR],["`eval echo $sysconfdir`"])
+AC_SUBST([SYSCONFDIR],["`eval echo $sysconfdir`"])
+AC_CONFIG_FILES([doc/openfortivpn.1])
+
 #AC_CONFIG_FILES([Makefile])
 AC_OUTPUT(Makefile)

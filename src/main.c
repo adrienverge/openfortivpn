@@ -43,7 +43,7 @@
 "  -h --help                     Show this help message and exit.\n" \
 "  --version                     Show version and exit.\n" \
 "  -c <file>, --config=<file>    Specify a custom config file (default:\n" \
-"                                /etc/openfortivpn/config).\n" \
+"                                "SYSCONFDIR"/openfortivpn/config).\n" \
 "  -u <user>, --username=<user>  VPN account username.\n" \
 "  -p <pass>, --password=<pass>  VPN account password.\n" \
 "  --realm=<realm>               Use specified authentication realm on VPN gateway\n" \
@@ -85,8 +85,9 @@
 "Config file:\n" \
 "  Options can be taken from a configuration file. Options passed in the\n" \
 "  command line will override those from the config file, though. The default\n" \
-"  config file is /etc/openfortivpn/config, but this can be set using the -c\n" \
-"  option. A simple config file example looks like:\n" \
+"  config file is "SYSCONFDIR"/openfortivpn/config,\n" \
+"  but this can be set using the -c option.\n" \
+"  A simple config file example looks like:\n" \
 "      # this is a comment\n" \
 "      host = vpn-gateway\n" \
 "      port = 8443\n" \
@@ -100,7 +101,7 @@ int main(int argc, char **argv)
 {
 	int ret = EXIT_FAILURE;
 	struct vpn_config cfg;
-	char *config_file = "/etc/openfortivpn/config";
+	char *config_file = SYSCONFDIR"/openfortivpn/config";
 	char *host, *username = NULL, *password = NULL;
 	char *port_str;
 	long int port;
