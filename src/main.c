@@ -22,7 +22,7 @@
 #include "tunnel.h"
 #include "userinput.h"
 
-#define USAGE \
+#define usage \
 "Usage: openfortivpn [<host>:<port>] [-u <user>] [-p <pass>]\n" \
 "                    [--realm=<realm>] [--otp=<otp>] [--no-routes]\n" \
 "                    [--no-dns] [--pppd-no-peerdns] [--pppd-log=<file>]\n" \
@@ -31,9 +31,10 @@
 "                    [--user-key=<file>] [--trusted-cert=<digest>]\n" \
 "                    [--use-syslog] [-c <file>] [-v|-q]\n" \
 "       openfortivpn --help\n" \
-"       openfortivpn --version\n"
+"       openfortivpn --version\n" \
+"\n"
 
-#define HELP \
+#define help_options \
 "Client for PPP+SSL VPN tunnel services.\n" \
 "openfortivpn connects to a VPN by setting up a tunnel to the gateway at\n" \
 "<host>:<port>. It spawns a pppd process and operates the communication between\n" \
@@ -85,7 +86,10 @@
 "                                to be even more verbose.\n" \
 "  -q                            Decrease verbosity. Can be used multiple times\n" \
 "                                to be even less verbose.\n" \
-"\n" \
+"\n"
+
+
+#define help_config \
 "Config file:\n" \
 "  Options can be taken from a configuration file. Options passed in the\n" \
 "  command line will override those from the config file, though. The default\n" \
@@ -227,10 +231,7 @@ int main(int argc, char **argv)
 			}
 			goto user_error;
 		case 'h':
-			printf(USAGE);
-			printf("\n");
-			printf(HELP);
-			printf("\n");
+			printf("%s%s%s", usage, help_options, help_config);
 			ret = EXIT_SUCCESS;
 			goto exit;
 		case 'v':
@@ -346,7 +347,7 @@ int main(int argc, char **argv)
 	goto exit;
 
 user_error:
-	fprintf(stderr, USAGE);
+	fprintf(stderr, "%s", usage);
 exit:
 	destroy_vpn_config(&cfg);
 	exit(ret);
