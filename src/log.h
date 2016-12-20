@@ -20,18 +20,20 @@
 
 #include <stdint.h>
 
+// Assign enum values explicitly, we're using them in a lookup
 enum log_verbosity {
-	LOG_MUTE,
-	LOG_ERROR,
-	LOG_WARN,
-	LOG_INFO,
-	LOG_DEBUG,
-	LOG_DEBUG_PACKETS
+	OFV_LOG_MUTE  = 0,
+	OFV_LOG_ERROR = 1,
+	OFV_LOG_WARN  = 2,
+	OFV_LOG_INFO  = 3,
+	OFV_LOG_DEBUG = 4,
+	OFV_LOG_DEBUG_PACKETS = 5
 };
 
 extern enum log_verbosity loglevel;
 
 void init_logging();
+void set_syslog (int do_syslog);
 
 void increase_verbosity();
 void decrease_verbosity();
@@ -45,17 +47,17 @@ void do_log(int verbosity, const char *format, ...);
 	} while (0)
 
 #define log_error(...) \
-	log_level(LOG_ERROR, __VA_ARGS__)
+	log_level(OFV_LOG_ERROR, __VA_ARGS__)
 #define log_warn(...) \
-	log_level(LOG_WARN, __VA_ARGS__)
+	log_level(OFV_LOG_WARN, __VA_ARGS__)
 #define log_info(...) \
-	log_level(LOG_INFO, __VA_ARGS__)
+	log_level(OFV_LOG_INFO, __VA_ARGS__)
 #define log_debug(...) \
-	log_level(LOG_DEBUG, __VA_ARGS__)
+	log_level(OFV_LOG_DEBUG, __VA_ARGS__)
 
 #define log_packet(...) \
 	do { \
-		if (loglevel >= LOG_DEBUG_PACKETS) \
+		if (loglevel >= OFV_LOG_DEBUG_PACKETS) \
 			do_log_packet(__VA_ARGS__); \
 	} while (0)
 

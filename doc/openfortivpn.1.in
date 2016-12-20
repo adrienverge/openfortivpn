@@ -14,6 +14,7 @@ openfortivpn \- Client for PPP+SSL VPN tunnel services
 [\fB\-\-ca-file=\fI<file>\fR]
 [\fB\-\-user-cert=\fI<file>\fR]
 [\fB\-\-user-key=\fI<file>\fR]
+[\fB\-\-use-syslog\fR]
 [\fB\-\-trusted-cert=\fI<digest>\fR]
 [\fB\-\-insecure-ssl\fR]
 [\fB\-\-cipher-list=\fI<ciphers>\fR]
@@ -72,6 +73,9 @@ with a certificate.
 \fB\-\-user-key=\fI<file>\fR
 Use specified PEM-encoded key if the server requires authentication with
 a certificate.
+.TP
+\fB\-\-use-syslog\fR
+Log to syslog instead of terminal.
 .TP
 \fB\-\-trusted-cert=\fI<digest>\fR
 Trust a given gateway. If classical SSL certificate validation fails, the

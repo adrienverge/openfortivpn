@@ -29,7 +29,7 @@
 "                    [--pppd-log=<file>] [--pppd-plugin=<file>]\n" \
 "                    [--ca-file=<file>] [--user-cert=<file>]\n" \
 "                    [--user-key=<file>] [--trusted-cert=<digest>]\n" \
-"                    [-c <file>] [-v|-q]\n" \
+"                    [--use-syslog] [-c <file>] [-v|-q]\n" \
 "       openfortivpn --help\n" \
 "       openfortivpn --version\n"
 
@@ -58,6 +58,7 @@
 "                                requires authentication with a certificate.\n" \
 "  --user-key=<file>             Use specified PEM-encoded key if the server if the\n" \
 "                                server requires authentication with a certificate.\n" \
+"  --use-syslog                  Log to syslog instead of terminal.\n" \
 "  --trusted-cert=<digest>       Trust a given gateway. If classical SSL\n" \
 "                                certificate validation fails, the gateway\n" \
 "                                certificate will be matched against this value.\n" \
@@ -126,6 +127,7 @@ int main(int argc, char **argv)
 		{"no-routes",       no_argument, &cfg.set_routes, 0},
 		{"no-dns",          no_argument, &cfg.set_dns, 0},
 		{"pppd-no-peerdns", no_argument, &cfg.pppd_use_peerdns, 0},
+		{"use-syslog",      no_argument, &cfg.use_syslog, 1},
 		{"ca-file",         required_argument, 0, 0},
 		{"user-cert",       required_argument, 0, 0},
 		{"user-key",        required_argument, 0, 0},
@@ -240,6 +242,7 @@ int main(int argc, char **argv)
 
 	if (optind < argc - 1 || optind > argc)
 		goto user_error;
+	set_syslog (cfg.use_syslog);
 
 	if (password != NULL)
 		log_warn("You should not pass the password on the command "
@@ -249,6 +252,7 @@ int main(int argc, char **argv)
 	// Load config file
 	if (config_file[0] != '\0') {
 		ret = load_config(&cfg, config_file);
+		set_syslog (cfg.use_syslog);
 		if (ret == 0)
 			log_debug("Loaded config file \"%s\".\n", config_file);
 		else

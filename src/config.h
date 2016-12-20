@@ -64,6 +64,7 @@ struct vpn_config {
 	int	set_routes;
 	int	set_dns;
 	int     pppd_use_peerdns;
+	int     use_syslog;
 
 	char	*pppd_log;
 	char	*pppd_plugin;
@@ -91,6 +92,7 @@ struct vpn_config {
 		(cfg)->user_key = NULL; \
 		(cfg)->cipher_list = NULL; \
 		(cfg)->cert_whitelist = NULL; \
+		(cfg)->use_syslog = 0; \
 	} while (0)
 
 #define destroy_vpn_config(cfg) \
