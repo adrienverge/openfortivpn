@@ -61,12 +61,18 @@ For other distros, you'll need to build and install from source:
     * Debian: `gcc` `automake` `autoconf` `libssl-dev`
     * Arch Linux: `automake` `autoconf` `openssl`
     * Gentoo Linux: `net-dialup/ppp`
+    * macOS: `automake` `autoconf` `homebrew/versions/openssl101`
 
   If You manage your kernel yourself, ensure to compile those modules:
 
   ```
   CONFIG_PPP=m
   CONFIG_PPP_ASYNC=m
+  ```
+
+  On macOS, install homebrew to install the build dependencies:
+  ```
+  /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
   ```
 
 2.  Build and install.
@@ -77,6 +83,17 @@ For other distros, you'll need to build and install from source:
     make
     sudo make install
     ```
+
+  On macOS :
+  ```
+  brew install automake autoconf homebrew/versions/openssl101
+  aclocal && autoconf && automake --add-missing
+  ./configure --prefix=/usr/local --sysconfdir=/etc
+  export CPPFLAGS="-I/usr/local/opt/openssl101/include"
+  export LDFLAGS="-L/usr/local/opt/openssl101/lib"
+  make
+  sudo make install
+  ```
 
 Running as root?
 ----------------
