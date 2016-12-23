@@ -58,6 +58,7 @@ struct vpn_config {
 	uint16_t	gateway_port;
 	char		username[FIELD_SIZE + 1];
 	char		password[FIELD_SIZE + 1];
+	char		otp[FIELD_SIZE + 1];
 	char		cookie[COOKIE_SIZE + 1];
 	char            realm[FIELD_SIZE + 1];
 

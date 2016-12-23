@@ -46,6 +46,7 @@
 "                                "SYSCONFDIR"/openfortivpn/config).\n" \
 "  -u <user>, --username=<user>  VPN account username.\n" \
 "  -p <pass>, --password=<pass>  VPN account password.\n" \
+"  -o <otp>, --otp=<otp>         One-Time-Password.\n" \
 "  --realm=<realm>               Use specified authentication realm on VPN gateway\n" \
 "                                when tunnel is up.\n" \
 "  --no-routes                   Do not try to configure IP routes through the\n" \
@@ -103,9 +104,12 @@ int main(int argc, char **argv)
 	int ret = EXIT_FAILURE;
 	struct vpn_config cfg;
 	char *config_file = SYSCONFDIR"/openfortivpn/config";
-	char *host, *username = NULL, *password = NULL;
+	char *host, *username = NULL, *password = NULL, *otp = NULL;
 	char *port_str;
 	long int port;
+
+	/* Init cfg */
+	memset (&cfg, 0, sizeof (cfg));
 
 	init_logging();
 
@@ -124,6 +128,7 @@ int main(int argc, char **argv)
 		{"realm",           required_argument, 0, 0},
 		{"username",        required_argument, 0, 'u'},
 		{"password",        required_argument, 0, 'p'},
+		{"otp",             required_argument, 0, 'o'},
 		{"no-routes",       no_argument, &cfg.set_routes, 0},
 		{"no-dns",          no_argument, &cfg.set_dns, 0},
 		{"pppd-no-peerdns", no_argument, &cfg.pppd_use_peerdns, 0},
@@ -235,6 +240,9 @@ int main(int argc, char **argv)
 		case 'p':
 			password = optarg;
 			break;
+		case 'o':
+			otp = optarg;
+			break;
 		default:
 			goto user_error;
 		}
@@ -288,6 +296,10 @@ int main(int argc, char **argv)
 		strncpy(cfg.password, password, FIELD_SIZE);
 		cfg.password[FIELD_SIZE] = '\0';
 	}
+	if (otp != NULL) {
+		strncpy(cfg.otp, otp, FIELD_SIZE);
+		cfg.otp[FIELD_SIZE] = '\0';
+	}
 
 	// Check host and port
 	if (cfg.gateway_host[0] == '\0' || cfg.gateway_port == 0) {
@@ -314,6 +326,8 @@ int main(int argc, char **argv)
 	log_debug("Config port = \"%d\"\n", cfg.gateway_port);
 	log_debug("Config username = \"%s\"\n", cfg.username);
 	log_debug("Config password = \"%s\"\n", "********");
+	if (cfg.otp != NULL)
+		log_debug("One-time password = \"%s\"\n", cfg.otp);
 
 	if (geteuid() != 0)
 		log_warn("This process was not spawned with root "
