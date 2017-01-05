@@ -281,8 +281,9 @@ static int ipv4_set_split_routes(struct tunnel *tunnel)
 		route = &tunnel->ipv4.split_rt[i];
 		strncpy(route_iface(route), tunnel->ppp_iface,
 		        ROUTE_IFACE_LEN - 1);
-		if (route_gtw(route).s_addr == -1)
+		if (route_gtw(route).s_addr == 0)
 			route_gtw(route).s_addr = tunnel->ipv4.ip_addr.s_addr;
+		route->rt_flags |= RTF_GATEWAY;
 		ret = ipv4_set_route(route);
 		if (ret == ERR_IPV4_SEE_ERRNO && errno == EEXIST)
 			log_warn("Route to gateway exists already.\n");
