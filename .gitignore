@@ -13,3 +13,5 @@ Makefile
 Makefile.in
 missing
 openfortivpn
+.dirstamp
+doc/*.1
