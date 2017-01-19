@@ -326,7 +326,7 @@ int main(int argc, char **argv)
 	log_debug("Config port = \"%d\"\n", cfg.gateway_port);
 	log_debug("Config username = \"%s\"\n", cfg.username);
 	log_debug("Config password = \"%s\"\n", "********");
-	if (cfg.otp != NULL)
+	if (cfg.otp[0] != '\0')
 		log_debug("One-time password = \"%s\"\n", cfg.otp);
 
 	if (geteuid() != 0)

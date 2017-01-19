@@ -88,9 +88,9 @@ For other distros, you'll need to build and install from source:
   ```
   brew install automake autoconf homebrew/versions/openssl101
   aclocal && autoconf && automake --add-missing
-  ./configure --prefix=/usr/local --sysconfdir=/etc
   export CPPFLAGS="-I/usr/local/opt/openssl101/include"
   export LDFLAGS="-L/usr/local/opt/openssl101/lib"
+  ./configure --prefix=/usr/local --sysconfdir=/etc
   make
   sudo make install
   ```

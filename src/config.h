@@ -86,6 +86,7 @@ struct vpn_config {
 		(cfg)->realm[0] = '\0'; \
 		(cfg)->username[0] = '\0'; \
 		(cfg)->password[0] = '\0'; \
+		(cfg)->otp[0] = '\0'; \
 		(cfg)->pppd_log = NULL; \
 		(cfg)->pppd_plugin = NULL; \
 		(cfg)->ca_file = NULL; \
