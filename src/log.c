@@ -42,7 +42,7 @@ static struct log_param_s log_params [OFV_LOG_DEBUG_PACKETS + 1] = {
 	{ "        ", "",           LOG_ERR},
 	{ "ERROR:  ", "\033[0;31m", LOG_ERR},
 	{ "WARN:   ", "\033[0;33m", LOG_WARNING},
-	{ "INFO:   ", "\033[0;97m", LOG_INFO},
+	{ "INFO:   ", "",           LOG_INFO},
 	{ "DEBUG:  ", "\033[0;90m", LOG_DEBUG},
 	{ "DEBUG:  ", "\033[0;90m", LOG_DEBUG},
 };
