@@ -275,14 +275,46 @@ static int ipv4_set_split_routes(struct tunnel *tunnel)
 {
 	int i;
 	struct rtentry *route;
+	struct rtentry *gtw_rt = &tunnel->ipv4.gtw_rt;
+	struct rtentry *def_rt = &tunnel->ipv4.def_rt;
 	int ret;
+
+	route_init(def_rt);
+
+	// Back up default route
+	route_dest(def_rt).s_addr = inet_addr("0.0.0.0");
+	route_mask(def_rt).s_addr = inet_addr("0.0.0.0");
+
+	ret = ipv4_get_route(def_rt);
+	if (ret != 0) {
+		log_warn("Could not get current default route (%s).\n",
+		         err_ipv4_str(ret));
+		goto err_destroy;
+	}
+
+
+	// Set the default route as the route to the tunnel gateway
+	memcpy(gtw_rt, def_rt, sizeof(*gtw_rt));
+	route_dest(gtw_rt).s_addr = tunnel->config->gateway_ip.s_addr;
+	route_mask(gtw_rt).s_addr = inet_addr("255.255.255.255");
+	gtw_rt->rt_flags |= RTF_HOST;
+	gtw_rt->rt_metric = 0;
+
+	log_debug("Setting route to tunnel gateway...\n");
+	ret = ipv4_set_route(gtw_rt);
+	if (ret == ERR_IPV4_SEE_ERRNO && errno == EEXIST)
+		log_warn("Route to gateway exists already.\n");
+	else if (ret != 0)
+		log_warn("Could not set route to tunnel gateway (%s).\n",
+		         err_ipv4_str(ret));
 
 	for (i = 0; i < tunnel->ipv4.split_routes; i++) {
 		route = &tunnel->ipv4.split_rt[i];
 		strncpy(route_iface(route), tunnel->ppp_iface,
 		        ROUTE_IFACE_LEN - 1);
-		if (route_gtw(route).s_addr == -1)
+		if (route_gtw(route).s_addr == 0)
 			route_gtw(route).s_addr = tunnel->ipv4.ip_addr.s_addr;
+		route->rt_flags |= RTF_GATEWAY;
 		ret = ipv4_set_route(route);
 		if (ret == ERR_IPV4_SEE_ERRNO && errno == EEXIST)
 			log_warn("Route to gateway exists already.\n");
@@ -291,6 +323,11 @@ static int ipv4_set_split_routes(struct tunnel *tunnel)
 			         err_ipv4_str(ret));
 	}
 	return 0;
+
+err_destroy:
+	route_destroy(def_rt);
+
+	return ret;
 }
 
 static int ipv4_set_default_routes(struct tunnel *tunnel)
@@ -318,7 +355,7 @@ static int ipv4_set_default_routes(struct tunnel *tunnel)
 	memcpy(gtw_rt, def_rt, sizeof(*gtw_rt));
 	route_dest(gtw_rt).s_addr = tunnel->config->gateway_ip.s_addr;
 	route_mask(gtw_rt).s_addr = inet_addr("255.255.255.255");
-	gtw_rt->rt_flags |= RTF_GATEWAY;
+	gtw_rt->rt_flags |= RTF_HOST;
 	gtw_rt->rt_metric = 0;
 
 	log_debug("Setting route to tunnel gateway...\n");
@@ -375,8 +412,13 @@ int ipv4_restore_routes(struct tunnel *tunnel)
 	struct rtentry *gtw_rt = &tunnel->ipv4.gtw_rt;
 	struct rtentry *ppp_rt = &tunnel->ipv4.ppp_rt;
 
+	ret = ipv4_del_route(gtw_rt);
+	if (ret != 0)
+		log_warn("Could not delete route to gateway (%s).\n",
+		         err_ipv4_str(ret));
+
 	if (tunnel->ipv4.split_routes)
-		return 0;
+		goto out;
 
 	ret = ipv4_del_route(ppp_rt);
 	if (ret != 0)
@@ -390,12 +432,8 @@ int ipv4_restore_routes(struct tunnel *tunnel)
 		log_warn("Could not restore default route (%s). Already restored?\n",
 		         err_ipv4_str(ret));
 
-	ret = ipv4_del_route(gtw_rt);
-	if (ret != 0)
-		log_warn("Could not delete route to gateway (%s).\n",
-		         err_ipv4_str(ret));
-
 	route_destroy(ppp_rt);
+out:
 	route_destroy(def_rt);
 
 	return 0;
