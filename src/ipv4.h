@@ -71,6 +71,7 @@ struct ipv4_config {
 	struct in_addr	ns2_addr;
 	int		ns_are_new; // were ns already in /etc/resolv.conf?
 	int		split_routes;
+	int		route_to_vpn_is_added;
 
 	struct rtentry	def_rt; // default route
 	struct rtentry	gtw_rt; // route to access VPN gateway
