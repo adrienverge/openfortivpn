@@ -362,6 +362,11 @@ int ssl_connect(struct tunnel *tunnel)
 		return 1;
 	}
 
+	// Load the OS default CA files
+	if (!SSL_CTX_set_default_verify_paths(tunnel->ssl_context)) {
+		log_error("Could not load OS OpenSSL files.\n");
+	}
+
 	if (tunnel->config->ca_file) {
 		if (!SSL_CTX_load_verify_locations(
 		            tunnel->ssl_context,
