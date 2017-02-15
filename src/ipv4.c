@@ -280,6 +280,8 @@ int ipv4_protect_tunnel_route(struct tunnel *tunnel)
 err_destroy:
 	route_destroy(def_rt);
 	tunnel->ipv4.route_to_vpn_is_added = 0;
+	log_warn("Protecting tunnel route has faild. \
+But this can be working except for some cases.\n");
 
 	return ret;
 }
