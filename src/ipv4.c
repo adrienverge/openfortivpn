@@ -381,11 +381,10 @@ int ipv4_set_tunnel_routes(struct tunnel *tunnel)
 {
 	int ret = ipv4_protect_tunnel_route(tunnel);
 
-	if (ret == 0) {
-		if (tunnel->ipv4.split_routes)
-			return ipv4_set_split_routes (tunnel);
-		else
-			return ipv4_set_default_routes (tunnel);
+	if (tunnel->ipv4.split_routes)
+		return ipv4_set_split_routes (tunnel);
+	else if (ret == 0) {
+		return ipv4_set_default_routes (tunnel);
 	} else {
 		return ret;
 	}
