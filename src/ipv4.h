@@ -62,7 +62,7 @@ static inline const char *err_ipv4_str(int code)
 }
 
 #define ROUTE_IFACE_LEN 32
-#define MAX_SPLIT_ROUTES 32
+#define MAX_SPLIT_ROUTES 64
 
 struct ipv4_config {
 	struct in_addr	ip_addr;
