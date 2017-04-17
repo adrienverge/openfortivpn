@@ -10,16 +10,32 @@ AM_INIT_AUTOMAKE([foreign subdir-objects])
 AC_PROG_CC
 AC_GNU_SOURCE
 
-AM_SILENT_RULES([yes])
+
+AM_SILENT_RULES
 
 # Checks for libraries.
 AC_CHECK_LIB([crypto], [ERR_peek_last_error], [], [AC_MSG_ERROR([Cannot find libcrypto.])])
 AC_CHECK_LIB([pthread], [pthread_create], [], [AC_MSG_ERROR([Cannot find libpthread.])])
 AC_CHECK_LIB([ssl], [SSL_connect], [], [AC_MSG_ERROR([Cannot find libssl.])])
 AC_CHECK_LIB([util], [forkpty], [], [AC_MSG_ERROR([Cannot find libutil.])])
+AC_CHECK_LIB([curl], [curl_global_init], [], [AC_MSG_ERROR([Cannot find libcurl.])])
 
 # Checks for header files.
-AC_CHECK_HEADERS([arpa/inet.h fcntl.h netdb.h netinet/in.h stddef.h stdint.h stdlib.h string.h strings.h sys/ioctl.h sys/socket.h unistd.h])
+AC_CHECK_HEADERS [\
+	arpa/inet.h \
+	fcntl.h \
+	netdb.h \
+	netinet/in.h \
+	stddef.h \
+	stdint.h \
+	stdlib.h \
+	string.h \
+	strings.h \
+	sys/ioctl.h \
+	sys/socket.h \
+	unistd.h\
+	]
+#([arpa/inet.h fcntl.h netdb.h netinet/in.h stddef.h stdint.h stdlib.h string.h strings.h sys/ioctl.h sys/socket.h unistd.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_INLINE

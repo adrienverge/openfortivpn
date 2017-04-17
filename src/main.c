@@ -16,7 +16,8 @@
  */
 
 #include <getopt.h>
-
+#include <stdio.h>
+#include <curl/curl.h>
 #include "config.h"
 #include "log.h"
 #include "tunnel.h"
@@ -98,6 +99,60 @@
 "      trusted-cert = certificatedigest4daa8c5fe6c...\n" \
 "      trusted-cert = othercertificatedigest6631bf...\n" \
 "  For a full-featured config see man openfortivpn(1). \n"
+
+
+/**
+ * fixes #35 in a patchy way without flow change.
+ * "introduces" libcurl, so the packaging requirements are made,
+ * and further development can be started without that plumbing stuff
+ * to eventually migrate http operations to be done via libcurl
+ *
+ * TODO: obsolete this function after the migration
+ */
+static void url_encode_str(const char* src, char* dest)
+{
+	CURL *curl = NULL;
+	size_t len = -1;
+	log_debug("URL-encoding strings with CURL\n");
+	len = strnlen(src, FIELD_SIZE);
+	curl = curl_easy_init();
+	if (!curl) {
+		log_warn("Failed at curl_easy_init(), no URL encoding.\n");
+		goto url_enc_exit;
+	}
+	char *output = curl_easy_escape(curl, src, len);
+	if (!output) {
+		log_warn("Failed at curl_easy_escape(), no URL encoded\n");
+		goto url_enc_exit;
+	}
+	/* assuming output is good here, 1 char can tripple on output */
+	strncpy(dest, output, len*3);
+	curl_free(output);
+url_enc_exit:
+	curl_easy_cleanup(curl);
+	return;
+}
+
+
+static int sanitize_web_param_buf(char *config_str)
+{
+	int ret_val = -1;
+	char * str_safe = (char*)malloc((FIELD_SIZE*3)+1);
+	if (!str_safe) {
+		log_error("Failed to allocate buffer for URL escaped string.\n");
+		return ret_val;
+	}
+	url_encode_str(config_str, str_safe);
+	/* replace data in current config */
+	/* NOTE: still possible problems with long passwords */
+	ret_val = 0;
+	if (config_str != strncpy(config_str, str_safe, FIELD_SIZE)) {
+		log_error("Failed to copy escaped buffer back");
+		ret_val = -2;
+	}
+	free(str_safe);
+	return ret_val;
+}
 
 int main(int argc, char **argv)
 {
@@ -319,6 +374,13 @@ int main(int argc, char **argv)
 	if (cfg.password[0] == '\0') {
 		log_error("Specify a password.\n");
 		goto user_error;
+	}
+	/* url escape username and password: */
+	if (0 != sanitize_web_param_buf(cfg.username)) {
+		goto exit;
+	}
+	if (0 != sanitize_web_param_buf(cfg.password)) {
+		goto exit;
 	}
 
 	log_debug("Config host = \"%s\"\n", cfg.gateway_host);
