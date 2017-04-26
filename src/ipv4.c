@@ -431,7 +431,7 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 	int ret = -1;
 	FILE *file;
 	struct stat stat;
-	char ns1[27], ns2[27]; // 11 + 15 + 1
+	char ns1[28], ns2[28]; // 11 + 15 + 1 + 1
 	char *buffer, *line;
 
 	tunnel->ipv4.ns_are_new = 1;
