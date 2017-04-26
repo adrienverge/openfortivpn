@@ -177,29 +177,29 @@ int ppp_interface_is_up(struct tunnel *tunnel)
 
 static int get_gateway_host_ip(struct tunnel *tunnel)
 {
-    struct addrinfo *result = NULL;
-    //struct addrinfo *res = NULL;
-    struct addrinfo hints;
-    int err;
+	struct addrinfo *result = NULL;
+	struct addrinfo hints;
+	int err;
 
-    memset(&hints, 0, sizeof(struct addrinfo));
-    hints.ai_family = AF_INET;
+	memset(&hints, 0, sizeof(struct addrinfo));
+	hints.ai_family = AF_INET;
 
-    err = getaddrinfo(tunnel->config->gateway_host, NULL, &hints, &result);
-    if (err != 0) {
-	if (err == EAI_SYSTEM) {
-	    log_error("gethostbyname: %s\n", strerror(errno));
-	} else {
-	    log_error("gethostbyname: %s\n", gai_strerror(err));
+	err = getaddrinfo(tunnel->config->gateway_host, NULL, &hints, &result);
+	if (err != 0) {
+		if (err == EAI_SYSTEM) {
+			log_error("gethostbyname: %s\n", strerror(errno));
+		} else {
+			log_error("gethostbyname: %s\n", gai_strerror(err));
+		}
+		return 1;
 	}
-	return 1;
-    }
 
-    tunnel->config->gateway_ip = *(&((struct sockaddr_in*)result->ai_addr)->sin_addr);
-    freeaddrinfo(result);
-    setenv("VPN_GATEWAY", inet_ntoa(tunnel->config->gateway_ip), 0);
+	tunnel->config->gateway_ip = *(&((struct sockaddr_in*)
+	                                 result->ai_addr)->sin_addr);
+	freeaddrinfo(result);
+	setenv("VPN_GATEWAY", inet_ntoa(tunnel->config->gateway_ip), 0);
 
-    return 0;
+	return 0;
 }
 
 /*
