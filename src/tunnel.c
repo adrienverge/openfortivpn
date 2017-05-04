@@ -48,8 +48,16 @@ static int on_ppp_if_up(struct tunnel *tunnel)
 	log_info("Interface %s is UP.\n", tunnel->ppp_iface);
 
 	if (tunnel->config->set_routes) {
+		int ret;
+
 		log_info("Setting new routes...\n");
-		ipv4_set_tunnel_routes(tunnel);
+
+		ret = ipv4_set_tunnel_routes(tunnel);
+
+		if (ret != 0) {
+			log_warn("Adding route table is incomplete.\n");
+			log_warn("Please check route table\n");
+		}
 	}
 
 	if (tunnel->config->set_dns) {

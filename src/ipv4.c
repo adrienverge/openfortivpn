@@ -279,6 +279,9 @@ int ipv4_protect_tunnel_route(struct tunnel *tunnel)
 
 err_destroy:
 	route_destroy(def_rt);
+	tunnel->ipv4.route_to_vpn_is_added = 0;
+	log_warn("Protecting tunnel route has faild. \
+But this can be working except for some cases.\n");
 
 	return ret;
 }
@@ -378,11 +381,10 @@ int ipv4_set_tunnel_routes(struct tunnel *tunnel)
 {
 	int ret = ipv4_protect_tunnel_route(tunnel);
 
-	if (ret == 0) {
-		if (tunnel->ipv4.split_routes)
-			return ipv4_set_split_routes (tunnel);
-		else
-			return ipv4_set_default_routes (tunnel);
+	if (tunnel->ipv4.split_routes)
+		return ipv4_set_split_routes (tunnel);
+	else if (ret == 0) {
+		return ipv4_set_default_routes (tunnel);
 	} else {
 		return ret;
 	}
@@ -400,28 +402,30 @@ int ipv4_restore_routes(struct tunnel *tunnel)
 		if (ret != 0)
 			log_warn("Could not delete route to vpn server (%s).\n",
 			         err_ipv4_str(ret));
-	} else {
-		log_debug("Route to vpn server is not added\n");
-	}
 
-	if (tunnel->ipv4.split_routes)
-		goto out;
+		if (tunnel->ipv4.split_routes)
+			goto out;
 
-	ret = ipv4_del_route(ppp_rt);
-	if (ret != 0)
-		log_warn("Could not delete route through tunnel (%s).\n",
-		         err_ipv4_str(ret));
+		ret = ipv4_del_route(ppp_rt);
+		if (ret != 0)
+			log_warn("Could not delete route through tunnel (%s).\n",
+			         err_ipv4_str(ret));
 
-	// Restore the default route
-	// It seems to not be automatically restored on all linux distributions
-	ret = ipv4_set_route(def_rt);
-	if (ret != 0)
-		log_warn("Could not restore default route (%s). Already restored?\n",
-		         err_ipv4_str(ret));
+		// Restore the default route
+		// It seems to not be automatically restored on all linux distributions
+		ret = ipv4_set_route(def_rt);
+		if (ret != 0) {
+			log_warn("Could not restore default route (%s). \
+Already restored?\n",
+			         err_ipv4_str(ret));
+		}
 
-	route_destroy(ppp_rt);
+		route_destroy(ppp_rt);
 out:
-	route_destroy(def_rt);
+		route_destroy(def_rt);
+	} else {
+		log_debug("Route to vpn server was not added\n");
+	}
 
 	return 0;
 }
