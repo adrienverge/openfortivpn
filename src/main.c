@@ -24,7 +24,7 @@
 
 #define USAGE \
 "Usage: openfortivpn [<host>:<port>] [-u <user>] [-p <pass>]\n" \
-"                    [--realm=<realm>] [--no-routes]\n" \
+"                    [--realm=<realm>] [--otp=<otp>] [--no-routes]\n" \
 "                    [--no-dns] [--pppd-no-peerdns]\n" \
 "                    [--pppd-log=<file>] [--pppd-plugin=<file>]\n" \
 "                    [--ca-file=<file>] [--user-cert=<file>]\n" \
@@ -149,7 +149,7 @@ int main(int argc, char **argv)
 		/* getopt_long stores the option index here. */
 		int c, option_index = 0;
 
-		c = getopt_long(argc, argv, "hvqc:u:p:",
+		c = getopt_long(argc, argv, "hvqc:u:p:o:",
 		                long_options, &option_index);
 
 		/* Detect the end of the options. */
