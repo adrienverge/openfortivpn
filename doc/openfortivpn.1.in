@@ -151,3 +151,9 @@ pppd-use-peerdns = 1
 insecure-ssl = 0
 .br
 cipher-list = HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4
+.br
+# These specify a script to run on VPN up/down events
+.br
+up-script = /usr/local/bin/custom_up.sh
+.br
+down-script = /usr/local/bin/custom_down.sh

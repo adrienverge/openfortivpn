@@ -67,6 +67,16 @@ static int on_ppp_if_up(struct tunnel *tunnel)
 
 	log_info("Tunnel is up and running.\n");
 
+	if (tunnel->config->up_script) {
+                int ret;
+
+                log_info("Running script on tunnel up: %s\n", tunnel->config->up_script);
+                ret = run_script(tunnel->config->up_script, "up");
+                if (ret != 0) {
+                        log_warn("Failed to run external script on up event\n");
+                }
+        }
+
 	return 0;
 }
 
@@ -83,6 +93,16 @@ static int on_ppp_if_down(struct tunnel *tunnel)
 		log_info("Removing VPN nameservers...\n");
 		ipv4_del_nameservers_from_resolv_conf(tunnel);
 	}
+
+        if (tunnel->config->down_script) {
+                int ret;
+
+                log_info("Running script on interface down: %s\n", tunnel->config->down_script);
+                ret = run_script(tunnel->config->down_script, "down");
+                if (ret != 0) {
+                        log_warn("Failed to run external script on down event\n");
+                }
+        }
 
 	return 0;
 }
@@ -585,3 +605,34 @@ err_tunnel:
 
 	return ret;
 }
+
+/*
+ * Run user defined scripts/programs in reaction to VPN events
+ */
+int run_script (char *script_path, char *event_name)
+{
+        char *argv[] = 
+        {
+                script_path,
+                event_name,
+                0
+        };
+        int ret = -1;
+        pid_t script_pid;
+
+        script_pid = fork();
+        if (script_pid == 0) {
+                // child
+                execvp(script_path, &argv[0]);
+                log_error("execve: failed to execute script\n");
+                exit(127);  // "command not found"
+        } else if (script_pid < 0) {
+                log_error("Failed to fork new process\n");
+        } else {
+		// parent
+		ret = 0;
+	}
+
+        return ret;
+}
+

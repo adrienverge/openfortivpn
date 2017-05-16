@@ -76,6 +76,8 @@ struct vpn_config {
 	int			verify_cert;
 	int			insecure_ssl;
 	char			*cipher_list;
+	char			*up_script;
+	char			*down_script;
 	struct x509_digest	*cert_whitelist;
 };
 
@@ -95,6 +97,8 @@ struct vpn_config {
 		(cfg)->cipher_list = NULL; \
 		(cfg)->cert_whitelist = NULL; \
 		(cfg)->use_syslog = 0; \
+		(cfg)->up_script = NULL; \
+		(cfg)->down_script = NULL; \
 	} while (0)
 
 #define destroy_vpn_config(cfg) \
@@ -106,7 +110,9 @@ struct vpn_config {
 	free((cfg)->ca_file); \
 	free((cfg)->user_cert); \
 	free((cfg)->user_key); \
-	free((cfg)->cipher_list);
+	free((cfg)->cipher_list); \
+	free((cfg)->up_script); \
+	free((cfg)->down_script);
 
 int add_trusted_cert(struct vpn_config *cfg, const char *digest);
 

@@ -83,4 +83,6 @@ int ssl_connect(struct tunnel *tunnel);
 
 int run_tunnel(struct vpn_config *config);
 
+int run_script(char *script_path, char *event_name);
+
 #endif

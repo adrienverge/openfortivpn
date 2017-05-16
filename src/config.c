@@ -229,6 +229,10 @@ int load_config(struct vpn_config *cfg, const char *filename)
 			cfg->insecure_ssl = insecure_ssl;
 		} else if (strcmp(key, "cipher-list") == 0) {
 			cfg->cipher_list = strdup(val);
+		} else if (strcmp(key, "up-script") == 0) {
+			cfg->up_script = strdup(val);
+		} else if (strcmp(key, "down-script") == 0) {
+			cfg->down_script = strdup(val);
 		} else {
 			log_warn("Bad key in config file: \"%s\".\n", key);
 			goto err_free;
