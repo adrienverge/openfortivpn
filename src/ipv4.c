@@ -23,6 +23,18 @@
 #include <sys/ioctl.h>
 #include <sys/stat.h>
 
+#ifdef __APPLE__
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/time.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <net/if.h>
+#include <net/route.h>
+#include <limits.h>
+#include <stdint.h>
+#endif
+
 #include "log.h"
 #include "tunnel.h"
 
@@ -88,13 +100,14 @@ static inline int route_destroy(struct rtentry *route)
 static int ipv4_get_route(struct rtentry *route)
 {
 	size_t size;
-	int fd;
 	char buffer[0x1000];
 	char *start, *line;
 	char *saveptr1 = NULL, *saveptr2 = NULL;
 
 	log_debug("ip route show %s\n", ipv4_show_route(route));
 
+#ifndef __APPLE__
+	int fd;
 	// Cannot stat, mmap not lseek this special /proc file
 	fd = open("/proc/net/route", O_RDONLY);
 	if (fd == -1) {
@@ -106,8 +119,105 @@ static int ipv4_get_route(struct rtentry *route)
 		return ERR_IPV4_SEE_ERRNO;
 	}
 	close(fd);
+#else
+	FILE *fp;
+	int len = sizeof(buffer)-1;
+	char *saveptr3 = NULL;
+
+	// Open the command for reading
+	fp = popen("/usr/sbin/netstat -f inet -rn", "r");
+	if (fp == NULL) {
+		return ERR_IPV4_SEE_ERRNO;
+	}
+
+	line = buffer;
+	// Read the output a line at a time
+	while (fgets(line, len, fp) != NULL) {
+		len -= strlen(line);
+		line += strlen(line);
+	}
+	size = sizeof(buffer)-1 - len;
+	pclose(fp);
+
+	// reserve enough memory (256 shorts)
+	// to make sure not to access out of bounds later,
+	// for ipv4 only unsigned short is allowed
+
+	unsigned short flag_table[256];
+	memset(flag_table, 0, 256*sizeof(short));
+
+	// fill the table now (I'm still looking for a more elagant way to do this),
+	// also, not all flags might be allowed in the context of ipv4
+#ifdef RTF_PROTO1     // Protocol specific routing flag #1
+	flag_table['1'] = RTF_PROTO1 & USHRT_MAX;
+#endif
+#ifdef RTF_PROTO2     // Protocol specific routing flag #2
+	flag_table['2'] = RTF_PROTO2 & USHRT_MAX;
+#endif
+#ifdef RTF_PROTO3     // Protocol specific routing flag #3
+	flag_table['3'] = RTF_PROTO3 & USHRT_MAX;
+#endif
+#ifdef RTF_BLACKHOLE  // Just discard packets (during updates)
+	flag_table['B'] = RTF_BLACKHOLE & USHRT_MAX;
+#endif
+#ifdef RTF_BROADCAST  // The route represents a broadcast address
+	flag_table['b'] = RTF_BROADCAST & USHRT_MAX;
+#endif
+#ifdef RTF_CLONING    // Generate new routes on use
+	flag_table['C'] = RTF_CLONING & USHRT_MAX;
+#endif
+#ifdef RTF_PRCLONING  // Protocol-specified generate new routes on use
+	flag_table['c'] = RTF_PRCLONING & USHRT_MAX;
+#endif
+#ifdef RTF_DYNAMIC    // Created dynamically (by redirect)
+	flag_table['D'] = RTF_DYNAMIC & USHRT_MAX;
+#endif
+#ifdef RTF_GATEWAY    // Destination requires forwarding by intermediary
+	flag_table['G'] = RTF_GATEWAY & USHRT_MAX;
+#endif
+#ifdef RTF_HOST       // Host entry (net otherwise)
+	flag_table['H'] = RTF_HOST & USHRT_MAX;
+#endif
+#ifdef RTF_IFSCOPE    // Route is associated with an interface scope
+	flag_table['I'] = RTF_IFSCOPE & USHRT_MAX;
+#endif
+#ifdef RTF_IFREF      // Route is holding a reference to the interface
+	flag_table['i'] = RTF_IFREF & USHRT_MAX;
+#endif
+#ifdef RTF_LLINFO     // Valid protocol to link address translation
+	flag_table['L'] = RTF_LLINFO & USHRT_MAX;
+#endif
+#ifdef RTF_MODIFIED   // Modified dynamically (by redirect)
+	flag_table['M'] = RTF_MODIFIED & USHRT_MAX;
+#endif
+#ifdef RTF_MULTICAST  // The route represents a multicast address
+	flag_table['m'] = RTF_MULTICAST & USHRT_MAX;
+#endif
+#ifdef RTF_REJECT     // Host or net unreachable
+	flag_table['R'] = RTF_REJECT & USHRT_MAX;
+#endif
+#ifdef RTF_ROUTER     // Host is a default router
+	flag_table['r'] = RTF_ROUTER & USHRT_MAX;
+#endif
+#ifdef RTF_STATIC     // Manually added
+	flag_table['S'] = RTF_STATIC & USHRT_MAX;
+#endif
+#ifdef RTF_UP         // Route usable
+	flag_table['U'] = RTF_UP & USHRT_MAX;
+#endif
+#ifdef RTF_WASCLONED  // Route was generated as a result of cloning
+	flag_table['W'] = RTF_WASCLONED & USHRT_MAX;
+#endif
+#ifdef RTF_XRESOLVE   // External daemon translates proto to link address
+	flag_table['X'] = RTF_XRESOLVE & USHRT_MAX;
+#endif
+#ifdef RTF_PROXY      // Proxying; cloned routes will not be scoped
+	flag_table['Y'] = RTF_PROXY & USHRT_MAX;
+#endif
+#endif
+
 	if (size == 0) {
-		log_debug("/proc/net/route is empty.\n");
+		log_debug("routing table is empty.\n");
 		return ERR_IPV4_PROC_NET_ROUTE;
 	}
 	buffer[size] = '\0';
@@ -115,40 +225,145 @@ static int ipv4_get_route(struct rtentry *route)
 	// Skip first line
 	start = index(buffer, '\n');
 	if (start == NULL) {
-		log_debug("/proc/net/route is malformed.\n");
+		log_debug("routing table is malformed.\n");
 		return ERR_IPV4_PROC_NET_ROUTE;
 	}
 	start++;
+
+#ifdef __APPLE__
+	// Skip 3 more line
+	start = index(start, '\n');
+	start = index(++start, '\n');
+	start = index(++start, '\n');
+	if (start == NULL) {
+		log_debug("routing table is malformed.\n");
+		return ERR_IPV4_PROC_NET_ROUTE;
+	}
+
+#endif
 
 	// Look for the route
 	line = strtok_r(start, "\n", &saveptr1);
 	while (line != NULL) {
 		char *iface;
 		uint32_t dest, mask, gtw;
-		unsigned short flags, irtt;
+		unsigned short flags;
+#ifndef __APPLE__
+		unsigned short irtt;
 		short metric;
 		unsigned long mtu, window;
+
 		iface = strtok_r(line, "\t", &saveptr2);
 		dest = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
 		gtw = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
 		flags = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
-		strtok_r(NULL, "\t", &saveptr2);
-		strtok_r(NULL, "\t", &saveptr2);
+		strtok_r(NULL, "\t", &saveptr2); // "RefCnt"
+		strtok_r(NULL, "\t", &saveptr2); // "Use"
 		metric = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
 		mask = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
 		mtu = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
 		window = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
 		irtt = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
+#else
+		char tmp_ip_string[16];
+		struct in_addr dstaddr;
+		int pos;
+		char *tmpstr;
+
+		log_debug("line: %s\n", line);
+
+		saveptr3=NULL;
+		dest = UINT32_MAX;
+		mask = UINT32_MAX;
+		// "Destination"
+		tmpstr = strtok_r(line, " ", &saveptr2);
+		log_debug("- Destination: %s\n", tmpstr);
+		// replace literal "default" route by IPV4 numbers-and-dots notation
+		if (strncmp(tmpstr, "default", 7) == 0) {
+			dest = 0;
+			mask = 0;
+		} else {
+			int is_mask_set = 0;
+			char* tmp_position;
+			int dot_count = -1;
+
+			if (index(tmpstr, '/') != NULL) {
+				// 123.123.123.123/30 style
+				// 123.123.123/24 style
+				// 123.123/24 style
+
+				// break CIDR up into address and mask part
+				strcpy(tmp_ip_string, strtok_r(tmpstr, "/", &saveptr3));
+				mask = 0;
+				mask = strtol(saveptr3, NULL, 10);
+				// convert from CIDR to ipv4 mask
+				mask = 0xffffffff << (32-mask);
+
+				is_mask_set = 1;
+			} else if (inet_aton(tmpstr, &dstaddr)) {
+				// 123.123.123.123 style
+				// 123.123.123 style
+				// 123.123 style
+
+				strcpy(tmp_ip_string, tmpstr);
+				is_mask_set = 0;
+			}
+
+			// Process Destination IP Expression
+			tmp_position = tmp_ip_string;
+			while (tmp_position != NULL) {
+				++dot_count;
+				tmp_position = index(++tmp_position, '.');
+			}
+
+			for (int i = dot_count; i < 3; i++) {
+				strcat(tmp_ip_string, ".0");
+			}
+
+			if (inet_aton(tmp_ip_string, &dstaddr)) {
+				dest = dstaddr.s_addr;
+			}
+
+			if (!is_mask_set) {
+				// convert from CIDR to ipv4 mask
+				mask = 0xffffffff << (32-((dot_count + 1) * 8));
+			}
+
+		}
+		log_debug("- Destionation IP Hex: %x\n", dest);
+		log_debug("- Destionation Mask Hex: %x\n", mask);
+		// "Gateway"
+		gtw = 0;
+		if (inet_aton(strtok_r(NULL, " ", &saveptr2), &dstaddr)) {
+			gtw=dstaddr.s_addr;
+			log_debug("- Gateway Mask Hex: %x\n", gtw);
+		}
+		// "Flags"
+		tmpstr = strtok_r(NULL, " ", &saveptr2);
+		flags = 0;
+		// this is the reason for the 256 entries mentioned above
+		for (pos=0; pos<strlen(tmpstr); pos++)
+			flags |= flag_table[(unsigned char)tmpstr[pos]];
+		strtok_r(NULL, " ", &saveptr2); // "Refs"
+		strtok_r(NULL, " ", &saveptr2); // "Use"
+		iface = strtok_r(NULL, " ", &saveptr2); // "Netif"
+		log_debug("- Interface: %s\n", iface);
+		log_debug("\n");
+#endif
 
 		if (dest == route_dest(route).s_addr &&
 		    mask == route_mask(route).s_addr) {
 			// Requested route has been found
 			route_gtw(route).s_addr = gtw;
 			route->rt_flags = flags;
+#ifndef __APPLE__
+			// we do not have these values from MacOSX netstat,
+			// so stay with defaults denoted by values of 0
 			route->rt_metric = metric;
 			route->rt_mtu = mtu;
 			route->rt_window = window;
 			route->rt_irtt = irtt;
+#endif
 			strncpy(route_iface(route), iface,
 			        ROUTE_IFACE_LEN - 1);
 			return 0;
