@@ -25,8 +25,8 @@
 #define USAGE \
 "Usage: openfortivpn [<host>:<port>] [-u <user>] [-p <pass>]\n" \
 "                    [--realm=<realm>] [--otp=<otp>] [--no-routes]\n" \
-"                    [--no-dns] [--pppd-no-peerdns]\n" \
-"                    [--pppd-log=<file>] [--pppd-plugin=<file>]\n" \
+"                    [--no-dns] [--pppd-no-peerdns] [--pppd-log=<file>]\n" \
+"                    [--pppd-ipparam=<string>] [--pppd-plugin=<file>]\n" \
 "                    [--ca-file=<file>] [--user-cert=<file>]\n" \
 "                    [--user-key=<file>] [--trusted-cert=<digest>]\n" \
 "                    [--use-syslog] [-c <file>] [-v|-q]\n" \
@@ -79,6 +79,8 @@
 "                                <file>.\n" \
 "  --pppd-plugin=<file>          Use specified pppd plugin instead of configuring\n" \
 "                                resolver and routes directly.\n" \
+"  --pppd-ipparam=<string>       Provides  an extra parameter to the ip-up, ip-pre-up\n" \
+"                                and ip-down scripts. see man (8) pppd\n" \
 "  -v                            Increase verbosity. Can be used multiple times\n" \
 "                                to be even more verbose.\n" \
 "  -q                            Decrease verbosity. Can be used multiple times\n" \
@@ -141,6 +143,7 @@ int main(int argc, char **argv)
 		{"cipher-list",     required_argument, 0, 0},
 		{"pppd-log",        required_argument, 0, 0},
 		{"pppd-plugin",     required_argument, 0, 0},
+		{"pppd-ipparam",    required_argument, 0, 0},
 		{"plugin",          required_argument, 0, 0}, // deprecated
 		{0, 0, 0, 0}
 	};
@@ -175,6 +178,11 @@ int main(int argc, char **argv)
 			if (strcmp(long_options[option_index].name,
 			           "pppd-plugin") == 0) {
 				cfg.pppd_plugin = optarg;
+				break;
+			}
+			if (strcmp(long_options[option_index].name,
+			           "pppd-ipparam") == 0) {
+				cfg.pppd_ipparam = optarg;
 				break;
 			}
 			// --plugin is deprecated, --pppd-plugin should be used
