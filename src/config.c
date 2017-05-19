@@ -195,6 +195,10 @@ int load_config(struct vpn_config *cfg, const char *filename)
 				continue;
 			}
 			cfg->pppd_use_peerdns = pppd_use_peerdns;
+		} else if (strcmp(key, "pppd-log") == 0) {
+			cfg->pppd_log = strdup(val);
+		} else if (strcmp(key, "pppd-plugin") == 0) {
+			cfg->pppd_plugin = strdup(val);
 		} else if (strcmp(key, "use-syslog") == 0) {
 			int use_syslog = strtob(val);
 			if (use_syslog < 0) {

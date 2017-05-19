@@ -103,6 +103,8 @@ struct vpn_config {
 		free((cfg)->cert_whitelist); \
 		(cfg)->cert_whitelist = tmp; \
 	} \
+	free((cfg)->pppd_log); \
+	free((cfg)->pppd_plugin); \
 	free((cfg)->ca_file); \
 	free((cfg)->user_cert); \
 	free((cfg)->user_key); \

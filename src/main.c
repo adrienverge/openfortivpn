@@ -24,7 +24,7 @@
 
 #define USAGE \
 "Usage: openfortivpn [<host>:<port>] [-u <user>] [-p <pass>]\n" \
-"                    [--realm=<realm>] [--no-routes]\n" \
+"                    [--realm=<realm>] [--otp=<otp>] [--no-routes]\n" \
 "                    [--no-dns] [--pppd-no-peerdns]\n" \
 "                    [--pppd-log=<file>] [--pppd-plugin=<file>]\n" \
 "                    [--ca-file=<file>] [--user-cert=<file>]\n" \
@@ -77,7 +77,7 @@
 "                                and do not make pppd rewrite /etc/resolv.conf\n" \
 "  --pppd-log=<file>             Set pppd in debug mode and save its logs into\n" \
 "                                <file>.\n" \
-"  --pppd-plugin=<file>          Use specified pppd plugin instead of configuring\n"\
+"  --pppd-plugin=<file>          Use specified pppd plugin instead of configuring\n" \
 "                                resolver and routes directly.\n" \
 "  -v                            Increase verbosity. Can be used multiple times\n" \
 "                                to be even more verbose.\n" \
@@ -149,7 +149,7 @@ int main(int argc, char **argv)
 		/* getopt_long stores the option index here. */
 		int c, option_index = 0;
 
-		c = getopt_long(argc, argv, "hvqc:u:p:",
+		c = getopt_long(argc, argv, "hvqc:u:p:o:",
 		                long_options, &option_index);
 
 		/* Detect the end of the options. */

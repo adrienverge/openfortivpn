@@ -148,6 +148,14 @@ set-routes = 1
 .br
 pppd-use-peerdns = 1
 .br
+# aternatively, use a specific pppd plugin instead
+.br
+# pppd-plugin = /usr/lib/pppd/default/some-plugin.so
+.br
+# for debugging pppd write logs here
+.br
+# pppd-log = /var/log/pppd.log
+.br
 insecure-ssl = 0
 .br
 cipher-list = HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4
