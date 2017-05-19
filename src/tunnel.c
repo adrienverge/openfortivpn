@@ -97,7 +97,8 @@ static int on_ppp_if_down(struct tunnel *tunnel)
         if (tunnel->config->down_script) {
                 int ret;
 
-                log_info("Running script on interface down: %s\n", tunnel->config->down_script);
+                log_info("Running script on interface down: %s\n",
+                         tunnel->config->down_script);
                 ret = run_script(tunnel->config->down_script, "down");
                 if (ret != 0) {
                         log_warn("Failed to run external script on down event\n");
@@ -635,4 +636,3 @@ int run_script (char *script_path, char *event_name)
 
         return ret;
 }
-
