@@ -86,10 +86,10 @@ For other distros, you'll need to build and install from source:
 
   On macOS :
   ```
-  brew install automake autoconf homebrew/versions/openssl101
+  brew install automake autoconf openssl@1.0
   aclocal && autoconf && automake --add-missing
-  export CPPFLAGS="-I/usr/local/opt/openssl101/include"
-  export LDFLAGS="-L/usr/local/opt/openssl101/lib"
+  export CPPFLAGS="-I/usr/local/opt/openssl/include"
+  export LDFLAGS="-L/usr/local/opt/openssl/lib"
   ./configure --prefix=/usr/local --sysconfdir=/etc
   make
   sudo make install
