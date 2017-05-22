@@ -113,7 +113,8 @@ static int pppd_run(struct tunnel *tunnel)
 			"nodefaultroute", ":1.1.1.1", "nodetach",
 			"lcp-max-configure", "40", "mru", "1354",
 			NULL, NULL, NULL, NULL,
-			NULL, NULL, NULL
+			NULL, NULL, NULL, NULL,
+			NULL
 		};
 		// Dynamically get first NULL pointer so that changes of
 		// args above don't need code changes here
@@ -133,6 +134,10 @@ static int pppd_run(struct tunnel *tunnel)
 		if (tunnel->config->pppd_plugin) {
 			args[i++] = "plugin";
 			args[i++] = tunnel->config->pppd_plugin;
+		}
+		if (tunnel->config->pppd_ipparam) {
+			args[i++] = "ipparam";
+			args[i++] = tunnel->config->pppd_ipparam;
 		}
 		// Assert that we didn't use up all NULL pointers above
 		assert (i < sizeof (args) / sizeof (*args));
