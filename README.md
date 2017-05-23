@@ -62,6 +62,7 @@ For other distros, you'll need to build and install from source:
     * Arch Linux: `automake` `autoconf` `openssl`
     * Gentoo Linux: `net-dialup/ppp`
     * macOS: `automake` `autoconf` `homebrew/versions/openssl101`
+    * openSUSE: `gcc` `automake` `autoconf` `libopenssl-devel`
 
   If You manage your kernel yourself, ensure to compile those modules:
 
