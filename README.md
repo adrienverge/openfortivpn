@@ -121,6 +121,13 @@ Cmnd_Alias  OPENFORTIVPN = /usr/bin/openfortivpn
 described in #54, a malicious user could use `--pppd-plugin` and `--pppd-log`
 options to divert the program's behaviour.
 
+
+Known Issue
+-----------
+
+* 'Default Route Mode' doesn't work in Mac OS X
+
+
 Contributing
 ------------
 
