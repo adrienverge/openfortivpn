@@ -295,6 +295,9 @@ static void *pppd_write(void *arg)
 			          len - written);
 			if (n == -1) {
 				log_error("write: %s\n", strerror(errno));
+#ifdef __APPLE__
+				sem_post(&sem_if_config);
+#endif
 				goto err_free_buf;
 			}
 			written += n;
