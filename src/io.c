@@ -536,7 +536,7 @@ error:
 
 static void sig_handler(int signo)
 {
-	if (signo == SIGINT)
+	if (signo == SIGINT || signo == SIGTERM)
 		sem_post(&sem_stop_io);
 }
 
@@ -575,15 +575,17 @@ int io_loop(struct tunnel *tunnel)
 
 // on osx this prevents the program from being stopped with ctrl-c
 #ifndef __APPLE__
-	// Disable SIGINT for the future spawned threads
+	// Disable SIGINT and SIGTERM for the future spawned threads
 	sigset_t sigset, oldset;
 	sigemptyset(&sigset);
 	sigaddset(&sigset, SIGINT);
+	sigaddset(&sigset, SIGTERM);
 	pthread_sigmask(SIG_BLOCK, &sigset, &oldset);
 #endif
 
 	// Set signal handler
-	if (signal(SIGINT, sig_handler) == SIG_ERR)
+	if (signal(SIGINT, sig_handler) == SIG_ERR ||
+	    signal(SIGTERM, sig_handler) == SIG_ERR)
 		goto err_signal;
 
 	if (pthread_create(&pty_read_thread, NULL, pppd_read, tunnel))
