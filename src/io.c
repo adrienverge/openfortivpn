@@ -30,18 +30,31 @@
 #include <netinet/tcp.h>
 #include <pthread.h>
 #include <signal.h>
+
 #ifdef __APPLE__
+
 /* Mac OS X defines sem_init but actually does not implement them */
-#include <dispatch/dispatch.h>
+#include <mach/mach.h>
 
-typedef dispatch_semaphore_t	sem_t;
+typedef semaphore_t os_semaphore_t;
 
-#define sem_init(psem,x,val)	*psem = dispatch_semaphore_create(val)
-#define sem_post(psem)		dispatch_semaphore_signal(*psem)
-#define sem_wait(psem)		dispatch_semaphore_wait(*psem, \
-					DISPATCH_TIME_FOREVER)
+#define SEM_INIT(sem, x, value)	semaphore_create(mach_task_self(), sem, \
+								SYNC_POLICY_FIFO, value)
+#define SEM_WAIT(sem)			semaphore_wait(*sem)
+#define SEM_POST(sem)			semaphore_signal(*sem)
+#define SEM_DESTROY(sem)		semaphore_destroy(mach_task_self(), *sem)
 
-#define sem_destroy(psem)	dispatch_release(*psem)
+#else
+
+#include <semaphore.h>
+
+typedef sem_t os_semaphore_t;
+
+#define SEM_INIT(sem, x, value)	sem_init(sem, x, value)
+#define SEM_WAIT(sem)			sem_wait(sem)
+#define SEM_POST(sem)			sem_post(sem)
+#define SEM_DESTROY(sem)		sem_destroy(sem)
+
 #endif
 
 #include "hdlc.h"
@@ -116,7 +129,7 @@ static struct ppp_packet *pool_pop(struct ppp_packet_pool *pool)
 {
 	struct ppp_packet *first = pool->list_head;
 
-	//sem_wait(&pool->sem);
+	//SEM_WAIT(&pool->sem);
 	pthread_mutex_lock(&pool->mutex);
 	while (pool->list_head == NULL)
 		pthread_cond_wait(&pool->new_data, &pool->mutex);
@@ -130,9 +143,9 @@ static struct ppp_packet *pool_pop(struct ppp_packet_pool *pool)
 	return first;
 }
 
-static sem_t sem_pppd_ready;
-static sem_t sem_if_config;
-static sem_t sem_stop_io;
+static os_semaphore_t sem_pppd_ready;
+static os_semaphore_t sem_if_config;
+static os_semaphore_t sem_stop_io;
 
 /*
  * Thread to read bytes from the pppd pty, convert them to ppp packets and add
@@ -174,7 +187,7 @@ static void *pppd_read(void *arg)
 			continue;
 		} else if (first_time) {
 			// pppd did talk, now we can write to it if we want
-			sem_post(&sem_pppd_ready);
+			SEM_POST(&sem_pppd_ready);
 			first_time = 0;
 		}
 		off_w += n;
@@ -235,7 +248,7 @@ static void *pppd_read(void *arg)
 
 exit:
 	// Send message to main thread to stop other threads
-	sem_post(&sem_stop_io);
+	SEM_POST(&sem_stop_io);
 	return NULL;
 }
 
@@ -252,7 +265,7 @@ static void *pppd_write(void *arg)
 	FD_SET(tunnel->pppd_pty, &write_fd);
 
 	// Write for pppd to talk first, otherwise unpredictable
-	sem_wait(&sem_pppd_ready);
+	SEM_WAIT(&sem_pppd_ready);
 
 	log_debug("pppd_write thread\n");
 
@@ -295,9 +308,6 @@ static void *pppd_write(void *arg)
 			          len - written);
 			if (n == -1) {
 				log_error("write: %s\n", strerror(errno));
-#ifdef __APPLE__
-				sem_post(&sem_if_config);
-#endif
 				goto err_free_buf;
 			}
 			written += n;
@@ -313,7 +323,7 @@ err_free_buf:
 	}
 
 	// Send message to main thread to stop other threads
-	sem_post(&sem_stop_io);
+	SEM_POST(&sem_stop_io);
 	return NULL;
 }
 
@@ -441,14 +451,14 @@ static void *ssl_read(void *arg)
 				strcat(line, "]");
 				log_info("Got addresses: %s\n", line);
 			} else if (packet_is_end_negociation(packet)) {
-				sem_post(&sem_if_config);
+				SEM_POST(&sem_if_config);
 			}
 		}
 	}
 
 exit:
 	// Send message to main thread to stop other threads
-	sem_post(&sem_stop_io);
+	SEM_POST(&sem_stop_io);
 	return NULL;
 }
 
@@ -490,7 +500,7 @@ static void *ssl_write(void *arg)
 	}
 
 	// Send message to main thread to stop other threads
-	sem_post(&sem_stop_io);
+	SEM_POST(&sem_stop_io);
 	return NULL;
 }
 
@@ -506,7 +516,7 @@ static void *if_config(void *arg)
 	log_debug("if_config thread\n");
 
 	// Wait for the right moment to configure IP interface
-	sem_wait(&sem_if_config);
+	SEM_WAIT(&sem_if_config);
 
 	while (1) {
 		if (ppp_interface_is_up(tunnel)) {
@@ -530,14 +540,14 @@ static void *if_config(void *arg)
 	return NULL;
 error:
 	// Send message to main thread to stop other threads
-	sem_post(&sem_stop_io);
+	SEM_POST(&sem_stop_io);
 	return NULL;
 }
 
 static void sig_handler(int signo)
 {
 	if (signo == SIGINT || signo == SIGTERM)
-		sem_post(&sem_stop_io);
+		SEM_POST(&sem_stop_io);
 }
 
 int io_loop(struct tunnel *tunnel)
@@ -550,9 +560,9 @@ int io_loop(struct tunnel *tunnel)
 	pthread_t ssl_write_thread;
 	pthread_t if_config_thread;
 
-	sem_init(&sem_pppd_ready, 0, 0);
-	sem_init(&sem_if_config, 0, 0);
-	sem_init(&sem_stop_io, 0, 0);
+	SEM_INIT(&sem_pppd_ready, 0, 0);
+	SEM_INIT(&sem_if_config, 0, 0);
+	SEM_INIT(&sem_stop_io, 0, 0);
 
 	init_ppp_packet_pool(&tunnel->ssl_to_pty_pool);
 	init_ppp_packet_pool(&tunnel->pty_to_ssl_pool);
@@ -609,7 +619,7 @@ int io_loop(struct tunnel *tunnel)
 #endif
 
 	// Wait for one of the thread to ask termination
-	sem_wait(&sem_stop_io);
+	SEM_WAIT(&sem_stop_io);
 
 	log_info("Cancelling threads...\n");
 	pthread_cancel(if_config_thread);
@@ -629,9 +639,9 @@ int io_loop(struct tunnel *tunnel)
 	destroy_ppp_packet_pool(&tunnel->pty_to_ssl_pool);
 	destroy_ppp_packet_pool(&tunnel->ssl_to_pty_pool);
 
-	sem_destroy(&sem_stop_io);
-	sem_destroy(&sem_if_config);
-	sem_destroy(&sem_pppd_ready);
+	SEM_DESTROY(&sem_stop_io);
+	SEM_DESTROY(&sem_if_config);
+	SEM_DESTROY(&sem_pppd_ready);
 
 	return 0;
 
