@@ -588,6 +588,10 @@ int io_loop(struct tunnel *tunnel)
 	    signal(SIGTERM, sig_handler) == SIG_ERR)
 		goto err_signal;
 
+	// Ignore SIGHUP
+	if (signal(SIGHUP, SIG_IGN) == SIG_ERR)
+		goto err_signal;
+
 	if (pthread_create(&pty_read_thread, NULL, pppd_read, tunnel))
 		goto err_thread;
 	if (pthread_create(&pty_write_thread, NULL, pppd_write, tunnel))
