@@ -294,7 +294,6 @@ static int ipv4_get_route(struct rtentry *route)
 
 				// break CIDR up into address and mask part
 				strcpy(tmp_ip_string, strtok_r(tmpstr, "/", &saveptr3));
-				mask = 0;
 				mask = strtol(saveptr3, NULL, 10);
 				// convert from CIDR to ipv4 mask
 				mask = 0xffffffff << (32-mask);
@@ -330,8 +329,8 @@ static int ipv4_get_route(struct rtentry *route)
 			}
 
 		}
-		log_debug("- Destionation IP Hex: %x\n", dest);
-		log_debug("- Destionation Mask Hex: %x\n", mask);
+		log_debug("- Destination IP Hex: %x\n", dest);
+		log_debug("- Destination Mask Hex: %x\n", mask);
 		// "Gateway"
 		gtw = 0;
 		if (inet_aton(strtok_r(NULL, " ", &saveptr2), &dstaddr)) {
@@ -357,7 +356,7 @@ static int ipv4_get_route(struct rtentry *route)
 			route_gtw(route).s_addr = gtw;
 			route->rt_flags = flags;
 #ifndef __APPLE__
-			// we do not have these values from MacOSX netstat,
+			// we do not have these values from Mac OS X netstat,
 			// so stay with defaults denoted by values of 0
 			route->rt_metric = metric;
 			route->rt_mtu = mtu;
