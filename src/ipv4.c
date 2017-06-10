@@ -511,7 +511,7 @@ int ipv4_add_split_vpn_route(struct tunnel *tunnel, char *dest, char *mask,
                              char *gateway)
 {
 	struct rtentry *route;
-	char env_var[21];
+	char env_var[22];
 
 	if (tunnel->ipv4.split_routes == MAX_SPLIT_ROUTES)
 		return ERR_IPV4_NO_MEM;
