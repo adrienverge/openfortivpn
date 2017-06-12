@@ -85,7 +85,7 @@ For other distros, you'll need to build and install from source:
 
     On Linux:
     ```shell
-    aclocal && autoconf && automake --add-missing
+    ./autogen.sh
     ./configure --prefix=/usr/local --sysconfdir=/etc
     make
     sudo make install
@@ -95,7 +95,7 @@ For other distros, you'll need to build and install from source:
     ```shell
     export CPPFLAGS="-I/usr/local/opt/openssl/include"
     export LDFLAGS="-L/usr/local/opt/openssl/lib"
-    aclocal && autoconf && automake --add-missing
+    ./autogen.sh
     ./configure --prefix=/usr/local --sysconfdir=/etc
     make
     sudo make install
