@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.68])
-AC_INIT([openfortivpn], [1.2.0])
+AC_INIT([openfortivpn], [1.3.1])
 AC_CONFIG_SRCDIR([src/main.c])
 AM_INIT_AUTOMAKE([foreign subdir-objects])
 
@@ -35,6 +35,10 @@ AC_TYPE_UINT8_T
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([bzero gethostbyname inet_ntoa memmove memset memmem select socket strerror strstr strtol])
+
+AC_DEFINE_UNQUOTED([SYSCONFDIR],["`eval echo $sysconfdir`"])
+AC_SUBST([SYSCONFDIR],["`eval echo $sysconfdir`"])
+AC_CONFIG_FILES([doc/openfortivpn.1])
 
 #AC_CONFIG_FILES([Makefile])
 AC_OUTPUT(Makefile)

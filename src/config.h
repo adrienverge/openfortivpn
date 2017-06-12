@@ -58,15 +58,18 @@ struct vpn_config {
 	uint16_t	gateway_port;
 	char		username[FIELD_SIZE + 1];
 	char		password[FIELD_SIZE + 1];
+	char		otp[FIELD_SIZE + 1];
 	char		cookie[COOKIE_SIZE + 1];
 	char            realm[FIELD_SIZE + 1];
 
 	int	set_routes;
 	int	set_dns;
 	int     pppd_use_peerdns;
+	int     use_syslog;
 
 	char	*pppd_log;
 	char	*pppd_plugin;
+	char	*pppd_ipparam;
 
 	char	                *ca_file;
 	char	                *user_cert;
@@ -84,13 +87,16 @@ struct vpn_config {
 		(cfg)->realm[0] = '\0'; \
 		(cfg)->username[0] = '\0'; \
 		(cfg)->password[0] = '\0'; \
+		(cfg)->otp[0] = '\0'; \
 		(cfg)->pppd_log = NULL; \
 		(cfg)->pppd_plugin = NULL; \
+		(cfg)->pppd_ipparam = NULL; \
 		(cfg)->ca_file = NULL; \
 		(cfg)->user_cert = NULL; \
 		(cfg)->user_key = NULL; \
 		(cfg)->cipher_list = NULL; \
 		(cfg)->cert_whitelist = NULL; \
+		(cfg)->use_syslog = 0; \
 	} while (0)
 
 #define destroy_vpn_config(cfg) \
@@ -99,6 +105,9 @@ struct vpn_config {
 		free((cfg)->cert_whitelist); \
 		(cfg)->cert_whitelist = tmp; \
 	} \
+	free((cfg)->pppd_log); \
+	free((cfg)->pppd_ipparam); \
+	free((cfg)->pppd_plugin); \
 	free((cfg)->ca_file); \
 	free((cfg)->user_cert); \
 	free((cfg)->user_key); \

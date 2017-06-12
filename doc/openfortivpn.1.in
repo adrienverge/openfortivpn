@@ -1,4 +1,4 @@
-.TH OPENFORTIVPN 1 "September 28, 2016" ""
+.TH OPENFORTIVPN 1 "November 10, 2016" ""
 
 .SH NAME
 openfortivpn \- Client for PPP+SSL VPN tunnel services
@@ -14,12 +14,14 @@ openfortivpn \- Client for PPP+SSL VPN tunnel services
 [\fB\-\-ca-file=\fI<file>\fR]
 [\fB\-\-user-cert=\fI<file>\fR]
 [\fB\-\-user-key=\fI<file>\fR]
+[\fB\-\-use-syslog\fR]
 [\fB\-\-trusted-cert=\fI<digest>\fR]
 [\fB\-\-insecure-ssl\fR]
 [\fB\-\-cipher-list=\fI<ciphers>\fR]
 [\fB\-\-pppd-no-peerdns\fR]
 [\fB\-\-pppd-log=\fI<file>\fR]
 [\fB\-\-pppd-plugin=\fI<file>\fR]
+[\fB\-\-pppd-ipparam=\fI<string>\fR]
 [\fB\-c\fR \fI<file>\fR]
 [\fB\-v|\-q\fR]
 .br
@@ -43,7 +45,7 @@ Show this help message and exit.
 Show version and exit.
 .TP
 \fB\-c \fI<file>\fR, \fB\-\-config=\fI<file>\fR
-Specify a custom config file (default: /etc/openfortivpn/config).
+Specify a custom config file (default: @SYSCONFDIR@/openfortivpn/config).
 .TP
 \fB\-u \fI<user>\fR, \fB\-\-username=\fI<user>\fR
 VPN account username.
@@ -73,6 +75,9 @@ with a certificate.
 Use specified PEM-encoded key if the server requires authentication with
 a certificate.
 .TP
+\fB\-\-use-syslog\fR
+Log to syslog instead of terminal.
+.TP
 \fB\-\-trusted-cert=\fI<digest>\fR
 Trust a given gateway. If classical SSL certificate validation fails, the
 gateway certificate will be matched against this value. \fI<digest>\fR is the
@@ -94,7 +99,7 @@ $ openssl s_client -connect \fI<host:port>\fR
 (default: HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4)
 .TP
 \fB\-\-pppd-no-peerdns\fR
-Do not ask peer ppp server for DNS addresses and do not make pppd rewrite 
+Do not ask peer ppp server for DNS addresses and do not make pppd rewrite
 /etc/resolv.conf.
 .TP
 \fB\-\-pppd-log=\fI<file>\fR
@@ -103,6 +108,11 @@ Set pppd in debug mode and save its logs into \fI<file>\fR.
 \fB\-\-pppd-plugin=\fI<file>\fR
 Use specified pppd plugin instead of configuring the resolver and routes
 directly.
+.TP
+\fB\-\-pppd-ipparam=\fI<string>\fR
+Provides an extra parameter to the ip-up, ip-pre-up and ip-down scripts. see man
+.BR pppd(8)
+for further details
 .TP
 \fB\-v\fR
 Increase verbosity. Can be used multiple times to be even more verbose.
@@ -113,7 +123,7 @@ Decrease verbosity. Can be used multiple times to be even less verbose.
 .SH CONFIG FILE
 Options can be taken from a configuration file. Options passed in the command
 line will override those from the config file, though. The default config file
-is /etc/openfortivpn/config, but this can be set using the \fB\-c\fR option.
+is @SYSCONFDIR@/openfortivpn/config, but this can be set using the \fB\-c\fR option.
 .TP
 A config file looks like:
 # this is a comment
@@ -126,17 +136,17 @@ username = foo
 .br
 password = bar
 .br
-user-cert = /etc/openfortivpn/user-cert.pem
+user-cert = @SYSCONFDIR@/openfortivpn/user-cert.pem
 .br
-user-key =/etc/openfortivpn/user-key.pem
+user-key = @SYSCONFDIR@/openfortivpn/user-key.pem
 .br
 trusted-cert = certificatedigest4daa8c5fe6c...
 .br
 trusted-cert = othercertificatedigest6631bf...
 .br
-# This would specify a ca bundle instead of system-wide store 
+# This would specify a ca bundle instead of system-wide store
 .br
-# ca-file = /etc/openfortivpn/ca-bundle.pem
+# ca-file = @SYSCONFDIR@/openfortivpn/ca-bundle.pem
 .br
 set-dns = 1
 .br
@@ -144,6 +154,16 @@ set-routes = 1
 .br
 pppd-use-peerdns = 1
 .br
+# aternatively, use a specific pppd plugin instead
+.br
+# pppd-plugin = /usr/lib/pppd/default/some-plugin.so
+.br
+# for debugging pppd write logs here
+.br
+# pppd-log = /var/log/pppd.log
+.br
+# pass an ipparam string to pppd
+# pppd-ipparam = somestringtopasstopppd
 insecure-ssl = 0
 .br
 cipher-list = HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4

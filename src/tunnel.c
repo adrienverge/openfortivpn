@@ -32,7 +32,11 @@
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <openssl/err.h>
+#ifndef __APPLE__
 #include <pty.h>
+#else
+#include <util.h>
+#endif
 #include <sys/wait.h>
 #include <assert.h>
 
@@ -44,8 +48,16 @@ static int on_ppp_if_up(struct tunnel *tunnel)
 	log_info("Interface %s is UP.\n", tunnel->ppp_iface);
 
 	if (tunnel->config->set_routes) {
+		int ret;
+
 		log_info("Setting new routes...\n");
-		ipv4_set_tunnel_routes(tunnel);
+
+		ret = ipv4_set_tunnel_routes(tunnel);
+
+		if (ret != 0) {
+			log_warn("Adding route table is incomplete. "
+			         "Please check route table.\n");
+		}
 	}
 
 	if (tunnel->config->set_dns) {
@@ -79,6 +91,7 @@ static int pppd_run(struct tunnel *tunnel)
 {
 	pid_t pid;
 	int amaster;
+#ifndef __APPLE__
 	struct termios termp;
 
 	termp.c_cflag = B9600;
@@ -86,6 +99,10 @@ static int pppd_run(struct tunnel *tunnel)
 	termp.c_cc[VMIN] = 1;
 
 	pid = forkpty(&amaster, NULL, &termp, NULL);
+#else
+	pid = forkpty(&amaster, NULL, NULL, NULL);
+#endif
+
 	if (pid == -1) {
 		log_error("forkpty: %s\n", strerror(errno));
 		return 1;
@@ -96,7 +113,8 @@ static int pppd_run(struct tunnel *tunnel)
 			"nodefaultroute", ":1.1.1.1", "nodetach",
 			"lcp-max-configure", "40", "mru", "1354",
 			NULL, NULL, NULL, NULL,
-			NULL, NULL, NULL
+			NULL, NULL, NULL, NULL,
+			NULL
 		};
 		// Dynamically get first NULL pointer so that changes of
 		// args above don't need code changes here
@@ -116,6 +134,10 @@ static int pppd_run(struct tunnel *tunnel)
 		if (tunnel->config->pppd_plugin) {
 			args[i++] = "plugin";
 			args[i++] = tunnel->config->pppd_plugin;
+		}
+		if (tunnel->config->pppd_ipparam) {
+			args[i++] = "ipparam";
+			args[i++] = tunnel->config->pppd_ipparam;
 		}
 		// Assert that we didn't use up all NULL pointers above
 		assert (i < sizeof (args) / sizeof (*args));
@@ -156,6 +178,8 @@ int ppp_interface_is_up(struct tunnel *tunnel)
 {
 	struct ifaddrs *ifap, *ifa;
 
+	log_debug("Got Address: %s\n", inet_ntoa(tunnel->ipv4.ip_addr));
+
 	if (getifaddrs(&ifap)) {
 		log_error("getifaddrs: %s\n", strerror(errno));
 		return 0;
@@ -164,10 +188,21 @@ int ppp_interface_is_up(struct tunnel *tunnel)
 	for (ifa = ifap; ifa != NULL; ifa = ifa->ifa_next) {
 		if (strstr(ifa->ifa_name, "ppp") != NULL
 		    && ifa->ifa_flags & IFF_UP) {
-			strncpy(tunnel->ppp_iface, ifa->ifa_name,
-			        ROUTE_IFACE_LEN - 1);
-			freeifaddrs(ifap);
-			return 1;
+			if (&(ifa->ifa_addr->sa_family) != NULL
+			    && ifa->ifa_addr->sa_family == AF_INET) {
+				struct in_addr if_ip_addr =
+				        cast_addr(ifa->ifa_addr)->sin_addr;
+
+				log_debug("Interface Name: %s\n", ifa->ifa_name);
+				log_debug("Interface Addr: %s\n", inet_ntoa(if_ip_addr));
+
+				if (tunnel->ipv4.ip_addr.s_addr == if_ip_addr.s_addr) {
+					strncpy(tunnel->ppp_iface, ifa->ifa_name,
+					        ROUTE_IFACE_LEN - 1);
+					freeifaddrs(ifap);
+					return 1;
+				}
+			}
 		}
 	}
 	freeifaddrs(ifap);
@@ -352,6 +387,11 @@ int ssl_connect(struct tunnel *tunnel)
 		return 1;
 	}
 
+	// Load the OS default CA files
+	if (!SSL_CTX_set_default_verify_paths(tunnel->ssl_context)) {
+		log_error("Could not load OS OpenSSL files.\n");
+	}
+
 	if (tunnel->config->ca_file) {
 		if (!SSL_CTX_load_verify_locations(
 		            tunnel->ssl_context,
@@ -458,6 +498,10 @@ int run_tunnel(struct vpn_config *config)
 	struct tunnel tunnel;
 
 	memset(&tunnel, 0, sizeof(tunnel));
+#ifdef __APPLE__
+	// initialize value
+	tunnel.ipv4.split_routes = 0;
+#endif
 	tunnel.config = config;
 	tunnel.on_ppp_if_up = on_ppp_if_up;
 	tunnel.on_ppp_if_down = on_ppp_if_down;

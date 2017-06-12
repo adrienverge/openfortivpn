@@ -30,12 +30,23 @@
 #define _TUNNEL_H
 
 #include <openssl/ssl.h>
+#ifndef __APPLE__
 #include <semaphore.h>
+#endif
 #include <unistd.h>
 
 #include "config.h"
 #include "io.h"
 #include "ipv4.h"
+
+#ifdef __APPLE__
+/*
+ * Get rid of OSX 10.7 and greater deprecation warnings
+ * see for instance https://wiki.openssl.org/index.php/Hostname_validation
+ * this pragma selectively suppresses this type of warnings in clang
+ */
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#endif
 
 enum tunnel_state {
 	STATE_DOWN,

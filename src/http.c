@@ -325,6 +325,140 @@ static int get_auth_cookie(struct tunnel *tunnel, char *buf)
 	return ret;
 }
 
+static
+int try_otp_auth(struct tunnel *tunnel, const char *buffer, char **res)
+{
+	char data[256];
+	char path[40];
+	char tmp [40];
+	char prompt [80];
+	const char *t = NULL, *n = NULL, *v = NULL, *e = NULL;
+	const char *s = buffer;
+	char *d = data;
+	const char *p = NULL;
+	/* Length-check for destination buffer */
+#define SPACE_AVAILABLE(sz) (sizeof (data) - (d - data) >= (sz))
+	/* Get the form action */
+	s = strcasestr (s, "<FORM");
+	if (s == NULL)
+		return -1;
+	s = strcasestr (s + 5, "ACTION=\"");
+	if (s == NULL)
+		return -1;
+	s += 8;
+	e = strchr(s, '"');
+	if (e == NULL)
+		return -1;
+	if (e - s + 1 > sizeof (path))
+		return -1;
+	strncpy (path, s, e - s);
+	path [e - s] = '\0';
+	/* Try to get password prompt, asume it starts with 'Please'
+	 * Fall back to default prompt if not found/parseable
+	 */
+	p = strstr (s, "Please");
+	if (p) {
+		e = strchr (p, '<');
+		if (e != NULL) {
+			if (e - p + 1 < sizeof (prompt)) {
+				strncpy (prompt, p, e - p);
+				prompt [e - p] = '\0';
+				p = prompt;
+			} else {
+				p = NULL;
+			}
+		} else {
+			p = NULL;
+		}
+	}
+	if (p == NULL)
+		p = "Please enter one-time password:";
+	/* Search for all inputs */
+	while ((s = strcasestr (s, "<INPUT"))) {
+		s += 6;
+		/* check if we found parameters for a later INPUT
+		 * during last round
+		 */
+		if (s < t || s < n || (v && s < v))
+			return -1;
+		t = strcasestr (s, "TYPE=\"");
+		n = strcasestr (s, "NAME=\"");
+		v = strcasestr (s, "VALUE=\"");
+		if (t == NULL)
+			return -1;
+		if (n == NULL)
+			continue;
+		n += 6;
+		t += 6;
+		if  (  0 == strncmp (t, "hidden", 6) || 0 == strncmp (t, "password", 8)) {
+			/* We try to be on the safe side
+			 * and url-encode the variable name
+			 */
+			/* Append '&' if we found something in last round */
+			if (d > data) {
+				if (!SPACE_AVAILABLE (1))
+					return -1;
+				*d++ = '&';
+			}
+			e = strchr (n, '"');
+			if (e == NULL)
+				return -1;
+			if (e - n + 1 > sizeof (tmp))
+				return -1;
+			strncpy (tmp, n, e - n);
+			tmp [e - n] = '\0';
+			if (!SPACE_AVAILABLE (3 * (e - n) + 1))
+				return -1;
+			url_encode (d, tmp);
+			d += strlen (d);
+			if (!SPACE_AVAILABLE(1))
+				return -1;
+			*d++ = '=';
+		}
+		if (0 == strncmp (t, "hidden", 6)) {
+			/* Require value for hidden fields */
+			if (v == NULL)
+				return -1;
+			v += 7;
+			e = strchr (v, '"');
+			if (e == NULL)
+				return -1;
+			if (e - v + 1 > sizeof (tmp))
+				return -1;
+			strncpy (tmp, v, e - v);
+			tmp [e - v] = '\0';
+			if (!SPACE_AVAILABLE (3 * (e - v) + 1))
+				return -1;
+			url_encode (d, tmp);
+			d += strlen (d);
+		} else if (0 == strncmp (t, "password", 8)) {
+			struct vpn_config *cfg = tunnel->config;
+			size_t l;
+			v = NULL;
+			if (cfg->otp [0] == '\0') {
+				read_password (p, cfg->otp, FIELD_SIZE);
+				if (cfg->otp [0] == '\0') {
+					log_error ("No OTP specified\n");
+					return 0;
+				}
+			}
+			l = strlen (cfg->otp);
+			if (!SPACE_AVAILABLE (3 * l + 1))
+				return -1;
+			url_encode (d, cfg->otp);
+			d += strlen (d);
+		} else if (0 == strncmp (t, "submit", 6)) {
+			/* avoid adding another '&' */
+			n = v = e = NULL;
+		}
+	}
+	if (!SPACE_AVAILABLE(1))
+		return -1;
+	*d++ = '\0';
+	return http_request(tunnel, "POST", path, data, res);
+#undef SPACE_AVAILABLE
+}
+
 /*
  * Authenticates to gateway by sending username and password.
  *
@@ -354,6 +488,13 @@ int auth_log_in(struct tunnel *tunnel)
 	ret = http_request(tunnel, "POST", "/remote/logincheck", data, &res);
 	if (ret != 1)
 		goto end;
+
+	/* Probably one-time password required */
+	if (0 == strncmp(res, "HTTP/1.1 401 Authorization Required\r\n", 37)) {
+		ret = try_otp_auth(tunnel, res, &res);
+		if (ret != 1)
+			goto end;
+	}
 
 	if (strncmp(res, "HTTP/1.1 200 OK\r\n", 17)) {
 		ret = ERR_HTTP_BAD_RES_CODE;

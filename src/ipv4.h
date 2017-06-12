@@ -18,6 +18,26 @@
 #ifndef _IPV4_H
 #define _IPV4_H
 
+#ifdef __APPLE__
+
+/* This structure gets passed by the SIOCADDRT and SIOCDELRT calls. */
+struct rtentry {
+	unsigned long   rt_hash;        /* hash key for lookups         */
+	struct sockaddr rt_dst;         /* target address               */
+	struct sockaddr rt_gateway;     /* gateway addr (RTF_GATEWAY)   */
+	struct sockaddr rt_genmask;     /* target network mask (IP)     */
+	short           rt_flags;
+	short           rt_refcnt;
+	unsigned long   rt_use;
+	struct ifnet    *rt_ifp;
+	short           rt_metric;      /* +1 for binary compatibility! */
+	char            *rt_dev;        /* forcing the device at add    */
+	unsigned long   rt_mss;         /* per route MTU/Window         */
+	unsigned long   rt_mtu;         /* compatibility 		*/
+	unsigned long   rt_window;      /* Window clamping              */
+	unsigned short  rt_irtt;        /* Initial RTT                  */
+};
+#endif
 #include <net/route.h>
 
 #define ERR_IPV4_SEE_ERRNO	-1
@@ -42,7 +62,7 @@ static inline const char *err_ipv4_str(int code)
 }
 
 #define ROUTE_IFACE_LEN 32
-#define MAX_SPLIT_ROUTES 32
+#define MAX_SPLIT_ROUTES 128
 
 struct ipv4_config {
 	struct in_addr	ip_addr;
@@ -51,6 +71,7 @@ struct ipv4_config {
 	struct in_addr	ns2_addr;
 	int		ns_are_new; // were ns already in /etc/resolv.conf?
 	int		split_routes;
+	int		route_to_vpn_is_added;
 
 	struct rtentry	def_rt; // default route
 	struct rtentry	gtw_rt; // route to access VPN gateway
