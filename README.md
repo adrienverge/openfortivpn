@@ -83,7 +83,6 @@ For other distros, you'll need to build and install from source:
 
 2.  Build and install.
 
-    On Linux:
     ```shell
     ./autogen.sh
     ./configure --prefix=/usr/local --sysconfdir=/etc
@@ -91,15 +90,8 @@ For other distros, you'll need to build and install from source:
     sudo make install
     ```
 
-    On macOS:
-    ```shell
-    export CPPFLAGS="-I/usr/local/opt/openssl/include"
-    export LDFLAGS="-L/usr/local/opt/openssl/lib"
-    ./autogen.sh
-    ./configure --prefix=/usr/local --sysconfdir=/etc
-    make
-    sudo make install
-    ```
+    If you need to specify the openssl location you can use the
+    `--with-openssl` option.
 
 
 
