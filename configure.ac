@@ -110,6 +110,23 @@ AC_DEFUN([OPENSSL_DEVEL],
 # run it:
 OPENSSL_DEVEL
 
+# Verify OpenSSL < 1.1.0
+AC_MSG_CHECKING([for OpenSSL version < 1.1.0])
+AC_EGREP_CPP(yes,
+  [#include <openssl/crypto.h>
+   #if (OPENSSL_VERSION_NUMBER < 0x10100000L)
+   yes
+   #endif
+  ],
+  [
+    AC_MSG_RESULT(yes)
+  ],
+  [
+    AC_MSG_RESULT(no)
+    AC_MSG_FAILURE([OpenSSL version too new])
+  ]
+)
+
 # Checks for libraries.
 AC_CHECK_LIB([crypto], [ERR_peek_last_error], [], [AC_MSG_ERROR([Cannot find libcrypto.])])
 AC_CHECK_LIB([pthread], [pthread_create], [], [AC_MSG_ERROR([Cannot find libpthread.])])
