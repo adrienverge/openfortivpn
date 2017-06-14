@@ -15,3 +15,5 @@ missing
 openfortivpn
 .dirstamp
 doc/*.1
+config.sub
+config.guess

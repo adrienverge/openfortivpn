@@ -10,6 +10,9 @@ AM_INIT_AUTOMAKE([foreign subdir-objects])
 AC_PROG_CC
 AC_GNU_SOURCE
 
+# Helps support multiarch by setting 'host_os' and 'host_cpu'
+AC_CANONICAL_HOST
+
 AM_SILENT_RULES([yes])
 
 AC_DEFUN([OPENSSL_DEVEL],
@@ -21,7 +24,7 @@ AC_DEFUN([OPENSSL_DEVEL],
 		[  --with-openssl=<path>     path containing OpenSSL header and library subdirs],
 		[OPENSSL_lib_check="$with_openssl/lib64 $with_openssl/lib $with_openssl/lib64/openssl $with_openssl/lib/openssl"
 		  OPENSSL_inc_check="$with_openssl/include $with_openssl/include/openssl"],
-		[OPENSSL_lib_check="/usr/local/openssl/lib64 /usr/local/openssl/lib /usr/local/lib64/openssl /usr/local/lib/openssl /opt/openssl/lib64 /opt/openssl/lib /usr/local/opt/openssl/lib64 /usr/local/opt/openssl/lib /usr/lib64/openssl /usr/lib/openssl /usr/local/lib64 /usr/local/lib /usr/lib64 /usr/lib"
+		[OPENSSL_lib_check="/usr/local/openssl/lib64 /usr/local/openssl/lib /usr/local/lib64/openssl /usr/local/lib/openssl /opt/openssl/lib64 /opt/openssl/lib /usr/local/opt/openssl/lib64 /usr/local/opt/openssl/lib /usr/lib64/openssl /usr/lib/openssl /usr/local/lib64 /usr/local/lib /usr/lib64 /usr/lib /lib"
 		  OPENSSL_inc_check="/usr/local/openssl/include /usr/local/include/openssl /opt/openssl/include /usr/local/opt/openssl/include /usr/local/include/openssl /usr/local/include /usr/include/openssl /usr/include"])
 	AC_ARG_WITH(openssl-lib,
 		[  --with-openssl-lib=<path> directory path of OpenSSL library],
@@ -39,7 +42,9 @@ AC_DEFUN([OPENSSL_DEVEL],
 		do
 			if test -d "$dir" && \
 				( test -f "$dir/libssl.so" ||
-				  test -f "$dir/libssl.a" )
+				  test -f "$dir/libssl.a"  ||
+				  test -f "$dir/${host_cpu}-${host_os}/libssl.so" ||
+				  test -f "$dir/${host_cpu}-${host_os}/libssl.a" )
 			then
 				ac_cv_openssl_lib=$dir
 				break
