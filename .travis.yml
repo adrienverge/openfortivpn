@@ -18,6 +18,6 @@ cache:
 script:
   - ./tests/lint/run.sh
   - >
-      aclocal && autoconf && automake --add-missing
+      ./autogen.sh
       && ./configure --prefix=/usr --sysconfdir=/etc
       && make
