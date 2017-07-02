@@ -566,31 +566,33 @@ static int ipv4_set_split_routes(struct tunnel *tunnel)
 static int ipv4_set_default_routes(struct tunnel *tunnel)
 {
 	int ret;
-	struct rtentry *def_rt = &tunnel->ipv4.def_rt;
 	struct rtentry *ppp_rt = &tunnel->ipv4.ppp_rt;
 
 	route_init(ppp_rt);
 
-	// Delete the current default route
-	log_debug("Deleting the current default route...\n");
-	ret = ipv4_del_route(def_rt);
-	if (ret != 0)
-		log_warn("Could not delete the current default route (%s).\n",
-		         err_ipv4_str(ret));
-
 	// Set the new default route
-	// ip route add to 0/0 dev ppp0
+	// Emulate default routes as two "half internet" routes
+	// This allows for e.g. DHCP renewing default routes without
+	// breaking the tunnel
+	log_debug("Setting new half-internet routes...\n");
 	route_dest(ppp_rt).s_addr = inet_addr("0.0.0.0");
-	route_mask(ppp_rt).s_addr = inet_addr("0.0.0.0");
-	route_gtw(ppp_rt).s_addr = inet_addr("0.0.0.0");
+	route_mask(ppp_rt).s_addr = inet_addr("128.0.0.0");
 	strncpy(route_iface(ppp_rt), tunnel->ppp_iface, ROUTE_IFACE_LEN - 1);
 
-	log_debug("Setting new default route...\n");
 	ret = ipv4_set_route(ppp_rt);
 	if (ret == ERR_IPV4_SEE_ERRNO && errno == EEXIST) {
-		log_warn("Default route exists already.\n");
+		log_warn("0.0.0.0/1 route exists already.\n");
 	} else if (ret != 0) {
-		log_warn("Could not set the new default route (%s).\n",
+		log_warn("Could not set the new 0.0.0.0/1 route (%s).\n",
+		         err_ipv4_str(ret));
+	}
+
+	route_dest(ppp_rt).s_addr = inet_addr("128.0.0.0");
+	ret = ipv4_set_route(ppp_rt);
+	if (ret == ERR_IPV4_SEE_ERRNO && errno == EEXIST) {
+		log_warn("128.0.0.0/1 route exists already.\n");
+	} else if (ret != 0) {
+		log_warn("Could not set the new 128.0.0.0/1 route (%s).\n",
 		         err_ipv4_str(ret));
 	}
 
@@ -623,23 +625,6 @@ int ipv4_restore_routes(struct tunnel *tunnel)
 		if (ret != 0)
 			log_warn("Could not delete route to vpn server (%s).\n",
 			         err_ipv4_str(ret));
-
-		if (tunnel->ipv4.split_routes==0) {
-			ret = ipv4_del_route(ppp_rt);
-			if (ret != 0)
-				log_warn("Could not delete route through tunnel (%s).\n",
-				         err_ipv4_str(ret));
-
-			// Restore the default route. It seems not to be
-			// automatically restored on all linux distributions
-			ret = ipv4_set_route(def_rt);
-			if (ret != 0) {
-				log_warn("Could not restore default route (%s). "
-				         "Already restored?\n",
-				         err_ipv4_str(ret));
-			}
-
-		}
 	} else {
 		log_debug("Route to vpn server was not added\n");
 	}
