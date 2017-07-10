@@ -16,7 +16,7 @@ AC_CANONICAL_HOST
 AM_SILENT_RULES([yes])
 
 # Checks for libraries.
-PKG_CHECK_MODULES(OPENSSL, [libcrypto < 1.1.0 libssl < 1.1.0])
+PKG_CHECK_MODULES(OPENSSL, [libcrypto libssl])
 AC_CHECK_LIB([pthread], [pthread_create], [], [AC_MSG_ERROR([Cannot find libpthread.])])
 AC_CHECK_LIB([util], [forkpty], [], [AC_MSG_ERROR([Cannot find libutil.])])
 
