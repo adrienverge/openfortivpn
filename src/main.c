@@ -181,24 +181,24 @@ int main(int argc, char **argv)
 			}
 			if (strcmp(long_options[option_index].name,
 			           "pppd-log") == 0) {
-				cfg.pppd_log = optarg;
+				cfg.pppd_log = strdup(optarg);
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
 			           "pppd-plugin") == 0) {
-				cfg.pppd_plugin = optarg;
+				cfg.pppd_plugin = strdup(optarg);
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
 			           "pppd-ipparam") == 0) {
-				cfg.pppd_ipparam = optarg;
+				cfg.pppd_ipparam = strdup(optarg);
 				break;
 			}
 			// --plugin is deprecated, --pppd-plugin should be used
 			if (cfg.pppd_plugin == NULL &&
 			    strcmp(long_options[option_index].name,
 			           "plugin") == 0) {
-				cfg.pppd_plugin = optarg;
+				cfg.pppd_plugin = strdup(optarg);
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
