@@ -43,6 +43,45 @@
 #include "http.h"
 #include "log.h"
 
+static int run_script(struct tunnel *tunnel)
+{
+	pid_t pid;
+	char *argv[] = { NULL, NULL, NULL };
+	argv[0] = tunnel->config->script;
+
+	if( argv[0] == NULL ) return 0;
+
+	if (tunnel->state == STATE_CONNECTING) {
+		argv[1] = "up";
+		setenv("VPN_INTERFACE", tunnel->ppp_iface, 1);
+		setenv("VPN_INTERFACE_IP", inet_ntoa(tunnel->ipv4.ip_addr), 1);
+		if(tunnel->ipv4.ns1_addr.s_addr != 0) setenv("VPN_NS1_IP", inet_ntoa(tunnel->ipv4.ns1_addr),1);
+		if(tunnel->ipv4.ns2_addr.s_addr != 0) setenv("VPN_NS2_IP", inet_ntoa(tunnel->ipv4.ns2_addr),1);
+	} else {
+		argv[1] = "down";
+	}
+
+	pid = fork();
+	if (pid < 0) {
+		log_error("run_script: fork failed, %s\n", strerror(errno));
+		return 1;
+	} else if (pid == 0) {
+		close(tunnel->ssl_socket);
+		execvp(argv[0], argv);
+		exit(errno);
+	} else {
+		int wst;
+		waitpid(pid, &wst, 0);
+		if( WIFEXITED(wst) && WEXITSTATUS(wst) ) {
+			log_error("run_script: failed to execute script %s, exit code: %d\n", argv[0], WEXITSTATUS(wst));
+			return 1;
+		} else {
+			log_info("run_script: successfully executed script %s\n", argv[0]);
+		}
+	}
+	return 0;
+}
+
 static int on_ppp_if_up(struct tunnel *tunnel)
 {
 	log_info("Interface %s is UP.\n", tunnel->ppp_iface);
@@ -65,6 +104,8 @@ static int on_ppp_if_up(struct tunnel *tunnel)
 		ipv4_add_nameservers_to_resolv_conf(tunnel);
 	}
 
+	run_script(tunnel);
+
 	log_info("Tunnel is up and running.\n");
 
 	return 0;
@@ -73,6 +114,8 @@ static int on_ppp_if_up(struct tunnel *tunnel)
 static int on_ppp_if_down(struct tunnel *tunnel)
 {
 	log_info("Setting ppp interface down.\n");
+
+	run_script(tunnel);
 
 	if (tunnel->config->set_routes) {
 		log_info("Restoring routes...\n");

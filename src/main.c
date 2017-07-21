@@ -27,6 +27,7 @@
 "                    [--realm=<realm>] [--otp=<otp>] [--no-routes]\n" \
 "                    [--no-dns] [--pppd-no-peerdns] [--pppd-log=<file>]\n" \
 "                    [--pppd-ipparam=<string>] [--pppd-plugin=<file>]\n" \
+"                    [--script=<path to script>]\n" \
 "                    [--ca-file=<file>] [--user-cert=<file>]\n" \
 "                    [--user-key=<file>] [--trusted-cert=<digest>]\n" \
 "                    [--use-syslog] [-c <file>] [-v|-q]\n" \
@@ -81,6 +82,8 @@
 "                                resolver and routes directly.\n" \
 "  --pppd-ipparam=<string>       Provides  an extra parameter to the ip-up, ip-pre-up\n" \
 "                                and ip-down scripts. see man (8) pppd\n" \
+"  --script=<path to script>     This script will be executed after tunnel setup and before\n" \
+"                                teardown\n" \
 "  -v                            Increase verbosity. Can be used multiple times\n" \
 "                                to be even more verbose.\n" \
 "  -q                            Decrease verbosity. Can be used multiple times\n" \
@@ -144,6 +147,7 @@ int main(int argc, char **argv)
 		{"pppd-log",        required_argument, 0, 0},
 		{"pppd-plugin",     required_argument, 0, 0},
 		{"pppd-ipparam",    required_argument, 0, 0},
+		{"script",          required_argument, 0, 0},
 		{"plugin",          required_argument, 0, 0}, // deprecated
 		{0, 0, 0, 0}
 	};
@@ -183,6 +187,11 @@ int main(int argc, char **argv)
 			if (strcmp(long_options[option_index].name,
 			           "pppd-ipparam") == 0) {
 				cfg.pppd_ipparam = optarg;
+				break;
+			}
+			if (strcmp(long_options[option_index].name,
+			           "script") == 0) {
+				cfg.script = strdup(optarg);
 				break;
 			}
 			// --plugin is deprecated, --pppd-plugin should be used

@@ -70,6 +70,7 @@ struct vpn_config {
 	char	*pppd_log;
 	char	*pppd_plugin;
 	char	*pppd_ipparam;
+	char	*script;
 
 	char	                *ca_file;
 	char	                *user_cert;
@@ -91,6 +92,7 @@ struct vpn_config {
 		(cfg)->pppd_log = NULL; \
 		(cfg)->pppd_plugin = NULL; \
 		(cfg)->pppd_ipparam = NULL; \
+		(cfg)->script = NULL; \
 		(cfg)->ca_file = NULL; \
 		(cfg)->user_cert = NULL; \
 		(cfg)->user_key = NULL; \
@@ -108,6 +110,7 @@ struct vpn_config {
 	free((cfg)->pppd_log); \
 	free((cfg)->pppd_ipparam); \
 	free((cfg)->pppd_plugin); \
+	if((cfg)->script != NULL) { free((cfg)->script); }; \
 	free((cfg)->ca_file); \
 	free((cfg)->user_cert); \
 	free((cfg)->user_key); \
