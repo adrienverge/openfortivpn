@@ -143,10 +143,8 @@ static int pppd_run(struct tunnel *tunnel)
 		assert (i < sizeof (args) / sizeof (*args));
 
 		close(tunnel->ssl_socket);
-		if (execvp(args[0], args) == -1) {
-			log_error("execvp: %s\n", strerror(errno));
-			return 1;
-		}
+		execvp(args[0], args);
+		exit(errno);
 	}
 
 	// Set non-blocking
