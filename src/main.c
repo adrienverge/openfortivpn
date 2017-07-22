@@ -82,8 +82,8 @@
 "                                resolver and routes directly.\n" \
 "  --pppd-ipparam=<string>       Provides  an extra parameter to the ip-up, ip-pre-up\n" \
 "                                and ip-down scripts. see man (8) pppd\n" \
-"  --script=<path to script>     This script will be executed after tunnel setup and before\n" \
-"                                teardown\n" \
+"  --script=<path to script>     This script will be executed after tunnel setup\n" \
+"                                and before teardown\n" \
 "  -v                            Increase verbosity. Can be used multiple times\n" \
 "                                to be even more verbose.\n" \
 "  -q                            Decrease verbosity. Can be used multiple times\n" \
