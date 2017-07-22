@@ -76,7 +76,7 @@ static int run_script(struct tunnel *tunnel)
 		waitpid(pid, &wst, 0);
 		if (WIFEXITED(wst) && WEXITSTATUS(wst)) {
 			log_error("run_script: failed to execute script %s, "
-				  "exit code: %d\n", argv[0], WEXITSTATUS(wst));
+			          "exit code: %d\n", argv[0], WEXITSTATUS(wst));
 			return 1;
 		} else {
 			log_info("run_script: successfully executed script %s\n", argv[0]);
