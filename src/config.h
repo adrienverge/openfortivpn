@@ -110,7 +110,7 @@ struct vpn_config {
 	free((cfg)->pppd_log); \
 	free((cfg)->pppd_ipparam); \
 	free((cfg)->pppd_plugin); \
-	if((cfg)->script != NULL) { free((cfg)->script); }; \
+	if ((cfg)->script != NULL) { free((cfg)->script); }; \
 	free((cfg)->ca_file); \
 	free((cfg)->user_cert); \
 	free((cfg)->user_key); \
