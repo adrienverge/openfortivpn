@@ -79,7 +79,8 @@ static int run_script(struct tunnel *tunnel)
 			          "exit code: %d\n", argv[0], WEXITSTATUS(wst));
 			return 1;
 		} else {
-			log_info("run_script: successfully executed script %s\n", argv[0]);
+			log_info("run_script: successfully executed script "
+			         "%s\n", argv[0]);
 		}
 	}
 	return 0;
