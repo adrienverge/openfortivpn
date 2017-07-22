@@ -55,8 +55,10 @@ static int run_script(struct tunnel *tunnel)
 		argv[1] = "up";
 		setenv("VPN_INTERFACE", tunnel->ppp_iface, 1);
 		setenv("VPN_INTERFACE_IP", inet_ntoa(tunnel->ipv4.ip_addr), 1);
-		if (tunnel->ipv4.ns1_addr.s_addr != 0) setenv("VPN_NS1_IP", inet_ntoa(tunnel->ipv4.ns1_addr),1);
-		if (tunnel->ipv4.ns2_addr.s_addr != 0) setenv("VPN_NS2_IP", inet_ntoa(tunnel->ipv4.ns2_addr),1);
+		if (tunnel->ipv4.ns1_addr.s_addr != 0)
+			setenv("VPN_NS1_IP", inet_ntoa(tunnel->ipv4.ns1_addr),1);
+		if (tunnel->ipv4.ns2_addr.s_addr != 0)
+			setenv("VPN_NS2_IP", inet_ntoa(tunnel->ipv4.ns2_addr),1);
 	} else {
 		argv[1] = "down";
 	}
@@ -73,7 +75,8 @@ static int run_script(struct tunnel *tunnel)
 		int wst;
 		waitpid(pid, &wst, 0);
 		if (WIFEXITED(wst) && WEXITSTATUS(wst)) {
-			log_error("run_script: failed to execute script %s, exit code: %d\n", argv[0], WEXITSTATUS(wst));
+			log_error("run_script: failed to execute script %s, "
+				  "exit code: %d\n", argv[0], WEXITSTATUS(wst));
 			return 1;
 		} else {
 			log_info("run_script: successfully executed script %s\n", argv[0]);
