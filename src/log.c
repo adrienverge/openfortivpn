@@ -87,7 +87,9 @@ void do_log(int verbosity, const char *format, ...)
 	pthread_mutex_lock(&mutex);
 
 	// Use sane default if wrong verbosity specified
-	if (verbosity > OFV_LOG_DEBUG || verbosity < 0)
+	if (verbosity > OFV_LOG_DEBUG_PACKETS)
+		verbosity = OFV_LOG_DEBUG_PACKETS;
+	else if (verbosity < OFV_LOG_MUTE)
 		verbosity = OFV_LOG_MUTE;
 	lp = &log_params [verbosity];
 
