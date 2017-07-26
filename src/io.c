@@ -64,7 +64,9 @@ typedef sem_t os_semaphore_t;
 
 #define PKT_BUF_SZ 0x1000
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
 static pthread_mutex_t *lockarray;
+
 static void lock_callback(int mode, int type, char *file, int line)
 {
 	if (mode & CRYPTO_LOCK)
@@ -94,6 +96,15 @@ static void destroy_ssl_locks()
 		pthread_mutex_destroy(&(lockarray[i]));
 	OPENSSL_free(lockarray);
 }
+#else
+static void init_ssl_locks()
+{
+}
+
+static void destroy_ssl_locks()
+{
+}
+#endif
 
 /*
  * Adds a new packet to a pool.
