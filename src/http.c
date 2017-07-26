@@ -471,7 +471,9 @@ int auth_log_in(struct tunnel *tunnel)
 	char username[3 * FIELD_SIZE + 1];
 	char password[3 * FIELD_SIZE + 1];
 	char realm[3 * FIELD_SIZE + 1];
-	char reqid[32], polid[32], group[128];
+	char reqid[32] = { '\0' };
+	char polid[32] = { '\0' };
+	char group[128] = { '\0' };
 	char data[256], token[128], tokenresponse[256];
 	char *res = NULL;
 
