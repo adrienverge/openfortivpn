@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.68])
-AC_INIT([openfortivpn], [1.3.1])
+AC_INIT([openfortivpn], [1.4.0])
 AC_CONFIG_SRCDIR([src/main.c])
 AM_INIT_AUTOMAKE([foreign subdir-objects])
 
@@ -10,12 +10,14 @@ AM_INIT_AUTOMAKE([foreign subdir-objects])
 AC_PROG_CC
 AC_GNU_SOURCE
 
+# Helps support multiarch by setting 'host_os' and 'host_cpu'
+AC_CANONICAL_HOST
+
 AM_SILENT_RULES([yes])
 
 # Checks for libraries.
-AC_CHECK_LIB([crypto], [ERR_peek_last_error], [], [AC_MSG_ERROR([Cannot find libcrypto.])])
+PKG_CHECK_MODULES(OPENSSL, [libcrypto libssl])
 AC_CHECK_LIB([pthread], [pthread_create], [], [AC_MSG_ERROR([Cannot find libpthread.])])
-AC_CHECK_LIB([ssl], [SSL_connect], [], [AC_MSG_ERROR([Cannot find libssl.])])
 AC_CHECK_LIB([util], [forkpty], [], [AC_MSG_ERROR([Cannot find libutil.])])
 
 # Checks for header files.
@@ -36,9 +38,4 @@ AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([bzero gethostbyname inet_ntoa memmove memset memmem select socket strerror strstr strtol])
 
-AC_DEFINE_UNQUOTED([SYSCONFDIR],["`eval echo $sysconfdir`"])
-AC_SUBST([SYSCONFDIR],["`eval echo $sysconfdir`"])
-AC_CONFIG_FILES([doc/openfortivpn.1])
-
-#AC_CONFIG_FILES([Makefile])
 AC_OUTPUT(Makefile)
