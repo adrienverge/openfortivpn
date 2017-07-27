@@ -114,6 +114,7 @@ struct vpn_config {
 	free((cfg)->cipher_list);
 
 int add_trusted_cert(struct vpn_config *cfg, const char *digest);
+int strtob(const char* str);
 
 int load_config(struct vpn_config *cfg, const char *filename);
 
