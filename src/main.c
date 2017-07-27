@@ -25,11 +25,12 @@
 #define usage \
 "Usage: openfortivpn [<host>:<port>] [-u <user>] [-p <pass>]\n" \
 "                    [--realm=<realm>] [--otp=<otp>] [--set-routes=<0|1>]\n" \
-"                    [--set-dns=<0|1>] [--pppd-no-peerdns] [--pppd-log=<file>]\n" \
+"                    [--half_internet_routes=<0|1>] [--set-dns=<0|1>]\n" \
+"                    [--pppd-no-peerdns] [--pppd-log=<file>]\n" \
 "                    [--pppd-ipparam=<string>] [--pppd-plugin=<file>]\n" \
-"                    [--ca-file=<file>] [--user-cert=<file>]\n" \
-"                    [--user-key=<file>] [--trusted-cert=<digest>]\n" \
-"                    [--use-syslog] [-c <file>] [-v|-q]\n" \
+"                    [--ca-file=<file>] [--user-cert=<file>] [--user-key=<file>] \n" \
+"                    [--trusted-cert=<digest>] [--use-syslog] \n" \
+"                    [-c <file>] [-v|-q]\n" \
 "       openfortivpn --help\n" \
 "       openfortivpn --version\n" \
 "\n"
@@ -53,6 +54,7 @@
 "  --set-routes=[01]             Set if we should configure output roues through\n" \
 "                                the VPN when tunnel is up.\n" \
 "  --no-routes                   Do not configure routes, same as --set-routes=0.\n" \
+"  --half-internet-routes=[01]   Add /1-routes instead of replacing the default route\n" \
 "  --set-dns=[01]                Set if we should add VPN name servers in\n" \
 "                                /etc/resolv.conf\n" \
 "  --no-dns                      Do not reconfigure DNS, same as --set-dns=0\n" \
@@ -140,6 +142,7 @@ int main(int argc, char **argv)
 		{"otp",             required_argument, 0, 'o'},
 		{"set-routes",	    required_argument, 0, 0},
 		{"no-routes",       no_argument, &cfg.set_routes, 0},
+		{"half-internet-routes", required_argument, 0, 0},
 		{"set-dns",	    required_argument, 0, 0},
 		{"no-dns",          no_argument, &cfg.set_dns, 0},
 		{"pppd-no-peerdns", no_argument, &cfg.pppd_use_peerdns, 0},
@@ -243,6 +246,17 @@ int main(int argc, char **argv)
 					break;
 				}
 				cfg.set_routes = set_routes;
+				break;
+			}
+			if (strcmp(long_options[option_index].name,
+			           "half-internet-routes") == 0) {
+				int half_internet_routes = strtob(optarg);
+				if (half_internet_routes < 0) {
+					log_warn("Bad half-internet-routes options: " \
+					         "\"%s\"\n", optarg);
+					break;
+				}
+				cfg.half_internet_routes = half_internet_routes;
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
