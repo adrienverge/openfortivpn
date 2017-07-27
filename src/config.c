@@ -56,7 +56,7 @@ int add_trusted_cert(struct vpn_config *cfg, const char *digest)
  * @params[in] str  the string to read from
  * @return          0 or 1 if successful, < 0 if unrecognized value
  */
-static int strtob(const char* str)
+int strtob(const char* str)
 {
 	if (str[0] == '\0') {
 		return 0;
