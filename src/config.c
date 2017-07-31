@@ -174,6 +174,9 @@ int load_config(struct vpn_config *cfg, const char *filename)
 		} else if (strcmp(key, "otp") == 0) {
 			strncpy(cfg->otp, val, FIELD_SIZE - 1);
 			cfg->otp[FIELD_SIZE] = '\0';
+		} else if (strcmp(key, "realm") == 0) {
+			strncpy(cfg->realm, val, FIELD_SIZE - 1);
+			cfg->realm[FIELD_SIZE] = '\0';
 		} else if (strcmp(key, "set-dns") == 0) {
 			int set_dns = strtob(val);
 			if (set_dns < 0) {
