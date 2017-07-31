@@ -193,6 +193,15 @@ int load_config(struct vpn_config *cfg, const char *filename)
 				continue;
 			}
 			cfg->set_routes = set_routes;
+		} else if (strcmp(key, "half-internet-routes") == 0) {
+			int half_internet_routes = strtob(val);
+			if (half_internet_routes < 0) {
+				log_warn("Bad half-internet-routes in config file:" \
+				         " \"%s\".\n",
+				         val);
+				continue;
+			}
+			cfg->half_internet_routes = half_internet_routes;
 		} else if (strcmp(key, "pppd-use-peerdns") == 0) {
 			int pppd_use_peerdns = strtob(val);
 			if (pppd_use_peerdns < 0) {

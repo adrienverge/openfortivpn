@@ -66,6 +66,7 @@ struct vpn_config {
 	int	set_dns;
 	int     pppd_use_peerdns;
 	int     use_syslog;
+	int	half_internet_routes;
 
 	char	*pppd_log;
 	char	*pppd_plugin;
