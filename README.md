@@ -80,6 +80,12 @@ For other distros, you'll need to build and install from source:
     brew install automake autoconf openssl@1.0
     ```
 
+    On macOS, install 'openfortivpn'...
+    ```
+    brew install openfortivpn
+    ```
+    ...**or** build a version of your choice from source following the instructions in step 2.
+
 
 2.  Build and install.
 
@@ -90,9 +96,8 @@ For other distros, you'll need to build and install from source:
     sudo make install
     ```
 
-    If you need to specify the openssl location you can use the
-    `--with-openssl` option.
-
+    If you need to specify the openssl location you can set the
+    `$PKG_CONFIG_PATH` environment variable.
 
 
 ----------------
