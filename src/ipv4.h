@@ -62,7 +62,8 @@ static inline const char *err_ipv4_str(int code)
 }
 
 #define ROUTE_IFACE_LEN 32
-#define MAX_SPLIT_ROUTES 128
+#define MAX_SPLIT_ROUTES 65535
+#define STEP_SPLIT_ROUTES 32
 
 struct ipv4_config {
 	struct in_addr	ip_addr;
@@ -76,7 +77,7 @@ struct ipv4_config {
 	struct rtentry	def_rt; // default route
 	struct rtentry	gtw_rt; // route to access VPN gateway
 	struct rtentry	ppp_rt; // new default route through VPN
-	struct rtentry	split_rt[MAX_SPLIT_ROUTES]; // split VPN routes
+	struct rtentry	*split_rt; // split VPN routes
 };
 
 // Dummy function to make gcc 6 happy

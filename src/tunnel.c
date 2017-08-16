@@ -492,10 +492,6 @@ int run_tunnel(struct vpn_config *config)
 	struct tunnel tunnel;
 
 	memset(&tunnel, 0, sizeof(tunnel));
-#ifdef __APPLE__
-	// initialize value
-	tunnel.ipv4.split_routes = 0;
-#endif
 	tunnel.config = config;
 	tunnel.on_ppp_if_up = on_ppp_if_up;
 	tunnel.on_ppp_if_down = on_ppp_if_down;
