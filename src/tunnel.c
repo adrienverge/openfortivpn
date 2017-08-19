@@ -191,8 +191,8 @@ int ppp_interface_is_up(struct tunnel *tunnel)
 
 	for (ifa = ifap; ifa != NULL; ifa = ifa->ifa_next) {
 		if (((tunnel->config->pppd_ifname
-		     && strstr(ifa->ifa_name, tunnel->config->pppd_ifname) != NULL)
-                     || strstr(ifa->ifa_name, "ppp") != NULL)
+		      && strstr(ifa->ifa_name, tunnel->config->pppd_ifname) != NULL)
+		     || strstr(ifa->ifa_name, "ppp") != NULL)
 		    && ifa->ifa_flags & IFF_UP) {
 			if (&(ifa->ifa_addr->sa_family) != NULL
 			    && ifa->ifa_addr->sa_family == AF_INET) {
