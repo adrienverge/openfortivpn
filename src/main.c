@@ -27,8 +27,9 @@
 "                    [--realm=<realm>] [--otp=<otp>] [--set-routes=<0|1>]\n" \
 "                    [--half_internet_routes=<0|1>] [--set-dns=<0|1>]\n" \
 "                    [--pppd-no-peerdns] [--pppd-log=<file>]\n" \
-"                    [--pppd-ipparam=<string>] [--pppd-plugin=<file>]\n" \
-"                    [--ca-file=<file>] [--user-cert=<file>] [--user-key=<file>] \n" \
+"                    [--pppd-ifname=<string>] [--pppd-ipparam=<string>]\n" \
+"                    [--pppd-plugin=<file>] [--ca-file=<file>]\n" \
+"                    [--user-cert=<file>] [--user-key=<file>] \n" \
 "                    [--trusted-cert=<digest>] [--use-syslog] \n" \
 "                    [-c <file>] [-v|-q]\n" \
 "       openfortivpn --help\n" \
@@ -85,6 +86,7 @@
 "                                <file>.\n" \
 "  --pppd-plugin=<file>          Use specified pppd plugin instead of configuring\n" \
 "                                resolver and routes directly.\n" \
+"  --pppd-ifname=<string>        Set the pppd interface name.\n" \
 "  --pppd-ipparam=<string>       Provides  an extra parameter to the ip-up, ip-pre-up\n" \
 "                                and ip-down scripts. see man (8) pppd\n" \
 "  -v                            Increase verbosity. Can be used multiple times\n" \
@@ -156,6 +158,7 @@ int main(int argc, char **argv)
 		{"pppd-log",        required_argument, 0, 0},
 		{"pppd-plugin",     required_argument, 0, 0},
 		{"pppd-ipparam",    required_argument, 0, 0},
+		{"pppd-ifname",     required_argument, 0, 0},
 		{"plugin",          required_argument, 0, 0}, // deprecated
 		{0, 0, 0, 0}
 	};
@@ -190,6 +193,11 @@ int main(int argc, char **argv)
 			if (strcmp(long_options[option_index].name,
 			           "pppd-plugin") == 0) {
 				cfg.pppd_plugin = strdup(optarg);
+				break;
+			}
+			if (strcmp(long_options[option_index].name,
+			           "pppd-ifname") == 0) {
+				cfg.pppd_ifname = strdup(optarg);
 				break;
 			}
 			if (strcmp(long_options[option_index].name,

@@ -216,6 +216,8 @@ int load_config(struct vpn_config *cfg, const char *filename)
 			cfg->pppd_plugin = strdup(val);
 		} else if (strcmp(key, "pppd-ipparam") == 0) {
 			cfg->pppd_ipparam = strdup(val);
+		} else if (strcmp(key, "pppd-ifname") == 0) {
+			cfg->pppd_ifname = strdup(val);
 		} else if (strcmp(key, "use-syslog") == 0) {
 			int use_syslog = strtob(val);
 			if (use_syslog < 0) {
