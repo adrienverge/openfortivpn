@@ -323,24 +323,122 @@ static int get_gateway_host_ip(struct tunnel *tunnel)
  */
 static int tcp_connect(struct tunnel *tunnel)
 {
-	int ret, handle;
+	int ret, handle, bytes_read, curr_pos;
 	struct sockaddr_in server;
+	const struct addrinfo hints = { .ai_family = AF_INET };
+	struct addrinfo *result = NULL;
+	char *env_proxy, *proxy_host, *proxy_port, *response;
+	char request[128];
 
 	handle = socket(AF_INET, SOCK_STREAM, 0);
 	if (handle == -1) {
 		log_error("socket: %s\n", strerror(errno));
 		goto err_socket;
 	}
+	env_proxy = getenv("https_proxy");
+	if (env_proxy == NULL)
+		env_proxy = getenv("HTTPS_PROXY");
+	if (env_proxy == NULL)
+		env_proxy = getenv("all_proxy");
+	if (env_proxy == NULL)
+		env_proxy = getenv("ALL_PROXY");
+	if (env_proxy != NULL) {
+		// protect the original environment from modifications
+		env_proxy = strdup(env_proxy);
+		// get rid of a trailing slash
+		if (env_proxy[strlen(env_proxy) - 1] == '/')
+			env_proxy[strlen(env_proxy) - 1] = '\0';
+		// get rid of a http(s):// prefix in env_proxy
+		proxy_host = strstr(env_proxy, "://");
+		if (proxy_host == NULL)
+			proxy_host = env_proxy;
+		else
+			proxy_host += 3;
+		// split host and port
+		proxy_port = index(proxy_host, ':');
+		if (proxy_port != NULL) {
+			proxy_port[0] = '\0';
+			proxy_port++;
+			server.sin_port = htons(strtol(proxy_port, NULL, 10));
+		} else {
+			server.sin_port = htons(tunnel->config->gateway_port);
+		}
+		// get rid of a trailing slash
+		if (proxy_host[strlen(proxy_host) - 1] == '/')
+			proxy_host[strlen(proxy_host) - 1] = '\0';
+		log_debug("proxy_host: %s\n", proxy_host);
+		log_debug("proxy_port: %s\n", proxy_port);
+		server.sin_addr.s_addr = inet_addr(proxy_host);
+		// if host is given as fqhn we have to do a dns lookup
+		if (server.sin_addr.s_addr == INADDR_NONE) {
+			ret = getaddrinfo(proxy_host, NULL, &hints, &result);
 
+			if (ret) {
+				if (ret == EAI_SYSTEM)
+					log_error("getaddrinfo: %s\n", strerror(errno));
+				else
+					log_error("getaddrinfo: %s\n", gai_strerror(ret));
+				goto err_connect;
+			}
+
+			server.sin_addr = ((struct sockaddr_in *)
+			                   result->ai_addr)->sin_addr;
+			freeaddrinfo(result);
+		}
+	} else {
+		server.sin_port = htons(tunnel->config->gateway_port);
+		server.sin_addr = tunnel->config->gateway_ip;
+	}
+
+	log_debug("server_addr: %s\n", inet_ntoa(server.sin_addr));
+	log_debug("server_port: %u\n", ntohs(server.sin_port));
 	server.sin_family = AF_INET;
-	server.sin_port = htons(tunnel->config->gateway_port);
-	server.sin_addr = tunnel->config->gateway_ip;
-	bzero(&(server.sin_zero), 8);
+	memset(&(server.sin_zero), '\0', 8);
+	log_debug("gateway_addr: %s\n", inet_ntoa(tunnel->config->gateway_ip));
+	log_debug("gateway_port: %u\n", tunnel->config->gateway_port);
 
 	ret = connect(handle, (struct sockaddr *) &server, sizeof(server));
 	if (ret == -1) {
 		log_error("connect: %s\n", strerror(errno));
 		goto err_connect;
+	}
+
+	if (env_proxy != NULL) {
+		// https://tools.ietf.org/html/rfc7231#section-4.3.6
+		sprintf(request, "CONNECT %s:%u HTTP/1.1\r\nHost: %s:%u\r\n\r\n",
+		        inet_ntoa(tunnel->config->gateway_ip),
+		        tunnel->config->gateway_port,
+		        inet_ntoa(tunnel->config->gateway_ip),
+		        tunnel->config->gateway_port);
+		if (write(handle, request, strlen(request)) != strlen(request)) {
+			log_error("write error when talking to proxy\n");
+			return -1;
+		}
+		// wait for a "200 OK" reply from the proxy,
+		// be careful not to fetch too many characters at once
+		memset(&(request), '\0', sizeof(request));
+		curr_pos = 0;
+		do {
+			bytes_read = read(handle, &(request[curr_pos++]), 1);
+			response = strstr(request, "200");
+		} while (
+		        (
+		                // repeat reading until we have got the string "200"
+		                (response == NULL)
+		                // continue reading until we hit the first empty line
+		                || (
+		                        // server uses newlines only
+		                        (strstr(response, "\n\n") == NULL)
+		                        // server uses cr+lf
+		                        && (strstr(response, "\r\n\r\n") == NULL)
+		                        // server uses lf+cr
+		                        && (strstr(response, "\n\r\n\r") == NULL)
+		                )
+		        )
+		        // condition for buffer full or possibly eof
+		        && (curr_pos < sizeof(request)) && (bytes_read > 0)
+		);
+		free(env_proxy); // we have copied the string
 	}
 
 	return handle;
