@@ -144,7 +144,8 @@ static int pppd_run(struct tunnel *tunnel)
 
 		close(tunnel->ssl_socket);
 		execvp(args[0], args);
-		exit(errno);
+		fprintf(stderr, "execvp: %s\n", strerror(errno));
+		exit(EXIT_FAILURE);
 	}
 
 	// Set non-blocking
