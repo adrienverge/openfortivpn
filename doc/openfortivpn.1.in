@@ -1,4 +1,4 @@
-.TH OPENFORTIVPN 1 "November 10, 2016" ""
+.TH OPENFORTIVPN 1 "July 27, 2017" ""
 
 .SH NAME
 openfortivpn \- Client for PPP+SSL VPN tunnel services
@@ -9,7 +9,10 @@ openfortivpn \- Client for PPP+SSL VPN tunnel services
 [\fB\-u\fR \fI<user>\fR]
 [\fB\-p\fR \fI<pass>\fR]
 [\fB\-\-realm=\fI<realm>\fR]
+[\fB\-\-set-routes=<bool>\fR]
 [\fB\-\-no-routes\fR]
+[\fB\-\-set-dns=<bool>\fR]
+[\fB\-\-half-internet-routes=<bool>\fR]
 [\fB\-\-no-dns\fR]
 [\fB\-\-ca-file=\fI<file>\fR]
 [\fB\-\-user-cert=\fI<file>\fR]
@@ -58,11 +61,18 @@ VPN account password.
 Connect to the specified authentication realm. Defaults to empty, which
 is usually what you want.
 .TP
-\fB\-\-no-routes\fR
-Do not try to configure IP routes through the VPN when tunnel is up.
+\fB\-\-set-routes=\fI<bool>\fR, \fB\-\-no-routes\fR
+Set if we should try to configure IP routes through the VPN when tunnel is up. If used multiple times, the last one takes priority.
+
+\fB\-\-no-routes\fR is the same as \fB\-\-set-routes=\fI0\fR.
 .TP
-\fB\-\-no-dns\fR
-Do not add VPN nameservers in /etc/resolv.conf when tunnel is up.
+\fB\-\-half-internet-routes=\fI<bool>\fR, if set to 1, tells openfortivpn not to 
+replace the default route by a different one, but set up two separate /1-routes instead.
+.TP
+\fB\-\-set-dns=\fI<bool>\fR, \fB\-\-no-dns\fR
+Set if we should add VPN nameservers in /etc/resolv.conf when tunnel is up. If used multiple times, the last one takes priority.
+
+\fB\-\-no-dns\fR is the same as \fB\-\-set-dns=\fI0\fR.
 .TP
 \fB\-\-ca-file=\fI<file>\fR
 Use specified PEM-encoded certificate bundle instead of system-wide store to
@@ -146,6 +156,10 @@ user-cert = @SYSCONFDIR@/openfortivpn/user-cert.pem
 .br
 user-key = @SYSCONFDIR@/openfortivpn/user-key.pem
 .br
+# the sha256 digest of the trusted host certs obtained by
+.br
+# openssl dgst -sha256 server-cert.pem:
+.br
 trusted-cert = certificatedigest4daa8c5fe6c...
 .br
 trusted-cert = othercertificatedigest6631bf...
@@ -158,6 +172,8 @@ set-dns = 1
 .br
 set-routes = 1
 .br
+half-internet-routes = 0
+.br
 pppd-use-peerdns = 1
 .br
 # aternatively, use a specific pppd plugin instead
@@ -169,7 +185,9 @@ pppd-use-peerdns = 1
 # pppd-log = /var/log/pppd.log
 .br
 # pass an ipparam string to pppd
+.br
 # pppd-ipparam = somestringtopasstopppd
+.br
 insecure-ssl = 0
 .br
 cipher-list = HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4

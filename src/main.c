@@ -22,19 +22,21 @@
 #include "tunnel.h"
 #include "userinput.h"
 
-#define USAGE \
+#define usage \
 "Usage: openfortivpn [<host>:<port>] [-u <user>] [-p <pass>]\n" \
-"                    [--realm=<realm>] [--otp=<otp>] [--no-routes]\n" \
-"                    [--no-dns] [--pppd-no-peerdns] [--pppd-log=<file>]\n" \
+"                    [--realm=<realm>] [--otp=<otp>] [--set-routes=<0|1>]\n" \
+"                    [--half_internet_routes=<0|1>] [--set-dns=<0|1>]\n" \
+"                    [--pppd-no-peerdns] [--pppd-log=<file>]\n" \
 "                    [--pppd-ipparam=<string>] [--pppd-plugin=<file>]\n" \
 "                    [--script=<path to script>]\n" \
-"                    [--ca-file=<file>] [--user-cert=<file>]\n" \
-"                    [--user-key=<file>] [--trusted-cert=<digest>]\n" \
-"                    [--use-syslog] [-c <file>] [-v|-q]\n" \
+"                    [--ca-file=<file>] [--user-cert=<file>] [--user-key=<file>] \n" \
+"                    [--trusted-cert=<digest>] [--use-syslog] \n" \
+"                    [-c <file>] [-v|-q]\n" \
 "       openfortivpn --help\n" \
-"       openfortivpn --version\n"
+"       openfortivpn --version\n" \
+"\n"
 
-#define HELP \
+#define help_options \
 "Client for PPP+SSL VPN tunnel services.\n" \
 "openfortivpn connects to a VPN by setting up a tunnel to the gateway at\n" \
 "<host>:<port>. It spawns a pppd process and operates the communication between\n" \
@@ -50,9 +52,13 @@
 "  -o <otp>, --otp=<otp>         One-Time-Password.\n" \
 "  --realm=<realm>               Use specified authentication realm on VPN gateway\n" \
 "                                when tunnel is up.\n" \
-"  --no-routes                   Do not try to configure IP routes through the\n" \
-"                                VPN when tunnel is up.\n" \
-"  --no-dns                      Do not add VPN nameservers in /etc/resolv.conf\n" \
+"  --set-routes=[01]             Set if we should configure output roues through\n" \
+"                                the VPN when tunnel is up.\n" \
+"  --no-routes                   Do not configure routes, same as --set-routes=0.\n" \
+"  --half-internet-routes=[01]   Add /1-routes instead of replacing the default route\n" \
+"  --set-dns=[01]                Set if we should add VPN name servers in\n" \
+"                                /etc/resolv.conf\n" \
+"  --no-dns                      Do not reconfigure DNS, same as --set-dns=0\n" \
 "  --ca-file=<file>              Use specified PEM-encoded certificate bundle\n" \
 "                                instead of system-wide store to verify the gateway\n" \
 "                                certificate.\n" \
@@ -88,7 +94,10 @@
 "                                to be even more verbose.\n" \
 "  -q                            Decrease verbosity. Can be used multiple times\n" \
 "                                to be even less verbose.\n" \
-"\n" \
+"\n"
+
+
+#define help_config \
 "Config file:\n" \
 "  Options can be taken from a configuration file. Options passed in the\n" \
 "  command line will override those from the config file, though. The default\n" \
@@ -134,7 +143,10 @@ int main(int argc, char **argv)
 		{"username",        required_argument, 0, 'u'},
 		{"password",        required_argument, 0, 'p'},
 		{"otp",             required_argument, 0, 'o'},
+		{"set-routes",	    required_argument, 0, 0},
 		{"no-routes",       no_argument, &cfg.set_routes, 0},
+		{"half-internet-routes", required_argument, 0, 0},
+		{"set-dns",	    required_argument, 0, 0},
 		{"no-dns",          no_argument, &cfg.set_dns, 0},
 		{"pppd-no-peerdns", no_argument, &cfg.pppd_use_peerdns, 0},
 		{"use-syslog",      no_argument, &cfg.use_syslog, 1},
@@ -176,17 +188,17 @@ int main(int argc, char **argv)
 			}
 			if (strcmp(long_options[option_index].name,
 			           "pppd-log") == 0) {
-				cfg.pppd_log = optarg;
+				cfg.pppd_log = strdup(optarg);
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
 			           "pppd-plugin") == 0) {
-				cfg.pppd_plugin = optarg;
+				cfg.pppd_plugin = strdup(optarg);
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
 			           "pppd-ipparam") == 0) {
-				cfg.pppd_ipparam = optarg;
+				cfg.pppd_ipparam = strdup(optarg);
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
@@ -198,7 +210,7 @@ int main(int argc, char **argv)
 			if (cfg.pppd_plugin == NULL &&
 			    strcmp(long_options[option_index].name,
 			           "plugin") == 0) {
-				cfg.pppd_plugin = optarg;
+				cfg.pppd_plugin = strdup(optarg);
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
@@ -234,12 +246,42 @@ int main(int argc, char **argv)
 				cfg.cipher_list = strdup(optarg);
 				break;
 			}
+			if (strcmp(long_options[option_index].name,
+			           "set-routes") == 0) {
+				int set_routes = strtob(optarg);
+				if (set_routes < 0) {
+					log_warn("Bad set-routes options: \"%s\"\n",
+					         optarg);
+					break;
+				}
+				cfg.set_routes = set_routes;
+				break;
+			}
+			if (strcmp(long_options[option_index].name,
+			           "half-internet-routes") == 0) {
+				int half_internet_routes = strtob(optarg);
+				if (half_internet_routes < 0) {
+					log_warn("Bad half-internet-routes options: " \
+					         "\"%s\"\n", optarg);
+					break;
+				}
+				cfg.half_internet_routes = half_internet_routes;
+				break;
+			}
+			if (strcmp(long_options[option_index].name,
+			           "set-dns") == 0) {
+				int set_dns = strtob(optarg);
+				if (set_dns < 0) {
+					log_warn("Bad set-dns options: \"%s\"\n",
+					         optarg);
+					break;
+				}
+				cfg.set_dns = set_dns;
+				break;
+			}
 			goto user_error;
 		case 'h':
-			printf(USAGE);
-			printf("\n");
-			printf(HELP);
-			printf("\n");
+			printf("%s%s%s", usage, help_options, help_config);
 			ret = EXIT_SUCCESS;
 			goto exit;
 		case 'v':
@@ -355,7 +397,7 @@ int main(int argc, char **argv)
 	goto exit;
 
 user_error:
-	fprintf(stderr, USAGE);
+	fprintf(stderr, "%s", usage);
 exit:
 	destroy_vpn_config(&cfg);
 	exit(ret);
