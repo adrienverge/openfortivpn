@@ -126,11 +126,6 @@ int main(int argc, char **argv)
 
 	// Set defaults
 	init_vpn_config(&cfg);
-	cfg.set_routes = 1;
-	cfg.set_dns = 1;
-	cfg.verify_cert = 1;
-	cfg.insecure_ssl = 0;
-	cfg.pppd_use_peerdns = 1;
 
 	struct option long_options[] = {
 		{"help",            no_argument,       0, 'h'},
@@ -241,7 +236,7 @@ int main(int argc, char **argv)
 			           "set-routes") == 0) {
 				int set_routes = strtob(optarg);
 				if (set_routes < 0) {
-					log_warn("Bad set-routes options: \"%s\"\n",
+					log_warn("Bad set-routes option: \"%s\"\n",
 					         optarg);
 					break;
 				}
@@ -252,7 +247,7 @@ int main(int argc, char **argv)
 			           "half-internet-routes") == 0) {
 				int half_internet_routes = strtob(optarg);
 				if (half_internet_routes < 0) {
-					log_warn("Bad half-internet-routes options: " \
+					log_warn("Bad half-internet-routes option: " \
 					         "\"%s\"\n", optarg);
 					break;
 				}
@@ -263,7 +258,7 @@ int main(int argc, char **argv)
 			           "set-dns") == 0) {
 				int set_dns = strtob(optarg);
 				if (set_dns < 0) {
-					log_warn("Bad set-dns options: \"%s\"\n",
+					log_warn("Bad set-dns option: \"%s\"\n",
 					         optarg);
 					break;
 				}

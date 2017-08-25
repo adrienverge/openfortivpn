@@ -85,19 +85,26 @@ struct vpn_config {
 	do { \
 		(cfg)->gateway_host[0] = '\0'; \
 		(cfg)->gateway_port = 0; \
-		(cfg)->realm[0] = '\0'; \
 		(cfg)->username[0] = '\0'; \
 		(cfg)->password[0] = '\0'; \
 		(cfg)->otp[0] = '\0'; \
+		(cfg)->cookie[0] = '\0'; \
+		(cfg)->realm[0] = '\0'; \
+		(cfg)->set_routes = 1; \
+		(cfg)->set_dns = 1; \
+		(cfg)->pppd_use_peerdns = 1; \
+		(cfg)->half_internet_routes = 0; \
+		(cfg)->use_syslog = 0; \
 		(cfg)->pppd_log = NULL; \
 		(cfg)->pppd_plugin = NULL; \
 		(cfg)->pppd_ipparam = NULL; \
 		(cfg)->ca_file = NULL; \
 		(cfg)->user_cert = NULL; \
 		(cfg)->user_key = NULL; \
+		(cfg)->verify_cert = 1; \
+		(cfg)->insecure_ssl = 0; \
 		(cfg)->cipher_list = NULL; \
 		(cfg)->cert_whitelist = NULL; \
-		(cfg)->use_syslog = 0; \
 	} while (0)
 
 #define destroy_vpn_config(cfg) \
