@@ -512,7 +512,8 @@ int ipv4_add_split_vpn_route(struct tunnel *tunnel, char *dest, char *mask,
 	struct rtentry *route;
 	char env_var[24];
 
-	if (tunnel->ipv4.split_routes == MAX_SPLIT_ROUTES) return ERR_IPV4_NO_MEM;
+	if (tunnel->ipv4.split_routes == MAX_SPLIT_ROUTES)
+		return ERR_IPV4_NO_MEM;
 	if ((tunnel->ipv4.split_rt == NULL)
 	    || ((tunnel->ipv4.split_routes % STEP_SPLIT_ROUTES) == 0)) {
 		void *new_ptr
@@ -521,7 +522,8 @@ int ipv4_add_split_vpn_route(struct tunnel *tunnel, char *dest, char *mask,
 		                  (size_t) (tunnel->ipv4.split_routes + STEP_SPLIT_ROUTES)
 		                  * sizeof(*(tunnel->ipv4.split_rt))
 		          );
-		if (new_ptr == NULL) return ERR_IPV4_NO_MEM;
+		if (new_ptr == NULL)
+			return ERR_IPV4_NO_MEM;
 		tunnel->ipv4.split_rt=new_ptr;
 	}
 
