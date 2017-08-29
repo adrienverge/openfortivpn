@@ -492,10 +492,6 @@ int run_tunnel(struct vpn_config *config)
 	struct tunnel tunnel;
 
 	memset(&tunnel, 0, sizeof(tunnel));
-#ifdef __APPLE__
-	// initialize value
-	tunnel.ipv4.split_routes = 0;
-#endif
 	tunnel.config = config;
 	tunnel.on_ppp_if_up = on_ppp_if_up;
 	tunnel.on_ppp_if_down = on_ppp_if_down;
@@ -594,5 +590,10 @@ err_tunnel:
 		log_info("Logged out.\n");
 	}
 
+	// explicitly free the buffer allocated for split routes of the ipv4 config
+	if (tunnel.ipv4.split_rt != NULL) {
+		free(tunnel.ipv4.split_rt);
+		tunnel.ipv4.split_rt = NULL;
+	}
 	return ret;
 }
