@@ -527,7 +527,7 @@ int auth_log_in(struct tunnel *tunnel)
 		get_value_from_response(res, "reqid=", reqid, 32);
 		get_value_from_response(res, "polid=", polid, 32);
 
-		read_password("2factor authentication token: ", tokenresponse, 255);
+		read_password("Two-factor authentication token: ", tokenresponse, 255);
 
 		snprintf(data, 256, "username=%s&realm=%s&reqid=%s&polid=%s&grp=%s"
 		         "&code=%s&code2=&redir=%%2Fremote%%2Findex&just_logged_in=1",
