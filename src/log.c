@@ -60,12 +60,12 @@ void init_logging()
 	pthread_mutex_init(&mutex, &mutexattr);
 }
 
-void set_syslog (int use_syslog)
+void set_syslog(int use_syslog)
 {
 	if (!use_syslog)
 		return;
 	do_syslog = use_syslog;
-	openlog ("openfortivpn", LOG_PID, LOG_DAEMON);
+	openlog("openfortivpn", LOG_PID, LOG_DAEMON);
 }
 
 void increase_verbosity()
@@ -92,11 +92,11 @@ void do_log(int verbosity, const char *format, ...)
 	lp = &log_params [verbosity];
 
 	if (!do_syslog)
-		printf ("%s%s", is_a_tty ? lp->color_string : "", lp->prefix);
+		printf("%s%s", is_a_tty ? lp->color_string : "", lp->prefix);
 
 	va_start(args, format);
 	if (do_syslog)
-		vsyslog (lp->syslog_prio, format, args);
+		vsyslog(lp->syslog_prio, format, args);
 	else
 		vprintf(format, args);
 	va_end(args);
@@ -130,7 +130,7 @@ void do_log_packet(const char *prefix, size_t len, const uint8_t *packet)
 	strcpy(pos - 1, "\n");
 
 	if (do_syslog)
-		syslog (LOG_DEBUG, "%s", str);
+		syslog(LOG_DEBUG, "%s", str);
 	else
 		puts(str);
 

@@ -118,7 +118,7 @@ static int pppd_run(struct tunnel *tunnel)
 		};
 		// Dynamically get first NULL pointer so that changes of
 		// args above don't need code changes here
-		int i = sizeof (args) / sizeof (*args) - 1;
+		int i = sizeof(args) / sizeof(*args) - 1;
 		for (; args [i] == NULL; i--)
 			;
 		i++;
@@ -140,7 +140,7 @@ static int pppd_run(struct tunnel *tunnel)
 			args[i++] = tunnel->config->pppd_ipparam;
 		}
 		// Assert that we didn't use up all NULL pointers above
-		assert (i < sizeof (args) / sizeof (*args));
+		assert(i < sizeof(args) / sizeof(*args));
 
 		close(tunnel->ssl_socket);
 		execvp(args[0], args);
@@ -363,7 +363,7 @@ static void ssl_disconnect(struct tunnel *tunnel)
  */
 int ssl_connect(struct tunnel *tunnel)
 {
-	ssl_disconnect (tunnel);
+	ssl_disconnect(tunnel);
 
 	tunnel->ssl_socket = tcp_connect(tunnel);
 	if (tunnel->ssl_socket == -1)

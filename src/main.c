@@ -120,7 +120,7 @@ int main(int argc, char **argv)
 	long int port;
 
 	/* Init cfg */
-	memset (&cfg, 0, sizeof (cfg));
+	memset(&cfg, 0, sizeof(cfg));
 
 	init_logging();
 
@@ -295,7 +295,7 @@ int main(int argc, char **argv)
 
 	if (optind < argc - 1 || optind > argc)
 		goto user_error;
-	set_syslog (cfg.use_syslog);
+	set_syslog(cfg.use_syslog);
 
 	if (password != NULL)
 		log_warn("You should not pass the password on the command "
@@ -305,7 +305,7 @@ int main(int argc, char **argv)
 	// Load config file
 	if (config_file[0] != '\0') {
 		ret = load_config(&cfg, config_file);
-		set_syslog (cfg.use_syslog);
+		set_syslog(cfg.use_syslog);
 		if (ret == 0)
 			log_debug("Loaded config file \"%s\".\n", config_file);
 		else

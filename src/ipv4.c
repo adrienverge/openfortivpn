@@ -646,9 +646,9 @@ int ipv4_set_tunnel_routes(struct tunnel *tunnel)
 
 	if (tunnel->ipv4.split_routes)
 		// try even if ipv4_protect_tunnel_route has failed
-		return ipv4_set_split_routes (tunnel);
+		return ipv4_set_split_routes(tunnel);
 	else if (ret == 0) {
-		return ipv4_set_default_routes (tunnel);
+		return ipv4_set_default_routes(tunnel);
 	} else {
 		return ret;
 	}
