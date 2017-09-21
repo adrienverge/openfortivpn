@@ -174,7 +174,7 @@ static int pppd_terminate(struct tunnel *tunnel)
 		return 1;
 	}
 	if (WIFEXITED(status)) {
-		log_debug("waitpid: exit status code %d", WEXITSTATUS(status));
+		log_debug("waitpid: pppd exit status code %d\n", WEXITSTATUS(status));
 	}
 
 	return 0;
