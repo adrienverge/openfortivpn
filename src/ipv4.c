@@ -284,7 +284,7 @@ static int ipv4_get_route(struct rtentry *route)
 			mask = 0;
 		} else {
 			int is_mask_set = 0;
-			char* tmp_position;
+			char *tmp_position;
 			int dot_count = -1;
 
 			if (index(tmpstr, '/') != NULL) {
@@ -478,7 +478,7 @@ int ipv4_protect_tunnel_route(struct tunnel *tunnel)
 
 
 	// Set the default route as the route to the tunnel gateway
-	char* iface = route_iface(gtw_rt);
+	char *iface = route_iface(gtw_rt);
 	memcpy(gtw_rt, def_rt, sizeof(*gtw_rt));
 	route_iface(gtw_rt) = iface;
 	strncpy(route_iface(gtw_rt), route_iface(def_rt), ROUTE_IFACE_LEN - 1);
