@@ -96,7 +96,7 @@ static const char *find_header(const char *res, const char *header)
 
 	while (memcmp(line, "\r\n", 2)) {
 		int line_len = (char *) memmem(line, BUFSZ, "\r\n", 2) - line;
-		int head_len = strlen (header);
+		int head_len = strlen(header);
 
 		if (line_len > head_len && !strncasecmp(line, header, head_len))
 			return line + head_len;
@@ -243,11 +243,11 @@ static int do_http_request(struct tunnel *tunnel, const char *method,
 static int http_request(struct tunnel *tunnel, const char *method,
                         const char *uri, const char *data, char **response)
 {
-	int ret = do_http_request (tunnel, method, uri, data, response);
+	int ret = do_http_request(tunnel, method, uri, data, response);
 
 	if (ret == ERR_HTTP_SSL) {
-		ssl_connect (tunnel);
-		ret = do_http_request (tunnel, method, uri, data, response);
+		ssl_connect(tunnel);
+		ret = do_http_request(tunnel, method, uri, data, response);
 	}
 
 	if (ret != 1)
@@ -337,32 +337,32 @@ int try_otp_auth(struct tunnel *tunnel, const char *buffer, char **res)
 	char *d = data;
 	const char *p = NULL;
 	/* Length-check for destination buffer */
-#define SPACE_AVAILABLE(sz) (sizeof (data) - (d - data) >= (sz))
+#define SPACE_AVAILABLE(sz) (sizeof(data) - (d - data) >= (sz))
 	/* Get the form action */
-	s = strcasestr (s, "<FORM");
+	s = strcasestr(s, "<FORM");
 	if (s == NULL)
 		return -1;
-	s = strcasestr (s + 5, "ACTION=\"");
+	s = strcasestr(s + 5, "ACTION=\"");
 	if (s == NULL)
 		return -1;
 	s += 8;
 	e = strchr(s, '"');
 	if (e == NULL)
 		return -1;
-	if (e - s + 1 > sizeof (path))
+	if (e - s + 1 > sizeof(path))
 		return -1;
-	strncpy (path, s, e - s);
+	strncpy(path, s, e - s);
 	path [e - s] = '\0';
 	/* Try to get password prompt, asume it starts with 'Please'
 	 * Fall back to default prompt if not found/parseable
 	 */
-	p = strstr (s, "Please");
+	p = strstr(s, "Please");
 	if (p) {
-		e = strchr (p, '<');
+		e = strchr(p, '<');
 		if (e != NULL) {
-			if (e - p + 1 < sizeof (prompt)) {
-				strncpy (prompt, p, e - p);
-				prompt [e - p] = '\0';
+			if (e - p + 1 < sizeof(prompt)) {
+				strncpy(prompt, p, e - p);
+				prompt[e - p] = '\0';
 				p = prompt;
 			} else {
 				p = NULL;
@@ -374,80 +374,80 @@ int try_otp_auth(struct tunnel *tunnel, const char *buffer, char **res)
 	if (p == NULL)
 		p = "Please enter one-time password:";
 	/* Search for all inputs */
-	while ((s = strcasestr (s, "<INPUT"))) {
+	while ((s = strcasestr(s, "<INPUT"))) {
 		s += 6;
 		/* check if we found parameters for a later INPUT
 		 * during last round
 		 */
 		if (s < t || s < n || (v && s < v))
 			return -1;
-		t = strcasestr (s, "TYPE=\"");
-		n = strcasestr (s, "NAME=\"");
-		v = strcasestr (s, "VALUE=\"");
+		t = strcasestr(s, "TYPE=\"");
+		n = strcasestr(s, "NAME=\"");
+		v = strcasestr(s, "VALUE=\"");
 		if (t == NULL)
 			return -1;
 		if (n == NULL)
 			continue;
 		n += 6;
 		t += 6;
-		if  (  0 == strncmp (t, "hidden", 6) || 0 == strncmp (t, "password", 8)) {
+		if (0 == strncmp(t, "hidden", 6) || 0 == strncmp(t, "password", 8)) {
 			/* We try to be on the safe side
 			 * and url-encode the variable name
 			 */
 			/* Append '&' if we found something in last round */
 			if (d > data) {
-				if (!SPACE_AVAILABLE (1))
+				if (!SPACE_AVAILABLE(1))
 					return -1;
 				*d++ = '&';
 			}
-			e = strchr (n, '"');
+			e = strchr(n, '"');
 			if (e == NULL)
 				return -1;
-			if (e - n + 1 > sizeof (tmp))
+			if (e - n + 1 > sizeof(tmp))
 				return -1;
-			strncpy (tmp, n, e - n);
+			strncpy(tmp, n, e - n);
 			tmp [e - n] = '\0';
-			if (!SPACE_AVAILABLE (3 * (e - n) + 1))
+			if (!SPACE_AVAILABLE(3 * (e - n) + 1))
 				return -1;
-			url_encode (d, tmp);
-			d += strlen (d);
+			url_encode(d, tmp);
+			d += strlen(d);
 			if (!SPACE_AVAILABLE(1))
 				return -1;
 			*d++ = '=';
 		}
-		if (0 == strncmp (t, "hidden", 6)) {
+		if (0 == strncmp(t, "hidden", 6)) {
 			/* Require value for hidden fields */
 			if (v == NULL)
 				return -1;
 			v += 7;
-			e = strchr (v, '"');
+			e = strchr(v, '"');
 			if (e == NULL)
 				return -1;
-			if (e - v + 1 > sizeof (tmp))
+			if (e - v + 1 > sizeof(tmp))
 				return -1;
-			strncpy (tmp, v, e - v);
+			strncpy(tmp, v, e - v);
 			tmp [e - v] = '\0';
-			if (!SPACE_AVAILABLE (3 * (e - v) + 1))
+			if (!SPACE_AVAILABLE(3 * (e - v) + 1))
 				return -1;
-			url_encode (d, tmp);
-			d += strlen (d);
-		} else if (0 == strncmp (t, "password", 8)) {
+			url_encode(d, tmp);
+			d += strlen(d);
+		} else if (0 == strncmp(t, "password", 8)) {
 			struct vpn_config *cfg = tunnel->config;
 			size_t l;
 			v = NULL;
 			if (cfg->otp [0] == '\0') {
-				read_password (p, cfg->otp, FIELD_SIZE);
+				read_password(p, cfg->otp, FIELD_SIZE);
 				if (cfg->otp [0] == '\0') {
-					log_error ("No OTP specified\n");
+					log_error("No OTP specified\n");
 					return 0;
 				}
 			}
-			l = strlen (cfg->otp);
-			if (!SPACE_AVAILABLE (3 * l + 1))
+			l = strlen(cfg->otp);
+			if (!SPACE_AVAILABLE(3 * l + 1))
 				return -1;
-			url_encode (d, cfg->otp);
-			d += strlen (d);
-		} else if (0 == strncmp (t, "submit", 6)) {
+			url_encode(d, cfg->otp);
+			d += strlen(d);
+		} else if (0 == strncmp(t, "submit", 6)) {
 			/* avoid adding another '&' */
 			n = v = e = NULL;
 		}
@@ -527,7 +527,7 @@ int auth_log_in(struct tunnel *tunnel)
 		get_value_from_response(res, "reqid=", reqid, 32);
 		get_value_from_response(res, "polid=", polid, 32);
 
-		read_password("2factor authentication token: ", tokenresponse, 255);
+		read_password("Two-factor authentication token: ", tokenresponse, 255);
 
 		snprintf(data, 256, "username=%s&realm=%s&reqid=%s&polid=%s&grp=%s"
 		         "&code=%s&code2=&redir=%%2Fremote%%2Findex&just_logged_in=1",

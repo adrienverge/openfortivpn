@@ -284,7 +284,7 @@ static int ipv4_get_route(struct rtentry *route)
 			mask = 0;
 		} else {
 			int is_mask_set = 0;
-			char* tmp_position;
+			char *tmp_position;
 			int dot_count = -1;
 
 			if (index(tmpstr, '/') != NULL) {
@@ -478,7 +478,7 @@ int ipv4_protect_tunnel_route(struct tunnel *tunnel)
 
 
 	// Set the default route as the route to the tunnel gateway
-	char* iface = route_iface(gtw_rt);
+	char *iface = route_iface(gtw_rt);
 	memcpy(gtw_rt, def_rt, sizeof(*gtw_rt));
 	route_iface(gtw_rt) = iface;
 	strncpy(route_iface(gtw_rt), route_iface(def_rt), ROUTE_IFACE_LEN - 1);
@@ -510,10 +510,22 @@ int ipv4_add_split_vpn_route(struct tunnel *tunnel, char *dest, char *mask,
                              char *gateway)
 {
 	struct rtentry *route;
-	char env_var[22];
+	char env_var[24];
 
 	if (tunnel->ipv4.split_routes == MAX_SPLIT_ROUTES)
 		return ERR_IPV4_NO_MEM;
+	if ((tunnel->ipv4.split_rt == NULL)
+	    || ((tunnel->ipv4.split_routes % STEP_SPLIT_ROUTES) == 0)) {
+		void *new_ptr
+		        = realloc(
+		                  tunnel->ipv4.split_rt,
+		                  (size_t) (tunnel->ipv4.split_routes + STEP_SPLIT_ROUTES)
+		                  * sizeof(*(tunnel->ipv4.split_rt))
+		          );
+		if (new_ptr == NULL)
+			return ERR_IPV4_NO_MEM;
+		tunnel->ipv4.split_rt=new_ptr;
+	}
 
 	sprintf(env_var, "VPN_ROUTE_DEST_%d", tunnel->ipv4.split_routes);
 	setenv(env_var, dest, 0);
@@ -634,9 +646,9 @@ int ipv4_set_tunnel_routes(struct tunnel *tunnel)
 
 	if (tunnel->ipv4.split_routes)
 		// try even if ipv4_protect_tunnel_route has failed
-		return ipv4_set_split_routes (tunnel);
+		return ipv4_set_split_routes(tunnel);
 	else if (ret == 0) {
-		return ipv4_set_default_routes (tunnel);
+		return ipv4_set_default_routes(tunnel);
 	} else {
 		return ret;
 	}

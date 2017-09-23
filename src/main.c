@@ -122,17 +122,12 @@ int main(int argc, char **argv)
 	long int port;
 
 	/* Init cfg */
-	memset (&cfg, 0, sizeof (cfg));
+	memset(&cfg, 0, sizeof(cfg));
 
 	init_logging();
 
 	// Set defaults
 	init_vpn_config(&cfg);
-	cfg.set_routes = 1;
-	cfg.set_dns = 1;
-	cfg.verify_cert = 1;
-	cfg.insecure_ssl = 0;
-	cfg.pppd_use_peerdns = 1;
 
 	struct option long_options[] = {
 		{"help",            no_argument,       0, 'h'},
@@ -249,7 +244,7 @@ int main(int argc, char **argv)
 			           "set-routes") == 0) {
 				int set_routes = strtob(optarg);
 				if (set_routes < 0) {
-					log_warn("Bad set-routes options: \"%s\"\n",
+					log_warn("Bad set-routes option: \"%s\"\n",
 					         optarg);
 					break;
 				}
@@ -260,7 +255,7 @@ int main(int argc, char **argv)
 			           "half-internet-routes") == 0) {
 				int half_internet_routes = strtob(optarg);
 				if (half_internet_routes < 0) {
-					log_warn("Bad half-internet-routes options: " \
+					log_warn("Bad half-internet-routes option: " \
 					         "\"%s\"\n", optarg);
 					break;
 				}
@@ -271,7 +266,7 @@ int main(int argc, char **argv)
 			           "set-dns") == 0) {
 				int set_dns = strtob(optarg);
 				if (set_dns < 0) {
-					log_warn("Bad set-dns options: \"%s\"\n",
+					log_warn("Bad set-dns option: \"%s\"\n",
 					         optarg);
 					break;
 				}
@@ -308,7 +303,7 @@ int main(int argc, char **argv)
 
 	if (optind < argc - 1 || optind > argc)
 		goto user_error;
-	set_syslog (cfg.use_syslog);
+	set_syslog(cfg.use_syslog);
 
 	if (password != NULL)
 		log_warn("You should not pass the password on the command "
@@ -318,7 +313,7 @@ int main(int argc, char **argv)
 	// Load config file
 	if (config_file[0] != '\0') {
 		ret = load_config(&cfg, config_file);
-		set_syslog (cfg.use_syslog);
+		set_syslog(cfg.use_syslog);
 		if (ret == 0)
 			log_debug("Loaded config file \"%s\".\n", config_file);
 		else
