@@ -138,10 +138,10 @@ static void pool_push(struct ppp_packet_pool *pool, struct ppp_packet *new)
  */
 static struct ppp_packet *pool_pop(struct ppp_packet_pool *pool)
 {
-	struct ppp_packet *first = pool->list_head;
+	struct ppp_packet *first;
 
-	//SEM_WAIT(&pool->sem);
 	pthread_mutex_lock(&pool->mutex);
+
 	while (pool->list_head == NULL)
 		pthread_cond_wait(&pool->new_data, &pool->mutex);
 

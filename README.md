@@ -51,8 +51,7 @@ Examples
 Installing
 ----------
 
-openfortivpn is packaged for Fedora, Gentoo and NixOS under the package name
-`openfortivpn`.
+openfortivpn is packaged for [Fedora](https://admin.fedoraproject.org/pkgdb/package/rpms/openfortivpn/), [Gentoo](https://packages.gentoo.org/packages/net-vpn/openfortivpn), [NixOS](https://github.com/NixOS/nixpkgs/tree/master/pkgs/tools/networking/openfortivpn) and [Arch Linux](https://aur.archlinux.org/packages/openfortivpn) under the package name `openfortivpn`.
 
 For other distros, you'll need to build and install from source:
 
