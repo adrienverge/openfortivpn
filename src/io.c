@@ -591,8 +591,11 @@ int io_loop(struct tunnel *tunnel)
 	 *   - openfortivpn, Python version:       ~ 2000 kbit/s
 	 *     (with or without TCP_NODELAY)
 	 */
-	setsockopt(tunnel->ssl_socket, IPPROTO_TCP, TCP_NODELAY,
-	           (char *) &tcp_nodelay_flag, sizeof(int));
+	if (setsockopt(tunnel->ssl_socket, IPPROTO_TCP, TCP_NODELAY,
+	               (char *) &tcp_nodelay_flag, sizeof(int))) {
+		log_error("setsockopt: %s\n", strerror(errno));
+		goto err_sockopt;
+	}
 
 // on osx this prevents the program from being stopped with ctrl-c
 #ifndef __APPLE__
@@ -658,5 +661,6 @@ int io_loop(struct tunnel *tunnel)
 
 err_thread:
 err_signal:
+err_sockopt:
 	return 1;
 }
