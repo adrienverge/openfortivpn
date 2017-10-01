@@ -851,7 +851,8 @@ int ipv4_del_nameservers_from_resolv_conf(struct tunnel *tunnel)
 err_free:
 	free(buffer);
 err_close:
-	fclose(file);
+	if (file)
+		fclose(file);
 
 	return ret;
 }
