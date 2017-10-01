@@ -451,14 +451,14 @@ static void *ssl_read(void *arg)
 
 		if (tunnel->state == STATE_CONNECTING) {
 			if (packet_is_ip_plus_dns(packet)) {
-				char line[128];
+				char line[57]; // 1 + 15 + 7 + 15 + 2 + 15 + 1 + 1
 				set_tunnel_ips(tunnel, packet);
 				strcpy(line, "[");
-				strcat(line, inet_ntoa(tunnel->ipv4.ip_addr));
+				strncat(line, inet_ntoa(tunnel->ipv4.ip_addr), 15);
 				strcat(line, "], ns [");
-				strcat(line, inet_ntoa(tunnel->ipv4.ns1_addr));
+				strncat(line, inet_ntoa(tunnel->ipv4.ns1_addr), 15);
 				strcat(line, ", ");
-				strcat(line, inet_ntoa(tunnel->ipv4.ns2_addr));
+				strncat(line, inet_ntoa(tunnel->ipv4.ns2_addr), 15);
 				strcat(line, "]");
 				log_info("Got addresses: %s\n", line);
 			} else if (packet_is_end_negociation(packet)) {
