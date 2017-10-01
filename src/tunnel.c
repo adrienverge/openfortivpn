@@ -242,7 +242,7 @@ static int tcp_connect(struct tunnel *tunnel)
 	handle = socket(AF_INET, SOCK_STREAM, 0);
 	if (handle == -1) {
 		log_error("socket: %s\n", strerror(errno));
-		return -1;
+		goto err_socket;
 	}
 
 	server.sin_family = AF_INET;
@@ -253,10 +253,15 @@ static int tcp_connect(struct tunnel *tunnel)
 	ret = connect(handle, (struct sockaddr *) &server, sizeof(server));
 	if (ret == -1) {
 		log_error("connect: %s\n", strerror(errno));
-		return -1;
+		goto err_connect;
 	}
 
 	return handle;
+
+err_connect:
+	close(handle);
+err_socket:
+	return -1;
 }
 
 static int ssl_verify_cert(struct tunnel *tunnel)
