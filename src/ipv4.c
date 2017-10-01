@@ -114,7 +114,7 @@ static int ipv4_get_route(struct rtentry *route)
 		return ERR_IPV4_SEE_ERRNO;
 	}
 
-	if ((size = read(fd, buffer, 0x1000 - 1)) == -1) {
+	if ((size = read(fd, buffer, sizeof(buffer)-1)) == -1) {
 		close(fd);
 		return ERR_IPV4_SEE_ERRNO;
 	}
