@@ -316,9 +316,16 @@ static int get_auth_cookie(struct tunnel *tunnel, char *buf)
 				end = strstr(line, ";");
 				if (end != NULL)
 					end[0] = '\0';
+				log_debug("Cookie: %s\n", line);
 				strncpy(tunnel->config->cookie, line, COOKIE_SIZE);
 				tunnel->config->cookie[COOKIE_SIZE] = '\0';
-				ret = 1; // success
+				if (strlen(line) > COOKIE_SIZE) {
+					log_error("Cookie larger than expected:"
+					          " %zu > %d\n",
+					          strlen(line), COOKIE_SIZE);
+				} else {
+					ret = 1; // success
+				}
 			}
 		}
 	}
