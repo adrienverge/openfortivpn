@@ -451,14 +451,14 @@ static void *ssl_read(void *arg)
 
 		if (tunnel->state == STATE_CONNECTING) {
 			if (packet_is_ip_plus_dns(packet)) {
-				char line[128];
+				char line[57]; // 1 + 15 + 7 + 15 + 2 + 15 + 1 + 1
 				set_tunnel_ips(tunnel, packet);
 				strcpy(line, "[");
-				strcat(line, inet_ntoa(tunnel->ipv4.ip_addr));
+				strncat(line, inet_ntoa(tunnel->ipv4.ip_addr), 15);
 				strcat(line, "], ns [");
-				strcat(line, inet_ntoa(tunnel->ipv4.ns1_addr));
+				strncat(line, inet_ntoa(tunnel->ipv4.ns1_addr), 15);
 				strcat(line, ", ");
-				strcat(line, inet_ntoa(tunnel->ipv4.ns2_addr));
+				strncat(line, inet_ntoa(tunnel->ipv4.ns2_addr), 15);
 				strcat(line, "]");
 				log_info("Got addresses: %s\n", line);
 			} else if (packet_is_end_negociation(packet)) {
@@ -591,8 +591,11 @@ int io_loop(struct tunnel *tunnel)
 	 *   - openfortivpn, Python version:       ~ 2000 kbit/s
 	 *     (with or without TCP_NODELAY)
 	 */
-	setsockopt(tunnel->ssl_socket, IPPROTO_TCP, TCP_NODELAY,
-	           (char *) &tcp_nodelay_flag, sizeof(int));
+	if (setsockopt(tunnel->ssl_socket, IPPROTO_TCP, TCP_NODELAY,
+	               (char *) &tcp_nodelay_flag, sizeof(int))) {
+		log_error("setsockopt: %s\n", strerror(errno));
+		goto err_sockopt;
+	}
 
 // on osx this prevents the program from being stopped with ctrl-c
 #ifndef __APPLE__
@@ -658,5 +661,6 @@ int io_loop(struct tunnel *tunnel)
 
 err_thread:
 err_signal:
+err_sockopt:
 	return 1;
 }
