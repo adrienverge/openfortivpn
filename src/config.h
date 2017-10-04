@@ -26,7 +26,7 @@
 #define ERR_CFG_SEE_ERRNO	-2
 #define ERR_CFG_EMPTY_FILE	-3
 #define ERR_CFG_NO_MEM		-4
-#define ERR_CFG_CANNOT_READ	-4
+#define ERR_CFG_CANNOT_READ	-5
 
 static inline const char *err_cfg_str(int code)
 {
@@ -122,7 +122,7 @@ struct vpn_config {
 	free((cfg)->cipher_list);
 
 int add_trusted_cert(struct vpn_config *cfg, const char *digest);
-int strtob(const char* str);
+int strtob(const char *str);
 
 int load_config(struct vpn_config *cfg, const char *filename);
 
