@@ -163,6 +163,38 @@ static int pppd_run(struct tunnel *tunnel)
 	return 0;
 }
 
+static const char * const pppd_message[] = {
+	NULL,
+	"pppd has detached, or otherwise the connection was successfully"
+	" established and terminated at the peer's request",
+	"an immediately fatal error of some kind occurred, such as an essential"
+	" system call failing, or running out of virtual memory",
+	"an error was detected in processing the options given, such as two"
+	" mutually exclusive options being used",
+	"pppd is not setuid-root and the invoking user is not root",
+	"the kernel does not support PPP, for example, the PPP kernel driver"
+	" is not included or cannot be loaded",
+	"pppd terminated because it was sent a SIGINT, SIGTERM or SIGHUP signal",
+	"the serial port could not be locked",
+	"the serial port could not be opened",
+	"the connect script failed (returned a non-zero exit status)",
+	"the command specified as the argument to the pty option could not be run",
+	"the PPP negotiation failed, that is, it didn't reach the point where at"
+	" least one network protocol (e.g. IP) was running",
+	"the peer system failed (or refused) to authenticate itself",
+	"the link was established successfully and terminated because it was idle",
+	"the link was established successfully and terminated because the"
+	" connect time limit was reached",
+	"callback was negotiated and an incoming call should arrive shortly",
+	"the link was terminated because the peer is not responding to echo "
+	" requests",
+	"the link was terminated by the modem hanging up",
+	"the PPP negotiation failed because serial loopback was detected",
+	"the init script failed (returned a non-zero exit status)",
+	"we failed to authenticate ourselves to the peer",
+	"unknown error"
+};
+
 static int pppd_terminate(struct tunnel *tunnel)
 {
 	close(tunnel->pppd_pty);
@@ -174,7 +206,12 @@ static int pppd_terminate(struct tunnel *tunnel)
 		return 1;
 	}
 	if (WIFEXITED(status)) {
-		log_debug("waitpid: pppd exit status code %d\n", WEXITSTATUS(status));
+		int pppd_exit_status = WEXITSTATUS(status);
+		log_debug("waitpid: pppd exit status code %d\n", pppd_exit_status);
+		size_t len_pppd_message = sizeof(pppd_message) / sizeof(pppd_message[0]);
+		if (pppd_exit_status >= len_pppd_message)
+			pppd_exit_status = len_pppd_message - 1;
+		log_debug("pppd: %s\n", pppd_message[pppd_exit_status]);
 	}
 
 	return 0;
