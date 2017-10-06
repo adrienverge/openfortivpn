@@ -301,7 +301,6 @@ static int get_auth_cookie(struct tunnel *tunnel, char *buf)
 {
 	int ret = 0;
 	const char *line;
-	char *end;
 
 	ret = ERR_HTTP_NO_COOKIE;
 
@@ -311,6 +310,7 @@ static int get_auth_cookie(struct tunnel *tunnel, char *buf)
 			if (line[11] == ';' || line[11] == '\0') {
 				log_debug("Empty cookie.\n");
 			} else {
+				char *end;
 				end = strstr(line, "\r");
 				end[0] = '\0';
 				end = strstr(line, ";");
@@ -574,7 +574,7 @@ int auth_request_vpn_allocation(struct tunnel *tunnel)
 static int parse_xml_config(struct tunnel *tunnel, const char *buffer)
 {
 	const char *val;
-	char *dest, *mask, *gateway;
+	char *gateway;
 
 	if (strncmp(buffer, "HTTP/1.1 200 OK\r\n", 17))
 		return ERR_HTTP_BAD_RES_CODE;
@@ -592,6 +592,7 @@ static int parse_xml_config(struct tunnel *tunnel, const char *buffer)
 	// Routes the tunnel wants to push
 	val = xml_find('<', "split-tunnel-info", buffer, 1);
 	while ((val = xml_find('<', "addr", val, 2))) {
+		char *dest, *mask;
 		dest = xml_get(xml_find(' ', "ip=", val, 1));
 		if (!dest) {
 			log_warn("No ip address for a route\n");

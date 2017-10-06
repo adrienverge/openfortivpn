@@ -555,10 +555,10 @@ int ipv4_add_split_vpn_route(struct tunnel *tunnel, char *dest, char *mask,
 static int ipv4_set_split_routes(struct tunnel *tunnel)
 {
 	int i;
-	struct rtentry *route;
-	int ret;
 
 	for (i = 0; i < tunnel->ipv4.split_routes; i++) {
+		struct rtentry *route;
+		int ret;
 		route = &tunnel->ipv4.split_rt[i];
 		strncpy(route_iface(route), tunnel->ppp_iface,
 		        ROUTE_IFACE_LEN - 1);
@@ -656,13 +656,13 @@ int ipv4_set_tunnel_routes(struct tunnel *tunnel)
 
 int ipv4_restore_routes(struct tunnel *tunnel)
 {
-	int ret;
 	struct rtentry *def_rt = &tunnel->ipv4.def_rt;
 	struct rtentry *gtw_rt = &tunnel->ipv4.gtw_rt;
 	struct rtentry *ppp_rt = &tunnel->ipv4.ppp_rt;
 	struct vpn_config *cfg = tunnel->config;
 
 	if (tunnel->ipv4.route_to_vpn_is_added) {
+		int ret;
 		ret = ipv4_del_route(gtw_rt);
 		if (ret != 0)
 			log_warn("Could not delete route to vpn server (%s).\n",
