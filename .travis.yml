@@ -17,3 +17,18 @@ install:
 
 script:
   - ./tests/lint/run.sh
+
+env:
+  global:
+    # COVERITY_SCAN_TOKEN
+    - secure: "dQYKsw3D9RzYspbSHp0lbf/QYAg2+cVhNibTPvAZSbF6LHAJAjDDp9RKGmAewus5HLFa3L3OlZIWAgrKpWCro8jNWuU4fkYd1vZ1zsHvHY/o0U8ZUNErQWoFY59oLsx7p6zowgi4fBEme4vZSIcgzrlltByy/Obs0RaVPTCn6+4l3/MybEJwbE8zcdGfrlk/rC2T2xcghejdTg/W6CzRqqmvfnOnbunhOfBleZtpJ4FFqpY7U5t1LQUSH8AMKDuwSb26LLMwaTjKloDnwkTsvKLePkHIc2HGdxjlLvfbIPlTdANnRoAKwB69UMX1UzLNvQHeUjI2qMNEPvT6yvEJVtUXxKQB8w/GFSwOprOhnFP4j7phAMG1jdObHSE4jYG/hQByEK3W+5xy4zPiaS54y+2z3TgL1JtQ1HTp690QyCB8R6FCiOSjgxTI5XdEXlxtM4SY718dIv9YWL1PPIRil8XXaznMN6Gf7Yz5ja8EQh+vmoF0pmFSQoDmkRRN5qzD9afaA0TKOJDw+Kud2imSYp9ku7gM70AzPUMyZWc40Fh93ebTHjEBWB7wyVK2s7HBbXlVGgXaV/6e2redXFeODzZdNby+dpOdLMU9H5Y+8FqMWsl1FmIiVMEnPNINkY94urmnqdteCYbZocMy6fy8f4KS8PWGHjRocoS3EQSNXpA="
+
+addons:
+  coverity_scan:
+    project:
+      name: adrienverge/openfortivpn
+      description: Client for PPP+SSL VPN tunnel services 
+    notification_email: adrienverge@users.noreply.github.com
+    build_command_prepend: ./configure --prefix=/usr --sysconfdir=/etc; make clean
+    build_command: make -j 4
+    branch_pattern: coverity_scan
