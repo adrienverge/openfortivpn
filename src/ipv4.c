@@ -114,7 +114,7 @@ static int ipv4_get_route(struct rtentry *route)
 		return ERR_IPV4_SEE_ERRNO;
 	}
 
-	if ((size = read(fd, buffer, 0x1000 - 1)) == -1) {
+	if ((size = read(fd, buffer, sizeof(buffer)-1)) == -1) {
 		close(fd);
 		return ERR_IPV4_SEE_ERRNO;
 	}
@@ -284,7 +284,7 @@ static int ipv4_get_route(struct rtentry *route)
 			mask = 0;
 		} else {
 			int is_mask_set = 0;
-			char* tmp_position;
+			char *tmp_position;
 			int dot_count = -1;
 
 			if (index(tmpstr, '/') != NULL) {
@@ -478,7 +478,7 @@ int ipv4_protect_tunnel_route(struct tunnel *tunnel)
 
 
 	// Set the default route as the route to the tunnel gateway
-	char* iface = route_iface(gtw_rt);
+	char *iface = route_iface(gtw_rt);
 	memcpy(gtw_rt, def_rt, sizeof(*gtw_rt));
 	route_iface(gtw_rt) = iface;
 	strncpy(route_iface(gtw_rt), route_iface(def_rt), ROUTE_IFACE_LEN - 1);
@@ -510,10 +510,22 @@ int ipv4_add_split_vpn_route(struct tunnel *tunnel, char *dest, char *mask,
                              char *gateway)
 {
 	struct rtentry *route;
-	char env_var[22];
+	char env_var[24];
 
 	if (tunnel->ipv4.split_routes == MAX_SPLIT_ROUTES)
 		return ERR_IPV4_NO_MEM;
+	if ((tunnel->ipv4.split_rt == NULL)
+	    || ((tunnel->ipv4.split_routes % STEP_SPLIT_ROUTES) == 0)) {
+		void *new_ptr
+		        = realloc(
+		                  tunnel->ipv4.split_rt,
+		                  (size_t) (tunnel->ipv4.split_routes + STEP_SPLIT_ROUTES)
+		                  * sizeof(*(tunnel->ipv4.split_rt))
+		          );
+		if (new_ptr == NULL)
+			return ERR_IPV4_NO_MEM;
+		tunnel->ipv4.split_rt=new_ptr;
+	}
 
 	sprintf(env_var, "VPN_ROUTE_DEST_%d", tunnel->ipv4.split_routes);
 	setenv(env_var, dest, 0);
@@ -543,10 +555,10 @@ int ipv4_add_split_vpn_route(struct tunnel *tunnel, char *dest, char *mask,
 static int ipv4_set_split_routes(struct tunnel *tunnel)
 {
 	int i;
-	struct rtentry *route;
-	int ret;
 
 	for (i = 0; i < tunnel->ipv4.split_routes; i++) {
+		struct rtentry *route;
+		int ret;
 		route = &tunnel->ipv4.split_rt[i];
 		strncpy(route_iface(route), tunnel->ppp_iface,
 		        ROUTE_IFACE_LEN - 1);
@@ -568,30 +580,61 @@ static int ipv4_set_default_routes(struct tunnel *tunnel)
 	int ret;
 	struct rtentry *def_rt = &tunnel->ipv4.def_rt;
 	struct rtentry *ppp_rt = &tunnel->ipv4.ppp_rt;
+	struct vpn_config *cfg = tunnel->config;
 
 	route_init(ppp_rt);
 
-	// Delete the current default route
-	log_debug("Deleting the current default route...\n");
-	ret = ipv4_del_route(def_rt);
-	if (ret != 0)
-		log_warn("Could not delete the current default route (%s).\n",
-		         err_ipv4_str(ret));
+	if (cfg->half_internet_routes==0) {
+		// Delete the current default route
+		log_debug("Deleting the current default route...\n");
+		ret = ipv4_del_route(def_rt);
+		if (ret != 0)
+			log_warn("Could not delete the current default route (%s).\n",
+			         err_ipv4_str(ret));
 
-	// Set the new default route
-	// ip route add to 0/0 dev ppp0
-	route_dest(ppp_rt).s_addr = inet_addr("0.0.0.0");
-	route_mask(ppp_rt).s_addr = inet_addr("0.0.0.0");
-	route_gtw(ppp_rt).s_addr = inet_addr("0.0.0.0");
-	strncpy(route_iface(ppp_rt), tunnel->ppp_iface, ROUTE_IFACE_LEN - 1);
+		// Set the new default route
+		// ip route add to 0/0 dev ppp0
+		route_dest(ppp_rt).s_addr = inet_addr("0.0.0.0");
+		route_mask(ppp_rt).s_addr = inet_addr("0.0.0.0");
+		route_gtw(ppp_rt).s_addr = inet_addr("0.0.0.0");
+		log_debug("Setting new default route...\n");
 
-	log_debug("Setting new default route...\n");
-	ret = ipv4_set_route(ppp_rt);
-	if (ret == ERR_IPV4_SEE_ERRNO && errno == EEXIST) {
-		log_warn("Default route exists already.\n");
-	} else if (ret != 0) {
-		log_warn("Could not set the new default route (%s).\n",
-		         err_ipv4_str(ret));
+		strncpy(route_iface(ppp_rt), tunnel->ppp_iface, ROUTE_IFACE_LEN - 1);
+
+		ret = ipv4_set_route(ppp_rt);
+		if (ret == ERR_IPV4_SEE_ERRNO && errno == EEXIST) {
+			log_warn("Default route exists already.\n");
+		} else if (ret != 0) {
+			log_warn("Could not set the new default route (%s).\n",
+			         err_ipv4_str(ret));
+		}
+
+	} else {
+		// Emulate default routes as two "half internet" routes
+		// This allows for e.g. DHCP renewing default routes without
+		// breaking the tunnel
+		log_debug("Setting new half-internet routes...\n");
+		route_dest(ppp_rt).s_addr = inet_addr("0.0.0.0");
+		route_mask(ppp_rt).s_addr = inet_addr("128.0.0.0");
+
+		strncpy(route_iface(ppp_rt), tunnel->ppp_iface, ROUTE_IFACE_LEN - 1);
+
+		ret = ipv4_set_route(ppp_rt);
+		if (ret == ERR_IPV4_SEE_ERRNO && errno == EEXIST) {
+			log_warn("0.0.0.0/1 route exists already.\n");
+		} else if (ret != 0) {
+			log_warn("Could not set the new 0.0.0.0/1 route (%s).\n",
+			         err_ipv4_str(ret));
+		}
+
+		route_dest(ppp_rt).s_addr = inet_addr("128.0.0.0");
+		ret = ipv4_set_route(ppp_rt);
+		if (ret == ERR_IPV4_SEE_ERRNO && errno == EEXIST) {
+			log_warn("128.0.0.0/1 route exists already.\n");
+		} else if (ret != 0) {
+			log_warn("Could not set the new 128.0.0.0/1 route (%s).\n",
+			         err_ipv4_str(ret));
+		}
 	}
 
 	return 0;
@@ -603,9 +646,9 @@ int ipv4_set_tunnel_routes(struct tunnel *tunnel)
 
 	if (tunnel->ipv4.split_routes)
 		// try even if ipv4_protect_tunnel_route has failed
-		return ipv4_set_split_routes (tunnel);
+		return ipv4_set_split_routes(tunnel);
 	else if (ret == 0) {
-		return ipv4_set_default_routes (tunnel);
+		return ipv4_set_default_routes(tunnel);
 	} else {
 		return ret;
 	}
@@ -613,18 +656,18 @@ int ipv4_set_tunnel_routes(struct tunnel *tunnel)
 
 int ipv4_restore_routes(struct tunnel *tunnel)
 {
-	int ret;
 	struct rtentry *def_rt = &tunnel->ipv4.def_rt;
 	struct rtentry *gtw_rt = &tunnel->ipv4.gtw_rt;
 	struct rtentry *ppp_rt = &tunnel->ipv4.ppp_rt;
+	struct vpn_config *cfg = tunnel->config;
 
 	if (tunnel->ipv4.route_to_vpn_is_added) {
+		int ret;
 		ret = ipv4_del_route(gtw_rt);
 		if (ret != 0)
 			log_warn("Could not delete route to vpn server (%s).\n",
 			         err_ipv4_str(ret));
-
-		if (tunnel->ipv4.split_routes==0) {
+		if ((cfg->half_internet_routes==0) && (tunnel->ipv4.split_routes==0)) {
 			ret = ipv4_del_route(ppp_rt);
 			if (ret != 0)
 				log_warn("Could not delete route through tunnel (%s).\n",
@@ -675,10 +718,14 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 		         strerror(errno));
 		goto err_close;
 	}
-	// TODO
-	//if (stat.st_size == 0)
 
-	buffer = malloc(stat.st_size);
+	if (stat.st_size == 0) {
+		log_warn("Could not read /etc/resolv.conf (%s).\n",
+		         "Empty file");
+		goto err_close;
+	}
+
+	buffer = malloc(stat.st_size + 1);
 	if (buffer == NULL) {
 		log_warn("Could not read /etc/resolv.conf (%s).\n",
 		         "Not enough memory");
@@ -690,6 +737,8 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 		log_warn("Could not read /etc/resolv.conf.\n");
 		goto err_free;
 	}
+
+	buffer[stat.st_size] = '\0';
 
 	strcpy(ns1, "nameserver ");
 	strncat(ns1, inet_ntoa(tunnel->ipv4.ns1_addr), 15);
@@ -718,6 +767,8 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 		log_warn("Could not read /etc/resolv.conf.\n");
 		goto err_free;
 	}
+
+	buffer[stat.st_size] = '\0';
 
 	rewind(file);
 	strcat(ns1, "\n");
@@ -767,7 +818,7 @@ int ipv4_del_nameservers_from_resolv_conf(struct tunnel *tunnel)
 		goto err_close;
 	}
 
-	buffer = malloc(stat.st_size);
+	buffer = malloc(stat.st_size + 1);
 	if (buffer == NULL) {
 		log_warn("Could not read /etc/resolv.conf (%s).\n",
 		         "Not enough memory");
@@ -779,6 +830,8 @@ int ipv4_del_nameservers_from_resolv_conf(struct tunnel *tunnel)
 		log_warn("Could not read /etc/resolv.conf.\n");
 		goto err_free;
 	}
+
+	buffer[stat.st_size] = '\0';
 
 	strcpy(ns1, "nameserver ");
 	strncat(ns1, inet_ntoa(tunnel->ipv4.ns1_addr), 15);
@@ -808,7 +861,8 @@ int ipv4_del_nameservers_from_resolv_conf(struct tunnel *tunnel)
 err_free:
 	free(buffer);
 err_close:
-	fclose(file);
+	if (file)
+		fclose(file);
 
 	return ret;
 }

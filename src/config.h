@@ -26,7 +26,7 @@
 #define ERR_CFG_SEE_ERRNO	-2
 #define ERR_CFG_EMPTY_FILE	-3
 #define ERR_CFG_NO_MEM		-4
-#define ERR_CFG_CANNOT_READ	-4
+#define ERR_CFG_CANNOT_READ	-5
 
 static inline const char *err_cfg_str(int code)
 {
@@ -50,7 +50,7 @@ struct x509_digest {
 };
 
 #define FIELD_SIZE	64
-#define COOKIE_SIZE	300
+#define COOKIE_SIZE	4096
 
 struct vpn_config {
 	char 		gateway_host[FIELD_SIZE + 1];
@@ -66,6 +66,7 @@ struct vpn_config {
 	int	set_dns;
 	int     pppd_use_peerdns;
 	int     use_syslog;
+	int	half_internet_routes;
 
 	char	*pppd_log;
 	char	*pppd_plugin;
@@ -84,19 +85,26 @@ struct vpn_config {
 	do { \
 		(cfg)->gateway_host[0] = '\0'; \
 		(cfg)->gateway_port = 0; \
-		(cfg)->realm[0] = '\0'; \
 		(cfg)->username[0] = '\0'; \
 		(cfg)->password[0] = '\0'; \
 		(cfg)->otp[0] = '\0'; \
+		(cfg)->cookie[0] = '\0'; \
+		(cfg)->realm[0] = '\0'; \
+		(cfg)->set_routes = 1; \
+		(cfg)->set_dns = 1; \
+		(cfg)->pppd_use_peerdns = 1; \
+		(cfg)->half_internet_routes = 0; \
+		(cfg)->use_syslog = 0; \
 		(cfg)->pppd_log = NULL; \
 		(cfg)->pppd_plugin = NULL; \
 		(cfg)->pppd_ipparam = NULL; \
 		(cfg)->ca_file = NULL; \
 		(cfg)->user_cert = NULL; \
 		(cfg)->user_key = NULL; \
+		(cfg)->verify_cert = 1; \
+		(cfg)->insecure_ssl = 0; \
 		(cfg)->cipher_list = NULL; \
 		(cfg)->cert_whitelist = NULL; \
-		(cfg)->use_syslog = 0; \
 	} while (0)
 
 #define destroy_vpn_config(cfg) \
@@ -114,6 +122,7 @@ struct vpn_config {
 	free((cfg)->cipher_list);
 
 int add_trusted_cert(struct vpn_config *cfg, const char *digest);
+int strtob(const char *str);
 
 int load_config(struct vpn_config *cfg, const char *filename);
 

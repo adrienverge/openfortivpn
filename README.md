@@ -51,8 +51,7 @@ Examples
 Installing
 ----------
 
-openfortivpn is packaged for Fedora, Gentoo and NixOS under the package name
-`openfortivpn`.
+openfortivpn is packaged for [Fedora](https://admin.fedoraproject.org/pkgdb/package/rpms/openfortivpn/), [Gentoo](https://packages.gentoo.org/packages/net-vpn/openfortivpn), [NixOS](https://github.com/NixOS/nixpkgs/tree/master/pkgs/tools/networking/openfortivpn) and [Arch Linux](https://aur.archlinux.org/packages/openfortivpn) under the package name `openfortivpn`.
 
 For other distros, you'll need to build and install from source:
 
@@ -80,6 +79,12 @@ For other distros, you'll need to build and install from source:
     brew install automake autoconf openssl@1.0
     ```
 
+    On macOS, install 'openfortivpn'...
+    ```
+    brew install openfortivpn
+    ```
+    ...**or** build a version of your choice from source following the instructions in step 2.
+
 
 2.  Build and install.
 
@@ -90,9 +95,8 @@ For other distros, you'll need to build and install from source:
     sudo make install
     ```
 
-    If you need to specify the openssl location you can use the
-    `--with-openssl` option.
-
+    If you need to specify the openssl location you can set the
+    `$PKG_CONFIG_PATH` environment variable.
 
 
 ----------------
