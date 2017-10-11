@@ -439,13 +439,15 @@ int main(int argc, char **argv)
 		log_warn("This process was not spawned with root "
 		         "privileges, this will probably not work.\n");
 
-	if (run_tunnel(&cfg) == 0)
-		ret = EXIT_SUCCESS;
-	while ((ret == EXIT_SUCCESS) && (cfg.loop!=0) && (get_sig_received()==0)) {
-		sleep(cfg.loop);
-		if (run_tunnel(&cfg) != 0)
+	do {
+		if (run_tunnel(&cfg) != 0) {
 			ret = EXIT_FAILURE;
-	}
+		} else
+			ret = EXIT_SUCCESS;
+		if ((cfg.loop > 0) && (get_sig_received() == 0))
+			sleep(cfg.loop);
+	} while ((get_sig_received() == 0) && (cfg.loop !=0));
+
 	goto exit;
 
 user_error:
