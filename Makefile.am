@@ -16,13 +16,13 @@ DISTCHECK_CONFIGURE_FLAGS = CFLAGS=-Werror
 
 confdir=$(sysconfdir)/openfortivpn
 datadir=$(prefix)/share/openfortivpn
-data_DATA=etc/openfortivpn/config.sample
+data_DATA=etc/openfortivpn/config.template
 
 install-data-hook:
-	chmod 0600 $(DESTDIR)$(datadir)/config.sample ; \
+	chmod 0600 $(DESTDIR)$(datadir)/config.template ; \
 	if ! test -e $(DESTDIR)$(sysconfdir)/openfortivpn/config ; then \
 		mkdir -p $(DESTDIR)$(sysconfdir)/openfortivpn ; \
-		cp -a $(DESTDIR)$(datadir)/config.sample \
+		cp -a $(DESTDIR)$(datadir)/config.template \
 			 $(DESTDIR)$(sysconfdir)/openfortivpn/config ; \
 	fi
 

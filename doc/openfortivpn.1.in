@@ -135,7 +135,7 @@ Options can be taken from a configuration file. Options passed in the command
 line will override those from the config file, though. The default config file
 is @SYSCONFDIR@/openfortivpn/config, but this can be set using the \fB\-c\fR option.
 An empty template for the config file is installed to
-@DATADIR@/config.sample
+@DATADIR@/config.template
 
 .TP
 A config file looks like:
