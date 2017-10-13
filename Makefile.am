@@ -15,18 +15,20 @@ openfortivpn_LDADD = $(OPENSSL_LIBS)
 DISTCHECK_CONFIGURE_FLAGS = CFLAGS=-Werror
 
 confdir=$(sysconfdir)/openfortivpn
-conf_DATA = etc/openfortivpn/config.sample
+datadir=$(prefix)/share/openfortivpn
+data_DATA=etc/openfortivpn/config.sample
 
 install-data-hook:
-	chmod 0600 $(DESTDIR)$(sysconfdir)/openfortivpn/config.sample ; \
+	chmod 0600 $(DESTDIR)$(datadir)/config.sample ; \
 	if ! test -e $(DESTDIR)$(sysconfdir)/openfortivpn/config ; then \
-		cp -a $(DESTDIR)$(sysconfdir)/openfortivpn/config.sample \
+		mkdir -p $(DESTDIR)$(sysconfdir)/openfortivpn ; \
+		cp -a $(DESTDIR)$(datadir)/config.sample \
 			 $(DESTDIR)$(sysconfdir)/openfortivpn/config ; \
 	fi
 
 dist_man_MANS = doc/openfortivpn.1
 
 doc/openfortivpn.1: $(srcdir)/doc/openfortivpn.1.in
-	sed -e 's|[@]SYSCONFDIR[@]|$(sysconfdir)|g' $^ >$@
+	sed -e 's|[@]SYSCONFDIR[@]|$(sysconfdir)|g;s|[@]DATADIR[@]|$(datadir)|g;' $^ >$@
 
-EXTRA_DIST = LICENSE README.md doc/openfortivpn.1.in $(conf_DATA)
+EXTRA_DIST = LICENSE README.md doc/openfortivpn.1.in $(data_DATA)
