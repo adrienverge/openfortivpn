@@ -44,9 +44,8 @@ void read_password(const char *prompt, char *pass, size_t len)
 	}
 	pass[i] = '\0';
 
-	if (masked) {
+	if (masked)
 		tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
-	}
 
 	printf("\n");
 }

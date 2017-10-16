@@ -32,11 +32,11 @@ enum log_verbosity {
 
 extern enum log_verbosity loglevel;
 
-void init_logging();
-void set_syslog (int do_syslog);
+void init_logging(void);
+void set_syslog(int do_syslog);
 
-void increase_verbosity();
-void decrease_verbosity();
+void increase_verbosity(void);
+void decrease_verbosity(void);
 
 void do_log(int verbosity, const char *format, ...);
 
