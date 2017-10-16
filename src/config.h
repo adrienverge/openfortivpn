@@ -26,7 +26,7 @@
 #define ERR_CFG_SEE_ERRNO	-2
 #define ERR_CFG_EMPTY_FILE	-3
 #define ERR_CFG_NO_MEM		-4
-#define ERR_CFG_CANNOT_READ	-4
+#define ERR_CFG_CANNOT_READ	-5
 
 static inline const char *err_cfg_str(int code)
 {
@@ -50,7 +50,7 @@ struct x509_digest {
 };
 
 #define FIELD_SIZE	64
-#define COOKIE_SIZE	300
+#define COOKIE_SIZE	4096
 
 struct vpn_config {
 	char 		gateway_host[FIELD_SIZE + 1];

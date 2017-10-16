@@ -114,7 +114,7 @@ static int ipv4_get_route(struct rtentry *route)
 		return ERR_IPV4_SEE_ERRNO;
 	}
 
-	if ((size = read(fd, buffer, 0x1000 - 1)) == -1) {
+	if ((size = read(fd, buffer, sizeof(buffer)-1)) == -1) {
 		close(fd);
 		return ERR_IPV4_SEE_ERRNO;
 	}
@@ -555,10 +555,10 @@ int ipv4_add_split_vpn_route(struct tunnel *tunnel, char *dest, char *mask,
 static int ipv4_set_split_routes(struct tunnel *tunnel)
 {
 	int i;
-	struct rtentry *route;
-	int ret;
 
 	for (i = 0; i < tunnel->ipv4.split_routes; i++) {
+		struct rtentry *route;
+		int ret;
 		route = &tunnel->ipv4.split_rt[i];
 		strncpy(route_iface(route), tunnel->ppp_iface,
 		        ROUTE_IFACE_LEN - 1);
@@ -656,13 +656,13 @@ int ipv4_set_tunnel_routes(struct tunnel *tunnel)
 
 int ipv4_restore_routes(struct tunnel *tunnel)
 {
-	int ret;
 	struct rtentry *def_rt = &tunnel->ipv4.def_rt;
 	struct rtentry *gtw_rt = &tunnel->ipv4.gtw_rt;
 	struct rtentry *ppp_rt = &tunnel->ipv4.ppp_rt;
 	struct vpn_config *cfg = tunnel->config;
 
 	if (tunnel->ipv4.route_to_vpn_is_added) {
+		int ret;
 		ret = ipv4_del_route(gtw_rt);
 		if (ret != 0)
 			log_warn("Could not delete route to vpn server (%s).\n",
@@ -718,10 +718,14 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 		         strerror(errno));
 		goto err_close;
 	}
-	// TODO
-	//if (stat.st_size == 0)
 
-	buffer = malloc(stat.st_size);
+	if (stat.st_size == 0) {
+		log_warn("Could not read /etc/resolv.conf (%s).\n",
+		         "Empty file");
+		goto err_close;
+	}
+
+	buffer = malloc(stat.st_size + 1);
 	if (buffer == NULL) {
 		log_warn("Could not read /etc/resolv.conf (%s).\n",
 		         "Not enough memory");
@@ -733,6 +737,8 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 		log_warn("Could not read /etc/resolv.conf.\n");
 		goto err_free;
 	}
+
+	buffer[stat.st_size] = '\0';
 
 	strcpy(ns1, "nameserver ");
 	strncat(ns1, inet_ntoa(tunnel->ipv4.ns1_addr), 15);
@@ -761,6 +767,8 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 		log_warn("Could not read /etc/resolv.conf.\n");
 		goto err_free;
 	}
+
+	buffer[stat.st_size] = '\0';
 
 	rewind(file);
 	strcat(ns1, "\n");
@@ -810,7 +818,7 @@ int ipv4_del_nameservers_from_resolv_conf(struct tunnel *tunnel)
 		goto err_close;
 	}
 
-	buffer = malloc(stat.st_size);
+	buffer = malloc(stat.st_size + 1);
 	if (buffer == NULL) {
 		log_warn("Could not read /etc/resolv.conf (%s).\n",
 		         "Not enough memory");
@@ -822,6 +830,8 @@ int ipv4_del_nameservers_from_resolv_conf(struct tunnel *tunnel)
 		log_warn("Could not read /etc/resolv.conf.\n");
 		goto err_free;
 	}
+
+	buffer[stat.st_size] = '\0';
 
 	strcpy(ns1, "nameserver ");
 	strncat(ns1, inet_ntoa(tunnel->ipv4.ns1_addr), 15);
@@ -851,7 +861,8 @@ int ipv4_del_nameservers_from_resolv_conf(struct tunnel *tunnel)
 err_free:
 	free(buffer);
 err_close:
-	fclose(file);
+	if (file)
+		fclose(file);
 
 	return ret;
 }
