@@ -60,7 +60,7 @@ struct vpn_config {
 	char		password[FIELD_SIZE + 1];
 	char		otp[FIELD_SIZE + 1];
 	char		cookie[COOKIE_SIZE + 1];
-	char            realm[FIELD_SIZE + 1];
+	char		realm[FIELD_SIZE + 1];
 
 	int	set_routes;
 	int	set_dns;
@@ -108,18 +108,20 @@ struct vpn_config {
 	} while (0)
 
 #define destroy_vpn_config(cfg) \
-	while ((cfg)->cert_whitelist != NULL) { \
-		struct x509_digest *tmp = (cfg)->cert_whitelist->next; \
-		free((cfg)->cert_whitelist); \
-		(cfg)->cert_whitelist = tmp; \
-	} \
-	free((cfg)->pppd_log); \
-	free((cfg)->pppd_ipparam); \
-	free((cfg)->pppd_plugin); \
-	free((cfg)->ca_file); \
-	free((cfg)->user_cert); \
-	free((cfg)->user_key); \
-	free((cfg)->cipher_list);
+	do { \
+		while ((cfg)->cert_whitelist != NULL) { \
+			struct x509_digest *tmp = (cfg)->cert_whitelist->next; \
+			free((cfg)->cert_whitelist); \
+			(cfg)->cert_whitelist = tmp; \
+		} \
+		free((cfg)->pppd_log); \
+		free((cfg)->pppd_ipparam); \
+		free((cfg)->pppd_plugin); \
+		free((cfg)->ca_file); \
+		free((cfg)->user_cert); \
+		free((cfg)->user_key); \
+		free((cfg)->cipher_list); \
+	} while (0)
 
 int add_trusted_cert(struct vpn_config *cfg, const char *digest);
 int strtob(const char *str);

@@ -127,7 +127,7 @@ int main(int argc, char **argv)
 	// Set defaults
 	init_vpn_config(&cfg);
 
-	struct option long_options[] = {
+	const struct option long_options[] = {
 		{"help",            no_argument,       0, 'h'},
 		{"version",         no_argument,       0, 0},
 		{"config",          required_argument, 0, 'c'},
@@ -247,7 +247,7 @@ int main(int argc, char **argv)
 			           "half-internet-routes") == 0) {
 				int half_internet_routes = strtob(optarg);
 				if (half_internet_routes < 0) {
-					log_warn("Bad half-internet-routes option: " \
+					log_warn("Bad half-internet-routes option: "
 					         "\"%s\"\n", optarg);
 					break;
 				}
