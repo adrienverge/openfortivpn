@@ -116,8 +116,8 @@ static int pppd_run(struct tunnel *tunnel)
 		log_error("forkpty: %s\n", strerror(errno));
 		return 1;
 	} else if (pid == 0) {
-		char * args[] = {
-			(char *)pppd_path, "38400", "noipdefault", "noaccomp",
+		static char * args[] = {
+			pppd_path, "38400", "noipdefault", "noaccomp",
 			"noauth", "default-asyncmap", "nopcomp", "receive-all",
 			"nodefaultroute", ":1.1.1.1", "nodetach",
 			"lcp-max-configure", "40", "mru", "1354",
@@ -151,7 +151,12 @@ static int pppd_run(struct tunnel *tunnel)
 		assert(i < sizeof(args) / sizeof(*args));
 
 		close(tunnel->ssl_socket);
-		execvp(args[0], args);
+		execvp(args[0], (char *const *)args);
+		/*
+		 * The following call to fprintf() doesn't work, probably
+		 * because of the prior call to forkpty().
+		 * TODO: print a meaningful message using strerror(errno)
+		 */
 		fprintf(stderr, "execvp: %s\n", strerror(errno));
 		exit(EXIT_FAILURE);
 	}
