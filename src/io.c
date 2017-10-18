@@ -74,11 +74,11 @@ static void lock_callback(int mode, int type, char *file, int line)
 	else
 		pthread_mutex_unlock(&(lockarray[type]));
 }
-static unsigned long thread_id()
+static unsigned long thread_id(void)
 {
 	return (unsigned long) pthread_self();
 }
-static void init_ssl_locks()
+static void init_ssl_locks(void)
 {
 	int i;
 	lockarray = (pthread_mutex_t *) OPENSSL_malloc(CRYPTO_num_locks() *
@@ -88,7 +88,7 @@ static void init_ssl_locks()
 	CRYPTO_set_id_callback((unsigned long (*)()) thread_id);
 	CRYPTO_set_locking_callback((void (*)()) lock_callback);
 }
-static void destroy_ssl_locks()
+static void destroy_ssl_locks(void)
 {
 	int i;
 	CRYPTO_set_locking_callback(NULL);
@@ -97,11 +97,11 @@ static void destroy_ssl_locks()
 	OPENSSL_free(lockarray);
 }
 #else
-static void init_ssl_locks()
+static void init_ssl_locks(void)
 {
 }
 
-static void destroy_ssl_locks()
+static void destroy_ssl_locks(void)
 {
 }
 #endif
@@ -210,8 +210,8 @@ static void *pppd_read(void *arg)
 			ssize_t frm_len, pktsize;
 			struct ppp_packet *packet, *repacket;
 
-			if ((frm_len = hdlc_find_frame(buf, off_w, &off_r))
-			    == ERR_HDLC_NO_FRAME_FOUND)
+			frm_len = hdlc_find_frame(buf, off_w, &off_r);
+			if (frm_len == ERR_HDLC_NO_FRAME_FOUND)
 				break;
 
 			pktsize = estimated_decoded_size(frm_len);
@@ -251,9 +251,8 @@ static void *pppd_read(void *arg)
 		}
 
 		// Do not discard remaining data
-		if (off_r > 0 && off_r < off_w) {
+		if (off_r > 0 && off_r < off_w)
 			memmove(buf, &buf[off_r], off_w - off_r);
-		}
 		off_w = off_w - off_r;
 	}
 

@@ -27,7 +27,6 @@ Examples
   ```
   openfortivpn vpn-gateway:8443 -u foo -p bar --no-routes --no-dns
   ```
-
 * Using a config file:
   ```
   openfortivpn
@@ -51,7 +50,7 @@ Examples
 Installing
 ----------
 
-openfortivpn is packaged for [Fedora](https://admin.fedoraproject.org/pkgdb/package/rpms/openfortivpn/), [Gentoo](https://packages.gentoo.org/packages/net-vpn/openfortivpn), [NixOS](https://github.com/NixOS/nixpkgs/tree/master/pkgs/tools/networking/openfortivpn), [Arch Linux](https://aur.archlinux.org/packages/openfortivpn) and [Solus](https://solus-project.com)  under the package name `openfortivpn`.
+openfortivpn is packaged for [Fedora](https://admin.fedoraproject.org/pkgdb/package/rpms/openfortivpn/), [openSUSE / SLE](https://software.opensuse.org/package/openfortivpn), [Gentoo](https://packages.gentoo.org/packages/net-vpn/openfortivpn), [NixOS](https://github.com/NixOS/nixpkgs/tree/master/pkgs/tools/networking/openfortivpn), [Arch Linux](https://aur.archlinux.org/packages/openfortivpn) and [Solus](https://packages.solus-project.com/unstable/o/openfortivpn/) under the package name `openfortivpn`.
 
 For other distros, you'll need to build and install from source:
 
