@@ -278,9 +278,9 @@ static int get_gateway_host_ip(struct tunnel *tunnel)
 	err = getaddrinfo(tunnel->config->gateway_host, NULL, &hints, &result);
 	if (err != 0) {
 		if (err == EAI_SYSTEM) {
-			log_error("gethostbyname: %s\n", strerror(errno));
+			log_error("getaddrinfo: %s\n", strerror(errno));
 		} else {
-			log_error("gethostbyname: %s\n", gai_strerror(err));
+			log_error("getaddrinfo: %s\n", gai_strerror(err));
 		}
 		return 1;
 	}
