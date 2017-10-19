@@ -25,6 +25,7 @@ openfortivpn \- Client for PPP+SSL VPN tunnel services
 [\fB\-\-pppd-log=\fI<file>\fR]
 [\fB\-\-pppd-plugin=\fI<file>\fR]
 [\fB\-\-pppd-ipparam=\fI<string>\fR]
+[\fB\-\-pppd-ifname=\fI<string>\fR]
 [\fB\-c\fR \fI<file>\fR]
 [\fB\-v|\-q\fR]
 .br
@@ -120,9 +121,12 @@ Use specified pppd plugin instead of configuring the resolver and routes
 directly.
 .TP
 \fB\-\-pppd-ipparam=\fI<string>\fR
-Provides an extra parameter to the ip-up, ip-pre-up and ip-down scripts. see man
+Provides an extra parameter to the ip-up, ip-pre-up and ip-down scripts. See man
 .BR pppd(8)
 for further details
+.TP
+\fB\-\-pppd-ifname=\fI<string>\fR
+Set the ppp interface name.
 .TP
 \fB\-v\fR
 Increase verbosity. Can be used multiple times to be even more verbose.
