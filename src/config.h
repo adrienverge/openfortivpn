@@ -116,14 +116,15 @@ struct vpn_config {
 			free((cfg)->cert_whitelist); \
 			(cfg)->cert_whitelist = tmp; \
 		} \
-		free((cfg)->pppd_log); \
+		free((cfg)->cert_whitelist); \
+		free((cfg)->cipher_list); \
+		free((cfg)->user_key); \
+		free((cfg)->user_cert); \
+		free((cfg)->ca_file); \
 		free((cfg)->pppd_ipparam); \
 		free((cfg)->pppd_ifname); \
 		free((cfg)->pppd_plugin); \
-		free((cfg)->ca_file); \
-		free((cfg)->user_cert); \
-		free((cfg)->user_key); \
-		free((cfg)->cipher_list); \
+		free((cfg)->pppd_log); \
 	} while (0)
 
 int add_trusted_cert(struct vpn_config *cfg, const char *digest);
