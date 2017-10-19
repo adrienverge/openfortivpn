@@ -93,7 +93,16 @@ static int pppd_run(struct tunnel *tunnel)
 	int amaster;
 #ifndef __APPLE__
 	struct termios termp;
+#endif
 
+	static const char pppd_path[] = "/usr/sbin/pppd";
+
+	if (access(pppd_path, F_OK) != 0) {
+		log_error("%s: %s.\n", pppd_path, strerror(errno));
+		return 1;
+	}
+
+#ifndef __APPLE__
 	termp.c_cflag = B9600;
 	termp.c_cc[VTIME] = 0;
 	termp.c_cc[VMIN] = 1;
@@ -107,8 +116,8 @@ static int pppd_run(struct tunnel *tunnel)
 		log_error("forkpty: %s\n", strerror(errno));
 		return 1;
 	} else if (pid == 0) {
-		char *args[] = {
-			"/usr/sbin/pppd", "38400", "noipdefault", "noaccomp",
+		static const char *args[] = {
+			pppd_path, "38400", "noipdefault", "noaccomp",
 			"noauth", "default-asyncmap", "nopcomp", "receive-all",
 			"nodefaultroute", ":1.1.1.1", "nodetach",
 			"lcp-max-configure", "40", "mru", "1354",
@@ -119,13 +128,12 @@ static int pppd_run(struct tunnel *tunnel)
 		// Dynamically get first NULL pointer so that changes of
 		// args above don't need code changes here
 		int i = sizeof(args) / sizeof(*args) - 1;
-		for (; args [i] == NULL; i--)
+		for (; args[i] == NULL; i--)
 			;
 		i++;
 
-		if (tunnel->config->pppd_use_peerdns) {
+		if (tunnel->config->pppd_use_peerdns)
 			args[i++] = "usepeerdns";
-		}
 		if (tunnel->config->pppd_log) {
 			args[i++] = "debug";
 			args[i++] = "logfile";
@@ -143,14 +151,19 @@ static int pppd_run(struct tunnel *tunnel)
 		assert(i < sizeof(args) / sizeof(*args));
 
 		close(tunnel->ssl_socket);
-		execvp(args[0], args);
+		execvp(args[0], (char *const *)args);
+		/*
+		 * The following call to fprintf() doesn't work, probably
+		 * because of the prior call to forkpty().
+		 * TODO: print a meaningful message using strerror(errno)
+		 */
 		fprintf(stderr, "execvp: %s\n", strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
 	// Set non-blocking
-	int flags;
-	if ((flags = fcntl(amaster, F_GETFL, 0)) == -1)
+	int flags = fcntl(amaster, F_GETFL, 0);
+	if (flags == -1)
 		flags = 0;
 	if (fcntl(amaster, F_SETFL, flags | O_NONBLOCK) == -1) {
 		log_error("fcntl: %s\n", strerror(errno));
@@ -317,7 +330,7 @@ static int ssl_verify_cert(struct tunnel *tunnel)
 {
 	int ret = -1;
 	unsigned char digest[SHA256LEN];
-	unsigned len;
+	unsigned int len;
 	struct x509_digest *elem;
 	char digest_str[SHA256STRLEN], *subject, *issuer;
 	char *line;
@@ -357,7 +370,7 @@ static int ssl_verify_cert(struct tunnel *tunnel)
 	// Encode digest in base16
 	for (i = 0; i < SHA256LEN; i++)
 		sprintf(&digest_str[2 * i], "%02x", digest[i]);
-	digest_str [SHA256STRLEN - 1] = '\0';
+	digest_str[SHA256STRLEN - 1] = '\0';
 	// Is it in whitelist?
 	for (elem = tunnel->config->cert_whitelist; elem != NULL;
 	     elem = elem->next)
@@ -436,9 +449,8 @@ int ssl_connect(struct tunnel *tunnel)
 	}
 
 	// Load the OS default CA files
-	if (!SSL_CTX_set_default_verify_paths(tunnel->ssl_context)) {
+	if (!SSL_CTX_set_default_verify_paths(tunnel->ssl_context))
 		log_error("Could not load OS OpenSSL files.\n");
-	}
 
 	if (tunnel->config->ca_file) {
 		if (!SSL_CTX_load_verify_locations(

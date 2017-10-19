@@ -37,13 +37,14 @@ int add_trusted_cert(struct vpn_config *cfg, const char *digest)
 
 	new->next = NULL;
 	strncpy(new->data, digest, SHA256STRLEN - 1);
-	new->data [SHA256STRLEN - 1] = '\0';
+	new->data[SHA256STRLEN - 1] = '\0';
 
 	if (cfg->cert_whitelist == NULL) {
 		cfg->cert_whitelist = new;
 	} else {
 		for (last = cfg->cert_whitelist; last->next != NULL;
-		     last = last->next) ;
+		     last = last->next)
+			;
 		last->next = new;
 	}
 
@@ -58,20 +59,18 @@ int add_trusted_cert(struct vpn_config *cfg, const char *digest)
  */
 int strtob(const char *str)
 {
-	if (str[0] == '\0') {
+	if (str[0] == '\0')
 		return 0;
-	} else if (strcasecmp(str, "true") == 0) {
+	else if (strcasecmp(str, "true") == 0)
 		return 1;
-	} else if (strcasecmp(str, "false") == 0) {
+	else if (strcasecmp(str, "false") == 0)
 		return 0;
-	} else if (isdigit(str[0]) == 0) {
+	else if (isdigit(str[0]) == 0)
 		return -1;
-	}
 
 	long int i = strtol(str, NULL, 0);
-	if (i < 0 || i > 1) {
+	if (i < 0 || i > 1)
 		return -1;
-	}
 	return i;
 }
 
@@ -196,17 +195,16 @@ int load_config(struct vpn_config *cfg, const char *filename)
 		} else if (strcmp(key, "half-internet-routes") == 0) {
 			int half_internet_routes = strtob(val);
 			if (half_internet_routes < 0) {
-				log_warn("Bad half-internet-routes in config file:" \
-				         " \"%s\".\n",
-				         val);
+				log_warn("Bad half-internet-routes in config" \
+				         " file: \"%s\".\n", val);
 				continue;
 			}
 			cfg->half_internet_routes = half_internet_routes;
 		} else if (strcmp(key, "pppd-use-peerdns") == 0) {
 			int pppd_use_peerdns = strtob(val);
 			if (pppd_use_peerdns < 0) {
-				log_warn("Bad pppd-use-peerdns in config file: \"%s\".\n",
-				         val);
+				log_warn("Bad pppd-use-peerdns in config file:"
+				         " \"%s\".\n", val);
 				continue;
 			}
 			cfg->pppd_use_peerdns = pppd_use_peerdns;
