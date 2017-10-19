@@ -83,4 +83,6 @@ int ssl_connect(struct tunnel *tunnel);
 
 int run_tunnel(struct vpn_config *config);
 
+#define ARRAY_SIZE(x)	(sizeof(x) / sizeof((x)[0]))
+
 #endif
