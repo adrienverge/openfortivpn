@@ -127,7 +127,7 @@ static int pppd_run(struct tunnel *tunnel)
 		};
 		// Dynamically get first NULL pointer so that changes of
 		// args above don't need code changes here
-		int i = sizeof(args) / sizeof(*args) - 1;
+		int i = ARRAY_SIZE(args) - 1;
 		for (; args[i] == NULL; i--)
 			;
 		i++;
@@ -152,7 +152,7 @@ static int pppd_run(struct tunnel *tunnel)
 			args[i++] = tunnel->config->pppd_ifname;
 		}
 		// Assert that we didn't use up all NULL pointers above
-		assert(i < sizeof(args) / sizeof(*args));
+		assert(i < ARRAY_SIZE(args));
 
 		close(tunnel->ssl_socket);
 		execvp(args[0], (char *const *)args);
@@ -225,7 +225,7 @@ static int pppd_terminate(struct tunnel *tunnel)
 	if (WIFEXITED(status)) {
 		int pppd_exit_status = WEXITSTATUS(status);
 		log_debug("waitpid: pppd exit status code %d\n", pppd_exit_status);
-		size_t len_pppd_message = sizeof(pppd_message) / sizeof(pppd_message[0]);
+		size_t len_pppd_message = ARRAY_SIZE(pppd_message);
 		if (pppd_exit_status >= len_pppd_message)
 			pppd_exit_status = len_pppd_message - 1;
 		log_debug("pppd: %s\n", pppd_message[pppd_exit_status]);
