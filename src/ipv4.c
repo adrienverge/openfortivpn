@@ -110,9 +110,8 @@ static int ipv4_get_route(struct rtentry *route)
 	int fd;
 	// Cannot stat, mmap not lseek this special /proc file
 	fd = open("/proc/net/route", O_RDONLY);
-	if (fd == -1) {
+	if (fd == -1)
 		return ERR_IPV4_SEE_ERRNO;
-	}
 
 	size = read(fd, buffer, sizeof(buffer) - 1);
 	if (size == -1) {
