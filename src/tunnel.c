@@ -123,7 +123,7 @@ static int pppd_run(struct tunnel *tunnel)
 			"lcp-max-configure", "40", "mru", "1354",
 			NULL, NULL, NULL, NULL,
 			NULL, NULL, NULL, NULL,
-			NULL
+			NULL, NULL, NULL
 		};
 		// Dynamically get first NULL pointer so that changes of
 		// args above don't need code changes here
