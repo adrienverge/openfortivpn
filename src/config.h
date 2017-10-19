@@ -114,7 +114,6 @@ struct vpn_config {
 			free((cfg)->cert_whitelist); \
 			(cfg)->cert_whitelist = tmp; \
 		} \
-		free((cfg)->cert_whitelist); \
 		free((cfg)->cipher_list); \
 		free((cfg)->user_key); \
 		free((cfg)->user_cert); \
