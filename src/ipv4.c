@@ -375,11 +375,11 @@ static int ipv4_get_route(struct rtentry *route)
 static int ipv4_set_route(struct rtentry *route)
 {
 #ifndef __APPLE__
-	int sockfd;
-
 	log_debug("ip route add %s\n", ipv4_show_route(route));
 
-	if ((sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP)) < 0)
+	int sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
+
+	if (sockfd < 0)
 		return ERR_IPV4_SEE_ERRNO;
 	if (ioctl(sockfd, SIOCADDRT, route) == -1) {
 		close(sockfd);
