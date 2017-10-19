@@ -120,8 +120,8 @@ struct vpn_config {
 		free((cfg)->user_key); \
 		free((cfg)->user_cert); \
 		free((cfg)->ca_file); \
-		free((cfg)->pppd_ipparam); \
 		free((cfg)->pppd_ifname); \
+		free((cfg)->pppd_ipparam); \
 		free((cfg)->pppd_plugin); \
 		free((cfg)->pppd_log); \
 	} while (0)
