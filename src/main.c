@@ -28,8 +28,8 @@
 "                    [--half_internet_routes=<0|1>] [--set-dns=<0|1>]\n" \
 "                    [--pppd-no-peerdns] [--pppd-log=<file>]\n" \
 "                    [--pppd-ipparam=<string>] [--pppd-plugin=<file>]\n" \
-"                    [--ca-file=<file>] [--user-cert=<file>] [--user-key=<file>] \n" \
-"                    [--trusted-cert=<digest>] [--use-syslog] \n" \
+"                    [--ca-file=<file>] [--user-cert=<file>] [--user-key=<file>]\n" \
+"                    [--trusted-cert=<digest>] [--use-syslog]\n" \
 "                    [-c <file>] [-v|-q]\n" \
 "       openfortivpn --help\n" \
 "       openfortivpn --version\n" \
@@ -108,7 +108,7 @@
 "      password = bar\n" \
 "      trusted-cert = certificatedigest4daa8c5fe6c...\n" \
 "      trusted-cert = othercertificatedigest6631bf...\n" \
-"  For a full-featured config see man openfortivpn(1). \n"
+"  For a full-featured config see man openfortivpn(1).\n"
 
 int main(int argc, char **argv)
 {
