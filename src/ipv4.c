@@ -664,7 +664,7 @@ int ipv4_restore_routes(struct tunnel *tunnel)
 		if (ret != 0)
 			log_warn("Could not delete route to vpn server (%s).\n",
 			         err_ipv4_str(ret));
-		if ((cfg->half_internet_routes ==0 ) &&
+		if ((cfg->half_internet_routes == 0) &&
 		    (tunnel->ipv4.split_routes == 0)) {
 			ret = ipv4_del_route(ppp_rt);
 			if (ret != 0)
