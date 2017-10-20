@@ -268,14 +268,26 @@ int ppp_interface_is_up(struct tunnel *tunnel)
 
 static int get_gateway_host_ip(struct tunnel *tunnel)
 {
-	struct hostent *host = gethostbyname(tunnel->config->gateway_host);
-	if (host == NULL) {
-		log_error("gethostbyname: %s\n", hstrerror(h_errno));
+	struct addrinfo *result = NULL;
+	struct addrinfo hints;
+	int err;
+
+	memset(&hints, 0, sizeof(struct addrinfo));
+	hints.ai_family = AF_INET;
+
+	err = getaddrinfo(tunnel->config->gateway_host, NULL, &hints, &result);
+	if (err != 0) {
+		if (err == EAI_SYSTEM) {
+			log_error("getaddrinfo: %s\n", strerror(errno));
+		} else {
+			log_error("getaddrinfo: %s\n", gai_strerror(err));
+		}
 		return 1;
 	}
 
-	tunnel->config->gateway_ip = *((struct in_addr *)
-	                               host->h_addr_list[0]);
+	tunnel->config->gateway_ip = *(&((struct sockaddr_in*)
+	                                 result->ai_addr)->sin_addr);
+	freeaddrinfo(result);
 	setenv("VPN_GATEWAY", inet_ntoa(tunnel->config->gateway_ip), 0);
 
 	return 0;
