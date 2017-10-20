@@ -29,8 +29,11 @@
 "                    [--pppd-no-peerdns] [--pppd-log=<file>]\n" \
 "                    [--pppd-ifname=<string>] [--pppd-ipparam=<string>]\n" \
 "                    [--pppd-plugin=<file>] [--ca-file=<file>]\n" \
-"                    [--user-cert=<file>] [--user-key=<file>] \n" \
-"                    [--trusted-cert=<digest>] [--use-syslog] \n" \
+"                    [--user-cert=<file>] [--user-key=<file>]\n" \
+"                    [--trusted-cert=<digest>] [--use-syslog]\n" \
+"                    [--pppd-ipparam=<string>] [--pppd-plugin=<file>]\n" \
+"                    [--ca-file=<file>] [--user-cert=<file>] [--user-key=<file>]\n" \
+"                    [--trusted-cert=<digest>] [--use-syslog]\n" \
 "                    [-c <file>] [-v|-q]\n" \
 "       openfortivpn --help\n" \
 "       openfortivpn --version\n" \
@@ -88,7 +91,7 @@
 "                                resolver and routes directly.\n" \
 "  --pppd-ifname=<string>        Set the pppd interface name.\n" \
 "  --pppd-ipparam=<string>       Provides  an extra parameter to the ip-up, ip-pre-up\n" \
-"                                and ip-down scripts. see man (8) pppd\n" \
+"                                and ip-down scripts. See man (8) pppd\n" \
 "  -v                            Increase verbosity. Can be used multiple times\n" \
 "                                to be even more verbose.\n" \
 "  -q                            Decrease verbosity. Can be used multiple times\n" \
@@ -110,7 +113,7 @@
 "      password = bar\n" \
 "      trusted-cert = certificatedigest4daa8c5fe6c...\n" \
 "      trusted-cert = othercertificatedigest6631bf...\n" \
-"  For a full-featured config see man openfortivpn(1). \n"
+"  For a full-featured config see man openfortivpn(1).\n"
 
 int main(int argc, char **argv)
 {

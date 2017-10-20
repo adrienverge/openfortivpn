@@ -110,9 +110,8 @@ static int ipv4_get_route(struct rtentry *route)
 	int fd;
 	// Cannot stat, mmap not lseek this special /proc file
 	fd = open("/proc/net/route", O_RDONLY);
-	if (fd == -1) {
+	if (fd == -1)
 		return ERR_IPV4_SEE_ERRNO;
-	}
 
 	size = read(fd, buffer, sizeof(buffer) - 1);
 	if (size == -1) {
@@ -375,11 +374,11 @@ static int ipv4_get_route(struct rtentry *route)
 static int ipv4_set_route(struct rtentry *route)
 {
 #ifndef __APPLE__
-	int sockfd;
-
 	log_debug("ip route add %s\n", ipv4_show_route(route));
 
-	if ((sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP)) < 0)
+	int sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
+
+	if (sockfd < 0)
 		return ERR_IPV4_SEE_ERRNO;
 	if (ioctl(sockfd, SIOCADDRT, route) == -1) {
 		close(sockfd);
@@ -664,7 +663,7 @@ int ipv4_restore_routes(struct tunnel *tunnel)
 		if (ret != 0)
 			log_warn("Could not delete route to vpn server (%s).\n",
 			         err_ipv4_str(ret));
-		if ((cfg->half_internet_routes ==0 ) &&
+		if ((cfg->half_internet_routes == 0) &&
 		    (tunnel->ipv4.split_routes == 0)) {
 			ret = ipv4_del_route(ppp_rt);
 			if (ret != 0)
