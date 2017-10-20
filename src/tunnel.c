@@ -118,14 +118,26 @@ static int pppd_run(struct tunnel *tunnel)
 		return 1;
 	} else if (pid == 0) {
 		static const char *args[] = {
-			pppd_path, "38400", "noipdefault", "noaccomp",
-			"noauth", "default-asyncmap", "nopcomp", "receive-all",
-			"nodefaultroute", ":1.1.1.1", "nodetach",
-			"lcp-max-configure", "40", "mru", "1354",
-			NULL, NULL, NULL, NULL,
-			NULL, NULL, NULL, NULL,
-			NULL
+			pppd_path,
+			"38400", // speed
+			":1.1.1.1", // <local_IP_address>:<remote_IP_address>
+			"noipdefault",
+			"noaccomp",
+			"noauth",
+			"default-asyncmap",
+			"nopcomp",
+			"receive-all",
+			"nodefaultroute",
+			"nodetach",
+			"lcp-max-configure", "40",
+			"mru", "1354",
+			NULL, // "usepeerdns"
+			NULL, NULL, NULL, // "debug", "logfile", pppd_log
+			NULL, NULL, // "plugin", pppd_plugin
+			NULL, NULL, // "ipparam", pppd_ipparam
+			NULL // terminal null pointer required by execvp()
 		};
+
 		// Dynamically get first NULL pointer so that changes of
 		// args above don't need code changes here
 		int i = ARRAY_SIZE(args) - 1;
@@ -133,6 +145,8 @@ static int pppd_run(struct tunnel *tunnel)
 			;
 		i++;
 
+		// Coverity detected a defect, actually a false positive:
+		//  CID 196857: Out-of-bounds write (OVERRUN)
 		if (tunnel->config->pppd_use_peerdns)
 			args[i++] = "usepeerdns";
 		if (tunnel->config->pppd_log) {
