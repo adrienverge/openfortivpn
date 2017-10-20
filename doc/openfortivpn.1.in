@@ -126,7 +126,8 @@ Provides an extra parameter to the ip-up, ip-pre-up and ip-down scripts. See man
 for further details
 .TP
 \fB\-\-pppd-ifname=\fI<string>\fR
-Set the ppp interface name. Not available on all platforms.
+Set the ppp interface name. Only if supported by pppd. Patched versions of pppd
+implement this option but may not be available on your platform.
 .TP
 \fB\-v\fR
 Increase verbosity. Can be used multiple times to be even more verbose.
