@@ -141,12 +141,18 @@ static int pppd_run(struct tunnel *tunnel)
 		// Dynamically get first NULL pointer so that changes of
 		// args above don't need code changes here
 		int i = ARRAY_SIZE(args) - 1;
-		for (; args[i] == NULL; i--)
-			;
+		while (args[i] == NULL)
+			i--;
 		i++;
 
-		// Coverity detected a defect, actually a false positive:
-		//  CID 196857: Out-of-bounds write (OVERRUN)
+		/*
+		 * Coverity detected a defect:
+		 *  CID 196857: Out-of-bounds write (OVERRUN)
+		 * It is actually a false positive. Because 'args' is not
+		 * constant, Coverity is unable to infer that the NULL
+		 * elements 'args' has been initialized with shall still
+		 * be present when initializing 'i' in the above loop.
+		 */
 		if (tunnel->config->pppd_use_peerdns)
 			args[i++] = "usepeerdns";
 		if (tunnel->config->pppd_log) {
