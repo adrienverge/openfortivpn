@@ -177,7 +177,7 @@ static int pppd_run(struct tunnel *tunnel)
 		assert(i < ARRAY_SIZE(args));
 
 		close(tunnel->ssl_socket);
-		execvp(args[0], (char *const *)args);
+		execv(args[0], (char *const *)args);
 		/*
 		 * The following call to fprintf() doesn't work, probably
 		 * because of the prior call to forkpty().
