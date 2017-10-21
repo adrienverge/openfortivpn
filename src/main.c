@@ -15,12 +15,16 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <getopt.h>
-
 #include "config.h"
-#include "log.h"
 #include "tunnel.h"
 #include "userinput.h"
+#include "log.h"
+
+#include <getopt.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define usage \
 "Usage: openfortivpn [<host>:<port>] [-u <user>] [-p <pass>]\n" \

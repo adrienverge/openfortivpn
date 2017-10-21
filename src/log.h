@@ -19,6 +19,7 @@
 #define _OPENFORTIVPN_LOG_H
 
 #include <stdint.h>
+#include <sys/types.h>
 
 // Assign enum values explicitly, we're using them in a lookup
 enum log_verbosity {

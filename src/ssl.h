@@ -30,9 +30,9 @@
 #define _OPENFORTIVPN_SSL_H
 
 #include <errno.h>
+#include <string.h>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
-#include <string.h>
 
 #ifdef __APPLE__
 /*

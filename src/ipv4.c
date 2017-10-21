@@ -15,28 +15,30 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "ipv4.h"
+#include "tunnel.h"
+#include "config.h"
+#include "log.h"
+
 #include <arpa/inet.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <stdlib.h>
-#include <string.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
+#include <errno.h>
 
 #ifdef __APPLE__
-#include <stdio.h>
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <net/if.h>
-#include <net/route.h>
 #include <limits.h>
-#include <stdint.h>
 #endif
-
-#include "log.h"
-#include "tunnel.h"
 
 #define SHOW_ROUTE_BUFFER_SIZE 128
 

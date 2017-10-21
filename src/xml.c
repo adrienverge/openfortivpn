@@ -15,10 +15,10 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <string.h>
-
 #include "xml.h"
 #include "log.h"
+
+#include <string.h>
 
 /*
  * Poor man's XML parser. Looks for given tag or attribute. Assumes

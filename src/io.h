@@ -18,6 +18,10 @@
 #ifndef _OPENFORTIVPN_IO_H
 #define _OPENFORTIVPN_IO_H
 
+#include <stdint.h>
+#include <sys/types.h>
+#include <pthread.h>
+
 /*
  * For performance reasons, we store the 6-byte header used by the SSL
  * communication right in front of the real PPP packet data. This way,

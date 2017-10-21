@@ -18,8 +18,6 @@
 #ifndef _OPENFORTIVPN_XML_H
 #define _OPENFORTIVPN_XML_H
 
-#include "tunnel.h"
-
 const char *xml_find(char t, const char *tag, const char *buf, int nest);
 char *xml_get(const char *buf);
 

@@ -26,6 +26,10 @@
  *  all source files in the program, then also delete it here.
  */
 
+#include "tunnel.h"
+#include "http.h"
+#include "log.h"
+
 #include <unistd.h>
 #include <fcntl.h>
 #include <ifaddrs.h>
@@ -40,11 +44,10 @@
 #else
 #include <util.h>
 #endif
+#include <signal.h>
 #include <sys/wait.h>
 #include <assert.h>
 
-#include "http.h"
-#include "log.h"
 
 static int on_ppp_if_up(struct tunnel *tunnel)
 {
@@ -118,7 +121,7 @@ static int pppd_run(struct tunnel *tunnel)
 	if (pid == -1) {
 		log_error("forkpty: %s\n", strerror(errno));
 		return 1;
-	} else if (pid == 0) {
+	} else if (pid == 0) { // child process
 		static const char *args[] = {
 			pppd_path,
 			"38400", // speed

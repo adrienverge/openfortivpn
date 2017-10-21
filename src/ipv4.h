@@ -18,6 +18,9 @@
 #ifndef _OPENFORTIVPN_IPV4_H
 #define _OPENFORTIVPN_IPV4_H
 
+#include <errno.h>
+#include <string.h>
+
 #ifdef __APPLE__
 
 /* This structure gets passed by the SIOCADDRT and SIOCDELRT calls. */
