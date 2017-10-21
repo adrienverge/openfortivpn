@@ -220,7 +220,7 @@ static const char * const pppd_message[] = {
 	"the link was established successfully and terminated because the"
 	" connect time limit was reached",
 	"callback was negotiated and an incoming call should arrive shortly",
-	"the link was terminated because the peer is not responding to echo "
+	"the link was terminated because the peer is not responding to echo"
 	" requests",
 	"the link was terminated by the modem hanging up",
 	"the PPP negotiation failed because serial loopback was detected",
