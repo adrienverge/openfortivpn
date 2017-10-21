@@ -26,8 +26,8 @@
  *  all source files in the program, then also delete it here.
  */
 
-#ifndef _TUNNEL_H
-#define _TUNNEL_H
+#ifndef _OPENFORTIVPN_TUNNEL_H
+#define _OPENFORTIVPN_TUNNEL_H
 
 #include <openssl/ssl.h>
 #ifndef __APPLE__

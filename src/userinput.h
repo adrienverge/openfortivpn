@@ -15,8 +15,8 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _USERINPUT_H
-#define _USERINPUT_H
+#ifndef _OPENFORTIVPN_USERINPUT_H
+#define _OPENFORTIVPN_USERINPUT_H
 
 void read_password(const char *prompt, char *pass, size_t len);
 
