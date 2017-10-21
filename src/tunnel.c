@@ -26,6 +26,7 @@
  *  all source files in the program, then also delete it here.
  */
 
+#include <unistd.h>
 #include <fcntl.h>
 #include <ifaddrs.h>
 #include <netdb.h>
@@ -184,7 +185,7 @@ static int pppd_run(struct tunnel *tunnel)
 		 * TODO: print a meaningful message using strerror(errno)
 		 */
 		fprintf(stderr, "execvp: %s\n", strerror(errno));
-		exit(EXIT_FAILURE);
+		_exit(EXIT_FAILURE);
 	}
 
 	// Set non-blocking
