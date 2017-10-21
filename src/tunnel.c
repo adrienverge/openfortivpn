@@ -41,7 +41,6 @@
 #include <util.h>
 #endif
 #include <sys/wait.h>
-#include <assert.h>
 
 #include "http.h"
 #include "log.h"
@@ -100,8 +99,13 @@ static int pppd_run(struct tunnel *tunnel)
 
 	static const char pppd_path[] = "/usr/sbin/pppd";
 
-	if (access(pppd_path, F_OK) != 0) {
-		log_error("%s: %s.\n", pppd_path, strerror(errno));
+	/*
+	 * Catch as many errors as possible and print error messages before
+	 * invoking forkpty(). After the call stderr will be directed to a
+	 * pseudoterminal.
+	 */
+	if (access(pppd_path, X_OK) != 0) {
+		log_error("%s: %s\n", pppd_path, strerror(errno));
 		return 1;
 	}
 
@@ -175,8 +179,6 @@ static int pppd_run(struct tunnel *tunnel)
 			args[i++] = "ifname";
 			args[i++] = tunnel->config->pppd_ifname;
 		}
-		// Assert that we didn't use up all NULL pointers above
-		assert(i < ARRAY_SIZE(args));
 
 		close(tunnel->ssl_socket);
 		execv(args[0], (char *const *)args);
