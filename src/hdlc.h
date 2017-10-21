@@ -15,8 +15,8 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _HDLC_H
-#define _HDLC_H
+#ifndef _OPENFORTIVPN_HDLC_H
+#define _OPENFORTIVPN_HDLC_H
 
 #include <stdint.h>
 #include <stdlib.h>
