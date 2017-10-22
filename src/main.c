@@ -112,22 +112,55 @@
 "      trusted-cert = othercertificatedigest6631bf...\n" \
 "  For a full-featured config see man openfortivpn(1).\n"
 
+static inline void destroy_vpn_config(struct vpn_config *cfg)
+{
+	while (cfg->cert_whitelist != NULL) {
+		struct x509_digest *tmp = cfg->cert_whitelist->next;
+		free(cfg->cert_whitelist);
+		cfg->cert_whitelist = tmp;
+	}
+	free(cfg->cipher_list);
+	free(cfg->user_key);
+	free(cfg->user_cert);
+	free(cfg->ca_file);
+	free(cfg->pppd_ipparam);
+	free(cfg->pppd_plugin);
+	free(cfg->pppd_log);
+}
+
 int main(int argc, char **argv)
 {
 	int ret = EXIT_FAILURE;
-	struct vpn_config cfg;
 	char *config_file = SYSCONFDIR"/openfortivpn/config";
 	char *host, *username = NULL, *password = NULL, *otp = NULL;
 	char *port_str;
 	long int port;
 
-	/* Init cfg */
-	memset(&cfg, 0, sizeof(cfg));
-
-	init_logging();
-
-	// Set defaults
-	init_vpn_config(&cfg);
+	struct vpn_config cfg = {
+		.gateway_host = {'\0'},
+		// gateway_ip
+		.gateway_port = 0,
+		.username = {'\0'},
+		.password = {'\0'},
+		.otp = {'\0'},
+		.cookie = {'\0'},
+		.realm = {'\0'},
+		.set_routes = 1,
+		.set_dns = 1,
+		.pppd_use_peerdns = 1,
+		.use_syslog = 0,
+		.half_internet_routes = 0,
+		.pppd_log = NULL,
+		.pppd_plugin = NULL,
+		.pppd_ipparam = NULL,
+		.ca_file = NULL,
+		.user_cert = NULL,
+		.user_key = NULL,
+		.verify_cert = 1,
+		.insecure_ssl = 0,
+		.cipher_list = NULL,
+		.cert_whitelist = NULL
+	};
 
 	const struct option long_options[] = {
 		{"help",            no_argument,       0, 'h'},
@@ -157,6 +190,8 @@ int main(int argc, char **argv)
 		{"plugin",          required_argument, 0, 0}, // deprecated
 		{0, 0, 0, 0}
 	};
+
+	init_logging();
 
 	while (1) {
 		/* getopt_long stores the option index here. */
