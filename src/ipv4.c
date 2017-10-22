@@ -42,6 +42,27 @@
 
 static char show_route_buffer[SHOW_ROUTE_BUFFER_SIZE];
 
+#define ERR_IPV4_SEE_ERRNO	-1
+#define ERR_IPV4_NO_MEM		-2
+#define ERR_IPV4_PERMISSION	-3
+#define ERR_IPV4_NO_SUCH_ROUTE	-4
+#define ERR_IPV4_PROC_NET_ROUTE	-5
+
+static inline const char *err_ipv4_str(int code)
+{
+	if (code == ERR_IPV4_SEE_ERRNO)
+		return strerror(errno);
+	else if (code == ERR_IPV4_NO_MEM)
+		return "Not enough memory";
+	else if (code == ERR_IPV4_PERMISSION)
+		return "Permission denied";
+	else if (code == ERR_IPV4_NO_SUCH_ROUTE)
+		return "Route not found";
+	else if (code == ERR_IPV4_PROC_NET_ROUTE)
+		return "Parsing /proc/net/route failed";
+	return "unknown";
+}
+
 /*
  * Returns a string representation of the route, such as:
  *   to 192.168.1.0/255.255.255.0 via 172.16.0.1 dev eth0
@@ -82,13 +103,12 @@ static inline int route_init(struct rtentry *route)
 	return 0;
 }
 
-static inline int route_destroy(struct rtentry *route)
+static inline void route_destroy(struct rtentry *route)
 {
 	if (route_iface(route) != NULL) {
 		free(route_iface(route));
 		route_iface(route) = NULL;
 	}
-	return 0;
 }
 
 /*
