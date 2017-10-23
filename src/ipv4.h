@@ -15,8 +15,8 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _IPV4_H
-#define _IPV4_H
+#ifndef _OPENFORTIVPN_IPV4_H
+#define _OPENFORTIVPN_IPV4_H
 
 #ifdef __APPLE__
 

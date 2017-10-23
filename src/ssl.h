@@ -26,6 +26,9 @@
  *  all source files in the program, then also delete it here.
  */
 
+#ifndef _OPENFORTIVPN_SSL_H
+#define _OPENFORTIVPN_SSL_H
+
 #include <errno.h>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
@@ -165,3 +168,5 @@ static inline int safe_ssl_write(SSL *ssl, const uint8_t *buf, int n)
 
 	return handle_ssl_error(ssl, ret);
 }
+
+#endif
