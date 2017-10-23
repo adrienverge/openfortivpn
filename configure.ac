@@ -36,6 +36,6 @@ AC_TYPE_UINT8_T
 # Checks for library functions.
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
-AC_CHECK_FUNCS([memset getaddrinfo inet_ntoa ntohs memmove memset memmem select socket strerror strstr strtol])
+AC_CHECK_FUNCS([getaddrinfo inet_ntoa ntohs memmove memset memmem select socket strerror strstr strtol])
 
 AC_OUTPUT(Makefile)
