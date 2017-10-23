@@ -200,6 +200,15 @@ int load_config(struct vpn_config *cfg, const char *filename)
 				continue;
 			}
 			cfg->half_internet_routes = half_internet_routes;
+		} else if (strcmp(key, "loop") == 0) {
+			long int loop = strtol(val, NULL, 0);
+			if (loop < 0) {
+				log_warn("Bad loop in config file:" \
+				         " \"%s\".\n",
+				         val);
+				continue;
+			}
+			cfg->loop =loop;
 		} else if (strcmp(key, "pppd-use-peerdns") == 0) {
 			int pppd_use_peerdns = strtob(val);
 			if (pppd_use_peerdns < 0) {

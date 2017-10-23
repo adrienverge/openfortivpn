@@ -34,7 +34,7 @@
 "                    [--pppd-ifname=<string>] [--pppd-ipparam=<string>]\n" \
 "                    [--pppd-plugin=<file>] [--ca-file=<file>]\n" \
 "                    [--user-cert=<file>] [--user-key=<file>]\n" \
-"                    [--trusted-cert=<digest>] [--use-syslog]\n" \
+"                    [--trusted-cert=<digest>] [--use-syslog] [--loop=<interval>]\n" \
 "                    [-c <file>] [-v|-q]\n" \
 "       openfortivpn --help\n" \
 "       openfortivpn --version\n" \
@@ -93,6 +93,8 @@
 "  --pppd-ifname=<string>        Set the pppd interface name, if supported by pppd.\n" \
 "  --pppd-ipparam=<string>       Provides  an extra parameter to the ip-up, ip-pre-up\n" \
 "                                and ip-down scripts. See man (8) pppd\n" \
+"  --loop=<interval>             Run the vpn in a loop and try to reconnect every\n" \
+"                                <interval> seconds\n" \
 "  -v                            Increase verbosity. Can be used multiple times\n" \
 "                                to be even more verbose.\n" \
 "  -q                            Decrease verbosity. Can be used multiple times\n" \
@@ -181,6 +183,7 @@ int main(int argc, char **argv)
 		{"no-dns",          no_argument, &cfg.set_dns, 0},
 		{"pppd-no-peerdns", no_argument, &cfg.pppd_use_peerdns, 0},
 		{"use-syslog",      no_argument, &cfg.use_syslog, 1},
+		{"loop",            required_argument, 0, 0},
 		{"ca-file",         required_argument, 0, 0},
 		{"user-cert",       required_argument, 0, 0},
 		{"user-key",        required_argument, 0, 0},
@@ -299,6 +302,17 @@ int main(int argc, char **argv)
 					break;
 				}
 				cfg.half_internet_routes = half_internet_routes;
+				break;
+			}
+			if (strcmp(long_options[option_index].name,
+			           "loop") == 0) {
+				long int loop = strtol(optarg, NULL, 0);
+				if (loop < 0) {
+					log_warn("Bad loop option: " \
+					         "\"%s\"\n", optarg);
+					break;
+				}
+				cfg.loop = loop;
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
@@ -427,6 +441,11 @@ int main(int argc, char **argv)
 
 	if (run_tunnel(&cfg) == 0)
 		ret = EXIT_SUCCESS;
+	while ((ret == EXIT_SUCCESS) && (cfg.loop!=0) && (get_sig_received()==0)) {
+		sleep(cfg.loop);
+		if (run_tunnel(&cfg) != 0)
+			ret = EXIT_FAILURE;
+	}
 	goto exit;
 
 user_error:
