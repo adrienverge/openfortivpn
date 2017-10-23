@@ -135,6 +135,7 @@ static int pppd_run(struct tunnel *tunnel)
 			NULL, NULL, NULL, // "debug", "logfile", pppd_log
 			NULL, NULL, // "plugin", pppd_plugin
 			NULL, NULL, // "ipparam", pppd_ipparam
+			NULL, NULL, // "ifname", pppd_ifname
 			NULL // terminal null pointer required by execvp()
 		};
 
@@ -167,6 +168,10 @@ static int pppd_run(struct tunnel *tunnel)
 		if (tunnel->config->pppd_ipparam) {
 			args[i++] = "ipparam";
 			args[i++] = tunnel->config->pppd_ipparam;
+		}
+		if (tunnel->config->pppd_ifname) {
+			args[i++] = "ifname";
+			args[i++] = tunnel->config->pppd_ifname;
 		}
 		// Assert that we didn't use up all NULL pointers above
 		assert(i < ARRAY_SIZE(args));
@@ -263,7 +268,9 @@ int ppp_interface_is_up(struct tunnel *tunnel)
 	}
 
 	for (ifa = ifap; ifa != NULL; ifa = ifa->ifa_next) {
-		if (strstr(ifa->ifa_name, "ppp") != NULL
+		if (((tunnel->config->pppd_ifname
+		      && strstr(ifa->ifa_name, tunnel->config->pppd_ifname) != NULL)
+		     || strstr(ifa->ifa_name, "ppp") != NULL)
 		    && ifa->ifa_flags & IFF_UP) {
 			if (&(ifa->ifa_addr->sa_family) != NULL
 			    && ifa->ifa_addr->sa_family == AF_INET) {
