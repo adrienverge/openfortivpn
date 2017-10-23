@@ -1,4 +1,4 @@
-.TH OPENFORTIVPN 1 "July 27, 2017" ""
+.TH OPENFORTIVPN 1 "October 23, 2017" ""
 
 .SH NAME
 openfortivpn \- Client for PPP+SSL VPN tunnel services
@@ -134,6 +134,46 @@ Increase verbosity. Can be used multiple times to be even more verbose.
 .TP
 \fB\-q\fR
 Decrease verbosity. Can be used multiple times to be even less verbose.
+
+.SH ENVIRONMENT and proxy support
+.B openfortivpn
+can be run behind a http that supports the http connect command.
+It checks if one of the environment variables
+.B https_proxy HTTPS_PROXY all_proxy ALL_PROXY
+is set which are supposed to contain a string of the format
+.br
+.B http://[host]:[port]
+.br
+where
+.B [host]
+is the ip or the fully qualified host name of the proxy server
+.B [port]
+is the tcp port number where the proxy is listening for
+incoming connections. If one of these variables is defined,
+.B openfortivpn
+tries to first establish a tcp connection to this proxy (plain http, not encrypted),
+and then makes a request to connect to the vpn host as given on the command line
+or in the config file. The proxy is supposed to forward any subsequent packets
+transparently to the vpn host, so that the tls layer of the connection effectively
+is establshed between the client and the vpn host, and the proxy just acts as a
+forwarding instance on the lower level of the tcp connection.
+
+The following environment variables are set by
+.B openfortivpn
+and
+.BR pppd(8)
+or its scripts can obtain information this way:
+.br
+VPN_GATEWAY the ip of the gateway host
+.br
+and for each route three variables are set up, where an integer number
+is appended to the variable names, denoting the number of the current route:
+.br
+VPN_ROUTE_DEST_... the destination network of the route
+.br
+VPN_ROUTE_MASK_... the network mask for this route
+.br
+VPN_ROUTE_GATEWAY_... the gateway for the current route entry
 
 .SH CONFIG FILE
 Options can be taken from a configuration file. Options passed in the command
