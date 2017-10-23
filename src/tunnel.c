@@ -26,10 +26,12 @@
  *  all source files in the program, then also delete it here.
  */
 
+#include <unistd.h>
 #include <fcntl.h>
 #include <ifaddrs.h>
 #include <netdb.h>
 #include <errno.h>
+#include <string.h>
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <openssl/err.h>
@@ -184,7 +186,7 @@ static int pppd_run(struct tunnel *tunnel)
 		 * TODO: print a meaningful message using strerror(errno)
 		 */
 		fprintf(stderr, "execvp: %s\n", strerror(errno));
-		exit(EXIT_FAILURE);
+		_exit(EXIT_FAILURE);
 	}
 
 	// Set non-blocking
@@ -203,35 +205,36 @@ static int pppd_run(struct tunnel *tunnel)
 }
 
 static const char * const pppd_message[] = {
-	NULL,
-	"pppd has detached, or otherwise the connection was successfully"
-	" established and terminated at the peer's request",
-	"an immediately fatal error of some kind occurred, such as an essential"
-	" system call failing, or running out of virtual memory",
-	"an error was detected in processing the options given, such as two"
-	" mutually exclusive options being used",
-	"pppd is not setuid-root and the invoking user is not root",
-	"the kernel does not support PPP, for example, the PPP kernel driver"
-	" is not included or cannot be loaded",
-	"pppd terminated because it was sent a SIGINT, SIGTERM or SIGHUP signal",
-	"the serial port could not be locked",
-	"the serial port could not be opened",
-	"the connect script failed (returned a non-zero exit status)",
-	"the command specified as the argument to the pty option could not be run",
-	"the PPP negotiation failed, that is, it didn't reach the point where at"
-	" least one network protocol (e.g. IP) was running",
-	"the peer system failed (or refused) to authenticate itself",
-	"the link was established successfully and terminated because it was idle",
-	"the link was established successfully and terminated because the"
-	" connect time limit was reached",
-	"callback was negotiated and an incoming call should arrive shortly",
-	"the link was terminated because the peer is not responding to echo"
-	" requests",
-	"the link was terminated by the modem hanging up",
-	"the PPP negotiation failed because serial loopback was detected",
-	"the init script failed (returned a non-zero exit status)",
-	"we failed to authenticate ourselves to the peer",
-	"unknown error"
+	"Returned an unknown exit status", // fall back
+	"Has detached, or otherwise the connection was successfully"
+	" established and terminated at the peer's request.",
+	"An immediately fatal error of some kind occurred, such as an"
+	" essential system call failing, or running out of virtual memory.",
+	"An error was detected in processing the options given, such as two"
+	" mutually exclusive options being used.",
+	"Is not setuid-root and the invoking user is not root.",
+	"The kernel does not support PPP, for example, the PPP kernel driver"
+	" is not included or cannot be loaded.",
+	"Terminated because it was sent a SIGINT, SIGTERM or SIGHUP signal.",
+	"The serial port could not be locked.",
+	"The serial port could not be opened.",
+	"The connect script failed (returned a non-zero exit status).",
+	"The command specified as the argument to the pty option"
+	" could not be run.",
+	"The PPP negotiation failed, that is, it didn't reach the point"
+	" where at least one network protocol (e.g. IP) was running.",
+	"The peer system failed (or refused) to authenticate itself.",
+	"The link was established successfully and terminated because"
+	" it was idle.",
+	"The link was established successfully and terminated because the"
+	" connect time limit was reached.",
+	"Callback was negotiated and an incoming call should arrive shortly.",
+	"The link was terminated because the peer is not responding to echo"
+	" requests.",
+	"The link was terminated by the modem hanging up.",
+	"The PPP negotiation failed because serial loopback was detected.",
+	"The init script failed (returned a non-zero exit status).",
+	"We failed to authenticate ourselves to the peer."
 };
 
 static int pppd_terminate(struct tunnel *tunnel)
@@ -245,12 +248,20 @@ static int pppd_terminate(struct tunnel *tunnel)
 		return 1;
 	}
 	if (WIFEXITED(status)) {
-		int pppd_exit_status = WEXITSTATUS(status);
-		log_debug("waitpid: pppd exit status code %d\n", pppd_exit_status);
-		size_t len_pppd_message = ARRAY_SIZE(pppd_message);
-		if (pppd_exit_status >= len_pppd_message)
-			pppd_exit_status = len_pppd_message - 1;
-		log_debug("pppd: %s\n", pppd_message[pppd_exit_status]);
+		int exit_status = WEXITSTATUS(status);
+		log_debug("waitpid: pppd exit status code %d\n", exit_status);
+		if (exit_status) {
+			size_t len_pppd_message = ARRAY_SIZE(pppd_message);
+			if (exit_status >= len_pppd_message)
+				exit_status = 0;
+			log_error("pppd: %s\n", pppd_message[exit_status]);
+		}
+	} else if (WIFSIGNALED(status)) {
+		int signal_number = WTERMSIG(status);
+		log_debug("waitpid: pppd terminated by signal %d\n",
+		          signal_number);
+		log_error("pppd: terminated by signal: %s\n",
+		          strsignal(signal_number));
 	}
 
 	return 0;
