@@ -56,12 +56,13 @@ For other distros, you'll need to build and install from source:
 
 1.  Install build dependencies.
 
-    * RHEL/CentOS/Fedora: `gcc` `automake` `autoconf` `openssl-devel`
-    * Debian/Ubuntu: `gcc` `automake` `autoconf` `libssl-dev`
-    * Arch Linux: `gcc` `automake` `autoconf` `openssl`
-    * Gentoo Linux: `net-dialup/ppp`
-    * openSUSE: `gcc` `automake` `autoconf` `libopenssl-devel`
-    * macOS(Homebrew): `automake` `autoconf` `openssl@1.0`
+    * RHEL/CentOS/Fedora: `gcc` `automake` `autoconf` `openssl-devel` `pkg-config`
+    * Debian/Ubuntu: `gcc` `automake` `autoconf` `libssl-dev` `pkg-config`
+    * Arch Linux: `gcc` `automake` `autoconf` `openssl` `pkg-config`
+    * Gentoo Linux: `net-dialup/ppp` `pkg-config`
+    * openSUSE: `gcc` `automake` `autoconf` `libopenssl-devel` `pkg-config`
+    * macOS(Homebrew): `automake` `autoconf` `openssl@1.0` `pkg-config`
+    * FreeBSD: `automake` `autoconf` `libressl` `pkgconf` (port still in progress)
 
     On Linux, if you manage your kernel yourself, ensure to compile those modules:
     ```
