@@ -31,15 +31,6 @@
 #include <stdint.h>
 #include <errno.h>
 
-#ifdef __APPLE__
-#include <sys/types.h>
-#include <sys/time.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <net/if.h>
-#include <limits.h>
-#endif
-
 #define SHOW_ROUTE_BUFFER_SIZE 128
 
 static char show_route_buffer[SHOW_ROUTE_BUFFER_SIZE];
