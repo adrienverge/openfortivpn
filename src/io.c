@@ -26,10 +26,16 @@
  *  all source files in the program, then also delete it here.
  */
 
+#include "io.h"
+#include "hdlc.h"
+#include "ssl.h"
+#include "tunnel.h"
+#include "log.h"
+
+#include <signal.h>
 #include <arpa/inet.h>
 #include <netinet/tcp.h>
-#include <pthread.h>
-#include <signal.h>
+#include <unistd.h>
 
 #ifdef __APPLE__
 
@@ -56,11 +62,6 @@ typedef sem_t os_semaphore_t;
 #define SEM_DESTROY(sem)		sem_destroy(sem)
 
 #endif
-
-#include "hdlc.h"
-#include "log.h"
-#include "ssl.h"
-#include "tunnel.h"
 
 #define PKT_BUF_SZ 0x1000
 

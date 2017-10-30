@@ -18,7 +18,11 @@
 #ifndef _OPENFORTIVPN_IPV4_H
 #define _OPENFORTIVPN_IPV4_H
 
+#include <netinet/in.h>
+#include <net/route.h>
+
 #ifdef __APPLE__
+#include <sys/socket.h>
 
 /* This structure gets passed by the SIOCADDRT and SIOCDELRT calls. */
 struct rtentry {
@@ -38,7 +42,6 @@ struct rtentry {
 	unsigned short  rt_irtt;        /* Initial RTT                  */
 };
 #endif
-#include <net/route.h>
 
 #define ROUTE_IFACE_LEN 32
 #define MAX_SPLIT_ROUTES 65535

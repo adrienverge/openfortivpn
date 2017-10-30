@@ -29,15 +29,12 @@
 #ifndef _OPENFORTIVPN_TUNNEL_H
 #define _OPENFORTIVPN_TUNNEL_H
 
-#include <openssl/ssl.h>
-#ifndef __APPLE__
-#include <semaphore.h>
-#endif
-#include <unistd.h>
-
 #include "config.h"
 #include "io.h"
 #include "ipv4.h"
+
+#include <openssl/ssl.h>
+#include <sys/types.h>
 
 #ifdef __APPLE__
 /*

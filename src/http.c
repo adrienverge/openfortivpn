@@ -15,15 +15,15 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <ctype.h>
-#include <string.h>
-
 #include "http.h"
 #include "xml.h"
-#include "log.h"
 #include "ssl.h"
 #include "ipv4.h"
 #include "userinput.h"
+#include "log.h"
+
+#include <ctype.h>
+#include <string.h>
 
 #define BUFSZ 0x8000
 

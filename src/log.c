@@ -15,15 +15,15 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "log.h"
+
 #include <pthread.h>
+#include <syslog.h>
+#include <unistd.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include <syslog.h>
-
-#include "log.h"
 
 static pthread_mutex_t mutex;
 static int do_syslog = 0;

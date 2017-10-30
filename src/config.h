@@ -19,8 +19,9 @@
 #define _OPENFORTIVPN_CONFIG_H
 
 #include <errno.h>
-#include <netinet/in.h>
 #include <string.h>
+#include <sys/types.h>
+#include <netinet/in.h>
 
 #define ERR_CFG_UNKNOWN		-1
 #define ERR_CFG_SEE_ERRNO	-2
