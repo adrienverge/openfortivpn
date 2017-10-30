@@ -233,7 +233,7 @@ static const char * const pppd_message[] = {
 	" connect time limit was reached.",
 	"Callback was negotiated and an incoming call should arrive shortly.",
 	"The link was terminated because the peer is not responding to echo"
-	" requests.",
+	" requests.", // emitted when exiting normally
 	"The link was terminated by the modem hanging up.",
 	"The PPP negotiation failed because serial loopback was detected.",
 	"The init script failed (returned a non-zero exit status).",
@@ -257,7 +257,8 @@ static int pppd_terminate(struct tunnel *tunnel)
 			size_t len_pppd_message = ARRAY_SIZE(pppd_message);
 			if (exit_status >= len_pppd_message)
 				exit_status = 0;
-			log_error("pppd: %s\n", pppd_message[exit_status]);
+			if (exit_status != 16) // emitted when exiting normally
+				log_error("pppd: %s\n", pppd_message[exit_status]);
 		}
 	} else if (WIFSIGNALED(status)) {
 		int signal_number = WTERMSIG(status);
