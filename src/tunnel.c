@@ -427,7 +427,7 @@ static int tcp_connect(struct tunnel *tunnel)
 		        tunnel->config->gateway_port);
 		if (write(handle, request, strlen(request)) != strlen(request)) {
 			log_error("write error when talking to proxy\n");
-			return -1;
+			goto err_connect;
 		}
 		// wait for a "200 OK" reply from the proxy,
 		// be careful not to fetch too many characters at once
