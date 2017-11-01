@@ -456,7 +456,7 @@ static int tcp_connect(struct tunnel *tunnel)
 		                )
 		        )
 		        // condition for buffer full or possibly eof
-		        && (curr_pos < sizeof(request)) && (bytes_read > 0)
+		        && (curr_pos < sizeof(request) - 1) && (bytes_read > 0)
 		);
 		free(env_proxy); // we have copied the string
 	}
