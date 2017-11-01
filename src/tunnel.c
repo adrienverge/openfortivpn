@@ -459,6 +459,7 @@ static int tcp_connect(struct tunnel *tunnel)
 	return handle;
 
 err_connect:
+	free(env_proxy); // we have copied the string
 	close(handle);
 err_socket:
 	return -1;
