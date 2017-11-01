@@ -338,12 +338,9 @@ static int get_gateway_host_ip(struct tunnel *tunnel)
  */
 static int tcp_connect(struct tunnel *tunnel)
 {
-	int ret, handle, bytes_read, curr_pos;
+	int ret, handle;
 	struct sockaddr_in server;
-	const struct addrinfo hints = { .ai_family = AF_INET };
-	struct addrinfo *result = NULL;
-	char *env_proxy, *proxy_host, *proxy_port, *response;
-	char request[128];
+	char *env_proxy;
 
 	handle = socket(AF_INET, SOCK_STREAM, 0);
 	if (handle == -1) {
@@ -358,6 +355,7 @@ static int tcp_connect(struct tunnel *tunnel)
 	if (env_proxy == NULL)
 		env_proxy = getenv("ALL_PROXY");
 	if (env_proxy != NULL) {
+		char *proxy_host, *proxy_port;
 		// protect the original environment from modifications
 		env_proxy = strdup(env_proxy);
 		// get rid of a trailing slash
@@ -386,8 +384,10 @@ static int tcp_connect(struct tunnel *tunnel)
 		server.sin_addr.s_addr = inet_addr(proxy_host);
 		// if host is given as fqhn we have to do a dns lookup
 		if (server.sin_addr.s_addr == INADDR_NONE) {
-			ret = getaddrinfo(proxy_host, NULL, &hints, &result);
+			const struct addrinfo hints = { .ai_family = AF_INET };
+			struct addrinfo *result = NULL;
 
+			ret = getaddrinfo(proxy_host, NULL, &hints, &result);
 			if (ret) {
 				if (ret == EAI_SYSTEM)
 					log_error("getaddrinfo: %s\n", strerror(errno));
@@ -419,6 +419,8 @@ static int tcp_connect(struct tunnel *tunnel)
 	}
 
 	if (env_proxy != NULL) {
+		char request[128];
+
 		// https://tools.ietf.org/html/rfc7231#section-4.3.6
 		sprintf(request, "CONNECT %s:%u HTTP/1.1\r\nHost: %s:%u\r\n\r\n",
 		        inet_ntoa(tunnel->config->gateway_ip),
@@ -429,10 +431,13 @@ static int tcp_connect(struct tunnel *tunnel)
 			log_error("write error when talking to proxy\n");
 			goto err_connect;
 		}
+
 		// wait for a "200 OK" reply from the proxy,
 		// be careful not to fetch too many characters at once
+		char *response;
+		int bytes_read, curr_pos = 0;
+
 		memset(&(request), '\0', sizeof(request));
-		curr_pos = 0;
 		do {
 			bytes_read = read(handle, &(request[curr_pos++]), 1);
 			response = strstr(request, "200");
