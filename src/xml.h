@@ -15,12 +15,10 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _XML_H
-#define _XML_H
+#ifndef _OPENFORTIVPN_XML_H
+#define _OPENFORTIVPN_XML_H
 
-#include "tunnel.h"
-
-const char *xml_find (char t, const char *tag, const char *buf, int nest);
-char *xml_get (const char *buf);
+const char *xml_find(char t, const char *tag, const char *buf, int nest);
+char *xml_get(const char *buf);
 
 #endif

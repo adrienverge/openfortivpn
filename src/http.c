@@ -15,15 +15,15 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <ctype.h>
-#include <string.h>
-
 #include "http.h"
 #include "xml.h"
-#include "log.h"
 #include "ssl.h"
 #include "ipv4.h"
 #include "userinput.h"
+#include "log.h"
+
+#include <ctype.h>
+#include <string.h>
 
 #define BUFSZ 0x8000
 
@@ -44,7 +44,7 @@ static void url_encode(char *dest, const char *str)
 		else if (*str == ' ')
 			*dest++ = '+';
 		else {
-			static char hex[] = "0123456789abcdef";
+			static const char hex[] = "0123456789abcdef";
 
 			*dest++ = '%';
 			*dest++ = hex[*str >> 4];
@@ -301,7 +301,6 @@ static int get_auth_cookie(struct tunnel *tunnel, char *buf)
 {
 	int ret = 0;
 	const char *line;
-	char *end;
 
 	ret = ERR_HTTP_NO_COOKIE;
 
@@ -311,6 +310,7 @@ static int get_auth_cookie(struct tunnel *tunnel, char *buf)
 			if (line[11] == ';' || line[11] == '\0') {
 				log_debug("Empty cookie.\n");
 			} else {
+				char *end;
 				end = strstr(line, "\r");
 				end[0] = '\0';
 				end = strstr(line, ";");
@@ -337,8 +337,8 @@ int try_otp_auth(struct tunnel *tunnel, const char *buffer, char **res)
 {
 	char data[256];
 	char path[40];
-	char tmp [40];
-	char prompt [80];
+	char tmp[40];
+	char prompt[80];
 	const char *t = NULL, *n = NULL, *v = NULL, *e = NULL;
 	const char *s = buffer;
 	char *d = data;
@@ -359,7 +359,7 @@ int try_otp_auth(struct tunnel *tunnel, const char *buffer, char **res)
 	if (e - s + 1 > sizeof(path))
 		return -1;
 	strncpy(path, s, e - s);
-	path [e - s] = '\0';
+	path[e - s] = '\0';
 	/* Try to get password prompt, asume it starts with 'Please'
 	 * Fall back to default prompt if not found/parseable
 	 */
@@ -397,7 +397,7 @@ int try_otp_auth(struct tunnel *tunnel, const char *buffer, char **res)
 			continue;
 		n += 6;
 		t += 6;
-		if (0 == strncmp(t, "hidden", 6) || 0 == strncmp(t, "password", 8)) {
+		if (strncmp(t, "hidden", 6) == 0 || strncmp(t, "password", 8) == 0) {
 			/* We try to be on the safe side
 			 * and url-encode the variable name
 			 */
@@ -413,7 +413,7 @@ int try_otp_auth(struct tunnel *tunnel, const char *buffer, char **res)
 			if (e - n + 1 > sizeof(tmp))
 				return -1;
 			strncpy(tmp, n, e - n);
-			tmp [e - n] = '\0';
+			tmp[e - n] = '\0';
 			if (!SPACE_AVAILABLE(3 * (e - n) + 1))
 				return -1;
 			url_encode(d, tmp);
@@ -422,7 +422,7 @@ int try_otp_auth(struct tunnel *tunnel, const char *buffer, char **res)
 				return -1;
 			*d++ = '=';
 		}
-		if (0 == strncmp(t, "hidden", 6)) {
+		if (strncmp(t, "hidden", 6) == 0) {
 			/* Require value for hidden fields */
 			if (v == NULL)
 				return -1;
@@ -433,18 +433,18 @@ int try_otp_auth(struct tunnel *tunnel, const char *buffer, char **res)
 			if (e - v + 1 > sizeof(tmp))
 				return -1;
 			strncpy(tmp, v, e - v);
-			tmp [e - v] = '\0';
+			tmp[e - v] = '\0';
 			if (!SPACE_AVAILABLE(3 * (e - v) + 1))
 				return -1;
 			url_encode(d, tmp);
 			d += strlen(d);
-		} else if (0 == strncmp(t, "password", 8)) {
+		} else if (strncmp(t, "password", 8) == 0) {
 			struct vpn_config *cfg = tunnel->config;
 			size_t l;
 			v = NULL;
-			if (cfg->otp [0] == '\0') {
+			if (cfg->otp[0] == '\0') {
 				read_password(p, cfg->otp, FIELD_SIZE);
-				if (cfg->otp [0] == '\0') {
+				if (cfg->otp[0] == '\0') {
 					log_error("No OTP specified\n");
 					return 0;
 				}
@@ -454,7 +454,7 @@ int try_otp_auth(struct tunnel *tunnel, const char *buffer, char **res)
 				return -1;
 			url_encode(d, cfg->otp);
 			d += strlen(d);
-		} else if (0 == strncmp(t, "submit", 6)) {
+		} else if (strncmp(t, "submit", 6) == 0) {
 			/* avoid adding another '&' */
 			n = v = e = NULL;
 		}
@@ -499,7 +499,7 @@ int auth_log_in(struct tunnel *tunnel)
 		goto end;
 
 	/* Probably one-time password required */
-	if (0 == strncmp(res, "HTTP/1.1 401 Authorization Required\r\n", 37)) {
+	if (strncmp(res, "HTTP/1.1 401 Authorization Required\r\n", 37) == 0) {
 		ret = try_otp_auth(tunnel, res, &res);
 		if (ret != 1)
 			goto end;
@@ -574,7 +574,7 @@ int auth_request_vpn_allocation(struct tunnel *tunnel)
 static int parse_xml_config(struct tunnel *tunnel, const char *buffer)
 {
 	const char *val;
-	char *dest, *mask, *gateway;
+	char *gateway;
 
 	if (strncmp(buffer, "HTTP/1.1 200 OK\r\n", 17))
 		return ERR_HTTP_BAD_RES_CODE;
@@ -585,13 +585,13 @@ static int parse_xml_config(struct tunnel *tunnel, const char *buffer)
 	// The address of a local end of a router
 	val = xml_find('<', "assigned-addr", buffer, 1);
 	gateway = xml_get(xml_find(' ', "ipv4=", val, 1));
-	if (!gateway) {
+	if (!gateway)
 		log_warn("No gateway address, using interface for routing\n");
-	}
 
 	// Routes the tunnel wants to push
 	val = xml_find('<', "split-tunnel-info", buffer, 1);
 	while ((val = xml_find('<', "addr", val, 2))) {
+		char *dest, *mask;
 		dest = xml_get(xml_find(' ', "ip=", val, 1));
 		if (!dest) {
 			log_warn("No ip address for a route\n");
@@ -676,7 +676,7 @@ int auth_get_config(struct tunnel *tunnel)
 	ret = http_request(tunnel, "GET", "/remote/fortisslvpn_xml", "", &buffer);
 	if (ret == 1) {
 		ret = parse_xml_config(tunnel, buffer);
-		free (buffer);
+		free(buffer);
 	}
 	if (ret == 1)
 		return ret;
@@ -684,7 +684,7 @@ int auth_get_config(struct tunnel *tunnel)
 	ret = http_request(tunnel, "GET", "/remote/fortisslvpn", "", &buffer);
 	if (ret == 1) {
 		ret = parse_config(tunnel, buffer);
-		free (buffer);
+		free(buffer);
 	}
 
 	return ret;

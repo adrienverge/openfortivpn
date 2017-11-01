@@ -15,16 +15,13 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _HDLC_H
-#define _HDLC_H
+#ifndef _OPENFORTIVPN_HDLC_H
+#define _OPENFORTIVPN_HDLC_H
 
 #include <stdint.h>
 #include <stdlib.h>
 #include <unistd.h>
-
-#ifdef __APPLE__
 #include <sys/types.h>
-#endif
 
 #define ERR_HDLC_BUFFER_TOO_SMALL	-1
 #define ERR_HDLC_NO_FRAME_FOUND		-2

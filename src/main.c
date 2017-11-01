@@ -15,21 +15,26 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <getopt.h>
-
 #include "config.h"
-#include "log.h"
 #include "tunnel.h"
 #include "userinput.h"
+#include "log.h"
+
+#include <getopt.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define usage \
 "Usage: openfortivpn [<host>:<port>] [-u <user>] [-p <pass>]\n" \
 "                    [--realm=<realm>] [--otp=<otp>] [--set-routes=<0|1>]\n" \
 "                    [--half_internet_routes=<0|1>] [--set-dns=<0|1>]\n" \
 "                    [--pppd-no-peerdns] [--pppd-log=<file>]\n" \
-"                    [--pppd-ipparam=<string>] [--pppd-plugin=<file>]\n" \
-"                    [--ca-file=<file>] [--user-cert=<file>] [--user-key=<file>] \n" \
-"                    [--trusted-cert=<digest>] [--use-syslog] \n" \
+"                    [--pppd-ifname=<string>] [--pppd-ipparam=<string>]\n" \
+"                    [--pppd-plugin=<file>] [--ca-file=<file>]\n" \
+"                    [--user-cert=<file>] [--user-key=<file>]\n" \
+"                    [--trusted-cert=<digest>] [--use-syslog]\n" \
 "                    [-c <file>] [-v|-q]\n" \
 "       openfortivpn --help\n" \
 "       openfortivpn --version\n" \
@@ -85,8 +90,9 @@
 "                                <file>.\n" \
 "  --pppd-plugin=<file>          Use specified pppd plugin instead of configuring\n" \
 "                                resolver and routes directly.\n" \
+"  --pppd-ifname=<string>        Set the pppd interface name, if supported by pppd.\n" \
 "  --pppd-ipparam=<string>       Provides  an extra parameter to the ip-up, ip-pre-up\n" \
-"                                and ip-down scripts. see man (8) pppd\n" \
+"                                and ip-down scripts. See man (8) pppd\n" \
 "  -v                            Increase verbosity. Can be used multiple times\n" \
 "                                to be even more verbose.\n" \
 "  -q                            Decrease verbosity. Can be used multiple times\n" \
@@ -108,26 +114,59 @@
 "      password = bar\n" \
 "      trusted-cert = certificatedigest4daa8c5fe6c...\n" \
 "      trusted-cert = othercertificatedigest6631bf...\n" \
-"  For a full-featured config see man openfortivpn(1). \n"
+"  For a full-featured config see man openfortivpn(1).\n"
+
+static inline void destroy_vpn_config(struct vpn_config *cfg)
+{
+	while (cfg->cert_whitelist != NULL) {
+		struct x509_digest *tmp = cfg->cert_whitelist->next;
+		free(cfg->cert_whitelist);
+		cfg->cert_whitelist = tmp;
+	}
+	free(cfg->cipher_list);
+	free(cfg->user_key);
+	free(cfg->user_cert);
+	free(cfg->ca_file);
+	free(cfg->pppd_ipparam);
+	free(cfg->pppd_plugin);
+	free(cfg->pppd_log);
+}
 
 int main(int argc, char **argv)
 {
 	int ret = EXIT_FAILURE;
-	struct vpn_config cfg;
 	char *config_file = SYSCONFDIR"/openfortivpn/config";
 	char *host, *username = NULL, *password = NULL, *otp = NULL;
 	char *port_str;
 	long int port;
 
-	/* Init cfg */
-	memset(&cfg, 0, sizeof(cfg));
+	struct vpn_config cfg = {
+		.gateway_host = {'\0'},
+		// gateway_ip
+		.gateway_port = 0,
+		.username = {'\0'},
+		.password = {'\0'},
+		.otp = {'\0'},
+		.cookie = {'\0'},
+		.realm = {'\0'},
+		.set_routes = 1,
+		.set_dns = 1,
+		.pppd_use_peerdns = 1,
+		.use_syslog = 0,
+		.half_internet_routes = 0,
+		.pppd_log = NULL,
+		.pppd_plugin = NULL,
+		.pppd_ipparam = NULL,
+		.ca_file = NULL,
+		.user_cert = NULL,
+		.user_key = NULL,
+		.verify_cert = 1,
+		.insecure_ssl = 0,
+		.cipher_list = NULL,
+		.cert_whitelist = NULL
+	};
 
-	init_logging();
-
-	// Set defaults
-	init_vpn_config(&cfg);
-
-	struct option long_options[] = {
+	const struct option long_options[] = {
 		{"help",            no_argument,       0, 'h'},
 		{"version",         no_argument,       0, 0},
 		{"config",          required_argument, 0, 'c'},
@@ -151,9 +190,12 @@ int main(int argc, char **argv)
 		{"pppd-log",        required_argument, 0, 0},
 		{"pppd-plugin",     required_argument, 0, 0},
 		{"pppd-ipparam",    required_argument, 0, 0},
+		{"pppd-ifname",     required_argument, 0, 0},
 		{"plugin",          required_argument, 0, 0}, // deprecated
 		{0, 0, 0, 0}
 	};
+
+	init_logging();
 
 	while (1) {
 		/* getopt_long stores the option index here. */
@@ -185,6 +227,11 @@ int main(int argc, char **argv)
 			if (strcmp(long_options[option_index].name,
 			           "pppd-plugin") == 0) {
 				cfg.pppd_plugin = strdup(optarg);
+				break;
+			}
+			if (strcmp(long_options[option_index].name,
+			           "pppd-ifname") == 0) {
+				cfg.pppd_ifname = strdup(optarg);
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
@@ -247,7 +294,7 @@ int main(int argc, char **argv)
 			           "half-internet-routes") == 0) {
 				int half_internet_routes = strtob(optarg);
 				if (half_internet_routes < 0) {
-					log_warn("Bad half-internet-routes option: " \
+					log_warn("Bad half-internet-routes option: "
 					         "\"%s\"\n", optarg);
 					break;
 				}

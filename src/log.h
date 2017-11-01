@@ -15,10 +15,11 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _LOG_H
-#define _LOG_H
+#ifndef _OPENFORTIVPN_LOG_H
+#define _OPENFORTIVPN_LOG_H
 
 #include <stdint.h>
+#include <sys/types.h>
 
 // Assign enum values explicitly, we're using them in a lookup
 enum log_verbosity {
@@ -32,11 +33,11 @@ enum log_verbosity {
 
 extern enum log_verbosity loglevel;
 
-void init_logging();
-void set_syslog (int do_syslog);
+void init_logging(void);
+void set_syslog(int do_syslog);
 
-void increase_verbosity();
-void decrease_verbosity();
+void increase_verbosity(void);
+void decrease_verbosity(void);
 
 void do_log(int verbosity, const char *format, ...);
 

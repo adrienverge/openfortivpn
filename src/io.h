@@ -15,8 +15,12 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _IO_H
-#define _IO_H
+#ifndef _OPENFORTIVPN_IO_H
+#define _OPENFORTIVPN_IO_H
+
+#include <stdint.h>
+#include <sys/types.h>
+#include <pthread.h>
 
 /*
  * For performance reasons, we store the 6-byte header used by the SSL

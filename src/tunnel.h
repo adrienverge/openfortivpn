@@ -26,18 +26,15 @@
  *  all source files in the program, then also delete it here.
  */
 
-#ifndef _TUNNEL_H
-#define _TUNNEL_H
-
-#include <openssl/ssl.h>
-#ifndef __APPLE__
-#include <semaphore.h>
-#endif
-#include <unistd.h>
+#ifndef _OPENFORTIVPN_TUNNEL_H
+#define _OPENFORTIVPN_TUNNEL_H
 
 #include "config.h"
 #include "io.h"
 #include "ipv4.h"
+
+#include <openssl/ssl.h>
+#include <sys/types.h>
 
 #ifdef __APPLE__
 /*
@@ -82,5 +79,7 @@ int ppp_interface_is_up(struct tunnel *tunnel);
 int ssl_connect(struct tunnel *tunnel);
 
 int run_tunnel(struct vpn_config *config);
+
+#define ARRAY_SIZE(x)	(sizeof(x) / sizeof((x)[0]))
 
 #endif

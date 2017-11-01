@@ -15,32 +15,46 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "ipv4.h"
+#include "tunnel.h"
+#include "config.h"
+#include "log.h"
+
 #include <arpa/inet.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <stdlib.h>
-#include <string.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
-
-#ifdef __APPLE__
+#include <fcntl.h>
+#include <unistd.h>
 #include <stdio.h>
-#include <sys/types.h>
-#include <sys/time.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <net/if.h>
-#include <net/route.h>
-#include <limits.h>
+#include <stdlib.h>
+#include <string.h>
 #include <stdint.h>
-#endif
-
-#include "log.h"
-#include "tunnel.h"
+#include <errno.h>
 
 #define SHOW_ROUTE_BUFFER_SIZE 128
 
 static char show_route_buffer[SHOW_ROUTE_BUFFER_SIZE];
+
+#define ERR_IPV4_SEE_ERRNO	-1
+#define ERR_IPV4_NO_MEM		-2
+#define ERR_IPV4_PERMISSION	-3
+#define ERR_IPV4_NO_SUCH_ROUTE	-4
+#define ERR_IPV4_PROC_NET_ROUTE	-5
+
+static inline const char *err_ipv4_str(int code)
+{
+	if (code == ERR_IPV4_SEE_ERRNO)
+		return strerror(errno);
+	else if (code == ERR_IPV4_NO_MEM)
+		return "Not enough memory";
+	else if (code == ERR_IPV4_PERMISSION)
+		return "Permission denied";
+	else if (code == ERR_IPV4_NO_SUCH_ROUTE)
+		return "Route not found";
+	else if (code == ERR_IPV4_PROC_NET_ROUTE)
+		return "Parsing /proc/net/route failed";
+	return "unknown";
+}
 
 /*
  * Returns a string representation of the route, such as:
@@ -82,13 +96,12 @@ static inline int route_init(struct rtentry *route)
 	return 0;
 }
 
-static inline int route_destroy(struct rtentry *route)
+static inline void route_destroy(struct rtentry *route)
 {
 	if (route_iface(route) != NULL) {
 		free(route_iface(route));
 		route_iface(route) = NULL;
 	}
-	return 0;
 }
 
 /*
@@ -110,25 +123,24 @@ static int ipv4_get_route(struct rtentry *route)
 	int fd;
 	// Cannot stat, mmap not lseek this special /proc file
 	fd = open("/proc/net/route", O_RDONLY);
-	if (fd == -1) {
+	if (fd == -1)
 		return ERR_IPV4_SEE_ERRNO;
-	}
 
-	if ((size = read(fd, buffer, sizeof(buffer)-1)) == -1) {
+	size = read(fd, buffer, sizeof(buffer) - 1);
+	if (size == -1) {
 		close(fd);
 		return ERR_IPV4_SEE_ERRNO;
 	}
 	close(fd);
 #else
 	FILE *fp;
-	int len = sizeof(buffer)-1;
+	int len = sizeof(buffer) - 1;
 	char *saveptr3 = NULL;
 
 	// Open the command for reading
 	fp = popen("/usr/sbin/netstat -f inet -rn", "r");
-	if (fp == NULL) {
+	if (fp == NULL)
 		return ERR_IPV4_SEE_ERRNO;
-	}
 
 	line = buffer;
 	// Read the output a line at a time
@@ -272,7 +284,7 @@ static int ipv4_get_route(struct rtentry *route)
 
 		log_debug("line: %s\n", line);
 
-		saveptr3=NULL;
+		saveptr3 = NULL;
 		dest = UINT32_MAX;
 		mask = UINT32_MAX;
 		// "Destination"
@@ -315,13 +327,11 @@ static int ipv4_get_route(struct rtentry *route)
 				tmp_position = index(++tmp_position, '.');
 			}
 
-			for (int i = dot_count; i < 3; i++) {
+			for (int i = dot_count; i < 3; i++)
 				strcat(tmp_ip_string, ".0");
-			}
 
-			if (inet_aton(tmp_ip_string, &dstaddr)) {
+			if (inet_aton(tmp_ip_string, &dstaddr))
 				dest = dstaddr.s_addr;
-			}
 
 			if (!is_mask_set) {
 				// convert from CIDR to ipv4 mask
@@ -334,14 +344,14 @@ static int ipv4_get_route(struct rtentry *route)
 		// "Gateway"
 		gtw = 0;
 		if (inet_aton(strtok_r(NULL, " ", &saveptr2), &dstaddr)) {
-			gtw=dstaddr.s_addr;
+			gtw = dstaddr.s_addr;
 			log_debug("- Gateway Mask Hex: %x\n", gtw);
 		}
 		// "Flags"
 		tmpstr = strtok_r(NULL, " ", &saveptr2);
 		flags = 0;
 		// this is the reason for the 256 entries mentioned above
-		for (pos=0; pos<strlen(tmpstr); pos++)
+		for (pos = 0; pos < strlen(tmpstr); pos++)
 			flags |= flag_table[(unsigned char)tmpstr[pos]];
 		strtok_r(NULL, " ", &saveptr2); // "Refs"
 		strtok_r(NULL, " ", &saveptr2); // "Use"
@@ -377,11 +387,11 @@ static int ipv4_get_route(struct rtentry *route)
 static int ipv4_set_route(struct rtentry *route)
 {
 #ifndef __APPLE__
-	int sockfd;
-
 	log_debug("ip route add %s\n", ipv4_show_route(route));
 
-	if ((sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP)) < 0)
+	int sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
+
+	if (sockfd < 0)
 		return ERR_IPV4_SEE_ERRNO;
 	if (ioctl(sockfd, SIOCADDRT, route) == -1) {
 		close(sockfd);
@@ -406,9 +416,8 @@ static int ipv4_set_route(struct rtentry *route)
 	log_debug("%s\n", cmd);
 
 	int res = system(cmd);
-	if (res == -1) {
+	if (res == -1)
 		return ERR_IPV4_SEE_ERRNO;
-	}
 #endif
 
 	return 0;
@@ -429,7 +438,8 @@ static int ipv4_del_route(struct rtentry *route)
 	tmp.rt_window = 0;
 	tmp.rt_irtt = 0;
 
-	if ((sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP)) < 0)
+	sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
+	if (sockfd < 0)
 		return ERR_IPV4_SEE_ERRNO;
 	if (ioctl(sockfd, SIOCDELRT, &tmp) == -1) {
 		close(sockfd);
@@ -447,9 +457,8 @@ static int ipv4_del_route(struct rtentry *route)
 	log_debug("%s\n", cmd);
 
 	int res = system(cmd);
-	if (res == -1) {
+	if (res == -1)
 		return ERR_IPV4_SEE_ERRNO;
-	}
 #endif
 	return 0;
 }
@@ -524,7 +533,7 @@ int ipv4_add_split_vpn_route(struct tunnel *tunnel, char *dest, char *mask,
 		          );
 		if (new_ptr == NULL)
 			return ERR_IPV4_NO_MEM;
-		tunnel->ipv4.split_rt=new_ptr;
+		tunnel->ipv4.split_rt = new_ptr;
 	}
 
 	sprintf(env_var, "VPN_ROUTE_DEST_%d", tunnel->ipv4.split_routes);
@@ -555,10 +564,10 @@ int ipv4_add_split_vpn_route(struct tunnel *tunnel, char *dest, char *mask,
 static int ipv4_set_split_routes(struct tunnel *tunnel)
 {
 	int i;
-	struct rtentry *route;
-	int ret;
 
 	for (i = 0; i < tunnel->ipv4.split_routes; i++) {
+		struct rtentry *route;
+		int ret;
 		route = &tunnel->ipv4.split_rt[i];
 		strncpy(route_iface(route), tunnel->ppp_iface,
 		        ROUTE_IFACE_LEN - 1);
@@ -584,7 +593,7 @@ static int ipv4_set_default_routes(struct tunnel *tunnel)
 
 	route_init(ppp_rt);
 
-	if (cfg->half_internet_routes==0) {
+	if (cfg->half_internet_routes == 0) {
 		// Delete the current default route
 		log_debug("Deleting the current default route...\n");
 		ret = ipv4_del_route(def_rt);
@@ -656,18 +665,19 @@ int ipv4_set_tunnel_routes(struct tunnel *tunnel)
 
 int ipv4_restore_routes(struct tunnel *tunnel)
 {
-	int ret;
 	struct rtentry *def_rt = &tunnel->ipv4.def_rt;
 	struct rtentry *gtw_rt = &tunnel->ipv4.gtw_rt;
 	struct rtentry *ppp_rt = &tunnel->ipv4.ppp_rt;
 	struct vpn_config *cfg = tunnel->config;
 
 	if (tunnel->ipv4.route_to_vpn_is_added) {
+		int ret;
 		ret = ipv4_del_route(gtw_rt);
 		if (ret != 0)
 			log_warn("Could not delete route to vpn server (%s).\n",
 			         err_ipv4_str(ret));
-		if ((cfg->half_internet_routes==0) && (tunnel->ipv4.split_routes==0)) {
+		if ((cfg->half_internet_routes == 0) &&
+		    (tunnel->ipv4.split_routes == 0)) {
 			ret = ipv4_del_route(ppp_rt);
 			if (ret != 0)
 				log_warn("Could not delete route through tunnel (%s).\n",

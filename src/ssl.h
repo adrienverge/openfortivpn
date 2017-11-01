@@ -26,10 +26,13 @@
  *  all source files in the program, then also delete it here.
  */
 
+#ifndef _OPENFORTIVPN_SSL_H
+#define _OPENFORTIVPN_SSL_H
+
 #include <errno.h>
+#include <string.h>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
-#include <string.h>
 
 #ifdef __APPLE__
 /*
@@ -131,8 +134,9 @@ static inline int safe_ssl_read(SSL *ssl, uint8_t *buf, int bufsize)
  */
 static inline int safe_ssl_read_all(SSL *ssl, uint8_t *buf, int bufsize)
 {
-	int ret, n = 0;
+	int n = 0;
 	while (n < bufsize) {
+		int ret;
 		ret = safe_ssl_read(ssl, &buf[n], bufsize - n);
 		if (ret == ERR_SSL_AGAIN)
 			continue;
@@ -164,3 +168,5 @@ static inline int safe_ssl_write(SSL *ssl, const uint8_t *buf, int n)
 
 	return handle_ssl_error(ssl, ret);
 }
+
+#endif
