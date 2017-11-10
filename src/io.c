@@ -36,6 +36,8 @@
 #include <arpa/inet.h>
 #include <netinet/tcp.h>
 #include <unistd.h>
+#include <string.h>
+#include <errno.h>
 
 #ifdef __APPLE__
 
@@ -218,7 +220,7 @@ static void *pppd_read(void *arg)
 			pktsize = estimated_decoded_size(frm_len);
 			packet = malloc(sizeof(*packet) + 6 + pktsize);
 			if (packet == NULL) {
-				log_warn("malloc failed.\n");
+				log_error("malloc: %s\n", strerror(errno));
 				break;
 			}
 
@@ -291,7 +293,7 @@ static void *pppd_write(void *arg)
 		hdlc_bufsize = estimated_encoded_size(packet->len);
 		hdlc_buffer = malloc(hdlc_bufsize);
 		if (hdlc_buffer == NULL) {
-			log_warn("malloc failed.\n");
+			log_error("malloc: %s\n", strerror(errno));
 			break;
 		}
 		len = hdlc_encode(hdlc_buffer, hdlc_bufsize,
@@ -430,7 +432,7 @@ static void *ssl_read(void *arg)
 
 		packet = malloc(sizeof(struct ppp_packet) + 6 + size);
 		if (packet == NULL) {
-			log_error("malloc failed\n");
+			log_error("malloc: %s\n", strerror(errno));
 			break;
 		}
 		memcpy(pkt_header(packet), header, 6);

@@ -737,7 +737,7 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 	buffer = malloc(stat.st_size + 1);
 	if (buffer == NULL) {
 		log_warn("Could not read /etc/resolv.conf (%s).\n",
-		         "Not enough memory");
+		         strerror(errno));
 		goto err_close;
 	}
 
@@ -830,7 +830,7 @@ int ipv4_del_nameservers_from_resolv_conf(struct tunnel *tunnel)
 	buffer = malloc(stat.st_size + 1);
 	if (buffer == NULL) {
 		log_warn("Could not read /etc/resolv.conf (%s).\n",
-		         "Not enough memory");
+		         strerror(errno));
 		goto err_close;
 	}
 
