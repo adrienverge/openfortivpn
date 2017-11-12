@@ -699,18 +699,16 @@ int ssl_connect(struct tunnel *tunnel)
 int run_tunnel(struct vpn_config *config)
 {
 	int ret;
-	struct tunnel tunnel;
-
-	memset(&tunnel, 0, sizeof(tunnel));
-	tunnel.config = config;
-	tunnel.on_ppp_if_up = on_ppp_if_up;
-	tunnel.on_ppp_if_down = on_ppp_if_down;
-	tunnel.ipv4.ns1_addr.s_addr = 0;
-	tunnel.ipv4.ns2_addr.s_addr = 0;
-	tunnel.ssl_handle = NULL;
-	tunnel.ssl_context = NULL;
-
-	tunnel.state = STATE_DOWN;
+	struct tunnel tunnel = {
+		.config = config,
+		.state = STATE_DOWN,
+		.ssl_context = NULL,
+		.ssl_handle = NULL,
+		.ipv4.ns1_addr.s_addr = 0,
+		.ipv4.ns2_addr.s_addr = 0,
+		.on_ppp_if_up = on_ppp_if_up,
+		.on_ppp_if_down = on_ppp_if_down
+	};
 
 	// Step 0: get gateway host IP
 	ret = get_gateway_host_ip(&tunnel);
