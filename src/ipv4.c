@@ -155,8 +155,7 @@ static int ipv4_get_route(struct rtentry *route)
 	// to make sure not to access out of bounds later,
 	// for ipv4 only unsigned short is allowed
 
-	unsigned short flag_table[256];
-	memset(flag_table, 0, 256*sizeof(short));
+	unsigned short flag_table[256] = { 0 };
 
 	// fill the table now (I'm still looking for a more elagant way to do this),
 	// also, not all flags might be allowed in the context of ipv4
