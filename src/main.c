@@ -84,7 +84,7 @@
 "                                you can try with the cipher suggested in the output\n" \
 "                                of 'openssl s_client -connect <host:port>'\n" \
 "                                (e.g. AES256-GCM-SHA384)\n" \
-"  --pppd-no-peerdns             Do not ask peer ppp server for DNS addresses\n" \
+"  --pppd-no-peerdns             Do not ask peer ppp server for DNS server addresses\n" \
 "                                and do not make pppd rewrite /etc/resolv.conf\n" \
 "  --pppd-log=<file>             Set pppd in debug mode and save its logs into\n" \
 "                                <file>.\n" \
