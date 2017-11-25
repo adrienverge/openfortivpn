@@ -98,7 +98,11 @@ static int pppd_run(struct tunnel *tunnel)
 	pid_t pid;
 	int amaster;
 #ifndef __APPLE__
-	struct termios termp;
+	struct termios termp = {
+		.c_cflag = B9600,
+		.c_cc[VTIME] = 0,
+		.c_cc[VMIN] = 1
+	};
 #endif
 
 	static const char pppd_path[] = "/usr/sbin/pppd";
@@ -109,10 +113,6 @@ static int pppd_run(struct tunnel *tunnel)
 	}
 
 #ifndef __APPLE__
-	termp.c_cflag = B9600;
-	termp.c_cc[VTIME] = 0;
-	termp.c_cc[VMIN] = 1;
-
 	pid = forkpty(&amaster, NULL, &termp, NULL);
 #else
 	pid = forkpty(&amaster, NULL, NULL, NULL);
