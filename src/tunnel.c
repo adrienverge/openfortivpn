@@ -39,6 +39,7 @@
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <openssl/err.h>
+#include <openssl/x509v3.h>
 #ifndef __APPLE__
 #include <pty.h>
 #else
@@ -490,14 +491,8 @@ static int ssl_verify_cert(struct tunnel *tunnel)
 		return 1;
 	}
 
-	subj = X509_get_subject_name(cert);
-
 	// Try to validate certificate using local PKI
-	if (subj
-	    && X509_NAME_get_text_by_NID(subj, NID_commonName, common_name,
-	                                 FIELD_SIZE) > 0
-	    && strncasecmp(common_name, tunnel->config->gateway_host,
-	                   FIELD_SIZE) == 0
+	if (X509_check_host(cert, common_name, FIELD_SIZE, 0, NULL)
 	    && SSL_get_verify_result(tunnel->ssl_handle) == X509_V_OK) {
 		log_debug("Gateway certificate validation succeeded.\n");
 		ret = 0;
@@ -526,6 +521,7 @@ static int ssl_verify_cert(struct tunnel *tunnel)
 		goto free_cert;
 	}
 
+	subj = X509_get_subject_name(cert);
 	subject = X509_NAME_oneline(subj, NULL, 0);
 	issuer = X509_NAME_oneline(X509_get_issuer_name(cert), NULL, 0);
 
