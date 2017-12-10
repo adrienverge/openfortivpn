@@ -1,0 +1,29 @@
+#!/bin/bash
+
+case "$PPP_IPPARAM" in
+    openfortivpn*)
+	rconf=/etc/resolv.conf
+	case "$0" in
+	    *ip-up*)
+		routes=$(echo $PPP_IPPARAM | tr , ' ')
+		for r in $routes; do
+		    [[ $r = "openfortivpn" ]] && continue
+		    com="ip route add ${r%/*} via ${r##*/}"
+		    echo $com
+		    $com
+		done
+		cp -pv $rconf $rconf.openfortivpn
+		{ 
+		    [[ "$DNS1" ]] && echo nameserver $DNS1 
+		    [[ "$DNS2" ]] && [[ "$DNS1" != "$DNS2" ]] && echo nameserver $DNS2
+		} > $rconf
+		;;
+	    *ip-down*)
+		[[ -f $rconf.openfortivpn ]] && cp -pv $rconf.openfortivpn $rconf
+		;;
+	esac 2>&1 | logger -p daemon.debug -i -t "$0"
+	exit 0
+	;;
+esac
+
+true
