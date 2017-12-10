@@ -494,7 +494,7 @@ static int ssl_verify_cert(struct tunnel *tunnel)
 
 	subj = X509_get_subject_name(cert);
 
-#ifdef HAVE_OPENSSL_X509V3_H
+#ifdef HAVE_X509_CHECK_HOST
 	// Use OpenSSL native host validation if v >= 1.0.2.
 	if (X509_check_host(cert, common_name, FIELD_SIZE, 0, NULL))
 		cert_valid = 1;

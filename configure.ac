@@ -23,7 +23,7 @@ AC_CHECK_LIB([pthread], [pthread_create], [], [AC_MSG_ERROR([Cannot find libpthr
 AC_CHECK_LIB([util], [forkpty], [], [AC_MSG_ERROR([Cannot find libutil.])])
 
 # Checks for header files.
-AC_CHECK_HEADERS([arpa/inet.h assert.h ctype.h errno.h fcntl.h getopt.h ifaddrs.h limits.h mach/mach.h netdb.h net/if.h netinet/in.h netinet/tcp.h net/route.h openssl/x509v3.h pty.h semaphore.h signal.h stdarg.h stddef.h stdint.h stdio.h stdlib.h string.h strings.h sys/ioctl.h syslog.h sys/socket.h sys/stat.h sys/time.h sys/types.h sys/wait.h termios.h unistd.h util.h])
+AC_CHECK_HEADERS([arpa/inet.h assert.h ctype.h errno.h fcntl.h getopt.h ifaddrs.h limits.h mach/mach.h netdb.h net/if.h netinet/in.h netinet/tcp.h net/route.h pty.h semaphore.h signal.h stdarg.h stddef.h stdint.h stdio.h stdlib.h string.h strings.h sys/ioctl.h syslog.h sys/socket.h sys/stat.h sys/time.h sys/types.h sys/wait.h termios.h unistd.h util.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_INLINE
@@ -39,5 +39,6 @@ AC_TYPE_UINT8_T
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([atoi close connect execv exit _exit fclose fcntl fflush fopen forkpty fprintf fputs free freeaddrinfo freeifaddrs freopen fwrite getaddrinfo getchar getenv getopt_long htons index inet_addr inet_ntoa isatty malloc memcpy memmem memmove memset ntohs open openlog pclose popen printf pthread_cancel pthread_cond_init pthread_cond_signal pthread_cond_wait pthread_join pthread_mutexattr_init pthread_mutexattr_setrobust pthread_mutex_destroy pthread_mutex_init pthread_mutex_lock pthread_mutex_unlock pthread_sigmask puts read realloc rewind select setenv sigaddset sigemptyset signal snprintf socket sprintf strcasestr strcat strchr strcmp strcpy strdup strerror strlen strncasecmp strncat strncpy strsignal strstr strtok strtok_r strtol syslog system tcsetattr usleep vprintf vsnprintf vsyslog write], [], AC_MSG_ERROR([Required function not present]))
+AC_CHECK_FUNCS([X509_check_host])
 
 AC_OUTPUT(Makefile)
