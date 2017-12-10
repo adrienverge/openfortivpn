@@ -124,6 +124,7 @@ static int pppd_run(struct tunnel *tunnel)
 	} else if (pid == 0) { // child process
 		static const char *args[] = {
 			pppd_path,
+			/*
 			"38400", // speed
 			":1.1.1.1", // <local_IP_address>:<remote_IP_address>
 			"noipdefault",
@@ -136,6 +137,8 @@ static int pppd_run(struct tunnel *tunnel)
 			"nodetach",
 			"lcp-max-configure", "40",
 			"mru", "1354",
+			*/
+			"call", "openfortivpn",
 			NULL, // "usepeerdns"
 			NULL, NULL, NULL, // "debug", "logfile", pppd_log
 			NULL, NULL, // "plugin", pppd_plugin
