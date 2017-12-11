@@ -515,14 +515,14 @@ err_destroy:
 }
 
 static void add_text_route(struct tunnel *tunnel, const char *dest,
-			   const char *mask, const char *gw)
+                           const char *mask, const char *gw)
 {
 	size_t l0, l1;
 	const char fmt[] = ",%s/%s/%s";
 	const char trigger[] = "openfortivpn";
 	char **target = &tunnel->config->pppd_ipparam;
 	char *ptr;
-	
+
 	if (*target == NULL || strncmp(*target, trigger, strlen(trigger)))
 		return;
 	if (!dest || !mask || !gw)

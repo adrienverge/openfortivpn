@@ -95,7 +95,8 @@
 "  --pppd-ipparam=<string>       Provides  an extra parameter to the ip-up, ip-pre-up\n" \
 "                                and ip-down scripts. See man (8) pppd\n" \
 "  --pppd-call=<name>            Move most pppd options from pppd cmdline to\n" \
-"                                /etc/ppp/peers/<name> and invoke pppd with 'call <name>'\n" \
+"                                /etc/ppp/peers/<name> and invoke pppd with\n" \
+"                                'call <name>'\n" \
 "  -v                            Increase verbosity. Can be used multiple times\n" \
 "                                to be even more verbose.\n" \
 "  -q                            Decrease verbosity. Can be used multiple times\n" \
