@@ -521,6 +521,7 @@ static void add_text_route(struct tunnel *tunnel, const char *dest,
 	const char fmt[] = ",%s/%s/%s";
 	const char trigger[] = "openfortivpn";
 	char **target = &tunnel->config->pppd_ipparam;
+	char *ptr;
 	
 	if (*target == NULL || strncmp(*target, trigger, strlen(trigger)))
 		return;
@@ -529,8 +530,13 @@ static void add_text_route(struct tunnel *tunnel, const char *dest,
 	log_info("Registering route %s/%s via %s\n", dest, mask, gw);
 	l0 = strlen(*target);
 	l1 = strlen(fmt) + strlen(dest) + strlen(mask) + strlen(gw) + 1;
-	*target = realloc(*target, l0 + l1);
-	snprintf(*target + l0, l1, fmt, dest, mask, gw);
+	if ((ptr = realloc(*target, l0 + l1))) {
+		*target = ptr;
+		snprintf(*target + l0, l1, fmt, dest, mask, gw);
+	} else {
+		int eno = errno;
+		log_error("Could not reallocate array: %s\n", strerror(eno));
+	}
 }
 
 int ipv4_add_split_vpn_route(struct tunnel *tunnel, char *dest, char *mask,
