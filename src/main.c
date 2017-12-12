@@ -32,7 +32,7 @@
 "                    [--half_internet_routes=<0|1>] [--set-dns=<0|1>]\n" \
 "                    [--pppd-no-peerdns] [--pppd-log=<file>]\n" \
 "                    [--pppd-ifname=<string>] [--pppd-ipparam=<string>]\n" \
-"		     [--pppd-call=<name>]\n" \
+"                    [--pppd-call=<name>]\n" \
 "                    [--pppd-plugin=<file>] [--ca-file=<file>]\n" \
 "                    [--user-cert=<file>] [--user-key=<file>]\n" \
 "                    [--trusted-cert=<digest>] [--use-syslog]\n" \
