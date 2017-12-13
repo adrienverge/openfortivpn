@@ -126,16 +126,13 @@ Provides an extra parameter to the ip-up, ip-pre-up and ip-down scripts. See man
 .BR pppd(8)
 for further details
 .TP
-<<<<<<< 5e9adc7e3fd27ee36b0a00583dce1225226f57a2
 \fB\-\-pppd-ifname=\fI<string>\fR
 Set the ppp interface name. Only if supported by pppd. Patched versions of pppd
 implement this option but may not be available on your platform.
-=======
 \fB\-\-loop\=\fI<interval>fR
 Runs the vpn in an endless loop and tries to reconnect forever. 
 The reconnect interval may be specified in seconds, where 0 means
 no reconnect is done (this is the default).
->>>>>>> added --loop option for automatic reconnects
 .TP
 \fB\-v\fR
 Increase verbosity. Can be used multiple times to be even more verbose.
