@@ -137,8 +137,9 @@ static int ipv4_get_route(struct rtentry *route)
 	int len = sizeof(buffer) - 1;
 	char *saveptr3 = NULL;
 
-	// Open the command for reading
-	fp = popen("/usr/sbin/netstat -f inet -rn", "r");
+	// Open the command for reading and properly account for the path on the local linux machine 
+	wnst = popen("which netstat");
+	fp = popen("wnst -f inet -rn", "r");
 	if (fp == NULL)
 		return ERR_IPV4_SEE_ERRNO;
 
