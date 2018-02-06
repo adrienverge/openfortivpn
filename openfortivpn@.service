@@ -1,0 +1,10 @@
+[Unit]
+Description = Forti VPN for %i
+
+[Service]
+ExecStart = /usr/bin/openfortivpn --use-syslog -c /etc/openfortivpn/%i.config
+Restart = always
+Type = simple
+
+[Install]
+WantedBy = multi-user.target
