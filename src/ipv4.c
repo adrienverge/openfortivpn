@@ -136,12 +136,8 @@ static int ipv4_get_route(struct rtentry *route)
 	FILE *fp;
 	FILE *wnst;
 	int len = sizeof(buffer) - 1;
-	char *saveptr3 = NULL;
-	
-	// Open the command for reading and
-	// properly account for the path on
-	// the local linux machine 
-	
+	char *saveptr3 = NULL;	
+	// Open the command for reading
 	wnst = popen("which netstat");
 	fp = popen("wnst -f inet -rn", "r");
 	if (fp == NULL)
