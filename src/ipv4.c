@@ -137,7 +137,7 @@ static int ipv4_get_route(struct rtentry *route)
 	FILE *wnst;
 	int len = sizeof(buffer) - 1;
 	char *saveptr3 = NULL;
-	
+
 	// Open the command for reading
 	wnst = popen("which netstat");
 	fp = popen("wnst -f inet -rn", "r");
