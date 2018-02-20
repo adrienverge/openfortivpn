@@ -109,6 +109,14 @@ static void destroy_ssl_locks(void)
 }
 #endif
 
+// global variable to pass signal out of its handler
+volatile sig_atomic_t sig_received = 0;
+
+int get_sig_received(void)
+{
+	return (int)sig_received;
+}
+
 /*
  * Adds a new packet to a pool.
  *
@@ -559,6 +567,7 @@ error:
 
 static void sig_handler(int signo)
 {
+	sig_received = signo;
 	if (signo == SIGINT || signo == SIGTERM)
 		SEM_POST(&sem_stop_io);
 }
