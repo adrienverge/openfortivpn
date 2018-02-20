@@ -34,7 +34,7 @@
 "                    [--pppd-ifname=<string>] [--pppd-ipparam=<string>]\n" \
 "                    [--pppd-plugin=<file>] [--ca-file=<file>]\n" \
 "                    [--user-cert=<file>] [--user-key=<file>]\n" \
-"                    [--trusted-cert=<digest>] [--use-syslog] [--loop=<interval>]\n" \
+"                    [--trusted-cert=<digest>] [--use-syslog] [--persistent=<interval>]\n" \
 "                    [-c <file>] [-v|-q]\n" \
 "       openfortivpn --help\n" \
 "       openfortivpn --version\n" \
@@ -93,8 +93,8 @@
 "  --pppd-ifname=<string>        Set the pppd interface name, if supported by pppd.\n" \
 "  --pppd-ipparam=<string>       Provides  an extra parameter to the ip-up, ip-pre-up\n" \
 "                                and ip-down scripts. See man (8) pppd\n" \
-"  --loop=<interval>             Run the vpn in a loop and try to reconnect every\n" \
-"                                <interval> seconds\n" \
+"  --persistent=<interval>       Run the vpn persistently in a loop and try to reconnect\n" \
+"                                every <interval> seconds when dropping out\n" \
 "  -v                            Increase verbosity. Can be used multiple times\n" \
 "                                to be even more verbose.\n" \
 "  -q                            Decrease verbosity. Can be used multiple times\n" \
@@ -183,7 +183,7 @@ int main(int argc, char **argv)
 		{"no-dns",          no_argument, &cfg.set_dns, 0},
 		{"pppd-no-peerdns", no_argument, &cfg.pppd_use_peerdns, 0},
 		{"use-syslog",      no_argument, &cfg.use_syslog, 1},
-		{"loop",            required_argument, 0, 0},
+		{"persistent",      required_argument, 0, 0},
 		{"ca-file",         required_argument, 0, 0},
 		{"user-cert",       required_argument, 0, 0},
 		{"user-key",        required_argument, 0, 0},
@@ -305,14 +305,14 @@ int main(int argc, char **argv)
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
-			           "loop") == 0) {
-				long int loop = strtol(optarg, NULL, 0);
-				if ((loop < 0) || (loop >= UINT_MAX)) {
-					log_warn("Bad loop option: " \
+			           "persistent") == 0) {
+				long int persistent = strtol(optarg, NULL, 0);
+				if ((persistent < 0) || (persistent >= UINT_MAX)) {
+					log_warn("Bad persistent option: " \
 					         "\"%s\"\n", optarg);
 					break;
 				}
-				cfg.loop = loop;
+				cfg.persistent = persistent;
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
@@ -444,9 +444,9 @@ int main(int argc, char **argv)
 			ret = EXIT_FAILURE;
 		} else
 			ret = EXIT_SUCCESS;
-		if ((cfg.loop > 0) && (get_sig_received() == 0))
-			sleep(cfg.loop);
-	} while ((get_sig_received() == 0) && (cfg.loop !=0));
+		if ((cfg.persistent > 0) && (get_sig_received() == 0))
+			sleep(cfg.persistent);
+	} while ((get_sig_received() == 0) && (cfg.persistent !=0));
 
 	goto exit;
 
