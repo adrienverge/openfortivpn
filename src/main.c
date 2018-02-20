@@ -34,8 +34,8 @@
 "                    [--pppd-ifname=<string>] [--pppd-ipparam=<string>]\n" \
 "                    [--pppd-plugin=<file>] [--ca-file=<file>]\n" \
 "                    [--user-cert=<file>] [--user-key=<file>]\n" \
-"                    [--trusted-cert=<digest>] [--use-syslog] [--persistent=<interval>]\n" \
-"                    [-c <file>] [-v|-q]\n" \
+"                    [--trusted-cert=<digest>] [--use-syslog]\n" \
+"                    [--persistent=<interval>] [-c <file>] [-v|-q]\n" \
 "       openfortivpn --help\n" \
 "       openfortivpn --version\n" \
 "\n"
@@ -93,8 +93,8 @@
 "  --pppd-ifname=<string>        Set the pppd interface name, if supported by pppd.\n" \
 "  --pppd-ipparam=<string>       Provides  an extra parameter to the ip-up, ip-pre-up\n" \
 "                                and ip-down scripts. See man (8) pppd\n" \
-"  --persistent=<interval>       Run the vpn persistently in a loop and try to reconnect\n" \
-"                                every <interval> seconds when dropping out\n" \
+"  --persistent=<interval>       Run the vpn persistently in a loop and try to re-\n" \
+"                                connect every <interval> seconds when dropping out\n" \
 "  -v                            Increase verbosity. Can be used multiple times\n" \
 "                                to be even more verbose.\n" \
 "  -q                            Decrease verbosity. Can be used multiple times\n" \
