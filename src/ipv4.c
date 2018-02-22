@@ -119,20 +119,7 @@ static int ipv4_get_route(struct rtentry *route)
 
 	log_debug("ip route show %s\n", ipv4_show_route(route));
 
-#ifndef __APPLE__
-	int fd;
-	// Cannot stat, mmap not lseek this special /proc file
-	fd = open("/proc/net/route", O_RDONLY);
-	if (fd == -1)
-		return ERR_IPV4_SEE_ERRNO;
-
-	size = read(fd, buffer, sizeof(buffer) - 1);
-	if (size == -1) {
-		close(fd);
-		return ERR_IPV4_SEE_ERRNO;
-	}
-	close(fd);
-#else
+#ifdef __APPLE__
 	FILE *fp;
 	int len = sizeof(buffer) - 1;
 	char *saveptr3 = NULL;
@@ -225,6 +212,20 @@ static int ipv4_get_route(struct rtentry *route)
 #ifdef RTF_PROXY      // Proxying; cloned routes will not be scoped
 	flag_table['Y'] = RTF_PROXY & USHRT_MAX;
 #endif
+
+#else
+	int fd;
+	// Cannot stat, mmap not lseek this special /proc file
+	fd = open("/proc/net/route", O_RDONLY);
+	if (fd == -1)
+		return ERR_IPV4_SEE_ERRNO;
+
+	size = read(fd, buffer, sizeof(buffer) - 1);
+	if (size == -1) {
+		close(fd);
+		return ERR_IPV4_SEE_ERRNO;
+	}
+	close(fd);
 #endif
 
 	if (size == 0) {
@@ -259,23 +260,7 @@ static int ipv4_get_route(struct rtentry *route)
 		char *iface;
 		uint32_t dest, mask, gtw;
 		unsigned short flags;
-#ifndef __APPLE__
-		unsigned short irtt;
-		short metric;
-		unsigned long mtu, window;
-
-		iface = strtok_r(line, "\t", &saveptr2);
-		dest = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
-		gtw = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
-		flags = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
-		strtok_r(NULL, "\t", &saveptr2); // "RefCnt"
-		strtok_r(NULL, "\t", &saveptr2); // "Use"
-		metric = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
-		mask = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
-		mtu = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
-		window = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
-		irtt = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
-#else
+#ifdef __APPLE__
 		char tmp_ip_string[16];
 		struct in_addr dstaddr;
 		int pos;
@@ -357,6 +342,22 @@ static int ipv4_get_route(struct rtentry *route)
 		iface = strtok_r(NULL, " ", &saveptr2); // "Netif"
 		log_debug("- Interface: %s\n", iface);
 		log_debug("\n");
+#else
+		unsigned short irtt;
+		short metric;
+		unsigned long mtu, window;
+
+		iface = strtok_r(line, "\t", &saveptr2);
+		dest = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
+		gtw = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
+		flags = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
+		strtok_r(NULL, "\t", &saveptr2); // "RefCnt"
+		strtok_r(NULL, "\t", &saveptr2); // "Use"
+		metric = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
+		mask = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
+		mtu = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
+		window = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
+		irtt = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
 #endif
 
 		if (dest == route_dest(route).s_addr &&
@@ -385,19 +386,7 @@ static int ipv4_get_route(struct rtentry *route)
 
 static int ipv4_set_route(struct rtentry *route)
 {
-#ifndef __APPLE__
-	log_debug("ip route add %s\n", ipv4_show_route(route));
-
-	int sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
-
-	if (sockfd < 0)
-		return ERR_IPV4_SEE_ERRNO;
-	if (ioctl(sockfd, SIOCADDRT, route) == -1) {
-		close(sockfd);
-		return ERR_IPV4_SEE_ERRNO;
-	}
-	close(sockfd);
-#else
+#ifdef __APPLE__
 	char cmd[SHOW_ROUTE_BUFFER_SIZE];
 
 	strcpy(cmd, "route -n add -net ");
@@ -417,6 +406,18 @@ static int ipv4_set_route(struct rtentry *route)
 	int res = system(cmd);
 	if (res == -1)
 		return ERR_IPV4_SEE_ERRNO;
+#else
+	log_debug("ip route add %s\n", ipv4_show_route(route));
+
+	int sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
+
+	if (sockfd < 0)
+		return ERR_IPV4_SEE_ERRNO;
+	if (ioctl(sockfd, SIOCADDRT, route) == -1) {
+		close(sockfd);
+		return ERR_IPV4_SEE_ERRNO;
+	}
+	close(sockfd);
 #endif
 
 	return 0;
@@ -424,7 +425,20 @@ static int ipv4_set_route(struct rtentry *route)
 
 static int ipv4_del_route(struct rtentry *route)
 {
-#ifndef __APPLE__
+#ifdef __APPLE__
+	char cmd[SHOW_ROUTE_BUFFER_SIZE];
+
+	strcpy(cmd, "route -n delete ");
+	strncat(cmd, inet_ntoa(route_dest(route)), 15);
+	strcat(cmd, " -netmask ");
+	strncat(cmd, inet_ntoa(route_mask(route)), 15);
+
+	log_debug("%s\n", cmd);
+
+	int res = system(cmd);
+	if (res == -1)
+		return ERR_IPV4_SEE_ERRNO;
+#else
 	struct rtentry tmp;
 	int sockfd;
 
@@ -445,19 +459,6 @@ static int ipv4_del_route(struct rtentry *route)
 		return ERR_IPV4_SEE_ERRNO;
 	}
 	close(sockfd);
-#else
-	char cmd[SHOW_ROUTE_BUFFER_SIZE];
-
-	strcpy(cmd, "route -n delete ");
-	strncat(cmd, inet_ntoa(route_dest(route)), 15);
-	strcat(cmd, " -netmask ");
-	strncat(cmd, inet_ntoa(route_mask(route)), 15);
-
-	log_debug("%s\n", cmd);
-
-	int res = system(cmd);
-	if (res == -1)
-		return ERR_IPV4_SEE_ERRNO;
 #endif
 	return 0;
 }

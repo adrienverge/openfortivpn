@@ -39,10 +39,10 @@
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <openssl/err.h>
-#ifndef __APPLE__
-#include <pty.h>
-#else
+#ifdef __APPLE__
 #include <util.h>
+#else
+#include <pty.h>
 #endif
 #include <signal.h>
 #include <sys/wait.h>
@@ -112,10 +112,10 @@ static int pppd_run(struct tunnel *tunnel)
 		return 1;
 	}
 
-#ifndef __APPLE__
-	pid = forkpty(&amaster, NULL, &termp, NULL);
-#else
+#ifdef __APPLE__
 	pid = forkpty(&amaster, NULL, NULL, NULL);
+#else
+	pid = forkpty(&amaster, NULL, &termp, NULL);
 #endif
 
 	if (pid == -1) {
