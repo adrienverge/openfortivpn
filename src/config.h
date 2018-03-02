@@ -75,6 +75,7 @@ struct vpn_config {
 	char	*pppd_plugin;
 	char	*pppd_ipparam;
 	char	*pppd_ifname;
+	char    *pppd_call;
 
 	char	                *ca_file;
 	char	                *user_cert;

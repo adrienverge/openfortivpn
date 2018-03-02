@@ -33,6 +33,7 @@
 "                    [--half-internet-routes=<0|1>] [--set-dns=<0|1>]\n" \
 "                    [--pppd-no-peerdns] [--pppd-log=<file>]\n" \
 "                    [--pppd-ifname=<string>] [--pppd-ipparam=<string>]\n" \
+"                    [--pppd-call=<name>]\n" \
 "                    [--pppd-plugin=<file>] [--ca-file=<file>]\n" \
 "                    [--user-cert=<file>] [--user-key=<file>]\n" \
 "                    [--trusted-cert=<digest>] [--use-syslog]\n" \
@@ -94,6 +95,9 @@
 "  --pppd-ifname=<string>        Set the pppd interface name, if supported by pppd.\n" \
 "  --pppd-ipparam=<string>       Provides  an extra parameter to the ip-up, ip-pre-up\n" \
 "                                and ip-down scripts. See man (8) pppd\n" \
+"  --pppd-call=<name>            Move most pppd options from pppd cmdline to\n" \
+"                                /etc/ppp/peers/<name> and invoke pppd with\n" \
+"                                'call <name>'\n" \
 "  --persistent=<interval>       Run the vpn persistently in a loop and try to re-\n" \
 "                                connect every <interval> seconds when dropping out\n" \
 "  -v                            Increase verbosity. Can be used multiple times\n" \
@@ -160,6 +164,7 @@ int main(int argc, char **argv)
 		.pppd_log = NULL,
 		.pppd_plugin = NULL,
 		.pppd_ipparam = NULL,
+		.pppd_call = NULL,
 		.ca_file = NULL,
 		.user_cert = NULL,
 		.user_key = NULL,
@@ -195,6 +200,7 @@ int main(int argc, char **argv)
 		{"pppd-plugin",     required_argument, 0, 0},
 		{"pppd-ipparam",    required_argument, 0, 0},
 		{"pppd-ifname",     required_argument, 0, 0},
+		{"pppd-call",       required_argument, 0, 0},
 		{"plugin",          required_argument, 0, 0}, // deprecated
 		{0, 0, 0, 0}
 	};
@@ -241,6 +247,11 @@ int main(int argc, char **argv)
 			if (strcmp(long_options[option_index].name,
 			           "pppd-ipparam") == 0) {
 				cfg.pppd_ipparam = strdup(optarg);
+				break;
+			}
+			if (strcmp(long_options[option_index].name,
+			           "pppd-call") == 0) {
+				cfg.pppd_call = strdup(optarg);
 				break;
 			}
 			// --plugin is deprecated, --pppd-plugin should be used
