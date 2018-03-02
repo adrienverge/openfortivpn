@@ -30,7 +30,7 @@
 #define usage \
 "Usage: openfortivpn [<host>:<port>] [-u <user>] [-p <pass>]\n" \
 "                    [--realm=<realm>] [--otp=<otp>] [--set-routes=<0|1>]\n" \
-"                    [--half_internet_routes=<0|1>] [--set-dns=<0|1>]\n" \
+"                    [--half-internet-routes=<0|1>] [--set-dns=<0|1>]\n" \
 "                    [--pppd-no-peerdns] [--pppd-log=<file>]\n" \
 "                    [--pppd-ifname=<string>] [--pppd-ipparam=<string>]\n" \
 "                    [--pppd-plugin=<file>] [--ca-file=<file>]\n" \
