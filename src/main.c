@@ -25,17 +25,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 
 #define usage \
 "Usage: openfortivpn [<host>:<port>] [-u <user>] [-p <pass>]\n" \
 "                    [--realm=<realm>] [--otp=<otp>] [--set-routes=<0|1>]\n" \
-"                    [--half_internet_routes=<0|1>] [--set-dns=<0|1>]\n" \
+"                    [--half-internet-routes=<0|1>] [--set-dns=<0|1>]\n" \
 "                    [--pppd-no-peerdns] [--pppd-log=<file>]\n" \
 "                    [--pppd-ifname=<string>] [--pppd-ipparam=<string>]\n" \
 "                    [--pppd-plugin=<file>] [--ca-file=<file>]\n" \
 "                    [--user-cert=<file>] [--user-key=<file>]\n" \
 "                    [--trusted-cert=<digest>] [--use-syslog]\n" \
-"                    [-c <file>] [-v|-q]\n" \
+"                    [--persistent=<interval>] [-c <file>] [-v|-q]\n" \
 "       openfortivpn --help\n" \
 "       openfortivpn --version\n" \
 "\n"
@@ -93,6 +94,8 @@
 "  --pppd-ifname=<string>        Set the pppd interface name, if supported by pppd.\n" \
 "  --pppd-ipparam=<string>       Provides  an extra parameter to the ip-up, ip-pre-up\n" \
 "                                and ip-down scripts. See man (8) pppd\n" \
+"  --persistent=<interval>       Run the vpn persistently in a loop and try to re-\n" \
+"                                connect every <interval> seconds when dropping out\n" \
 "  -v                            Increase verbosity. Can be used multiple times\n" \
 "                                to be even more verbose.\n" \
 "  -q                            Decrease verbosity. Can be used multiple times\n" \
@@ -181,6 +184,7 @@ int main(int argc, char **argv)
 		{"no-dns",          no_argument, &cfg.set_dns, 0},
 		{"pppd-no-peerdns", no_argument, &cfg.pppd_use_peerdns, 0},
 		{"use-syslog",      no_argument, &cfg.use_syslog, 1},
+		{"persistent",      required_argument, 0, 0},
 		{"ca-file",         required_argument, 0, 0},
 		{"user-cert",       required_argument, 0, 0},
 		{"user-key",        required_argument, 0, 0},
@@ -299,6 +303,17 @@ int main(int argc, char **argv)
 					break;
 				}
 				cfg.half_internet_routes = half_internet_routes;
+				break;
+			}
+			if (strcmp(long_options[option_index].name,
+			           "persistent") == 0) {
+				long int persistent = strtol(optarg, NULL, 0);
+				if ((persistent < 0) || (persistent >= UINT_MAX)) {
+					log_warn("Bad persistent option: " \
+					         "\"%s\"\n", optarg);
+					break;
+				}
+				cfg.persistent = persistent;
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
@@ -425,8 +440,15 @@ int main(int argc, char **argv)
 		log_warn("This process was not spawned with root "
 		         "privileges, this will probably not work.\n");
 
-	if (run_tunnel(&cfg) == 0)
-		ret = EXIT_SUCCESS;
+	do {
+		if (run_tunnel(&cfg) != 0) {
+			ret = EXIT_FAILURE;
+		} else
+			ret = EXIT_SUCCESS;
+		if ((cfg.persistent > 0) && (get_sig_received() == 0))
+			sleep(cfg.persistent);
+	} while ((get_sig_received() == 0) && (cfg.persistent !=0));
+
 	goto exit;
 
 user_error:

@@ -25,14 +25,14 @@ Examples
 
 * Don't set IP routes and don't add VPN nameservers to `/etc/resolv.conf`:
   ```
-  openfortivpn vpn-gateway:8443 -u foo -p bar --no-routes --no-dns
+  openfortivpn vpn-gateway:8443 -u foo -p bar --no-routes --no-dns --pppd-no-peerdns
   ```
 * Using a config file:
   ```
-  openfortivpn
+  openfortivpn -c /etc/openfortivpn/my-config
   ```
 
-  With `/etc/openfortivpn/config` containing:
+  With `/etc/openfortivpn/my-config` containing:
   ```
   host = vpn-gateway
   port = 8443
@@ -62,7 +62,6 @@ For other distros, you'll need to build and install from source:
     * Gentoo Linux: `net-dialup/ppp` `pkg-config`
     * openSUSE: `gcc` `automake` `autoconf` `libopenssl-devel` `pkg-config`
     * macOS(Homebrew): `automake` `autoconf` `openssl@1.0` `pkg-config`
-    * FreeBSD: `automake` `autoconf` `libressl` `pkgconf` (port still in progress)
 
     On Linux, if you manage your kernel yourself, ensure to compile those modules:
     ```
