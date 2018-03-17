@@ -184,7 +184,7 @@ static void *pppd_read(void *arg)
 	FD_ZERO(&read_fd);
 	FD_SET(tunnel->pppd_pty, &read_fd);
 
-	log_debug("pppd_read_thread\n");
+	log_debug("%s thread\n", __func__);
 
 	// Wait for pppd to be ready
 	off_w = 0;
@@ -288,7 +288,7 @@ static void *pppd_write(void *arg)
 	// Write for pppd to talk first, otherwise unpredictable
 	SEM_WAIT(&sem_pppd_ready);
 
-	log_debug("pppd_write thread\n");
+	log_debug("%s thread\n", __func__);
 
 	while (1) {
 		struct ppp_packet *packet;
@@ -414,7 +414,7 @@ static void *ssl_read(void *arg)
 	struct tunnel *tunnel = (struct tunnel *) arg;
 	//uint8_t buf[PKT_BUF_SZ];
 
-	log_debug("ssl_read_thread\n");
+	log_debug("%s thread\n", __func__);
 
 	while (1) {
 		struct ppp_packet *packet;
@@ -491,7 +491,7 @@ static void *ssl_write(void *arg)
 {
 	struct tunnel *tunnel = (struct tunnel *) arg;
 
-	log_debug("ssl_write_thread\n");
+	log_debug("%s thread\n", __func__);
 
 	while (1) {
 		struct ppp_packet *packet;
@@ -534,7 +534,7 @@ static void *if_config(void *arg)
 	struct tunnel *tunnel = (struct tunnel *) arg;
 	int timeout = 60000000; // one minute
 
-	log_debug("if_config thread\n");
+	log_debug("%s thread\n", __func__);
 
 	// Wait for the right moment to configure IP interface
 	SEM_WAIT(&sem_if_config);
