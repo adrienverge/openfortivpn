@@ -309,7 +309,7 @@ int main(int argc, char **argv)
 			           "persistent") == 0) {
 				long int persistent = strtol(optarg, NULL, 0);
 				if ((persistent < 0) || (persistent >= UINT_MAX)) {
-					log_warn("Bad persistent option: " \
+					log_warn("Bad persistent option: "
 					         "\"%s\"\n", optarg);
 					break;
 				}
@@ -441,13 +441,13 @@ int main(int argc, char **argv)
 		         "privileges, this will probably not work.\n");
 
 	do {
-		if (run_tunnel(&cfg) != 0) {
+		if (run_tunnel(&cfg) != 0)
 			ret = EXIT_FAILURE;
-		} else
+		else
 			ret = EXIT_SUCCESS;
 		if ((cfg.persistent > 0) && (get_sig_received() == 0))
 			sleep(cfg.persistent);
-	} while ((get_sig_received() == 0) && (cfg.persistent !=0));
+	} while ((get_sig_received() == 0) && (cfg.persistent != 0));
 
 	goto exit;
 
