@@ -155,8 +155,8 @@ int http_receive(struct tunnel *tunnel, char **response)
 			}
 
 			if (header_size) {
-				/* We saw the whole header, let's check if the
-				 * body is done as well */
+				/* We saw the whole header, */
+				/* let's check if the body is done as well */
 				if (chunked) {
 					/* Last chunk terminator. Done naively. */
 					if (bytes_read >= 7 &&
