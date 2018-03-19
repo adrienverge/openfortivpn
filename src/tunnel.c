@@ -154,6 +154,7 @@ static int pppd_run(struct tunnel *tunnel)
 
 		/*
 		 * Coverity detected a defect:
+		 * 	CID 196857: Out-of-bounds write (OVERRUN)
 		 *
 		 * It is actually a false positive:
 		 * Although 'args' is  constant, Coverity is unable
