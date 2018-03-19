@@ -154,11 +154,11 @@ static int pppd_run(struct tunnel *tunnel)
 
 		/*
 		 * Coverity detected a defect:
-		 *  CID 196857: Out-of-bounds write (OVERRUN)
-		 * It is actually a false positive. Because 'args' is not
-		 * constant, Coverity is unable to infer that the NULL
-		 * elements 'args' has been initialized with shall still
-		 * be present when initializing 'i' in the above loop.
+		 *
+		 * It is actually a false positive:
+		 * Although 'args' is  constant, Coverity is unable
+		 * to infer there are enough NULL elements in 'args'
+		 * to add the following options.
 		 */
 		if (tunnel->config->pppd_use_peerdns)
 			args[i++] = "usepeerdns";
