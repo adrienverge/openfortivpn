@@ -54,7 +54,7 @@ struct x509_digest {
 #define COOKIE_SIZE	4096
 
 struct vpn_config {
-	char 		gateway_host[FIELD_SIZE + 1];
+	char		gateway_host[FIELD_SIZE + 1];
 	struct in_addr	gateway_ip;
 	uint16_t	gateway_port;
 	char		username[FIELD_SIZE + 1];
