@@ -195,7 +195,7 @@ int load_config(struct vpn_config *cfg, const char *filename)
 		} else if (strcmp(key, "half-internet-routes") == 0) {
 			int half_internet_routes = strtob(val);
 			if (half_internet_routes < 0) {
-				log_warn("Bad half-internet-routes in config" \
+				log_warn("Bad half-internet-routes in config"
 				         " file: \"%s\".\n", val);
 				continue;
 			}
@@ -203,7 +203,7 @@ int load_config(struct vpn_config *cfg, const char *filename)
 		} else if (strcmp(key, "persistent") == 0) {
 			long int persistent = strtol(val, NULL, 0);
 			if (persistent < 0) {
-				log_warn("Bad value for persistent in config file:" \
+				log_warn("Bad value for persistent in config file:"
 				         " \"%s\".\n",
 				         val);
 				continue;

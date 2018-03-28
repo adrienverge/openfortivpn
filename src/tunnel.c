@@ -39,10 +39,11 @@
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <openssl/err.h>
-#ifndef __APPLE__
-#include <pty.h>
-#else
+#include <openssl/x509v3.h>
+#ifdef __APPLE__
 #include <util.h>
+#else
+#include <pty.h>
 #endif
 #include <signal.h>
 #include <sys/wait.h>
@@ -112,10 +113,10 @@ static int pppd_run(struct tunnel *tunnel)
 		return 1;
 	}
 
-#ifndef __APPLE__
-	pid = forkpty(&amaster, NULL, &termp, NULL);
-#else
+#ifdef __APPLE__
 	pid = forkpty(&amaster, NULL, NULL, NULL);
+#else
+	pid = forkpty(&amaster, NULL, &termp, NULL);
 #endif
 
 	if (pid == -1) {
@@ -153,11 +154,12 @@ static int pppd_run(struct tunnel *tunnel)
 
 		/*
 		 * Coverity detected a defect:
-		 *  CID 196857: Out-of-bounds write (OVERRUN)
-		 * It is actually a false positive. Because 'args' is not
-		 * constant, Coverity is unable to infer that the NULL
-		 * elements 'args' has been initialized with shall still
-		 * be present when initializing 'i' in the above loop.
+		 * 	CID 196857: Out-of-bounds write (OVERRUN)
+		 *
+		 * It is actually a false positive:
+		 * Although 'args' is  constant, Coverity is unable
+		 * to infer there are enough NULL elements in 'args'
+		 * to add the following options.
 		 */
 		if (tunnel->config->pppd_use_peerdns)
 			args[i++] = "usepeerdns";
@@ -473,6 +475,7 @@ err_socket:
 static int ssl_verify_cert(struct tunnel *tunnel)
 {
 	int ret = -1;
+	int cert_valid = 0;
 	unsigned char digest[SHA256LEN];
 	unsigned int len;
 	struct x509_digest *elem;
@@ -492,12 +495,23 @@ static int ssl_verify_cert(struct tunnel *tunnel)
 
 	subj = X509_get_subject_name(cert);
 
-	// Try to validate certificate using local PKI
+#ifdef HAVE_X509_CHECK_HOST
+	// Use OpenSSL native host validation if v >= 1.0.2.
+	if (X509_check_host(cert, common_name, FIELD_SIZE, 0, NULL))
+		cert_valid = 1;
+#else
+	// Use explicit Common Name check if native validation not available.
+	// Note: this will ignore Subject Alternative Name fields.
 	if (subj
 	    && X509_NAME_get_text_by_NID(subj, NID_commonName, common_name,
 	                                 FIELD_SIZE) > 0
 	    && strncasecmp(common_name, tunnel->config->gateway_host,
-	                   FIELD_SIZE) == 0
+	                   FIELD_SIZE) == 0)
+		cert_valid = 1;
+#endif
+
+	// Try to validate certificate using local PKI
+	if (cert_valid
 	    && SSL_get_verify_result(tunnel->ssl_handle) == X509_V_OK) {
 		log_debug("Gateway certificate validation succeeded.\n");
 		ret = 0;
