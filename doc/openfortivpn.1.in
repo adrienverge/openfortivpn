@@ -26,6 +26,7 @@ openfortivpn \- Client for PPP+SSL VPN tunnel services
 [\fB\-\-pppd-plugin=\fI<file>\fR]
 [\fB\-\-pppd-ipparam=\fI<string>\fR]
 [\fB\-\-pppd-ifname=\fI<string>\fR]
+[\fB\-\-pppd-call=\fI<name>\fR]
 [\fB\-\-persistent\fR]
 [\fB\-c\fR \fI<file>\fR]
 [\fB\-v|\-q\fR]
@@ -129,6 +130,13 @@ for further details
 \fB\-\-pppd-ifname=\fI<string>\fR
 Set the ppp interface name. Only if supported by pppd. Patched versions of pppd
 implement this option but may not be available on your platform.
+.TP
+\fB\-\-pppd-call=\fI<name>\fR
+Drop usual arguments from pppd command line and add `call <name>' instead.
+This can be useful on Debian and Ubuntu, where unprivileged users in
+group `dip' can invoke `pppd call <name>' to make pppd read and apply
+options from /etc/ppp/peers/<name> (including privileged ones).
+.TP
 \fB\-\-persistent\=\fI<interval>fR
 Runs the vpn persistently in an endless loop and tries to reconnect forever.
 The reconnect interval may be specified in seconds, where 0 means
