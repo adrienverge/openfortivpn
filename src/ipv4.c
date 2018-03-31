@@ -535,8 +535,7 @@ static void add_text_route(struct tunnel *tunnel, const char *dest,
 		*target = ptr;
 		snprintf(*target + l0, l1, fmt, dest, mask, gw);
 	} else {
-		int eno = errno;
-		log_error("Could not reallocate array: %s\n", strerror(eno));
+		log_error("realloc: %s\n", strerror(errno));
 	}
 }
 
