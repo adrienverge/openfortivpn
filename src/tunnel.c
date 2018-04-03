@@ -145,6 +145,16 @@ static int pppd_run(struct tunnel *tunnel)
 			NULL // terminal null pointer required by execvp()
 		};
 
+		if (tunnel->config->pppd_call) {
+			/* overwrite args[]: keep pppd_path, replace all
+			 * options with "call <name>" */
+			int j = 1;
+			args[j++] = "call";
+			args[j++] = tunnel->config->pppd_call;
+			while (j < ARRAY_SIZE(args))
+				args[j++] = NULL;
+		}
+
 		// Dynamically get first NULL pointer so that changes of
 		// args above don't need code changes here
 		int i = ARRAY_SIZE(args) - 1;
