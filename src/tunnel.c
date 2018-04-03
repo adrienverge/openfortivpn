@@ -145,7 +145,7 @@ static int pppd_run(struct tunnel *tunnel)
 			NULL // terminal null pointer required by execvp()
 		};
 
-		if (tunnel->config->pppd_call != NULL) {
+		if (tunnel->config->pppd_call) {
 			/* overwrite args[]: keep pppd_path, replace all
 			 * options with "call <name>" */
 			int j = 1;
