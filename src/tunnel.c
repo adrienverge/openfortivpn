@@ -146,6 +146,8 @@ static int pppd_run(struct tunnel *tunnel)
 		};
 
 		if (tunnel->config->pppd_call != NULL) {
+			/* overwrite args[]: keep pppd_path, replace all
+			 * options with "call <name>" */
 			int j = 1;
 			args[j++] = "call";
 			args[j++] = tunnel->config->pppd_call;
