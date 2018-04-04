@@ -42,12 +42,14 @@
 "       openfortivpn --version\n" \
 "\n"
 
-#define help_options \
+#define summary \
 "Client for PPP+SSL VPN tunnel services.\n" \
 "openfortivpn connects to a VPN by setting up a tunnel to the gateway at\n" \
 "<host>:<port>. It spawns a pppd process and operates the communication between\n" \
 "the gateway and this process.\n" \
-"\n" \
+"\n"
+
+#define help_options \
 "Options:\n" \
 "  -h --help                     Show this help message and exit.\n" \
 "  --version                     Show version and exit.\n" \
@@ -340,7 +342,7 @@ int main(int argc, char **argv)
 			}
 			goto user_error;
 		case 'h':
-			printf("%s%s%s", usage, help_options, help_config);
+			printf("%s%s%s%s", usage, summary, help_options, help_config);
 			ret = EXIT_SUCCESS;
 			goto exit;
 		case 'v':
