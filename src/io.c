@@ -235,8 +235,7 @@ static void *pppd_read(void *arg)
 			pktsize = hdlc_decode(&buf[off_r], frm_len,
 			                      pkt_data(packet), pktsize);
 			if (pktsize < 0) {
-				log_error("Failed to decode PPP packet from "
-				          "HDLC frame (%s).\n",
+				log_error("Failed to decode PPP packet from HDLC frame (%s).\n",
 				          (pktsize == ERR_HDLC_BAD_CHECKSUM ?
 				           "bad checksum" :
 				           (pktsize == ERR_HDLC_INVALID_FRAME ?
@@ -307,8 +306,7 @@ static void *pppd_write(void *arg)
 		len = hdlc_encode(hdlc_buffer, hdlc_bufsize,
 		                  pkt_data(packet), packet->len);
 		if (len < 0) {
-			log_error("Failed to encode PPP packet into HDLC "
-			          "frame.\n");
+			log_error("Failed to encode PPP packet into HDLC frame.\n");
 			goto err_free_buf;
 		}
 
@@ -547,8 +545,7 @@ static void *if_config(void *arg)
 			tunnel->state = STATE_UP;
 			break;
 		} else if (timeout == 0) {
-			log_error("Timed out waiting for the ppp interface to "
-			          "be UP.\n");
+			log_error("Timed out waiting for the ppp interface to be UP.\n");
 			break;
 		}
 		log_debug("%s: not ready yet...\n", __func__);

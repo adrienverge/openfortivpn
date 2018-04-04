@@ -480,8 +480,7 @@ int ipv4_protect_tunnel_route(struct tunnel *tunnel)
 	if (ret != 0) {
 		log_warn("Could not get current default route (%s).\n",
 		         err_ipv4_str(ret));
-		log_warn("Protecting tunnel route has failed. "
-		         "But this can be working except for some cases.\n");
+		log_warn("Protecting tunnel route has failed. But this can be working except for some cases.\n");
 		goto err_destroy;
 	}
 
@@ -712,8 +711,7 @@ int ipv4_restore_routes(struct tunnel *tunnel)
 			// automatically restored on all linux distributions
 			ret = ipv4_set_route(def_rt);
 			if (ret != 0) {
-				log_warn("Could not restore default route (%s). "
-				         "Already restored?\n",
+				log_warn("Could not restore default route (%s). Already restored?\n",
 				         err_ipv4_str(ret));
 			}
 
@@ -788,8 +786,7 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 	     line = strtok(NULL, "\n")) {
 		if (strcmp(line, ns1) == 0) {
 			tunnel->ipv4.ns_are_new = 0;
-			log_debug("Nameservers already present in "
-			          "/etc/resolv.conf.\n");
+			log_debug("Nameservers already present in /etc/resolv.conf.\n");
 			ret = 0;
 			goto err_free;
 		}
