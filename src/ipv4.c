@@ -515,12 +515,37 @@ err_destroy:
 	return ret;
 }
 
+static void add_text_route(struct tunnel *tunnel, const char *dest,
+                           const char *mask, const char *gw)
+{
+	size_t l0, l1;
+	const char fmt[] = ",%s/%s/%s";
+	const char trigger[] = "openfortivpn";
+	char **target = &tunnel->config->pppd_ipparam;
+	char *ptr;
+
+	if (*target == NULL || strncmp(*target, trigger, strlen(trigger)))
+		return;
+	if (!dest || !mask || !gw)
+		return;
+	log_info("Registering route %s/%s via %s\n", dest, mask, gw);
+	l0 = strlen(*target);
+	l1 = strlen(fmt) + strlen(dest) + strlen(mask) + strlen(gw) + 1;
+	if ((ptr = realloc(*target, l0 + l1))) {
+		*target = ptr;
+		snprintf(*target + l0, l1, fmt, dest, mask, gw);
+	} else {
+		log_error("realloc: %s\n", strerror(errno));
+	}
+}
+
 int ipv4_add_split_vpn_route(struct tunnel *tunnel, char *dest, char *mask,
                              char *gateway)
 {
 	struct rtentry *route;
 	char env_var[24];
 
+	add_text_route(tunnel, dest, mask, gateway);
 	if (tunnel->ipv4.split_routes == MAX_SPLIT_ROUTES)
 		return ERR_IPV4_NO_MEM;
 	if ((tunnel->ipv4.split_rt == NULL)
