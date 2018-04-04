@@ -551,7 +551,7 @@ static void *if_config(void *arg)
 			          "be UP.\n");
 			break;
 		}
-		log_debug("if_config: not ready yet...\n");
+		log_debug("%s: not ready yet...\n", __func__);
 		timeout -= 200000;
 		usleep(200000);
 	}

@@ -26,6 +26,7 @@ openfortivpn \- Client for PPP+SSL VPN tunnel services
 [\fB\-\-pppd-plugin=\fI<file>\fR]
 [\fB\-\-pppd-ipparam=\fI<string>\fR]
 [\fB\-\-pppd-ifname=\fI<string>\fR]
+[\fB\-\-pppd-call=\fI<name>\fR]
 [\fB\-\-persistent\fR]
 [\fB\-c\fR \fI<file>\fR]
 [\fB\-v|\-q\fR]
@@ -67,8 +68,9 @@ Set if we should try to configure IP routes through the VPN when tunnel is up. I
 
 \fB\-\-no-routes\fR is the same as \fB\-\-set-routes=\fI0\fR.
 .TP
-\fB\-\-half-internet-routes=\fI<bool>\fR, if set to 1, tells openfortivpn not to 
-replace the default route by a different one, but set up two separate /1-routes instead.
+\fB\-\-half-internet-routes=\fI<bool>\fR, if set to 1, tells openfortivpn not
+to replace the default route by a different one, but to set up two 0.0.0.0/1
+and 128.0.0.0/1 routes with higher priority instead.
 .TP
 \fB\-\-set-dns=\fI<bool>\fR, \fB\-\-no-dns\fR
 Set if we should add VPN nameservers in /etc/resolv.conf when tunnel is up. If used multiple times, the last one takes priority.
@@ -129,6 +131,13 @@ for further details
 \fB\-\-pppd-ifname=\fI<string>\fR
 Set the ppp interface name. Only if supported by pppd. Patched versions of pppd
 implement this option but may not be available on your platform.
+.TP
+\fB\-\-pppd-call=\fI<name>\fR
+Drop usual arguments from pppd command line and add `call <name>' instead.
+This can be useful on Debian and Ubuntu, where unprivileged users in
+group `dip' can invoke `pppd call <name>' to make pppd read and apply
+options from /etc/ppp/peers/<name> (including privileged ones).
+.TP
 \fB\-\-persistent\=\fI<interval>fR
 Runs the vpn persistently in an endless loop and tries to reconnect forever.
 The reconnect interval may be specified in seconds, where 0 means
