@@ -62,8 +62,7 @@ static int on_ppp_if_up(struct tunnel *tunnel)
 		ret = ipv4_set_tunnel_routes(tunnel);
 
 		if (ret != 0) {
-			log_warn("Adding route table is incomplete. "
-			         "Please check route table.\n");
+			log_warn("Adding route table is incomplete. Please check route table.\n");
 		}
 	}
 
@@ -221,31 +220,22 @@ static int pppd_run(struct tunnel *tunnel)
 
 static const char * const pppd_message[] = {
 	"Returned an unknown exit status", // fall back
-	"Has detached, or otherwise the connection was successfully"
-	" established and terminated at the peer's request.",
-	"An immediately fatal error of some kind occurred, such as an"
-	" essential system call failing, or running out of virtual memory.",
-	"An error was detected in processing the options given, such as two"
-	" mutually exclusive options being used.",
+	"Has detached, or otherwise the connection was successfully established and terminated at the peer's request.",
+	"An immediately fatal error of some kind occurred, such as an essential system call failing, or running out of virtual memory.",
+	"An error was detected in processing the options given, such as two mutually exclusive options being used.",
 	"Is not setuid-root and the invoking user is not root.",
-	"The kernel does not support PPP, for example, the PPP kernel driver"
-	" is not included or cannot be loaded.",
+	"The kernel does not support PPP, for example, the PPP kernel driver is not included or cannot be loaded.",
 	"Terminated because it was sent a SIGINT, SIGTERM or SIGHUP signal.",
 	"The serial port could not be locked.",
 	"The serial port could not be opened.",
 	"The connect script failed (returned a non-zero exit status).",
-	"The command specified as the argument to the pty option"
-	" could not be run.",
-	"The PPP negotiation failed, that is, it didn't reach the point"
-	" where at least one network protocol (e.g. IP) was running.",
+	"The command specified as the argument to the pty option could not be run.",
+	"The PPP negotiation failed, that is, it didn't reach the point where at least one network protocol (e.g. IP) was running.",
 	"The peer system failed (or refused) to authenticate itself.",
-	"The link was established successfully and terminated because"
-	" it was idle.",
-	"The link was established successfully and terminated because the"
-	" connect time limit was reached.",
+	"The link was established successfully and terminated because it was idle.",
+	"The link was established successfully and terminated because the connect time limit was reached.",
 	"Callback was negotiated and an incoming call should arrive shortly.",
-	"The link was terminated because the peer is not responding to echo"
-	" requests.", // emitted when exiting normally
+	"The link was terminated because the peer is not responding to echo requests.", // emitted when exiting normally
 	"The link was terminated by the modem hanging up.",
 	"The PPP negotiation failed because serial loopback was detected.",
 	"The init script failed (returned a non-zero exit status).",
@@ -468,8 +458,7 @@ static int tcp_connect(struct tunnel *tunnel)
 			 */
 			ssize_t bytes_read = read(handle, &(request[j]), 1);
 			if (bytes_read < 1) {
-				log_error("Proxy response is unexpectedly large and"
-				          " cannot fit in the %d-bytes buffer.\n",
+				log_error("Proxy response is unexpectedly large and cannot fit in the %d-bytes buffer.\n",
 				          ARRAY_SIZE(request));
 				goto err_proxy_response;
 			}
@@ -509,8 +498,8 @@ static int tcp_connect(struct tunnel *tunnel)
 			}
 
 			if (j > ARRAY_SIZE(request) - 2) {
-				log_error("Proxy response does not contain \"%s\" "
-				          "as expected.\n", HTTP_STATUS_200);
+				log_error("Proxy response does not contain \"%s\" as expected.\n",
+				          HTTP_STATUS_200);
 				goto err_proxy_response;
 			}
 		}
@@ -600,9 +589,7 @@ static int ssl_verify_cert(struct tunnel *tunnel)
 	subject = X509_NAME_oneline(subj, NULL, 0);
 	issuer = X509_NAME_oneline(X509_get_issuer_name(cert), NULL, 0);
 
-	log_error("Gateway certificate validation failed, and the certificate "
-	          "digest in not in the local whitelist. If you trust it, "
-	          "rerun with:\n");
+	log_error("Gateway certificate validation failed, and the certificate digest in not in the local whitelist. If you trust it, rerun with:\n");
 	log_error("    --trusted-cert %s\n", digest_str);
 	log_error("or add this line to your config file:\n");
 	log_error("    trusted-cert = %s\n", digest_str);
@@ -672,8 +659,7 @@ int ssl_connect(struct tunnel *tunnel)
 		            tunnel->ssl_context,
 		            tunnel->config->ca_file, NULL)) {
 			log_error("SSL_CTX_load_verify_locations: %s\n",
-			          ERR_error_string(ERR_peek_last_error(),
-			                           NULL));
+			          ERR_error_string(ERR_peek_last_error(), NULL));
 			return 1;
 		}
 	}
@@ -683,8 +669,7 @@ int ssl_connect(struct tunnel *tunnel)
 		            tunnel->ssl_context, tunnel->config->user_cert,
 		            SSL_FILETYPE_PEM)) {
 			log_error("SSL_CTX_use_certificate_file: %s\n",
-			          ERR_error_string(ERR_peek_last_error(),
-			                           NULL));
+			          ERR_error_string(ERR_peek_last_error(), NULL));
 			return 1;
 		}
 	}
@@ -694,8 +679,7 @@ int ssl_connect(struct tunnel *tunnel)
 		            tunnel->ssl_context, tunnel->config->user_key,
 		            SSL_FILETYPE_PEM)) {
 			log_error("SSL_CTX_use_PrivateKey_file: %s\n",
-			          ERR_error_string(ERR_peek_last_error(),
-			                           NULL));
+			          ERR_error_string(ERR_peek_last_error(), NULL));
 			return 1;
 		}
 	}
@@ -749,8 +733,7 @@ int ssl_connect(struct tunnel *tunnel)
 	// Initiate SSL handshake
 	if (SSL_connect(tunnel->ssl_handle) != 1) {
 		log_error("SSL_connect: %s\n"
-		          "You might want to try --insecure-ssl or specify "
-		          "a different --cipher-list\n",
+		          "You might want to try --insecure-ssl or specify a different --cipher-list\n",
 		          ERR_error_string(ERR_peek_last_error(), NULL));
 		return 1;
 	}
