@@ -445,11 +445,8 @@ static int tcp_connect(struct tunnel *tunnel)
 		        tunnel->config->gateway_port);
 		ssize_t bytes_written = write(handle, request, strlen(request));
 		if (bytes_written != strlen(request)) {
-			if (bytes_written == -1)
-				log_error("write: %s\n", strerror(errno));
-			else
-				log_error("write: unexpected error: cannot write all "
-				          "bytes while talking to proxy\n");
+			log_error("write error while talking to proxy: %s\n",
+			          strerror(errno));
 			goto err_connect;
 		}
 
