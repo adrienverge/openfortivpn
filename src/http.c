@@ -322,8 +322,7 @@ static int get_auth_cookie(struct tunnel *tunnel, char *buf)
 				strncpy(tunnel->config->cookie, line, COOKIE_SIZE);
 				tunnel->config->cookie[COOKIE_SIZE] = '\0';
 				if (strlen(line) > COOKIE_SIZE) {
-					log_error("Cookie larger than expected:"
-					          " %zu > %d\n",
+					log_error("Cookie larger than expected: %zu > %d\n",
 					          strlen(line), COOKIE_SIZE);
 				} else {
 					ret = 1; // success
@@ -642,8 +641,7 @@ int parse_config(struct tunnel *tunnel, const char *buffer)
 
 		c = strchr(buffer, '/');
 		if (c == NULL || c >= end || c - buffer > 15) {
-			log_warn("Wrong addresses in split VPN route: "
-			         "expected <dest>/<mask>\n");
+			log_warn("Wrong addresses in split VPN route: expected <dest>/<mask>\n");
 			return 1;
 		}
 		memcpy(dest, buffer, c - buffer);
@@ -655,8 +653,7 @@ int parse_config(struct tunnel *tunnel, const char *buffer)
 			c = end;
 
 		if (c - buffer > 15) {
-			log_warn("Wrong addresses in split VPN route: "
-			         "expected <dest>/<mask>\n");
+			log_warn("Wrong addresses in split VPN route: expected <dest>/<mask>\n");
 			return 1;
 		}
 		memcpy(mask, buffer, c - buffer);
