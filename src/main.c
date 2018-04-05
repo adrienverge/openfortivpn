@@ -288,8 +288,7 @@ int main(int argc, char **argv)
 			if (strcmp(long_options[option_index].name,
 			           "trusted-cert") == 0) {
 				if (add_trusted_cert(&cfg, optarg))
-					log_warn("Could not add certificate "
-					         "digest to whitelist.\n");
+					log_warn("Could not add certificate digest to whitelist.\n");
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
@@ -301,8 +300,7 @@ int main(int argc, char **argv)
 			           "set-routes") == 0) {
 				int set_routes = strtob(optarg);
 				if (set_routes < 0) {
-					log_warn("Bad set-routes option: \"%s\"\n",
-					         optarg);
+					log_warn("Bad set-routes option: \"%s\"\n", optarg);
 					break;
 				}
 				cfg.set_routes = set_routes;
@@ -312,8 +310,8 @@ int main(int argc, char **argv)
 			           "half-internet-routes") == 0) {
 				int half_internet_routes = strtob(optarg);
 				if (half_internet_routes < 0) {
-					log_warn("Bad half-internet-routes option: "
-					         "\"%s\"\n", optarg);
+					log_warn("Bad half-internet-routes option: \"%s\"\n",
+					         optarg);
 					break;
 				}
 				cfg.half_internet_routes = half_internet_routes;
@@ -323,8 +321,7 @@ int main(int argc, char **argv)
 			           "persistent") == 0) {
 				long int persistent = strtol(optarg, NULL, 0);
 				if ((persistent < 0) || (persistent >= UINT_MAX)) {
-					log_warn("Bad persistent option: "
-					         "\"%s\"\n", optarg);
+					log_warn("Bad persistent option: \"%s\"\n", optarg);
 					break;
 				}
 				cfg.persistent = persistent;
@@ -334,8 +331,7 @@ int main(int argc, char **argv)
 			           "set-dns") == 0) {
 				int set_dns = strtob(optarg);
 				if (set_dns < 0) {
-					log_warn("Bad set-dns option: \"%s\"\n",
-					         optarg);
+					log_warn("Bad set-dns option: \"%s\"\n", optarg);
 					break;
 				}
 				cfg.set_dns = set_dns;
@@ -374,9 +370,7 @@ int main(int argc, char **argv)
 	set_syslog(cfg.use_syslog);
 
 	if (password != NULL)
-		log_warn("You should not pass the password on the command "
-		         "line. Type it interactively or use a config file "
-		         "instead.\n");
+		log_warn("You should not pass the password on the command line. Type it interactively or use a config file instead.\n");
 
 	// Load config file
 	if (config_file[0] != '\0') {
@@ -451,8 +445,7 @@ int main(int argc, char **argv)
 		log_debug("One-time password = \"%s\"\n", cfg.otp);
 
 	if (geteuid() != 0)
-		log_warn("This process was not spawned with root "
-		         "privileges, this will probably not work.\n");
+		log_warn("This process was not spawned with root privileges, this will probably not work.\n");
 
 	do {
 		if (run_tunnel(&cfg) != 0)

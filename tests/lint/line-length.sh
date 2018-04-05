@@ -9,8 +9,12 @@ rc=0
 for file in "$@"; do
   tmp=$(mktemp)
 
-  # Replace tabs with 8 spaces
-  sed 's/\t/        /g' "$file" >$tmp
+  # Preprocess source code
+  # 1. Replace tabs with 8 spaces
+  # 2. Remove strings so that they are not taken into account when
+  #    calculating line lengths (this is far from being foolproof
+  #    but is probably good enough for now)
+  sed 's/\t/        /g; s/"[^"]*"/""/g' "$file" >$tmp
 
   awk "{
          if (length(\$0) > $MAX) {
