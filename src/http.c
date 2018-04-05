@@ -212,7 +212,7 @@ static int do_http_request(struct tunnel *tunnel, const char *method,
                            const char *uri, const char *data, char **response)
 {
 	int ret;
-	const char template[] = "%s %s HTTP/1.1\r\n"
+	const char *template = ("%s %s HTTP/1.1\r\n"
 	                        "Host: %s:%d\r\n"
 	                        "User-Agent: Mozilla/5.0 SV1\r\n"
 	                        "Accept: text/plain\r\n"
@@ -220,7 +220,7 @@ static int do_http_request(struct tunnel *tunnel, const char *method,
 	                        "Content-Type: application/x-www-form-urlencoded\r\n"
 	                        "Cookie: %s\r\n"
 	                        "Content-Length: %d\r\n"
-	                        "\r\n%s";
+	                        "\r\n%s");
 
 	ret = http_send(tunnel, template, method, uri,
 	                tunnel->config->gateway_host,
@@ -276,7 +276,7 @@ static int get_value_from_response(const char *buf, const char *key,
 	if (tokens == NULL) {
 		ret = -3;
 		goto end;
-    }
+	}
 
 	for (const char *kv_pair = strtok(tokens, "&,\r\n");
 	     kv_pair != NULL;
