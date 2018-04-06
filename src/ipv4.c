@@ -392,7 +392,8 @@ static int ipv4_get_route(struct rtentry *route)
 		 */
 
 		if (((dest & mask) == (rtdest & rtmask & mask))
-		    && (mask >= route_mask(route).s_addr)) {
+		    && (mask >= route_mask(route).s_addr)
+		    && (mask <= rtmask)) {
 #ifndef __APPLE__
 			if (((mask == route_mask(route).s_addr)
 			     && (metric <= route->rt_metric))
