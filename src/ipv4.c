@@ -116,8 +116,21 @@ static int ipv4_get_route(struct rtentry *route)
 	char buffer[0x1000];
 	char *start, *line;
 	char *saveptr1 = NULL, *saveptr2 = NULL;
+	uint32_t rtdest, rtmask, rtgtw;
+	int rtfound = 0;
 
 	log_debug("ip route show %s\n", ipv4_show_route(route));
+
+	// store what we are looking for
+	rtdest = route_dest(route).s_addr;
+	rtmask = route_mask(route).s_addr;
+	rtgtw = route_gtw(route).s_addr;
+
+
+	// initialize the output record
+	route_dest(route).s_addr = inet_addr("0.0.0.0");
+	route_mask(route).s_addr = inet_addr("0.0.0.0");
+	route_gtw(route).s_addr = inet_addr("0.0.0.0");
 
 #ifdef __APPLE__
 	FILE *fp;
@@ -359,29 +372,67 @@ static int ipv4_get_route(struct rtentry *route)
 		window = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
 		irtt = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
 #endif
+		/*
+		 * ( address & mask ) is the network address.
+		 * Check if the network address we are looking for falls into
+		 * the network for the current route. Therefore, calculate
+		 * the network address for both, the current route and for
+		 * the destination we are searching. If the destination
+		 * is a smaller network (possibly a single host), we have
+		 * to mask again with the netmask of the network that we are
+		 * checking in order to obtain the network address in the
+		 * context of the current route. If both network addresses
+		 * match, we have found a candidate for a route. However,
+		 * there might be another route for a smaller network,
+		 * therefore repeat this and only store the resulting route
+		 * when the mask is at least as large as the one we may
+		 * have already found in a previous iteration.
+		 * If the metric is larger than one found for this network
+		 * size, skip the current route (this is not supported on mac).
+		 */
 
-		if (dest == route_dest(route).s_addr &&
-		    mask == route_mask(route).s_addr) {
-			// Requested route has been found
-			route_gtw(route).s_addr = gtw;
-			route->rt_flags = flags;
+		if (((dest & mask) == (rtdest & rtmask & mask))
+		    && (mask >= route_mask(route).s_addr)) {
 #ifndef __APPLE__
-			// we do not have these values from Mac OS X netstat,
-			// so stay with defaults denoted by values of 0
-			route->rt_metric = metric;
-			route->rt_mtu = mtu;
-			route->rt_window = window;
-			route->rt_irtt = irtt;
+			if (((mask == route_mask(route).s_addr)
+			     && (metric <= route->rt_metric))
+			    || (rtfound == 0)
+			    || (mask > route_mask(route).s_addr)) {
 #endif
-			strncpy(route_iface(route), iface,
-			        ROUTE_IFACE_LEN - 1);
-			return 0;
+				rtfound = 1;
+				// Requested route has been found
+				route_dest(route).s_addr = dest;
+				route_mask(route).s_addr = mask;
+				route_gtw(route).s_addr = gtw;
+				route->rt_flags = flags;
+
+				strncpy(route_iface(route), iface,
+				        ROUTE_IFACE_LEN - 1);
+
+#ifndef __APPLE__
+				// we do not have these values from Mac OS X netstat,
+				// so stay with defaults denoted by values of 0
+				route->rt_metric = metric;
+				route->rt_mtu = mtu;
+				route->rt_window = window;
+				route->rt_irtt = irtt;
+			}
+#endif
 		}
 		line = strtok_r(NULL, "\n", &saveptr1);
 	}
-	log_debug("Route not found.\n");
 
-	return ERR_IPV4_NO_SUCH_ROUTE;
+	if (rtfound==0) {
+		// should not occur anymore unless there is no default route
+		log_debug("Route not found.\n");
+		// at least restore input values
+		route_dest(route).s_addr = rtdest;
+		route_mask(route).s_addr = rtmask;
+		route_gtw(route).s_addr = rtgtw;
+		return ERR_IPV4_NO_SUCH_ROUTE;
+	}
+
+	return 0;
 }
 
 static int ipv4_set_route(struct rtentry *route)
@@ -485,11 +536,16 @@ int ipv4_protect_tunnel_route(struct tunnel *tunnel)
 	}
 
 
-	// Set the default route as the route to the tunnel gateway
-	char *iface = route_iface(gtw_rt);
-	memcpy(gtw_rt, def_rt, sizeof(*gtw_rt));
-	route_iface(gtw_rt) = iface;
-	strncpy(route_iface(gtw_rt), route_iface(def_rt), ROUTE_IFACE_LEN - 1);
+	// Set the up a route to the tunnel gateway
+	route_dest(gtw_rt).s_addr = tunnel->config->gateway_ip.s_addr;
+	route_mask(gtw_rt).s_addr = inet_addr("255.255.255.255");
+	ret = ipv4_get_route(gtw_rt);
+	if (ret != 0) {
+		log_warn("Could not get route to gateway (%s).\n",
+		         err_ipv4_str(ret));
+		log_warn("Protecting tunnel route has failed. But this can be working except for some cases.\n");
+		goto err_destroy;
+	}
 	route_dest(gtw_rt).s_addr = tunnel->config->gateway_ip.s_addr;
 	route_mask(gtw_rt).s_addr = inet_addr("255.255.255.255");
 	gtw_rt->rt_flags |= RTF_HOST;
@@ -497,6 +553,7 @@ int ipv4_protect_tunnel_route(struct tunnel *tunnel)
 
 	tunnel->ipv4.route_to_vpn_is_added = 1;
 	log_debug("Setting route to vpn server...\n");
+	log_debug("ip route show %s\n", ipv4_show_route(gtw_rt));
 	ret = ipv4_set_route(gtw_rt);
 	if (ret == ERR_IPV4_SEE_ERRNO && errno == EEXIST) {
 		log_warn("Route to vpn server exists already.\n");
