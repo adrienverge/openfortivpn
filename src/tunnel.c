@@ -62,8 +62,7 @@ static int on_ppp_if_up(struct tunnel *tunnel)
 		ret = ipv4_set_tunnel_routes(tunnel);
 
 		if (ret != 0) {
-			log_warn("Adding route table is incomplete. "
-			         "Please check route table.\n");
+			log_warn("Adding route table is incomplete. Please check route table.\n");
 		}
 	}
 
@@ -220,32 +219,22 @@ static int pppd_run(struct tunnel *tunnel)
 }
 
 static const char * const pppd_message[] = {
-	"Returned an unknown exit status", // fall back
-	"Has detached, or otherwise the connection was successfully"
-	" established and terminated at the peer's request.",
-	"An immediately fatal error of some kind occurred, such as an"
-	" essential system call failing, or running out of virtual memory.",
-	"An error was detected in processing the options given, such as two"
-	" mutually exclusive options being used.",
+	"Has detached, or otherwise the connection was successfully established and terminated at the peer's request.",
+	"An immediately fatal error of some kind occurred, such as an essential system call failing, or running out of virtual memory.",
+	"An error was detected in processing the options given, such as two mutually exclusive options being used.",
 	"Is not setuid-root and the invoking user is not root.",
-	"The kernel does not support PPP, for example, the PPP kernel driver"
-	" is not included or cannot be loaded.",
+	"The kernel does not support PPP, for example, the PPP kernel driver is not included or cannot be loaded.",
 	"Terminated because it was sent a SIGINT, SIGTERM or SIGHUP signal.",
 	"The serial port could not be locked.",
 	"The serial port could not be opened.",
 	"The connect script failed (returned a non-zero exit status).",
-	"The command specified as the argument to the pty option"
-	" could not be run.",
-	"The PPP negotiation failed, that is, it didn't reach the point"
-	" where at least one network protocol (e.g. IP) was running.",
+	"The command specified as the argument to the pty option could not be run.",
+	"The PPP negotiation failed, that is, it didn't reach the point where at least one network protocol (e.g. IP) was running.",
 	"The peer system failed (or refused) to authenticate itself.",
-	"The link was established successfully and terminated because"
-	" it was idle.",
-	"The link was established successfully and terminated because the"
-	" connect time limit was reached.",
+	"The link was established successfully and terminated because it was idle.",
+	"The link was established successfully and terminated because the connect time limit was reached.",
 	"Callback was negotiated and an incoming call should arrive shortly.",
-	"The link was terminated because the peer is not responding to echo"
-	" requests.", // emitted when exiting normally
+	"The link was terminated because the peer is not responding to echo requests.",
 	"The link was terminated by the modem hanging up.",
 	"The PPP negotiation failed because serial loopback was detected.",
 	"The init script failed (returned a non-zero exit status).",
@@ -265,13 +254,21 @@ static int pppd_terminate(struct tunnel *tunnel)
 	if (WIFEXITED(status)) {
 		int exit_status = WEXITSTATUS(status);
 		log_debug("waitpid: pppd exit status code %d\n", exit_status);
-		if (exit_status) {
-			size_t len_pppd_message = ARRAY_SIZE(pppd_message);
-			if (exit_status >= len_pppd_message)
-				exit_status = 0;
-			if (exit_status != 16) // emitted when exiting normally
+		if (exit_status >= ARRAY_SIZE(pppd_message) || exit_status < 0)
+			log_error("pppd: Returned an unknown exit status: %d\n",
+			          exit_status);
+		else
+			switch (exit_status) {
+			case 0: // success
+				log_debug("pppd: %s\n", pppd_message[exit_status]);
+				break;
+			case 16: // emitted when exiting normally
+				log_info("pppd: %s\n", pppd_message[exit_status]);
+				break;
+			default:
 				log_error("pppd: %s\n", pppd_message[exit_status]);
-		}
+				break;
+			}
 	} else if (WIFSIGNALED(status)) {
 		int signal_number = WTERMSIG(status);
 		log_debug("waitpid: pppd terminated by signal %d\n",
@@ -370,8 +367,12 @@ static int tcp_connect(struct tunnel *tunnel)
 		char *proxy_host, *proxy_port;
 		// protect the original environment from modifications
 		env_proxy = strdup(env_proxy);
+		if (env_proxy == NULL) {
+			log_error("strdup: %s\n", strerror(errno));
+			goto err_strdup;
+		}
 		// get rid of a trailing slash
-		if (env_proxy[strlen(env_proxy) - 1] == '/')
+		if (*env_proxy && env_proxy[strlen(env_proxy) - 1] == '/')
 			env_proxy[strlen(env_proxy) - 1] = '\0';
 		// get rid of a http(s):// prefix in env_proxy
 		proxy_host = strstr(env_proxy, "://");
@@ -389,7 +390,7 @@ static int tcp_connect(struct tunnel *tunnel)
 			server.sin_port = htons(tunnel->config->gateway_port);
 		}
 		// get rid of a trailing slash
-		if (proxy_host[strlen(proxy_host) - 1] == '/')
+		if (*proxy_host && proxy_host[strlen(proxy_host) - 1] == '/')
 			proxy_host[strlen(proxy_host) - 1] = '\0';
 		log_debug("proxy_host: %s\n", proxy_host);
 		log_debug("proxy_port: %s\n", proxy_port);
@@ -425,7 +426,7 @@ static int tcp_connect(struct tunnel *tunnel)
 	log_debug("gateway_port: %u\n", tunnel->config->gateway_port);
 
 	ret = connect(handle, (struct sockaddr *) &server, sizeof(server));
-	if (ret == -1) {
+	if (ret) {
 		log_error("connect: %s\n", strerror(errno));
 		goto err_connect;
 	}
@@ -439,44 +440,86 @@ static int tcp_connect(struct tunnel *tunnel)
 		        tunnel->config->gateway_port,
 		        inet_ntoa(tunnel->config->gateway_ip),
 		        tunnel->config->gateway_port);
-		if (write(handle, request, strlen(request)) != strlen(request)) {
-			log_error("write error when talking to proxy\n");
+		ssize_t bytes_written = write(handle, request, strlen(request));
+		if (bytes_written != strlen(request)) {
+			log_error("write error while talking to proxy: %s\n",
+			          strerror(errno));
 			goto err_connect;
 		}
 
 		// wait for a "200 OK" reply from the proxy,
-		// be careful not to fetch too many characters at once
-		char *response;
-		int bytes_read, curr_pos = 0;
+		// be careful not to fetch too many bytes at once
+		const char *response = NULL;
 
 		memset(&(request), '\0', sizeof(request));
-		do {
-			bytes_read = read(handle, &(request[curr_pos++]), 1);
-			response = strstr(request, "200");
-		} while (
-		        (
-		                // repeat reading until we have got the string "200"
-		                (response == NULL)
-		                // continue reading until we hit the first empty line
-		                || (
-		                        // server uses newlines only
-		                        (strstr(response, "\n\n") == NULL)
-		                        // server uses cr+lf
-		                        && (strstr(response, "\r\n\r\n") == NULL)
-		                        // server uses lf+cr
-		                        && (strstr(response, "\n\r\n\r") == NULL)
-		                )
-		        )
-		        // condition for buffer full or possibly eof
-		        && (curr_pos < sizeof(request) - 1) && (bytes_read > 0)
-		);
-		free(env_proxy); // we have copied the string
+		for (int j = 0; response == NULL; j++) {
+			/*
+			 * Coverity detected a defect:
+			 *  CID 200508: String not null terminated (STRING_NULL)
+			 *
+			 * It is actually a false positive:
+			 * • Function memset() initializes 'request' with '\0'
+			 * • Function read() gets a single char into: request[j]
+			 * • The final '\0' cannot be overwritten because:
+			 *   	j < ARRAY_SIZE(request) - 1
+			 */
+			ssize_t bytes_read = read(handle, &(request[j]), 1);
+			if (bytes_read < 1) {
+				log_error("Proxy response is unexpectedly large and cannot fit in the %d-bytes buffer.\n",
+				          ARRAY_SIZE(request));
+				goto err_proxy_response;
+			}
+
+			// detect "200"
+			const char HTTP_STATUS_200[] = "200";
+			response = strstr(request, HTTP_STATUS_200);
+
+			// detect end-of-line after "200"
+			if (response != NULL) {
+				/*
+				 * RFC2616 states in section 2.2 Basic Rules:
+				 * 	CR     = <US-ASCII CR, carriage return (13)>
+				 * 	LF     = <US-ASCII LF, linefeed (10)>
+				 * 	HTTP/1.1 defines the sequence CR LF as the
+				 * 	end-of-line marker for all protocol elements
+				 * 	except the entity-body (see appendix 19.3
+				 * 	for tolerant applications).
+				 * 		CRLF   = CR LF
+				 *
+				 * RFC2616 states in section 19.3 Tolerant Applications:
+				 * 	The line terminator for message-header fields
+				 * 	is the sequence CRLF. However, we recommend
+				 * 	that applications, when parsing such headers,
+				 * 	recognize a single LF as a line terminator
+				 * 	and ignore the leading CR.
+				 */
+				static const char *HTTP_EOL[] = {
+					"\r\n\r\n",
+					"\n\n"
+				};
+				const char *eol = NULL;
+				for (int i = 0; (i < ARRAY_SIZE(HTTP_EOL)) &&
+				     (eol == NULL); i++)
+					eol = strstr(response, HTTP_EOL[i]);
+				response = eol;
+			}
+
+			if (j > ARRAY_SIZE(request) - 2) {
+				log_error("Proxy response does not contain \"%s\" as expected.\n",
+				          HTTP_STATUS_200);
+				goto err_proxy_response;
+			}
+		}
+
+		free(env_proxy); // release memory allocated by strdup()
 	}
 
 	return handle;
 
+err_proxy_response:
 err_connect:
-	free(env_proxy); // we have copied the string
+	free(env_proxy); // release memory allocated by strdup()
+err_strdup:
 	close(handle);
 err_socket:
 	return -1;
@@ -553,9 +596,7 @@ static int ssl_verify_cert(struct tunnel *tunnel)
 	subject = X509_NAME_oneline(subj, NULL, 0);
 	issuer = X509_NAME_oneline(X509_get_issuer_name(cert), NULL, 0);
 
-	log_error("Gateway certificate validation failed, and the certificate "
-	          "digest in not in the local whitelist. If you trust it, "
-	          "rerun with:\n");
+	log_error("Gateway certificate validation failed, and the certificate digest in not in the local whitelist. If you trust it, rerun with:\n");
 	log_error("    --trusted-cert %s\n", digest_str);
 	log_error("or add this line to your config file:\n");
 	log_error("    trusted-cert = %s\n", digest_str);
@@ -625,8 +666,7 @@ int ssl_connect(struct tunnel *tunnel)
 		            tunnel->ssl_context,
 		            tunnel->config->ca_file, NULL)) {
 			log_error("SSL_CTX_load_verify_locations: %s\n",
-			          ERR_error_string(ERR_peek_last_error(),
-			                           NULL));
+			          ERR_error_string(ERR_peek_last_error(), NULL));
 			return 1;
 		}
 	}
@@ -636,8 +676,7 @@ int ssl_connect(struct tunnel *tunnel)
 		            tunnel->ssl_context, tunnel->config->user_cert,
 		            SSL_FILETYPE_PEM)) {
 			log_error("SSL_CTX_use_certificate_file: %s\n",
-			          ERR_error_string(ERR_peek_last_error(),
-			                           NULL));
+			          ERR_error_string(ERR_peek_last_error(), NULL));
 			return 1;
 		}
 	}
@@ -647,8 +686,7 @@ int ssl_connect(struct tunnel *tunnel)
 		            tunnel->ssl_context, tunnel->config->user_key,
 		            SSL_FILETYPE_PEM)) {
 			log_error("SSL_CTX_use_PrivateKey_file: %s\n",
-			          ERR_error_string(ERR_peek_last_error(),
-			                           NULL));
+			          ERR_error_string(ERR_peek_last_error(), NULL));
 			return 1;
 		}
 	}
@@ -702,8 +740,7 @@ int ssl_connect(struct tunnel *tunnel)
 	// Initiate SSL handshake
 	if (SSL_connect(tunnel->ssl_handle) != 1) {
 		log_error("SSL_connect: %s\n"
-		          "You might want to try --insecure-ssl or specify "
-		          "a different --cipher-list\n",
+		          "You might want to try --insecure-ssl or specify a different --cipher-list\n",
 		          ERR_error_string(ERR_peek_last_error(), NULL));
 		return 1;
 	}
