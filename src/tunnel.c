@@ -125,7 +125,7 @@ static int pppd_run(struct tunnel *tunnel)
 		static const char *args[] = {
 			pppd_path,
 			"38400", // speed
-			":1.1.1.1", // <local_IP_address>:<remote_IP_address>
+			":192.0.2.1", // <local_IP_address>:<remote_IP_address>
 			"noipdefault",
 			"noaccomp",
 			"noauth",
