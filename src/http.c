@@ -75,7 +75,7 @@ int http_send(struct tunnel *tunnel, const char *request, ...)
 
 	if (length < 0)
 		return ERR_HTTP_INVALID;
-	else if (length == BUFSZ)
+	else if (length >= BUFSZ)
 		return ERR_HTTP_TOO_LONG;
 
 	while (n == 0)
