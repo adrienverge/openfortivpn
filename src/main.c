@@ -300,7 +300,8 @@ int main(int argc, char **argv)
 			           "set-routes") == 0) {
 				int set_routes = strtob(optarg);
 				if (set_routes < 0) {
-					log_warn("Bad set-routes option: \"%s\"\n", optarg);
+					log_warn("Bad set-routes option: \"%s\"\n",
+					         optarg);
 					break;
 				}
 				cfg.set_routes = set_routes;
@@ -321,7 +322,8 @@ int main(int argc, char **argv)
 			           "persistent") == 0) {
 				long int persistent = strtol(optarg, NULL, 0);
 				if ((persistent < 0) || (persistent >= UINT_MAX)) {
-					log_warn("Bad persistent option: \"%s\"\n", optarg);
+					log_warn("Bad persistent option: \"%s\"\n",
+					         optarg);
 					break;
 				}
 				cfg.persistent = persistent;
