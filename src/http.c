@@ -512,6 +512,8 @@ int auth_log_in(struct tunnel *tunnel)
 	}
 	ret = get_auth_cookie(tunnel, res);
 	if (ret == ERR_HTTP_NO_COOKIE) {
+		struct vpn_config *cfg = tunnel->config;
+
 		/* If the response body includes a tokeninfo= parameter,
 		 * it means the VPN gateway expects two-factor authentication.
 		 * It sends a one-time authentication credential for example
@@ -535,8 +537,16 @@ int auth_log_in(struct tunnel *tunnel)
 		get_value_from_response(res, "reqid=", reqid, 32);
 		get_value_from_response(res, "polid=", polid, 32);
 
-		read_password("Two-factor authentication token: ", tokenresponse, 255);
+		if (cfg->otp[0] == '\0') {
+			read_password("Two-factor authentication token: ",
+			              cfg->otp, FIELD_SIZE);
+			if (cfg->otp[0] == '\0') {
+				log_error("No token specified\n");
+				return 0;
+			}
+		}
 
+		url_encode(tokenresponse, cfg->otp);
 		snprintf(data, 256, "username=%s&realm=%s&reqid=%s&polid=%s&grp=%s"
 		         "&code=%s&code2=&redir=%%2Fremote%%2Findex&just_logged_in=1",
 		         username, realm, reqid, polid, group, tokenresponse);
