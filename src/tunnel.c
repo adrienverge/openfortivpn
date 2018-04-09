@@ -38,6 +38,7 @@
 #include <string.h>
 #include <net/if.h>
 #include <arpa/inet.h>
+#include <sys/socket.h>
 #include <openssl/err.h>
 #include <openssl/x509v3.h>
 #ifdef __APPLE__
@@ -823,9 +824,9 @@ int run_tunnel(struct vpn_config *config)
 
 	// Step 5: ask gateway to start tunneling
 	ret = http_send(&tunnel,
-	                "GET /remote/sslvpn-tunnel HTTP/1.1\n"
-	                "Host: sslvpn\n"
-	                "Cookie: %s\n\n%c",
+	                "GET /remote/sslvpn-tunnel HTTP/1.1\r\n"
+	                "Host: sslvpn\r\n"
+	                "Cookie: %s\r\n\r\n%c",
 	                tunnel.config->cookie, '\0');
 	if (ret != 1) {
 		log_error("Could not start tunnel (%s).\n", err_http_str(ret));
