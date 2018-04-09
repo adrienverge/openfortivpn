@@ -38,6 +38,7 @@
 #include <string.h>
 #include <net/if.h>
 #include <arpa/inet.h>
+#include <sys/socket.h>
 #include <openssl/err.h>
 #include <openssl/x509v3.h>
 #ifdef __APPLE__
