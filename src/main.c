@@ -145,8 +145,8 @@ static inline void destroy_vpn_config(struct vpn_config *cfg)
 int main(int argc, char **argv)
 {
 	int ret = EXIT_FAILURE;
-	char *config_file = SYSCONFDIR"/openfortivpn/config";
-	char *host, *username = NULL, *password = NULL, *otp = NULL;
+	const char *config_file = SYSCONFDIR"/openfortivpn/config";
+	const char *host, *username = NULL, *password = NULL, *otp = NULL;
 	char *port_str;
 	long int port;
 

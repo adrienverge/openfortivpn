@@ -70,7 +70,7 @@ typedef sem_t os_semaphore_t;
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
 static pthread_mutex_t *lockarray;
 
-static void lock_callback(int mode, int type, char *file, int line)
+static void lock_callback(int mode, int type, const char *file, int line)
 {
 	if (mode & CRYPTO_LOCK)
 		pthread_mutex_lock(&(lockarray[type]));
@@ -400,7 +400,7 @@ static void debug_bad_packet(struct tunnel *tunnel, uint8_t *header)
 			buffer[i] = '.';
 	buffer[i] = buffer[256 - 1] = '\0';
 
-	printf("  (raw) %s\n", (char *) buffer);
+	printf("  (raw) %s\n", (const char *) buffer);
 }
 
 /*
@@ -600,7 +600,7 @@ int io_loop(struct tunnel *tunnel)
 	 *     (with or without TCP_NODELAY)
 	 */
 	if (setsockopt(tunnel->ssl_socket, IPPROTO_TCP, TCP_NODELAY,
-	               (char *) &tcp_nodelay_flag, sizeof(int))) {
+	               (const char *) &tcp_nodelay_flag, sizeof(int))) {
 		log_error("setsockopt: %s\n", strerror(errno));
 		goto err_sockopt;
 	}
