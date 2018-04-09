@@ -25,6 +25,7 @@
 #include <ctype.h>
 #include <string.h>
 #include <stdarg.h>
+#include <stdio.h>
 
 #define BUFSZ 0x8000
 
