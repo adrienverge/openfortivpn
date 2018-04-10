@@ -157,8 +157,21 @@ static int ipv4_get_route(struct rtentry *route)
 
 	unsigned short flag_table[256] = { 0 };
 
-	// fill the table now (I'm still looking for a more elagant way to do this),
-	// also, not all flags might be allowed in the context of ipv4
+	/*
+	 * Fill the table now. Unfortunately it is not easy
+	 * to do this in a more elegant way. The problem here
+	 * is that these are already preprocessor macros and
+	 * we can't use them as arguments for another macro which
+	 * would take them as an argument and include the #ifdef
+	 * statements.
+	 *
+	 * Also, not all flags might be allowed in the context
+	 * of ipv4, and the code depends on which ones are
+	 * actually implemented on the target platform, which
+	 * might also be varying between OSX versions.
+	 *
+	 */
+
 #ifdef RTF_PROTO1     // Protocol specific routing flag #1
 	flag_table['1'] = RTF_PROTO1 & USHRT_MAX;
 #endif
@@ -256,7 +269,7 @@ static int ipv4_get_route(struct rtentry *route)
 	start++;
 
 #ifdef __APPLE__
-	// Skip 3 more line
+	// Skip 3 more lines on Mac OSX
 	start = index(start, '\n');
 	start = index(++start, '\n');
 	start = index(++start, '\n');
@@ -373,22 +386,39 @@ static int ipv4_get_route(struct rtentry *route)
 		irtt = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
 #endif
 		/*
-		 * ( address & mask ) is the network address.
-		 * Check if the network address we are looking for falls into
-		 * the network for the current route. Therefore, calculate
-		 * the network address for both, the current route and for
-		 * the destination we are searching. If the destination
-		 * is a smaller network (possibly a single host), we have
-		 * to mask again with the netmask of the network that we are
+		 * Now that we have parsed a routing entry, check if it
+		 * matches the current argument to the function call.
+		 * In rtentry we have integer representation, i.e.
+		 * the most significant byte corresponds to the last
+		 * number of dotted-number representation and vice versa.
+		 * Then ( address & mask ) is the network address.
+		 * The routing algorithm does the following:
+		 * First, check if the network address we are looking for
+		 * falls into the network for the current route.
+		 * Therefore, calculate the network address for both,
+		 * the current route and for the destination we are searching.
+		 * If the destination is a smaller network (possibly a single host),
+		 * we have to mask again with the netmask of the network that we are
 		 * checking in order to obtain the network address in the
 		 * context of the current route. If both network addresses
 		 * match, we have found a candidate for a route. However,
 		 * there might be another route for a smaller network,
 		 * therefore repeat this and only store the resulting route
 		 * when the mask is at least as large as the one we may
-		 * have already found in a previous iteration.
+		 * have already found in a previous iteration (a larger
+		 * netmask corresponds to a smaller network in this
+		 * representation, and has a higher prority by default).
+		 * Also, only consider routing entries for which the
+		 * netmask is not larger than the netmask used in the
+		 * argument when calling the function - so that we can
+		 * distinguish between different routing entries for subnets
+		 * of different size but with the same network address.
+		 * For routing entries with the same destination and
+		 * the same netmask the metric can be used for adjusting
+		 * the priority (this is not supported on mac).
 		 * If the metric is larger than one found for this network
-		 * size, skip the current route (this is not supported on mac).
+		 * size, skip the current route (smaller numbers denote
+		 * less hops and therefore have a higher priority).
 		 */
 
 		if (((dest & mask) == (rtdest & rtmask & mask))
