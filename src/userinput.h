@@ -18,6 +18,8 @@
 #ifndef _OPENFORTIVPN_USERINPUT_H
 #define _OPENFORTIVPN_USERINPUT_H
 
+#include <sys/types.h>
+
 void read_password(const char *prompt, char *pass, size_t len);
 
 #endif

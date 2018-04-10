@@ -24,6 +24,9 @@
 
 #include <ctype.h>
 #include <string.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #define BUFSZ 0x8000
 
@@ -75,7 +78,7 @@ int http_send(struct tunnel *tunnel, const char *request, ...)
 
 	if (length < 0)
 		return ERR_HTTP_INVALID;
-	else if (length == BUFSZ)
+	else if (length >= BUFSZ)
 		return ERR_HTTP_TOO_LONG;
 
 	while (n == 0)
@@ -212,15 +215,15 @@ static int do_http_request(struct tunnel *tunnel, const char *method,
                            const char *uri, const char *data, char **response)
 {
 	int ret;
-	char *template = ("%s %s HTTP/1.1\r\n"
-	                  "Host: %s:%d\r\n"
-	                  "User-Agent: Mozilla/5.0 SV1\r\n"
-	                  "Accept: text/plain\r\n"
-	                  "Accept-Encoding: identify\r\n"
-	                  "Content-Type: application/x-www-form-urlencoded\r\n"
-	                  "Cookie: %s\r\n"
-	                  "Content-Length: %d\r\n"
-	                  "\r\n%s");
+	const char *template = ("%s %s HTTP/1.1\r\n"
+	                        "Host: %s:%d\r\n"
+	                        "User-Agent: Mozilla/5.0 SV1\r\n"
+	                        "Accept: text/plain\r\n"
+	                        "Accept-Encoding: identify\r\n"
+	                        "Content-Type: application/x-www-form-urlencoded\r\n"
+	                        "Cookie: %s\r\n"
+	                        "Content-Length: %d\r\n"
+	                        "\r\n%s");
 
 	ret = http_send(tunnel, template, method, uri,
 	                tunnel->config->gateway_host,
@@ -268,20 +271,21 @@ static int http_request(struct tunnel *tunnel, const char *method,
 static int get_value_from_response(const char *buf, const char *key,
                                    char *retbuf, size_t retbuflen)
 {
-	int ret;
-	char *tokens, *kv_pair;
+	int ret = -1;
+	char *tokens;
 	size_t keylen = strlen(key);
 
 	tokens = strdup(buf);
-	if (tokens == NULL)
-		return -3;
+	if (tokens == NULL) {
+		ret = -3;
+		goto end;
+	}
 
-	ret = -1;
-
-	kv_pair = strtok(tokens, "&,\r\n");
-	for (; kv_pair != NULL; kv_pair = strtok(NULL, "&,\r\n")) {
+	for (const char *kv_pair = strtok(tokens, "&,\r\n");
+	     kv_pair != NULL;
+	     kv_pair = strtok(NULL, "&,\r\n")) {
 		if (strncmp(key, kv_pair, keylen) == 0) {
-			char *val = &kv_pair[keylen];
+			const char *val = &kv_pair[keylen];
 
 			if (strlen(val) > retbuflen - 1) {  // value too long
 				ret = -2;
@@ -294,6 +298,7 @@ static int get_value_from_response(const char *buf, const char *key,
 	}
 
 	free(tokens);
+end:
 	return ret;
 }
 
@@ -628,7 +633,7 @@ static int parse_xml_config(struct tunnel *tunnel, const char *buffer)
 static
 int parse_config(struct tunnel *tunnel, const char *buffer)
 {
-	char *c, *end;
+	const char *c, *end;
 
 	buffer = strcasestr(buffer, "NAME=\"text6\"");
 	if (!buffer)

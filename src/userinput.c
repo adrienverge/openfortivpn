@@ -15,7 +15,8 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stddef.h>
+#include "userinput.h"
+
 #include <stdio.h>
 #include <termios.h>
 #include <unistd.h>
