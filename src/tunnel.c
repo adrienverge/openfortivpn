@@ -720,7 +720,7 @@ int ssl_connect(struct tunnel *tunnel)
 	}
 
 	if (!tunnel->config->insecure_ssl && !tunnel->config->cipher_list) {
-		char *cipher_list = "HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4";
+		const char *cipher_list = "HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4";
 
 		if (tunnel->config->cipher_list)
 			cipher_list = tunnel->config->cipher_list;

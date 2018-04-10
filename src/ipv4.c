@@ -732,7 +732,7 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 	FILE *file;
 	struct stat stat;
 	char ns1[28], ns2[28]; // 11 + 15 + 1 + 1
-	char *buffer, *line;
+	char *buffer;
 
 	tunnel->ipv4.ns_are_new = 1;
 
@@ -782,7 +782,8 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 		ns2[0] = '\0';
 	}
 
-	for (line = strtok(buffer, "\n"); line != NULL;
+	for (const char *line = strtok(buffer, "\n");
+	     line != NULL;
 	     line = strtok(NULL, "\n")) {
 		if (strcmp(line, ns1) == 0) {
 			tunnel->ipv4.ns_are_new = 0;
@@ -827,7 +828,7 @@ int ipv4_del_nameservers_from_resolv_conf(struct tunnel *tunnel)
 	FILE *file;
 	struct stat stat;
 	char ns1[27], ns2[27]; // 11 + 15 + 1
-	char *buffer, *line;
+	char *buffer;
 
 	// If nameservers were already there before setting up tunnel,
 	// don't delete them from /etc/resolv.conf
@@ -877,7 +878,9 @@ int ipv4_del_nameservers_from_resolv_conf(struct tunnel *tunnel)
 		goto err_free;
 	}
 
-	for (line = strtok(buffer, "\n"); line != NULL; line = strtok(NULL, "\n")) {
+	for (const char *line = strtok(buffer, "\n");
+	     line != NULL;
+	     line = strtok(NULL, "\n")) {
 		if (strcmp(line, ns1) == 0) {
 			log_debug("Deleting \"%s\" from /etc/resolv.conf.\n", ns1);
 		} else if (strcmp(line, ns2) == 0) {
