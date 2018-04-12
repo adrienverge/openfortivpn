@@ -107,8 +107,12 @@ static inline void route_destroy(struct rtentry *route)
 /*
  * Finds system IP route to a destination.
  *
- * The passed route must have dest and mask set. If the route is found, the
- * function fills the gtw and iface properties.
+ * The passed route must have dest and mask set. If the route is found,
+ * the function searches for a match in the routing table and returns
+ * that one. Note that dest and mask contain the network address and
+ * the mask of the corresponding routing table entry after calling.
+ * After calling ipv4_get_route it might be necessary to set dest
+ * and mask again to the desired values for further processing.
  */
 static int ipv4_get_route(struct rtentry *route)
 {
@@ -158,12 +162,11 @@ static int ipv4_get_route(struct rtentry *route)
 	unsigned short flag_table[256] = { 0 };
 
 	/*
-	 * Fill the table now. Unfortunately it is not easy
+	 * Fill the flag_table now. Unfortunately it is not easy
 	 * to do this in a more elegant way. The problem here
 	 * is that these are already preprocessor macros and
 	 * we can't use them as arguments for another macro which
-	 * would take them as an argument and include the #ifdef
-	 * statements.
+	 * would include the #ifdef statements.
 	 *
 	 * Also, not all flags might be allowed in the context
 	 * of ipv4, and the code depends on which ones are
@@ -391,18 +394,20 @@ static int ipv4_get_route(struct rtentry *route)
 		 * In rtentry we have integer representation, i.e.
 		 * the most significant byte corresponds to the last
 		 * number of dotted-number representation and vice versa.
-		 * Then ( address & mask ) is the network address.
+		 * In this representation ( address & mask ) is the network
+		 * address.
 		 * The routing algorithm does the following:
 		 * First, check if the network address we are looking for
 		 * falls into the network for the current route.
-		 * Therefore, calculate the network address for both,
-		 * the current route and for the destination we are searching.
-		 * If the destination is a smaller network (possibly a single host),
-		 * we have to mask again with the netmask of the network that we are
-		 * checking in order to obtain the network address in the
-		 * context of the current route. If both network addresses
-		 * match, we have found a candidate for a route. However,
-		 * there might be another route for a smaller network,
+		 * Therefore, calculate the network address for both, the
+		 * current route and for the destination we are searching.
+		 * If the destination is a smaller network (for instance a
+		 * single host), we have to mask again with the netmask of
+		 * the routing entry that we are checking in order to obtain
+		 * the network address in the context of the current route.
+		 * If both network addresses match, we have found a candidate
+		 * for a route.
+		 * However, there might be another route for a smaller network,
 		 * therefore repeat this and only store the resulting route
 		 * when the mask is at least as large as the one we may
 		 * have already found in a previous iteration (a larger
