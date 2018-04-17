@@ -461,7 +461,9 @@ static int ipv4_get_route(struct rtentry *route)
 		}
 		line = strtok_r(NULL, "\n", &saveptr1);
 	}
+#ifdef __APPLE__
 end:
+#endif
 	if (rtfound==0) {
 		// should not occur anymore unless there is no default route
 		log_debug("Route not found.\n");
