@@ -302,6 +302,10 @@ static int ipv4_get_route(struct rtentry *route)
 		mask = UINT32_MAX;
 		// "Destination"
 		tmpstr = strtok_r(line, " ", &saveptr2);
+		if (strncmp(tmpstr, "Internet6", 9) == 0) {
+			// we have arrived at the end of ipv4 output
+			goto end;
+		}
 		log_debug("- Destination: %s\n", tmpstr);
 		// replace literal "default" route by IPV4 numbers-and-dots notation
 		if (strncmp(tmpstr, "default", 7) == 0) {
@@ -457,7 +461,7 @@ static int ipv4_get_route(struct rtentry *route)
 		}
 		line = strtok_r(NULL, "\n", &saveptr1);
 	}
-
+end:
 	if (rtfound==0) {
 		// should not occur anymore unless there is no default route
 		log_debug("Route not found.\n");
