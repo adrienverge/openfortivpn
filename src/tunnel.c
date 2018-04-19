@@ -134,6 +134,7 @@ static int pppd_run(struct tunnel *tunnel)
 #endif
 
 	static const char pppd_path[] = "/usr/sbin/pppd";
+	struct ofv_varr pppd_args = { 0, 0, NULL };
 
 	if (access(pppd_path, F_OK) != 0) {
 		log_error("%s: %s.\n", pppd_path, strerror(errno));
