@@ -50,6 +50,32 @@
 #include <sys/wait.h>
 #include <assert.h>
 
+struct ofv_varr {
+	/* current capacity */
+	unsigned cap;
+	/* next slot to write to, always < max(cap - 1, 1) */
+	unsigned off;
+	/* NULL terminated */
+	const void **data;
+};
+
+static void ofv_append_varr(struct ofv_varr *p, const void *x) {
+        if (p->off + 1 >= p->cap) {
+                const void **ndata;
+                unsigned ncap = (p->off + 1) * 2;
+                assert(p->off + 1 < ncap);
+                ndata = realloc(p->data, ncap * sizeof(const void *));
+                if (ndata) {
+                        p->data = ndata;
+                        p->cap = ncap;
+                } else {
+                        abort();
+                }
+        }
+        assert(p->off + 1 < p->cap);
+        p->data[p->off] = x;
+        p->data[++p->off] = NULL;
+}
 
 static int on_ppp_if_up(struct tunnel *tunnel)
 {
@@ -107,6 +133,7 @@ static int pppd_run(struct tunnel *tunnel)
 #endif
 
 	static const char pppd_path[] = "/usr/sbin/pppd";
+	struct ofv_varr pppd_args = { 0, 0, NULL };
 
 	if (access(pppd_path, F_OK) != 0) {
 		log_error("%s: %s.\n", pppd_path, strerror(errno));
@@ -123,78 +150,62 @@ static int pppd_run(struct tunnel *tunnel)
 		log_error("forkpty: %s\n", strerror(errno));
 		return 1;
 	} else if (pid == 0) { // child process
-		static const char *args[] = {
-			pppd_path,
-			"38400", // speed
-			":192.0.2.1", // <local_IP_address>:<remote_IP_address>
-			"noipdefault",
-			"noaccomp",
-			"noauth",
-			"default-asyncmap",
-			"nopcomp",
-			"receive-all",
-			"nodefaultroute",
-			"nodetach",
-			"lcp-max-configure", "40",
-			"mru", "1354",
-			NULL, // "usepeerdns"
-			NULL, NULL, NULL, // "debug", "logfile", pppd_log
-			NULL, NULL, // "plugin", pppd_plugin
-			NULL, NULL, // "ipparam", pppd_ipparam
-			NULL, NULL, // "ifname", pppd_ifname
-			NULL // terminal null pointer required by execvp()
-		};
 
 		if (tunnel->config->pppd_call) {
 			/* overwrite args[]: keep pppd_path, replace all
 			 * options with "call <name>" */
-			int j = 1;
-			args[j++] = "call";
-			args[j++] = tunnel->config->pppd_call;
-			while (j < ARRAY_SIZE(args))
-				args[j++] = NULL;
+			const char *args[] = {
+				pppd_path,
+				"call",
+				tunnel->config->pppd_call,
+				NULL
+			};
+			for (const char **p = args; *p; ++p)
+				ofv_append_varr(&pppd_args, *p);
+		} else {
+			const char *args[] = {
+				pppd_path,
+				"38400", // speed
+				":192.0.2.1", // <local_IP_address>:<remote_IP_address>
+				"noipdefault",
+				"noaccomp",
+				"noauth",
+				"default-asyncmap",
+				"nopcomp",
+				"receive-all",
+				"nodefaultroute",
+				"nodetach",
+				"lcp-max-configure", "40",
+				"mru", "1354",
+				NULL
+			};
+			for (const char **p = args; *p; ++p)
+				ofv_append_varr(&pppd_args, *p);
 		}
 
-		// Dynamically get first NULL pointer so that changes of
-		// args above don't need code changes here
-		int i = ARRAY_SIZE(args) - 1;
-		while (args[i] == NULL)
-			i--;
-		i++;
-
-		/*
-		 * Coverity detected a defect:
-		 * 	CID 196857: Out-of-bounds write (OVERRUN)
-		 *
-		 * It is actually a false positive:
-		 * Although 'args' is  constant, Coverity is unable
-		 * to infer there are enough NULL elements in 'args'
-		 * to add the following options.
-		 */
 		if (tunnel->config->pppd_use_peerdns)
-			args[i++] = "usepeerdns";
+			ofv_append_varr(&pppd_args, "usepeerdns");
 		if (tunnel->config->pppd_log) {
-			args[i++] = "debug";
-			args[i++] = "logfile";
-			args[i++] = tunnel->config->pppd_log;
+			ofv_append_varr(&pppd_args, "debug");
+			ofv_append_varr(&pppd_args, "logfile");
+			ofv_append_varr(&pppd_args, tunnel->config->pppd_log);
 		}
 		if (tunnel->config->pppd_plugin) {
-			args[i++] = "plugin";
-			args[i++] = tunnel->config->pppd_plugin;
+			ofv_append_varr(&pppd_args, "plugin");
+			ofv_append_varr(&pppd_args, tunnel->config->pppd_plugin);
 		}
 		if (tunnel->config->pppd_ipparam) {
-			args[i++] = "ipparam";
-			args[i++] = tunnel->config->pppd_ipparam;
+			ofv_append_varr(&pppd_args, "ipparam");
+			ofv_append_varr(&pppd_args, tunnel->config->pppd_ipparam);
 		}
 		if (tunnel->config->pppd_ifname) {
-			args[i++] = "ifname";
-			args[i++] = tunnel->config->pppd_ifname;
+			ofv_append_varr(&pppd_args, "ifname");
+			ofv_append_varr(&pppd_args, tunnel->config->pppd_ifname);
 		}
-		// Assert that we didn't use up all NULL pointers above
-		assert(i < ARRAY_SIZE(args));
 
 		close(tunnel->ssl_socket);
-		execv(args[0], (char *const *)args);
+		execv(pppd_args.data[0], (char *const *)pppd_args.data);
+		free(pppd_args.data);
 		/*
 		 * The following call to fprintf() doesn't work, probably
 		 * because of the prior call to forkpty().
