@@ -59,22 +59,23 @@ struct ofv_varr {
 	const void **data;
 };
 
-static void ofv_append_varr(struct ofv_varr *p, const void *x) {
-        if (p->off + 1 >= p->cap) {
-                const void **ndata;
-                unsigned ncap = (p->off + 1) * 2;
-                assert(p->off + 1 < ncap);
-                ndata = realloc(p->data, ncap * sizeof(const void *));
-                if (ndata) {
-                        p->data = ndata;
-                        p->cap = ncap;
-                } else {
-                        abort();
-                }
-        }
-        assert(p->off + 1 < p->cap);
-        p->data[p->off] = x;
-        p->data[++p->off] = NULL;
+static void ofv_append_varr(struct ofv_varr *p, const void *x)
+{
+	if (p->off + 1 >= p->cap) {
+		const void **ndata;
+		unsigned ncap = (p->off + 1) * 2;
+		assert(p->off + 1 < ncap);
+		ndata = realloc(p->data, ncap * sizeof(const void *));
+		if (ndata) {
+			p->data = ndata;
+			p->cap = ncap;
+		} else {
+			abort();
+		}
+	}
+	assert(p->off + 1 < p->cap);
+	p->data[p->off] = x;
+	p->data[++p->off] = NULL;
 }
 
 static int on_ppp_if_up(struct tunnel *tunnel)
