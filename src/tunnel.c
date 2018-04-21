@@ -41,10 +41,10 @@
 #include <sys/socket.h>
 #include <openssl/err.h>
 #include <openssl/x509v3.h>
-#ifdef __APPLE__
-#include <util.h>
-#else
+#if HAVE_PTY_H
 #include <pty.h>
+#elif HAVE_UTIL_H
+#include <util.h>
 #endif
 #include <signal.h>
 #include <sys/wait.h>
