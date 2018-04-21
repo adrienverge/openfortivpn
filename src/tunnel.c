@@ -46,6 +46,7 @@
 #elif HAVE_UTIL_H
 #include <util.h>
 #endif
+#include <termios.h>
 #include <signal.h>
 #include <sys/wait.h>
 #include <assert.h>
@@ -98,7 +99,7 @@ static int pppd_run(struct tunnel *tunnel)
 {
 	pid_t pid;
 	int amaster;
-#ifndef __APPLE__
+#ifdef HAVE_STRUCT_TERMIOS
 	struct termios termp = {
 		.c_cflag = B9600,
 		.c_cc[VTIME] = 0,
@@ -113,10 +114,10 @@ static int pppd_run(struct tunnel *tunnel)
 		return 1;
 	}
 
-#ifdef __APPLE__
-	pid = forkpty(&amaster, NULL, NULL, NULL);
-#else
+#ifdef HAVE_STRUCT_TERMIOS
 	pid = forkpty(&amaster, NULL, &termp, NULL);
+#else
+	pid = forkpty(&amaster, NULL, NULL, NULL);
 #endif
 
 	if (pid == -1) {

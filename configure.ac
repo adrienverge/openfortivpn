@@ -34,6 +34,7 @@ AC_TYPE_SSIZE_T
 AC_TYPE_UINT16_T
 AC_TYPE_UINT32_T
 AC_TYPE_UINT8_T
+AC_CHECK_TYPES([struct termios], [], [], [#include <termios.h>])
 
 # Checks for library functions.
 AC_FUNC_MALLOC
