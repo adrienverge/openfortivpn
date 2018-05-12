@@ -18,10 +18,9 @@ AC_CANONICAL_HOST
 AM_SILENT_RULES([yes])
 
 # Checks for libraries.
+PKG_CHECK_MODULES(OPENSSL, [libcrypto libssl])
 AC_CHECK_LIB([pthread], [pthread_create], [], [AC_MSG_ERROR([Cannot find libpthread.])])
 AC_CHECK_LIB([util], [forkpty], [], [AC_MSG_ERROR([Cannot find libutil.])])
-AC_CHECK_LIB([crypto], [EVP_sha256])
-AC_CHECK_LIB([ssl], [SSL_set_verify])
 
 # Checks for header files.
 AC_CHECK_HEADERS([arpa/inet.h assert.h ctype.h errno.h fcntl.h getopt.h ifaddrs.h limits.h mach/mach.h netdb.h net/if.h netinet/in.h netinet/tcp.h net/route.h pty.h semaphore.h signal.h stdarg.h stddef.h stdint.h stdio.h stdlib.h string.h strings.h sys/ioctl.h syslog.h sys/socket.h sys/stat.h sys/time.h sys/types.h sys/wait.h termios.h unistd.h util.h])
