@@ -9,6 +9,9 @@ openfortivpn_SOURCES = src/config.c src/config.h src/hdlc.c src/hdlc.h \
 openfortivpn_CFLAGS = -Wall --pedantic -std=gnu99
 openfortivpn_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\"
 
+openfortivpn_CPPFLAGS += $(OPENSSL_CFLAGS)
+openfortivpn_LDADD = $(OPENSSL_LIBS)
+
 DISTCHECK_CONFIGURE_FLAGS = CFLAGS=-Werror
 
 confdir=$(sysconfdir)/openfortivpn
