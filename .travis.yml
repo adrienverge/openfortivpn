@@ -8,10 +8,11 @@ cache:
 
 before_install:
   - ci/install_astyle.sh $HOME/.openfortivpn-deps
+  - ci/install_openssl.sh $HOME/.openfortivpn-deps
 
 install:
   - ./autogen.sh
-  - ./configure
+  - PKG_CONFIG_PATH=$HOME/.openfortivpn-deps/lib/pkgconfig ./configure
   - make
 
 script:
