@@ -2,22 +2,18 @@ language: c
 
 sudo: false
 
-install:
-  - >
-      [ -f $HOME/astyle/build/gcc/bin/astyle ] || {
-        wget -O astyle_2.05.1_linux.tar.gz http://sourceforge.net/projects/astyle/files/astyle/astyle%202.05.1/astyle_2.05.1_linux.tar.gz/download;
-        tar -xf astyle_2.05.1_linux.tar.gz -C $HOME;
-        make -C $HOME/astyle/build/gcc;
-      }
-  - make -C $HOME/astyle/build/gcc prefix=$HOME install
-
 cache:
   directories:
-    - $HOME/astyle
+    - $HOME/.openfortivpn-deps
+
+before_install:
+  - tests/ci/install_astyle.sh $HOME/.openfortivpn-deps
+  - tests/ci/install_openssl.sh $HOME/.openfortivpn-deps
+
+install:
+  - ./autogen.sh
+  - PKG_CONFIG_PATH=$HOME/.openfortivpn-deps/lib/pkgconfig ./configure
+  - make
 
 script:
   - ./tests/lint/run.sh
-  - >
-      ./autogen.sh
-      && ./configure --prefix=/usr --sysconfdir=/etc
-      && make
