@@ -552,20 +552,8 @@ static int ssl_verify_cert(struct tunnel *tunnel)
 
 	subj = X509_get_subject_name(cert);
 
-#ifdef HAVE_X509_CHECK_HOST
-	// Use OpenSSL native host validation if v >= 1.0.2.
 	if (X509_check_host(cert, common_name, FIELD_SIZE, 0, NULL))
 		cert_valid = 1;
-#else
-	// Use explicit Common Name check if native validation not available.
-	// Note: this will ignore Subject Alternative Name fields.
-	if (subj
-	    && X509_NAME_get_text_by_NID(subj, NID_commonName, common_name,
-	                                 FIELD_SIZE) > 0
-	    && strncasecmp(common_name, tunnel->config->gateway_host,
-	                   FIELD_SIZE) == 0)
-		cert_valid = 1;
-#endif
 
 	// Try to validate certificate using local PKI
 	if (cert_valid
