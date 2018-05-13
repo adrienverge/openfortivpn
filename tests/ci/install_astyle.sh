@@ -12,6 +12,6 @@ SRC=https://sourceforge.net/projects/astyle/files/astyle/astyle%20${VERSION}/ast
 
 wget -O astyle.tar.gz $SRC
 tar -xf astyle.tar.gz -C $HOME
-cd $HOME/astyle/build/gcc
+cd ${HOME}/astyle/build/gcc
 make
 make prefix=$PREFIX install
