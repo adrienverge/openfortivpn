@@ -18,7 +18,7 @@ AC_CANONICAL_HOST
 AM_SILENT_RULES([yes])
 
 # Checks for libraries.
-PKG_CHECK_MODULES(OPENSSL, [libcrypto libssl])
+PKG_CHECK_MODULES(OPENSSL, [libssl >= 1.0.2 libcrypto >= 1.0.2], [], [AC_MSG_ERROR([Cannot find OpenSSL 1.0.2 or better.])])
 AC_CHECK_LIB([pthread], [pthread_create], [], [AC_MSG_ERROR([Cannot find libpthread.])])
 AC_CHECK_LIB([util], [forkpty], [], [AC_MSG_ERROR([Cannot find libutil.])])
 
@@ -39,6 +39,6 @@ AC_TYPE_UINT8_T
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([atoi close connect execv exit _exit fclose fcntl fflush fopen forkpty fprintf fputs free freeaddrinfo freeifaddrs freopen fwrite getaddrinfo getchar getenv getopt_long htons index inet_addr inet_ntoa isatty malloc memcpy memmem memmove memset ntohs open openlog pclose popen printf pthread_cancel pthread_cond_init pthread_cond_signal pthread_cond_wait pthread_join pthread_mutexattr_init pthread_mutex_destroy pthread_mutex_init pthread_mutex_lock pthread_mutex_unlock pthread_sigmask puts read realloc rewind select setenv sigaddset sigemptyset signal snprintf socket sprintf strcasestr strcat strchr strcmp strcpy strdup strerror strlen strncasecmp strncat strncpy strsignal strstr strtok strtok_r strtol syslog system tcsetattr usleep vprintf vsnprintf vsyslog write], [], AC_MSG_ERROR([Required function not present]))
-AC_CHECK_FUNCS([pthread_mutexattr_setrobust X509_check_host])
+AC_CHECK_FUNCS([pthread_mutexattr_setrobust])
 
 AC_OUTPUT(Makefile)
