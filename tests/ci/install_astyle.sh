@@ -4,8 +4,8 @@ set -e
 
 PREFIX=$1
 
-ln -s ${PREFIX}/bin/astyle ${HOME}/bin/astyle
-[[ -x ${PREFIX}/bin/astyle ]] && exit 0
+ln -fs ${PREFIX}/bin/astyle ${HOME}/bin/astyle
+[ -x ${PREFIX}/bin/astyle ] && exit 0
 
 VERSION=3.1
 SRC=https://sourceforge.net/projects/astyle/files/astyle/astyle%20${VERSION}/astyle_${VERSION}_linux.tar.gz/download

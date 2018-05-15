@@ -4,7 +4,7 @@ set -e
 
 PREFIX=$1
 
-[[ -x ${PREFIX}/bin/openssl ]] && exit 0
+[ -x ${PREFIX}/bin/openssl ] && exit 0
 
 VERSION=1.0.2o
 SRC=https://www.openssl.org/source/openssl-${VERSION}.tar.gz
