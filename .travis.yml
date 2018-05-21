@@ -12,7 +12,7 @@ before_install:
 
 install:
   - ./autogen.sh
-  - PKG_CONFIG_PATH=$HOME/.openfortivpn-deps/lib/pkgconfig ./configure
+  - PKG_CONFIG_PATH=$HOME/.openfortivpn-deps/lib/pkgconfig ./configure --prefix=/usr --sysconfdir=/etc
   - make
 
 script:
