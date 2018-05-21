@@ -38,16 +38,44 @@
 #include <string.h>
 #include <net/if.h>
 #include <arpa/inet.h>
+#include <sys/socket.h>
 #include <openssl/err.h>
-#ifndef __APPLE__
-#include <pty.h>
-#else
+#include <openssl/x509v3.h>
+#ifdef __APPLE__
 #include <util.h>
+#else
+#include <pty.h>
 #endif
 #include <signal.h>
 #include <sys/wait.h>
 #include <assert.h>
 
+struct ofv_varr {
+	unsigned cap;		// current capacity
+	unsigned off;		// next slot to write, always < max(cap - 1, 1)
+	const void **data;	// NULL terminated
+};
+
+static void ofv_append_varr(struct ofv_varr *p, const void *x)
+{
+	if (p->off + 1 >= p->cap) {
+		const void **ndata;
+		unsigned ncap = (p->off + 1) * 2;
+		assert(p->off + 1 < ncap);
+		ndata = realloc(p->data, ncap * sizeof(const void *));
+		if (ndata) {
+			p->data = ndata;
+			p->cap = ncap;
+		} else {
+			log_error("realloc: %s\n", strerror(errno));
+			assert(ndata);
+			return;
+		}
+	}
+	assert(p->off + 1 < p->cap);
+	p->data[p->off] = x;
+	p->data[++p->off] = NULL;
+}
 
 static int on_ppp_if_up(struct tunnel *tunnel)
 {
@@ -61,8 +89,7 @@ static int on_ppp_if_up(struct tunnel *tunnel)
 		ret = ipv4_set_tunnel_routes(tunnel);
 
 		if (ret != 0) {
-			log_warn("Adding route table is incomplete. "
-			         "Please check route table.\n");
+			log_warn("Adding route table is incomplete. Please check route table.\n");
 		}
 	}
 
@@ -98,7 +125,11 @@ static int pppd_run(struct tunnel *tunnel)
 	pid_t pid;
 	int amaster;
 #ifndef __APPLE__
-	struct termios termp;
+	struct termios termp = {
+		.c_cflag = B9600,
+		.c_cc[VTIME] = 0,
+		.c_cc[VMIN] = 1
+	};
 #endif
 
 	static const char pppd_path[] = "/usr/sbin/pppd";
@@ -108,81 +139,65 @@ static int pppd_run(struct tunnel *tunnel)
 		return 1;
 	}
 
-#ifndef __APPLE__
-	termp.c_cflag = B9600;
-	termp.c_cc[VTIME] = 0;
-	termp.c_cc[VMIN] = 1;
-
-	pid = forkpty(&amaster, NULL, &termp, NULL);
-#else
+#ifdef __APPLE__
 	pid = forkpty(&amaster, NULL, NULL, NULL);
+#else
+	pid = forkpty(&amaster, NULL, &termp, NULL);
 #endif
 
 	if (pid == -1) {
 		log_error("forkpty: %s\n", strerror(errno));
 		return 1;
 	} else if (pid == 0) { // child process
-		static const char *args[] = {
-			pppd_path,
-			"38400", // speed
-			":1.1.1.1", // <local_IP_address>:<remote_IP_address>
-			"noipdefault",
-			"noaccomp",
-			"noauth",
-			"default-asyncmap",
-			"nopcomp",
-			"receive-all",
-			"nodefaultroute",
-			"nodetach",
-			"lcp-max-configure", "40",
-			"mru", "1354",
-			NULL, // "usepeerdns"
-			NULL, NULL, NULL, // "debug", "logfile", pppd_log
-			NULL, NULL, // "plugin", pppd_plugin
-			NULL, NULL, // "ipparam", pppd_ipparam
-			NULL, NULL, // "ifname", pppd_ifname
-			NULL // terminal null pointer required by execvp()
-		};
+		struct ofv_varr pppd_args = { 0, 0, NULL };
 
-		// Dynamically get first NULL pointer so that changes of
-		// args above don't need code changes here
-		int i = ARRAY_SIZE(args) - 1;
-		while (args[i] == NULL)
-			i--;
-		i++;
+		if (tunnel->config->pppd_call) {
+			ofv_append_varr(&pppd_args, pppd_path);
+			ofv_append_varr(&pppd_args, "call");
+			ofv_append_varr(&pppd_args, tunnel->config->pppd_call);
+		} else {
+			const char *v[] = {
+				pppd_path,
+				"38400", // speed
+				":192.0.2.1", // <local_IP_address>:<remote_IP_address>
+				"noipdefault",
+				"noaccomp",
+				"noauth",
+				"default-asyncmap",
+				"nopcomp",
+				"receive-all",
+				"nodefaultroute",
+				"nodetach",
+				"lcp-max-configure", "40",
+				"mru", "1354"
+			};
+			for (unsigned i = 0; i < sizeof v/sizeof v[0]; i++)
+				ofv_append_varr(&pppd_args, v[i]);
+		}
 
-		/*
-		 * Coverity detected a defect:
-		 *  CID 196857: Out-of-bounds write (OVERRUN)
-		 * It is actually a false positive. Because 'args' is not
-		 * constant, Coverity is unable to infer that the NULL
-		 * elements 'args' has been initialized with shall still
-		 * be present when initializing 'i' in the above loop.
-		 */
 		if (tunnel->config->pppd_use_peerdns)
-			args[i++] = "usepeerdns";
+			ofv_append_varr(&pppd_args, "usepeerdns");
 		if (tunnel->config->pppd_log) {
-			args[i++] = "debug";
-			args[i++] = "logfile";
-			args[i++] = tunnel->config->pppd_log;
+			ofv_append_varr(&pppd_args, "debug");
+			ofv_append_varr(&pppd_args, "logfile");
+			ofv_append_varr(&pppd_args, tunnel->config->pppd_log);
 		}
 		if (tunnel->config->pppd_plugin) {
-			args[i++] = "plugin";
-			args[i++] = tunnel->config->pppd_plugin;
+			ofv_append_varr(&pppd_args, "plugin");
+			ofv_append_varr(&pppd_args, tunnel->config->pppd_plugin);
 		}
 		if (tunnel->config->pppd_ipparam) {
-			args[i++] = "ipparam";
-			args[i++] = tunnel->config->pppd_ipparam;
+			ofv_append_varr(&pppd_args, "ipparam");
+			ofv_append_varr(&pppd_args, tunnel->config->pppd_ipparam);
 		}
 		if (tunnel->config->pppd_ifname) {
-			args[i++] = "ifname";
-			args[i++] = tunnel->config->pppd_ifname;
+			ofv_append_varr(&pppd_args, "ifname");
+			ofv_append_varr(&pppd_args, tunnel->config->pppd_ifname);
 		}
-		// Assert that we didn't use up all NULL pointers above
-		assert(i < ARRAY_SIZE(args));
 
 		close(tunnel->ssl_socket);
-		execv(args[0], (char *const *)args);
+		execv(pppd_args.data[0], (char *const *)pppd_args.data);
+		free(pppd_args.data);
 		/*
 		 * The following call to fprintf() doesn't work, probably
 		 * because of the prior call to forkpty().
@@ -208,32 +223,22 @@ static int pppd_run(struct tunnel *tunnel)
 }
 
 static const char * const pppd_message[] = {
-	"Returned an unknown exit status", // fall back
-	"Has detached, or otherwise the connection was successfully"
-	" established and terminated at the peer's request.",
-	"An immediately fatal error of some kind occurred, such as an"
-	" essential system call failing, or running out of virtual memory.",
-	"An error was detected in processing the options given, such as two"
-	" mutually exclusive options being used.",
+	"Has detached, or otherwise the connection was successfully established and terminated at the peer's request.",
+	"An immediately fatal error of some kind occurred, such as an essential system call failing, or running out of virtual memory.",
+	"An error was detected in processing the options given, such as two mutually exclusive options being used.",
 	"Is not setuid-root and the invoking user is not root.",
-	"The kernel does not support PPP, for example, the PPP kernel driver"
-	" is not included or cannot be loaded.",
+	"The kernel does not support PPP, for example, the PPP kernel driver is not included or cannot be loaded.",
 	"Terminated because it was sent a SIGINT, SIGTERM or SIGHUP signal.",
 	"The serial port could not be locked.",
 	"The serial port could not be opened.",
 	"The connect script failed (returned a non-zero exit status).",
-	"The command specified as the argument to the pty option"
-	" could not be run.",
-	"The PPP negotiation failed, that is, it didn't reach the point"
-	" where at least one network protocol (e.g. IP) was running.",
+	"The command specified as the argument to the pty option could not be run.",
+	"The PPP negotiation failed, that is, it didn't reach the point where at least one network protocol (e.g. IP) was running.",
 	"The peer system failed (or refused) to authenticate itself.",
-	"The link was established successfully and terminated because"
-	" it was idle.",
-	"The link was established successfully and terminated because the"
-	" connect time limit was reached.",
+	"The link was established successfully and terminated because it was idle.",
+	"The link was established successfully and terminated because the connect time limit was reached.",
 	"Callback was negotiated and an incoming call should arrive shortly.",
-	"The link was terminated because the peer is not responding to echo"
-	" requests.", // emitted when exiting normally
+	"The link was terminated because the peer is not responding to echo requests.",
 	"The link was terminated by the modem hanging up.",
 	"The PPP negotiation failed because serial loopback was detected.",
 	"The init script failed (returned a non-zero exit status).",
@@ -253,13 +258,21 @@ static int pppd_terminate(struct tunnel *tunnel)
 	if (WIFEXITED(status)) {
 		int exit_status = WEXITSTATUS(status);
 		log_debug("waitpid: pppd exit status code %d\n", exit_status);
-		if (exit_status) {
-			size_t len_pppd_message = ARRAY_SIZE(pppd_message);
-			if (exit_status >= len_pppd_message)
-				exit_status = 0;
-			if (exit_status != 16) // emitted when exiting normally
+		if (exit_status >= ARRAY_SIZE(pppd_message) || exit_status < 0)
+			log_error("pppd: Returned an unknown exit status: %d\n",
+			          exit_status);
+		else
+			switch (exit_status) {
+			case 0: // success
+				log_debug("pppd: %s\n", pppd_message[exit_status]);
+				break;
+			case 16: // emitted when exiting normally
+				log_info("pppd: %s\n", pppd_message[exit_status]);
+				break;
+			default:
 				log_error("pppd: %s\n", pppd_message[exit_status]);
-		}
+				break;
+			}
 	} else if (WIFSIGNALED(status)) {
 		int signal_number = WTERMSIG(status);
 		log_debug("waitpid: pppd terminated by signal %d\n",
@@ -338,12 +351,9 @@ static int get_gateway_host_ip(struct tunnel *tunnel)
  */
 static int tcp_connect(struct tunnel *tunnel)
 {
-	int ret, handle, bytes_read, curr_pos;
+	int ret, handle;
 	struct sockaddr_in server;
-	const struct addrinfo hints = { .ai_family = AF_INET };
-	struct addrinfo *result = NULL;
-	char *env_proxy, *proxy_host, *proxy_port, *response;
-	char request[128];
+	char *env_proxy;
 
 	handle = socket(AF_INET, SOCK_STREAM, 0);
 	if (handle == -1) {
@@ -358,10 +368,15 @@ static int tcp_connect(struct tunnel *tunnel)
 	if (env_proxy == NULL)
 		env_proxy = getenv("ALL_PROXY");
 	if (env_proxy != NULL) {
+		char *proxy_host, *proxy_port;
 		// protect the original environment from modifications
 		env_proxy = strdup(env_proxy);
+		if (env_proxy == NULL) {
+			log_error("strdup: %s\n", strerror(errno));
+			goto err_strdup;
+		}
 		// get rid of a trailing slash
-		if (env_proxy[strlen(env_proxy) - 1] == '/')
+		if (*env_proxy && env_proxy[strlen(env_proxy) - 1] == '/')
 			env_proxy[strlen(env_proxy) - 1] = '\0';
 		// get rid of a http(s):// prefix in env_proxy
 		proxy_host = strstr(env_proxy, "://");
@@ -379,15 +394,17 @@ static int tcp_connect(struct tunnel *tunnel)
 			server.sin_port = htons(tunnel->config->gateway_port);
 		}
 		// get rid of a trailing slash
-		if (proxy_host[strlen(proxy_host) - 1] == '/')
+		if (*proxy_host && proxy_host[strlen(proxy_host) - 1] == '/')
 			proxy_host[strlen(proxy_host) - 1] = '\0';
 		log_debug("proxy_host: %s\n", proxy_host);
 		log_debug("proxy_port: %s\n", proxy_port);
 		server.sin_addr.s_addr = inet_addr(proxy_host);
 		// if host is given as fqhn we have to do a dns lookup
 		if (server.sin_addr.s_addr == INADDR_NONE) {
-			ret = getaddrinfo(proxy_host, NULL, &hints, &result);
+			const struct addrinfo hints = { .ai_family = AF_INET };
+			struct addrinfo *result = NULL;
 
+			ret = getaddrinfo(proxy_host, NULL, &hints, &result);
 			if (ret) {
 				if (ret == EAI_SYSTEM)
 					log_error("getaddrinfo: %s\n", strerror(errno));
@@ -413,52 +430,100 @@ static int tcp_connect(struct tunnel *tunnel)
 	log_debug("gateway_port: %u\n", tunnel->config->gateway_port);
 
 	ret = connect(handle, (struct sockaddr *) &server, sizeof(server));
-	if (ret == -1) {
+	if (ret) {
 		log_error("connect: %s\n", strerror(errno));
 		goto err_connect;
 	}
 
 	if (env_proxy != NULL) {
+		char request[128];
+
 		// https://tools.ietf.org/html/rfc7231#section-4.3.6
 		sprintf(request, "CONNECT %s:%u HTTP/1.1\r\nHost: %s:%u\r\n\r\n",
 		        inet_ntoa(tunnel->config->gateway_ip),
 		        tunnel->config->gateway_port,
 		        inet_ntoa(tunnel->config->gateway_ip),
 		        tunnel->config->gateway_port);
-		if (write(handle, request, strlen(request)) != strlen(request)) {
-			log_error("write error when talking to proxy\n");
-			return -1;
+		ssize_t bytes_written = write(handle, request, strlen(request));
+		if (bytes_written != strlen(request)) {
+			log_error("write error while talking to proxy: %s\n",
+			          strerror(errno));
+			goto err_connect;
 		}
+
 		// wait for a "200 OK" reply from the proxy,
-		// be careful not to fetch too many characters at once
+		// be careful not to fetch too many bytes at once
+		const char *response = NULL;
+
 		memset(&(request), '\0', sizeof(request));
-		curr_pos = 0;
-		do {
-			bytes_read = read(handle, &(request[curr_pos++]), 1);
-			response = strstr(request, "200");
-		} while (
-		        (
-		                // repeat reading until we have got the string "200"
-		                (response == NULL)
-		                // continue reading until we hit the first empty line
-		                || (
-		                        // server uses newlines only
-		                        (strstr(response, "\n\n") == NULL)
-		                        // server uses cr+lf
-		                        && (strstr(response, "\r\n\r\n") == NULL)
-		                        // server uses lf+cr
-		                        && (strstr(response, "\n\r\n\r") == NULL)
-		                )
-		        )
-		        // condition for buffer full or possibly eof
-		        && (curr_pos < sizeof(request)) && (bytes_read > 0)
-		);
-		free(env_proxy); // we have copied the string
+		for (int j = 0; response == NULL; j++) {
+			/*
+			 * Coverity detected a defect:
+			 *  CID 200508: String not null terminated (STRING_NULL)
+			 *
+			 * It is actually a false positive:
+			 * • Function memset() initializes 'request' with '\0'
+			 * • Function read() gets a single char into: request[j]
+			 * • The final '\0' cannot be overwritten because:
+			 *   	j < ARRAY_SIZE(request) - 1
+			 */
+			ssize_t bytes_read = read(handle, &(request[j]), 1);
+			if (bytes_read < 1) {
+				log_error("Proxy response is unexpectedly large and cannot fit in the %d-bytes buffer.\n",
+				          ARRAY_SIZE(request));
+				goto err_proxy_response;
+			}
+
+			// detect "200"
+			const char HTTP_STATUS_200[] = "200";
+			response = strstr(request, HTTP_STATUS_200);
+
+			// detect end-of-line after "200"
+			if (response != NULL) {
+				/*
+				 * RFC2616 states in section 2.2 Basic Rules:
+				 * 	CR     = <US-ASCII CR, carriage return (13)>
+				 * 	LF     = <US-ASCII LF, linefeed (10)>
+				 * 	HTTP/1.1 defines the sequence CR LF as the
+				 * 	end-of-line marker for all protocol elements
+				 * 	except the entity-body (see appendix 19.3
+				 * 	for tolerant applications).
+				 * 		CRLF   = CR LF
+				 *
+				 * RFC2616 states in section 19.3 Tolerant Applications:
+				 * 	The line terminator for message-header fields
+				 * 	is the sequence CRLF. However, we recommend
+				 * 	that applications, when parsing such headers,
+				 * 	recognize a single LF as a line terminator
+				 * 	and ignore the leading CR.
+				 */
+				static const char *HTTP_EOL[] = {
+					"\r\n\r\n",
+					"\n\n"
+				};
+				const char *eol = NULL;
+				for (int i = 0; (i < ARRAY_SIZE(HTTP_EOL)) &&
+				     (eol == NULL); i++)
+					eol = strstr(response, HTTP_EOL[i]);
+				response = eol;
+			}
+
+			if (j > ARRAY_SIZE(request) - 2) {
+				log_error("Proxy response does not contain \"%s\" as expected.\n",
+				          HTTP_STATUS_200);
+				goto err_proxy_response;
+			}
+		}
+
+		free(env_proxy); // release memory allocated by strdup()
 	}
 
 	return handle;
 
+err_proxy_response:
 err_connect:
+	free(env_proxy); // release memory allocated by strdup()
+err_strdup:
 	close(handle);
 err_socket:
 	return -1;
@@ -467,6 +532,7 @@ err_socket:
 static int ssl_verify_cert(struct tunnel *tunnel)
 {
 	int ret = -1;
+	int cert_valid = 0;
 	unsigned char digest[SHA256LEN];
 	unsigned int len;
 	struct x509_digest *elem;
@@ -486,12 +552,23 @@ static int ssl_verify_cert(struct tunnel *tunnel)
 
 	subj = X509_get_subject_name(cert);
 
-	// Try to validate certificate using local PKI
+#ifdef HAVE_X509_CHECK_HOST
+	// Use OpenSSL native host validation if v >= 1.0.2.
+	if (X509_check_host(cert, common_name, FIELD_SIZE, 0, NULL))
+		cert_valid = 1;
+#else
+	// Use explicit Common Name check if native validation not available.
+	// Note: this will ignore Subject Alternative Name fields.
 	if (subj
 	    && X509_NAME_get_text_by_NID(subj, NID_commonName, common_name,
 	                                 FIELD_SIZE) > 0
 	    && strncasecmp(common_name, tunnel->config->gateway_host,
-	                   FIELD_SIZE) == 0
+	                   FIELD_SIZE) == 0)
+		cert_valid = 1;
+#endif
+
+	// Try to validate certificate using local PKI
+	if (cert_valid
 	    && SSL_get_verify_result(tunnel->ssl_handle) == X509_V_OK) {
 		log_debug("Gateway certificate validation succeeded.\n");
 		ret = 0;
@@ -523,9 +600,7 @@ static int ssl_verify_cert(struct tunnel *tunnel)
 	subject = X509_NAME_oneline(subj, NULL, 0);
 	issuer = X509_NAME_oneline(X509_get_issuer_name(cert), NULL, 0);
 
-	log_error("Gateway certificate validation failed, and the certificate "
-	          "digest in not in the local whitelist. If you trust it, "
-	          "rerun with:\n");
+	log_error("Gateway certificate validation failed, and the certificate digest in not in the local whitelist. If you trust it, rerun with:\n");
 	log_error("    --trusted-cert %s\n", digest_str);
 	log_error("or add this line to your config file:\n");
 	log_error("    trusted-cert = %s\n", digest_str);
@@ -595,8 +670,7 @@ int ssl_connect(struct tunnel *tunnel)
 		            tunnel->ssl_context,
 		            tunnel->config->ca_file, NULL)) {
 			log_error("SSL_CTX_load_verify_locations: %s\n",
-			          ERR_error_string(ERR_peek_last_error(),
-			                           NULL));
+			          ERR_error_string(ERR_peek_last_error(), NULL));
 			return 1;
 		}
 	}
@@ -606,8 +680,7 @@ int ssl_connect(struct tunnel *tunnel)
 		            tunnel->ssl_context, tunnel->config->user_cert,
 		            SSL_FILETYPE_PEM)) {
 			log_error("SSL_CTX_use_certificate_file: %s\n",
-			          ERR_error_string(ERR_peek_last_error(),
-			                           NULL));
+			          ERR_error_string(ERR_peek_last_error(), NULL));
 			return 1;
 		}
 	}
@@ -617,8 +690,7 @@ int ssl_connect(struct tunnel *tunnel)
 		            tunnel->ssl_context, tunnel->config->user_key,
 		            SSL_FILETYPE_PEM)) {
 			log_error("SSL_CTX_use_PrivateKey_file: %s\n",
-			          ERR_error_string(ERR_peek_last_error(),
-			                           NULL));
+			          ERR_error_string(ERR_peek_last_error(), NULL));
 			return 1;
 		}
 	}
@@ -651,7 +723,7 @@ int ssl_connect(struct tunnel *tunnel)
 	}
 
 	if (!tunnel->config->insecure_ssl && !tunnel->config->cipher_list) {
-		char *cipher_list = "HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4";
+		const char *cipher_list = "HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4";
 
 		if (tunnel->config->cipher_list)
 			cipher_list = tunnel->config->cipher_list;
@@ -672,8 +744,7 @@ int ssl_connect(struct tunnel *tunnel)
 	// Initiate SSL handshake
 	if (SSL_connect(tunnel->ssl_handle) != 1) {
 		log_error("SSL_connect: %s\n"
-		          "You might want to try --insecure-ssl or specify "
-		          "a different --cipher-list\n",
+		          "You might want to try --insecure-ssl or specify a different --cipher-list\n",
 		          ERR_error_string(ERR_peek_last_error(), NULL));
 		return 1;
 	}
@@ -693,18 +764,16 @@ int ssl_connect(struct tunnel *tunnel)
 int run_tunnel(struct vpn_config *config)
 {
 	int ret;
-	struct tunnel tunnel;
-
-	memset(&tunnel, 0, sizeof(tunnel));
-	tunnel.config = config;
-	tunnel.on_ppp_if_up = on_ppp_if_up;
-	tunnel.on_ppp_if_down = on_ppp_if_down;
-	tunnel.ipv4.ns1_addr.s_addr = 0;
-	tunnel.ipv4.ns2_addr.s_addr = 0;
-	tunnel.ssl_handle = NULL;
-	tunnel.ssl_context = NULL;
-
-	tunnel.state = STATE_DOWN;
+	struct tunnel tunnel = {
+		.config = config,
+		.state = STATE_DOWN,
+		.ssl_context = NULL,
+		.ssl_handle = NULL,
+		.ipv4.ns1_addr.s_addr = 0,
+		.ipv4.ns2_addr.s_addr = 0,
+		.on_ppp_if_up = on_ppp_if_up,
+		.on_ppp_if_down = on_ppp_if_down
+	};
 
 	// Step 0: get gateway host IP
 	ret = get_gateway_host_ip(&tunnel);
@@ -758,10 +827,10 @@ int run_tunnel(struct vpn_config *config)
 
 	// Step 5: ask gateway to start tunneling
 	ret = http_send(&tunnel,
-	                "GET /remote/sslvpn-tunnel HTTP/1.1\n"
-	                "Host: sslvpn\n"
-	                "Cookie: %s\n\n%c",
-	                tunnel.config->cookie, '\0');
+	                "GET /remote/sslvpn-tunnel HTTP/1.1\r\n"
+	                "Host: sslvpn\r\n"
+	                "Cookie: %s\r\n\r\n",
+	                tunnel.config->cookie);
 	if (ret != 1) {
 		log_error("Could not start tunnel (%s).\n", err_http_str(ret));
 		ret = 1;

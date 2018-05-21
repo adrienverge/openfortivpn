@@ -24,6 +24,9 @@
 
 #include <ctype.h>
 #include <string.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #define BUFSZ 0x8000
 
@@ -75,7 +78,7 @@ int http_send(struct tunnel *tunnel, const char *request, ...)
 
 	if (length < 0)
 		return ERR_HTTP_INVALID;
-	else if (length == BUFSZ)
+	else if (length >= BUFSZ)
 		return ERR_HTTP_TOO_LONG;
 
 	while (n == 0)
@@ -155,8 +158,8 @@ int http_receive(struct tunnel *tunnel, char **response)
 			}
 
 			if (header_size) {
-				/* We saw the whole header, let's check if the
-				 * body is done as well */
+				/* We saw the whole header, */
+				/* let's check if the body is done as well */
 				if (chunked) {
 					/* Last chunk terminator. Done naively. */
 					if (bytes_read >= 7 &&
@@ -212,15 +215,15 @@ static int do_http_request(struct tunnel *tunnel, const char *method,
                            const char *uri, const char *data, char **response)
 {
 	int ret;
-	char *template = ("%s %s HTTP/1.1\r\n"
-	                  "Host: %s:%d\r\n"
-	                  "User-Agent: Mozilla/5.0 SV1\r\n"
-	                  "Accept: text/plain\r\n"
-	                  "Accept-Encoding: identify\r\n"
-	                  "Content-Type: application/x-www-form-urlencoded\r\n"
-	                  "Cookie: %s\r\n"
-	                  "Content-Length: %d\r\n"
-	                  "\r\n%s");
+	const char *template = ("%s %s HTTP/1.1\r\n"
+	                        "Host: %s:%d\r\n"
+	                        "User-Agent: Mozilla/5.0 SV1\r\n"
+	                        "Accept: text/plain\r\n"
+	                        "Accept-Encoding: identify\r\n"
+	                        "Content-Type: application/x-www-form-urlencoded\r\n"
+	                        "Cookie: %s\r\n"
+	                        "Content-Length: %d\r\n"
+	                        "\r\n%s");
 
 	ret = http_send(tunnel, template, method, uri,
 	                tunnel->config->gateway_host,
@@ -268,20 +271,21 @@ static int http_request(struct tunnel *tunnel, const char *method,
 static int get_value_from_response(const char *buf, const char *key,
                                    char *retbuf, size_t retbuflen)
 {
-	int ret;
-	char *tokens, *kv_pair;
+	int ret = -1;
+	char *tokens;
 	size_t keylen = strlen(key);
 
 	tokens = strdup(buf);
-	if (tokens == NULL)
-		return -3;
+	if (tokens == NULL) {
+		ret = -3;
+		goto end;
+	}
 
-	ret = -1;
-
-	kv_pair = strtok(tokens, "&,\r\n");
-	for (; kv_pair != NULL; kv_pair = strtok(NULL, "&,\r\n")) {
+	for (const char *kv_pair = strtok(tokens, "&,\r\n");
+	     kv_pair != NULL;
+	     kv_pair = strtok(NULL, "&,\r\n")) {
 		if (strncmp(key, kv_pair, keylen) == 0) {
-			char *val = &kv_pair[keylen];
+			const char *val = &kv_pair[keylen];
 
 			if (strlen(val) > retbuflen - 1) {  // value too long
 				ret = -2;
@@ -294,6 +298,7 @@ static int get_value_from_response(const char *buf, const char *key,
 	}
 
 	free(tokens);
+end:
 	return ret;
 }
 
@@ -320,8 +325,7 @@ static int get_auth_cookie(struct tunnel *tunnel, char *buf)
 				strncpy(tunnel->config->cookie, line, COOKIE_SIZE);
 				tunnel->config->cookie[COOKIE_SIZE] = '\0';
 				if (strlen(line) > COOKIE_SIZE) {
-					log_error("Cookie larger than expected:"
-					          " %zu > %d\n",
+					log_error("Cookie larger than expected: %zu > %d\n",
 					          strlen(line), COOKIE_SIZE);
 				} else {
 					ret = 1; // success
@@ -511,6 +515,8 @@ int auth_log_in(struct tunnel *tunnel)
 	}
 	ret = get_auth_cookie(tunnel, res);
 	if (ret == ERR_HTTP_NO_COOKIE) {
+		struct vpn_config *cfg = tunnel->config;
+
 		/* If the response body includes a tokeninfo= parameter,
 		 * it means the VPN gateway expects two-factor authentication.
 		 * It sends a one-time authentication credential for example
@@ -534,8 +540,16 @@ int auth_log_in(struct tunnel *tunnel)
 		get_value_from_response(res, "reqid=", reqid, 32);
 		get_value_from_response(res, "polid=", polid, 32);
 
-		read_password("Two-factor authentication token: ", tokenresponse, 255);
+		if (cfg->otp[0] == '\0') {
+			read_password("Two-factor authentication token: ",
+			              cfg->otp, FIELD_SIZE);
+			if (cfg->otp[0] == '\0') {
+				log_error("No token specified\n");
+				return 0;
+			}
+		}
 
+		url_encode(tokenresponse, cfg->otp);
 		snprintf(data, 256, "username=%s&realm=%s&reqid=%s&polid=%s&grp=%s"
 		         "&code=%s&code2=&redir=%%2Fremote%%2Findex&just_logged_in=1",
 		         username, realm, reqid, polid, group, tokenresponse);
@@ -619,7 +633,7 @@ static int parse_xml_config(struct tunnel *tunnel, const char *buffer)
 static
 int parse_config(struct tunnel *tunnel, const char *buffer)
 {
-	char *c, *end;
+	const char *c, *end;
 
 	buffer = strcasestr(buffer, "NAME=\"text6\"");
 	if (!buffer)
@@ -640,8 +654,7 @@ int parse_config(struct tunnel *tunnel, const char *buffer)
 
 		c = strchr(buffer, '/');
 		if (c == NULL || c >= end || c - buffer > 15) {
-			log_warn("Wrong addresses in split VPN route: "
-			         "expected <dest>/<mask>\n");
+			log_warn("Wrong addresses in split VPN route: expected <dest>/<mask>\n");
 			return 1;
 		}
 		memcpy(dest, buffer, c - buffer);
@@ -653,8 +666,7 @@ int parse_config(struct tunnel *tunnel, const char *buffer)
 			c = end;
 
 		if (c - buffer > 15) {
-			log_warn("Wrong addresses in split VPN route: "
-			         "expected <dest>/<mask>\n");
+			log_warn("Wrong addresses in split VPN route: expected <dest>/<mask>\n");
 			return 1;
 		}
 		memcpy(mask, buffer, c - buffer);

@@ -195,16 +195,24 @@ int load_config(struct vpn_config *cfg, const char *filename)
 		} else if (strcmp(key, "half-internet-routes") == 0) {
 			int half_internet_routes = strtob(val);
 			if (half_internet_routes < 0) {
-				log_warn("Bad half-internet-routes in config" \
-				         " file: \"%s\".\n", val);
+				log_warn("Bad half-internet-routes in config file: \"%s\".\n",
+				         val);
 				continue;
 			}
 			cfg->half_internet_routes = half_internet_routes;
+		} else if (strcmp(key, "persistent") == 0) {
+			long int persistent = strtol(val, NULL, 0);
+			if (persistent < 0) {
+				log_warn("Bad value for persistent in config file: \"%s\".\n",
+				         val);
+				continue;
+			}
+			cfg->persistent = persistent;
 		} else if (strcmp(key, "pppd-use-peerdns") == 0) {
 			int pppd_use_peerdns = strtob(val);
 			if (pppd_use_peerdns < 0) {
-				log_warn("Bad pppd-use-peerdns in config file:"
-				         " \"%s\".\n", val);
+				log_warn("Bad pppd-use-peerdns in config file: \"%s\".\n",
+				         val);
 				continue;
 			}
 			cfg->pppd_use_peerdns = pppd_use_peerdns;
@@ -216,6 +224,8 @@ int load_config(struct vpn_config *cfg, const char *filename)
 			cfg->pppd_ipparam = strdup(val);
 		} else if (strcmp(key, "pppd-ifname") == 0) {
 			cfg->pppd_ifname = strdup(val);
+		} else if (strcmp(key, "pppd-call") == 0) {
+			cfg->pppd_call = strdup(val);
 		} else if (strcmp(key, "use-syslog") == 0) {
 			int use_syslog = strtob(val);
 			if (use_syslog < 0) {
@@ -226,13 +236,12 @@ int load_config(struct vpn_config *cfg, const char *filename)
 			cfg->use_syslog = use_syslog;
 		} else if (strcmp(key, "trusted-cert") == 0) {
 			if (strlen(val) != SHA256STRLEN - 1) {
-				log_warn("Bad certificate sha256 digest in "
-				         "config file: \"%s\".\n", val);
+				log_warn("Bad certificate sha256 digest in config file: \"%s\".\n",
+				         val);
 				continue;
 			}
 			if (add_trusted_cert(cfg, val))
-				log_warn("Could not add certificate digest to "
-				         "whitelist.\n");
+				log_warn("Could not add certificate digest to whitelist.\n");
 
 		} else if (strcmp(key, "ca-file") == 0) {
 			cfg->ca_file = strdup(val);

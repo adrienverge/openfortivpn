@@ -1,0 +1,11 @@
+#!/bin/bash
+
+case "$PPP_IPPARAM" in
+    openfortivpn*)
+        rconf=/etc/resolv.conf
+        [[ -f $rconf.openfortivpn ]] && cp -pv $rconf.openfortivpn $rconf
+        exit 0
+        ;;
+esac 2>&1 | logger -p daemon.debug -i -t "$0"
+
+true

@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
 static pthread_mutex_t mutex;
 static int do_syslog = 0;
@@ -54,7 +55,7 @@ void init_logging(void)
 	is_a_tty = isatty(STDOUT_FILENO);
 
 	pthread_mutexattr_init(&mutexattr);
-#ifndef __APPLE__
+#ifdef HAVE_PTHREAD_MUTEXATTR_SETROBUST
 	pthread_mutexattr_setrobust(&mutexattr, PTHREAD_MUTEX_ROBUST);
 #endif
 	pthread_mutex_init(&mutex, &mutexattr);
@@ -118,7 +119,7 @@ void do_log_packet(const char *prefix, size_t len, const uint8_t *packet)
 
 	str = malloc(strlen(prefix) + 3 * len + 1 + 1);
 	if (str == NULL) {
-		log_error("malloc failed\n");
+		log_error("malloc: %s\n", strerror(errno));
 		return;
 	}
 

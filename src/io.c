@@ -36,6 +36,8 @@
 #include <arpa/inet.h>
 #include <netinet/tcp.h>
 #include <unistd.h>
+#include <string.h>
+#include <errno.h>
 
 #ifdef __APPLE__
 
@@ -68,7 +70,7 @@ typedef sem_t os_semaphore_t;
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
 static pthread_mutex_t *lockarray;
 
-static void lock_callback(int mode, int type, char *file, int line)
+static void lock_callback(int mode, int type, const char *file, int line)
 {
 	if (mode & CRYPTO_LOCK)
 		pthread_mutex_lock(&(lockarray[type]));
@@ -106,6 +108,14 @@ static void destroy_ssl_locks(void)
 {
 }
 #endif
+
+// global variable to pass signal out of its handler
+volatile sig_atomic_t sig_received = 0;
+
+int get_sig_received(void)
+{
+	return (int)sig_received;
+}
 
 /*
  * Adds a new packet to a pool.
@@ -174,7 +184,7 @@ static void *pppd_read(void *arg)
 	FD_ZERO(&read_fd);
 	FD_SET(tunnel->pppd_pty, &read_fd);
 
-	log_debug("pppd_read_thread\n");
+	log_debug("%s thread\n", __func__);
 
 	// Wait for pppd to be ready
 	off_w = 0;
@@ -218,15 +228,14 @@ static void *pppd_read(void *arg)
 			pktsize = estimated_decoded_size(frm_len);
 			packet = malloc(sizeof(*packet) + 6 + pktsize);
 			if (packet == NULL) {
-				log_warn("malloc failed.\n");
+				log_error("malloc: %s\n", strerror(errno));
 				break;
 			}
 
 			pktsize = hdlc_decode(&buf[off_r], frm_len,
 			                      pkt_data(packet), pktsize);
 			if (pktsize < 0) {
-				log_error("Failed to decode PPP packet from "
-				          "HDLC frame (%s).\n",
+				log_error("Failed to decode PPP packet from HDLC frame (%s).\n",
 				          (pktsize == ERR_HDLC_BAD_CHECKSUM ?
 				           "bad checksum" :
 				           (pktsize == ERR_HDLC_INVALID_FRAME ?
@@ -278,7 +287,7 @@ static void *pppd_write(void *arg)
 	// Write for pppd to talk first, otherwise unpredictable
 	SEM_WAIT(&sem_pppd_ready);
 
-	log_debug("pppd_write thread\n");
+	log_debug("%s thread\n", __func__);
 
 	while (1) {
 		struct ppp_packet *packet;
@@ -291,14 +300,13 @@ static void *pppd_write(void *arg)
 		hdlc_bufsize = estimated_encoded_size(packet->len);
 		hdlc_buffer = malloc(hdlc_bufsize);
 		if (hdlc_buffer == NULL) {
-			log_warn("malloc failed.\n");
+			log_error("malloc: %s\n", strerror(errno));
 			break;
 		}
 		len = hdlc_encode(hdlc_buffer, hdlc_bufsize,
 		                  pkt_data(packet), packet->len);
 		if (len < 0) {
-			log_error("Failed to encode PPP packet into HDLC "
-			          "frame.\n");
+			log_error("Failed to encode PPP packet into HDLC frame.\n");
 			goto err_free_buf;
 		}
 
@@ -392,7 +400,7 @@ static void debug_bad_packet(struct tunnel *tunnel, uint8_t *header)
 			buffer[i] = '.';
 	buffer[i] = buffer[256 - 1] = '\0';
 
-	printf("  (raw) %s\n", (char *) buffer);
+	printf("  (raw) %s\n", (const char *) buffer);
 }
 
 /*
@@ -404,7 +412,7 @@ static void *ssl_read(void *arg)
 	struct tunnel *tunnel = (struct tunnel *) arg;
 	//uint8_t buf[PKT_BUF_SZ];
 
-	log_debug("ssl_read_thread\n");
+	log_debug("%s thread\n", __func__);
 
 	while (1) {
 		struct ppp_packet *packet;
@@ -430,7 +438,7 @@ static void *ssl_read(void *arg)
 
 		packet = malloc(sizeof(struct ppp_packet) + 6 + size);
 		if (packet == NULL) {
-			log_error("malloc failed\n");
+			log_error("malloc: %s\n", strerror(errno));
 			break;
 		}
 		memcpy(pkt_header(packet), header, 6);
@@ -481,7 +489,7 @@ static void *ssl_write(void *arg)
 {
 	struct tunnel *tunnel = (struct tunnel *) arg;
 
-	log_debug("ssl_write_thread\n");
+	log_debug("%s thread\n", __func__);
 
 	while (1) {
 		struct ppp_packet *packet;
@@ -524,7 +532,7 @@ static void *if_config(void *arg)
 	struct tunnel *tunnel = (struct tunnel *) arg;
 	int timeout = 60000000; // one minute
 
-	log_debug("if_config thread\n");
+	log_debug("%s thread\n", __func__);
 
 	// Wait for the right moment to configure IP interface
 	SEM_WAIT(&sem_if_config);
@@ -537,11 +545,10 @@ static void *if_config(void *arg)
 			tunnel->state = STATE_UP;
 			break;
 		} else if (timeout == 0) {
-			log_error("Timed out waiting for the ppp interface to "
-			          "be UP.\n");
+			log_error("Timed out waiting for the ppp interface to be UP.\n");
 			break;
 		}
-		log_debug("if_config: not ready yet...\n");
+		log_debug("%s: not ready yet...\n", __func__);
 		timeout -= 200000;
 		usleep(200000);
 	}
@@ -557,6 +564,7 @@ error:
 
 static void sig_handler(int signo)
 {
+	sig_received = signo;
 	if (signo == SIGINT || signo == SIGTERM)
 		SEM_POST(&sem_stop_io);
 }
@@ -592,7 +600,7 @@ int io_loop(struct tunnel *tunnel)
 	 *     (with or without TCP_NODELAY)
 	 */
 	if (setsockopt(tunnel->ssl_socket, IPPROTO_TCP, TCP_NODELAY,
-	               (char *) &tcp_nodelay_flag, sizeof(int))) {
+	               (const char *) &tcp_nodelay_flag, sizeof(int))) {
 		log_error("setsockopt: %s\n", strerror(errno));
 		goto err_sockopt;
 	}

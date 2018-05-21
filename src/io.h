@@ -56,4 +56,6 @@ struct tunnel;
 
 int io_loop(struct tunnel *tunnel);
 
+int get_sig_received(void);
+
 #endif

@@ -54,7 +54,7 @@ struct x509_digest {
 #define COOKIE_SIZE	4096
 
 struct vpn_config {
-	char 		gateway_host[FIELD_SIZE + 1];
+	char		gateway_host[FIELD_SIZE + 1];
 	struct in_addr	gateway_ip;
 	uint16_t	gateway_port;
 	char		username[FIELD_SIZE + 1];
@@ -69,10 +69,13 @@ struct vpn_config {
 	int     use_syslog;
 	int	half_internet_routes;
 
+	unsigned int	persistent;
+
 	char	*pppd_log;
 	char	*pppd_plugin;
 	char	*pppd_ipparam;
 	char	*pppd_ifname;
+	char    *pppd_call;
 
 	char	                *ca_file;
 	char	                *user_cert;

@@ -25,14 +25,14 @@ Examples
 
 * Don't set IP routes and don't add VPN nameservers to `/etc/resolv.conf`:
   ```
-  openfortivpn vpn-gateway:8443 -u foo -p bar --no-routes --no-dns
+  openfortivpn vpn-gateway:8443 -u foo -p bar --no-routes --no-dns --pppd-no-peerdns
   ```
 * Using a config file:
   ```
-  openfortivpn
+  openfortivpn -c /etc/openfortivpn/my-config
   ```
 
-  With `/etc/openfortivpn/config` containing:
+  With `/etc/openfortivpn/my-config` containing:
   ```
   host = vpn-gateway
   port = 8443
@@ -50,18 +50,18 @@ Examples
 Installing
 ----------
 
-openfortivpn is packaged for [Fedora](https://admin.fedoraproject.org/pkgdb/package/rpms/openfortivpn/), [openSUSE / SLE](https://software.opensuse.org/package/openfortivpn), [Gentoo](https://packages.gentoo.org/packages/net-vpn/openfortivpn), [NixOS](https://github.com/NixOS/nixpkgs/tree/master/pkgs/tools/networking/openfortivpn), [Arch Linux](https://aur.archlinux.org/packages/openfortivpn) and [Solus](https://packages.solus-project.com/unstable/o/openfortivpn/) under the package name `openfortivpn`.
+openfortivpn is packaged for [Fedora](https://admin.fedoraproject.org/pkgdb/package/rpms/openfortivpn/), [openSUSE / SLE](https://software.opensuse.org/package/openfortivpn), [Gentoo](https://packages.gentoo.org/packages/net-vpn/openfortivpn), [NixOS](https://github.com/NixOS/nixpkgs/tree/master/pkgs/tools/networking/openfortivpn), [Arch Linux](https://aur.archlinux.org/packages/openfortivpn), [Debian (testing)](https://packages.debian.org/buster/openfortivpn) and [Solus](https://packages.solus-project.com/unstable/o/openfortivpn/) under the package name `openfortivpn`.
 
 For other distros, you'll need to build and install from source:
 
 1.  Install build dependencies.
 
-    * RHEL/CentOS/Fedora: `gcc` `automake` `autoconf` `openssl-devel`
-    * Debian/Ubuntu: `gcc` `automake` `autoconf` `libssl-dev`
-    * Arch Linux: `gcc` `automake` `autoconf` `openssl`
-    * Gentoo Linux: `net-dialup/ppp`
-    * openSUSE: `gcc` `automake` `autoconf` `libopenssl-devel`
-    * macOS(Homebrew): `automake` `autoconf` `openssl@1.0`
+    * RHEL/CentOS/Fedora: `gcc` `automake` `autoconf` `openssl-devel` `pkg-config`
+    * Debian/Ubuntu: `gcc` `automake` `autoconf` `libssl-dev` `pkg-config`
+    * Arch Linux: `gcc` `automake` `autoconf` `openssl` `pkg-config`
+    * Gentoo Linux: `net-dialup/ppp` `pkg-config`
+    * openSUSE: `gcc` `automake` `autoconf` `libopenssl-devel` `pkg-config`
+    * macOS(Homebrew): `automake` `autoconf` `openssl@1.0` `pkg-config`
 
     On Linux, if you manage your kernel yourself, ensure to compile those modules:
     ```

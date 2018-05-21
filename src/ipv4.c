@@ -107,8 +107,12 @@ static inline void route_destroy(struct rtentry *route)
 /*
  * Finds system IP route to a destination.
  *
- * The passed route must have dest and mask set. If the route is found, the
- * function fills the gtw and iface properties.
+ * The passed route must have dest and mask set. If the route is found,
+ * the function searches for a match in the routing table and returns
+ * that one. Note that dest and mask contain the network address and
+ * the mask of the corresponding routing table entry after calling.
+ * After calling ipv4_get_route it might be necessary to set dest
+ * and mask again to the desired values for further processing.
  */
 static int ipv4_get_route(struct rtentry *route)
 {
@@ -116,23 +120,23 @@ static int ipv4_get_route(struct rtentry *route)
 	char buffer[0x1000];
 	char *start, *line;
 	char *saveptr1 = NULL, *saveptr2 = NULL;
+	uint32_t rtdest, rtmask, rtgtw;
+	int rtfound = 0;
 
 	log_debug("ip route show %s\n", ipv4_show_route(route));
 
-#ifndef __APPLE__
-	int fd;
-	// Cannot stat, mmap not lseek this special /proc file
-	fd = open("/proc/net/route", O_RDONLY);
-	if (fd == -1)
-		return ERR_IPV4_SEE_ERRNO;
+	// store what we are looking for
+	rtdest = route_dest(route).s_addr;
+	rtmask = route_mask(route).s_addr;
+	rtgtw = route_gtw(route).s_addr;
 
-	size = read(fd, buffer, sizeof(buffer) - 1);
-	if (size == -1) {
-		close(fd);
-		return ERR_IPV4_SEE_ERRNO;
-	}
-	close(fd);
-#else
+
+	// initialize the output record
+	route_dest(route).s_addr = inet_addr("0.0.0.0");
+	route_mask(route).s_addr = inet_addr("0.0.0.0");
+	route_gtw(route).s_addr = inet_addr("0.0.0.0");
+
+#ifdef __APPLE__
 	FILE *fp;
 	int len = sizeof(buffer) - 1;
 	char *saveptr3 = NULL;
@@ -155,11 +159,22 @@ static int ipv4_get_route(struct rtentry *route)
 	// to make sure not to access out of bounds later,
 	// for ipv4 only unsigned short is allowed
 
-	unsigned short flag_table[256];
-	memset(flag_table, 0, 256*sizeof(short));
+	unsigned short flag_table[256] = { 0 };
 
-	// fill the table now (I'm still looking for a more elagant way to do this),
-	// also, not all flags might be allowed in the context of ipv4
+	/*
+	 * Fill the flag_table now. Unfortunately it is not easy
+	 * to do this in a more elegant way. The problem here
+	 * is that these are already preprocessor macros and
+	 * we can't use them as arguments for another macro which
+	 * would include the #ifdef statements.
+	 *
+	 * Also, not all flags might be allowed in the context
+	 * of ipv4, and the code depends on which ones are
+	 * actually implemented on the target platform, which
+	 * might also be varying between OSX versions.
+	 *
+	 */
+
 #ifdef RTF_PROTO1     // Protocol specific routing flag #1
 	flag_table['1'] = RTF_PROTO1 & USHRT_MAX;
 #endif
@@ -226,6 +241,20 @@ static int ipv4_get_route(struct rtentry *route)
 #ifdef RTF_PROXY      // Proxying; cloned routes will not be scoped
 	flag_table['Y'] = RTF_PROXY & USHRT_MAX;
 #endif
+
+#else
+	int fd;
+	// Cannot stat, mmap not lseek this special /proc file
+	fd = open("/proc/net/route", O_RDONLY);
+	if (fd == -1)
+		return ERR_IPV4_SEE_ERRNO;
+
+	size = read(fd, buffer, sizeof(buffer) - 1);
+	if (size == -1) {
+		close(fd);
+		return ERR_IPV4_SEE_ERRNO;
+	}
+	close(fd);
 #endif
 
 	if (size == 0) {
@@ -243,7 +272,7 @@ static int ipv4_get_route(struct rtentry *route)
 	start++;
 
 #ifdef __APPLE__
-	// Skip 3 more line
+	// Skip 3 more lines on Mac OSX
 	start = index(start, '\n');
 	start = index(++start, '\n');
 	start = index(++start, '\n');
@@ -260,23 +289,7 @@ static int ipv4_get_route(struct rtentry *route)
 		char *iface;
 		uint32_t dest, mask, gtw;
 		unsigned short flags;
-#ifndef __APPLE__
-		unsigned short irtt;
-		short metric;
-		unsigned long mtu, window;
-
-		iface = strtok_r(line, "\t", &saveptr2);
-		dest = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
-		gtw = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
-		flags = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
-		strtok_r(NULL, "\t", &saveptr2); // "RefCnt"
-		strtok_r(NULL, "\t", &saveptr2); // "Use"
-		metric = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
-		mask = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
-		mtu = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
-		window = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
-		irtt = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
-#else
+#ifdef __APPLE__
 		char tmp_ip_string[16];
 		struct in_addr dstaddr;
 		int pos;
@@ -289,6 +302,10 @@ static int ipv4_get_route(struct rtentry *route)
 		mask = UINT32_MAX;
 		// "Destination"
 		tmpstr = strtok_r(line, " ", &saveptr2);
+		if (strncmp(tmpstr, "Internet6", 9) == 0) {
+			// we have arrived at the end of ipv4 output
+			goto end;
+		}
 		log_debug("- Destination: %s\n", tmpstr);
 		// replace literal "default" route by IPV4 numbers-and-dots notation
 		if (strncmp(tmpstr, "default", 7) == 0) {
@@ -358,47 +375,111 @@ static int ipv4_get_route(struct rtentry *route)
 		iface = strtok_r(NULL, " ", &saveptr2); // "Netif"
 		log_debug("- Interface: %s\n", iface);
 		log_debug("\n");
-#endif
+#else
+		unsigned short irtt;
+		short metric;
+		unsigned long mtu, window;
 
-		if (dest == route_dest(route).s_addr &&
-		    mask == route_mask(route).s_addr) {
-			// Requested route has been found
-			route_gtw(route).s_addr = gtw;
-			route->rt_flags = flags;
-#ifndef __APPLE__
-			// we do not have these values from Mac OS X netstat,
-			// so stay with defaults denoted by values of 0
-			route->rt_metric = metric;
-			route->rt_mtu = mtu;
-			route->rt_window = window;
-			route->rt_irtt = irtt;
+		iface = strtok_r(line, "\t", &saveptr2);
+		dest = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
+		gtw = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
+		flags = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
+		strtok_r(NULL, "\t", &saveptr2); // "RefCnt"
+		strtok_r(NULL, "\t", &saveptr2); // "Use"
+		metric = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
+		mask = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
+		mtu = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
+		window = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
+		irtt = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
 #endif
-			strncpy(route_iface(route), iface,
-			        ROUTE_IFACE_LEN - 1);
-			return 0;
+		/*
+		 * Now that we have parsed a routing entry, check if it
+		 * matches the current argument to the function call.
+		 * In rtentry we have integer representation, i.e.
+		 * the most significant byte corresponds to the last
+		 * number of dotted-number representation and vice versa.
+		 * In this representation ( address & mask ) is the network
+		 * address.
+		 * The routing algorithm does the following:
+		 * First, check if the network address we are looking for
+		 * falls into the network for the current route.
+		 * Therefore, calculate the network address for both, the
+		 * current route and for the destination we are searching.
+		 * If the destination is a smaller network (for instance a
+		 * single host), we have to mask again with the netmask of
+		 * the routing entry that we are checking in order to obtain
+		 * the network address in the context of the current route.
+		 * If both network addresses match, we have found a candidate
+		 * for a route.
+		 * However, there might be another route for a smaller network,
+		 * therefore repeat this and only store the resulting route
+		 * when the mask is at least as large as the one we may
+		 * have already found in a previous iteration (a larger
+		 * netmask corresponds to a smaller network in this
+		 * representation, and has a higher prority by default).
+		 * Also, only consider routing entries for which the
+		 * netmask is not larger than the netmask used in the
+		 * argument when calling the function - so that we can
+		 * distinguish between different routing entries for subnets
+		 * of different size but with the same network address.
+		 * For routing entries with the same destination and
+		 * the same netmask the metric can be used for adjusting
+		 * the priority (this is not supported on mac).
+		 * If the metric is larger than one found for this network
+		 * size, skip the current route (smaller numbers denote
+		 * less hops and therefore have a higher priority).
+		 */
+
+		if (((dest & mask) == (rtdest & rtmask & mask))
+		    && (mask >= route_mask(route).s_addr)
+		    && (mask <= rtmask)) {
+#ifndef __APPLE__
+			if (((mask == route_mask(route).s_addr)
+			     && (metric <= route->rt_metric))
+			    || (rtfound == 0)
+			    || (mask > route_mask(route).s_addr)) {
+#endif
+				rtfound = 1;
+				// Requested route has been found
+				route_dest(route).s_addr = dest;
+				route_mask(route).s_addr = mask;
+				route_gtw(route).s_addr = gtw;
+				route->rt_flags = flags;
+
+				strncpy(route_iface(route), iface,
+				        ROUTE_IFACE_LEN - 1);
+
+#ifndef __APPLE__
+				// we do not have these values from Mac OS X netstat,
+				// so stay with defaults denoted by values of 0
+				route->rt_metric = metric;
+				route->rt_mtu = mtu;
+				route->rt_window = window;
+				route->rt_irtt = irtt;
+			}
+#endif
 		}
 		line = strtok_r(NULL, "\n", &saveptr1);
 	}
-	log_debug("Route not found.\n");
+#ifdef __APPLE__
+end:
+#endif
+	if (rtfound==0) {
+		// should not occur anymore unless there is no default route
+		log_debug("Route not found.\n");
+		// at least restore input values
+		route_dest(route).s_addr = rtdest;
+		route_mask(route).s_addr = rtmask;
+		route_gtw(route).s_addr = rtgtw;
+		return ERR_IPV4_NO_SUCH_ROUTE;
+	}
 
-	return ERR_IPV4_NO_SUCH_ROUTE;
+	return 0;
 }
 
 static int ipv4_set_route(struct rtentry *route)
 {
-#ifndef __APPLE__
-	log_debug("ip route add %s\n", ipv4_show_route(route));
-
-	int sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
-
-	if (sockfd < 0)
-		return ERR_IPV4_SEE_ERRNO;
-	if (ioctl(sockfd, SIOCADDRT, route) == -1) {
-		close(sockfd);
-		return ERR_IPV4_SEE_ERRNO;
-	}
-	close(sockfd);
-#else
+#ifdef __APPLE__
 	char cmd[SHOW_ROUTE_BUFFER_SIZE];
 
 	strcpy(cmd, "route -n add -net ");
@@ -418,6 +499,18 @@ static int ipv4_set_route(struct rtentry *route)
 	int res = system(cmd);
 	if (res == -1)
 		return ERR_IPV4_SEE_ERRNO;
+#else
+	log_debug("ip route add %s\n", ipv4_show_route(route));
+
+	int sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
+
+	if (sockfd < 0)
+		return ERR_IPV4_SEE_ERRNO;
+	if (ioctl(sockfd, SIOCADDRT, route) == -1) {
+		close(sockfd);
+		return ERR_IPV4_SEE_ERRNO;
+	}
+	close(sockfd);
 #endif
 
 	return 0;
@@ -425,7 +518,20 @@ static int ipv4_set_route(struct rtentry *route)
 
 static int ipv4_del_route(struct rtentry *route)
 {
-#ifndef __APPLE__
+#ifdef __APPLE__
+	char cmd[SHOW_ROUTE_BUFFER_SIZE];
+
+	strcpy(cmd, "route -n delete ");
+	strncat(cmd, inet_ntoa(route_dest(route)), 15);
+	strcat(cmd, " -netmask ");
+	strncat(cmd, inet_ntoa(route_mask(route)), 15);
+
+	log_debug("%s\n", cmd);
+
+	int res = system(cmd);
+	if (res == -1)
+		return ERR_IPV4_SEE_ERRNO;
+#else
 	struct rtentry tmp;
 	int sockfd;
 
@@ -446,19 +552,6 @@ static int ipv4_del_route(struct rtentry *route)
 		return ERR_IPV4_SEE_ERRNO;
 	}
 	close(sockfd);
-#else
-	char cmd[SHOW_ROUTE_BUFFER_SIZE];
-
-	strcpy(cmd, "route -n delete ");
-	strncat(cmd, inet_ntoa(route_dest(route)), 15);
-	strcat(cmd, " -netmask ");
-	strncat(cmd, inet_ntoa(route_mask(route)), 15);
-
-	log_debug("%s\n", cmd);
-
-	int res = system(cmd);
-	if (res == -1)
-		return ERR_IPV4_SEE_ERRNO;
 #endif
 	return 0;
 }
@@ -480,17 +573,21 @@ int ipv4_protect_tunnel_route(struct tunnel *tunnel)
 	if (ret != 0) {
 		log_warn("Could not get current default route (%s).\n",
 		         err_ipv4_str(ret));
-		log_warn("Protecting tunnel route has failed. "
-		         "But this can be working except for some cases.\n");
+		log_warn("Protecting tunnel route has failed. But this can be working except for some cases.\n");
 		goto err_destroy;
 	}
 
 
-	// Set the default route as the route to the tunnel gateway
-	char *iface = route_iface(gtw_rt);
-	memcpy(gtw_rt, def_rt, sizeof(*gtw_rt));
-	route_iface(gtw_rt) = iface;
-	strncpy(route_iface(gtw_rt), route_iface(def_rt), ROUTE_IFACE_LEN - 1);
+	// Set the up a route to the tunnel gateway
+	route_dest(gtw_rt).s_addr = tunnel->config->gateway_ip.s_addr;
+	route_mask(gtw_rt).s_addr = inet_addr("255.255.255.255");
+	ret = ipv4_get_route(gtw_rt);
+	if (ret != 0) {
+		log_warn("Could not get route to gateway (%s).\n",
+		         err_ipv4_str(ret));
+		log_warn("Protecting tunnel route has failed. But this can be working except for some cases.\n");
+		goto err_destroy;
+	}
 	route_dest(gtw_rt).s_addr = tunnel->config->gateway_ip.s_addr;
 	route_mask(gtw_rt).s_addr = inet_addr("255.255.255.255");
 	gtw_rt->rt_flags |= RTF_HOST;
@@ -498,6 +595,7 @@ int ipv4_protect_tunnel_route(struct tunnel *tunnel)
 
 	tunnel->ipv4.route_to_vpn_is_added = 1;
 	log_debug("Setting route to vpn server...\n");
+	log_debug("ip route show %s\n", ipv4_show_route(gtw_rt));
 	ret = ipv4_set_route(gtw_rt);
 	if (ret == ERR_IPV4_SEE_ERRNO && errno == EEXIST) {
 		log_warn("Route to vpn server exists already.\n");
@@ -515,12 +613,37 @@ err_destroy:
 	return ret;
 }
 
+static void add_text_route(struct tunnel *tunnel, const char *dest,
+                           const char *mask, const char *gw)
+{
+	size_t l0, l1;
+	const char fmt[] = ",%s/%s/%s";
+	const char trigger[] = "openfortivpn";
+	char **target = &tunnel->config->pppd_ipparam;
+	char *ptr;
+
+	if (*target == NULL || strncmp(*target, trigger, strlen(trigger)))
+		return;
+	if (!dest || !mask || !gw)
+		return;
+	log_info("Registering route %s/%s via %s\n", dest, mask, gw);
+	l0 = strlen(*target);
+	l1 = strlen(fmt) + strlen(dest) + strlen(mask) + strlen(gw) + 1;
+	if ((ptr = realloc(*target, l0 + l1))) {
+		*target = ptr;
+		snprintf(*target + l0, l1, fmt, dest, mask, gw);
+	} else {
+		log_error("realloc: %s\n", strerror(errno));
+	}
+}
+
 int ipv4_add_split_vpn_route(struct tunnel *tunnel, char *dest, char *mask,
                              char *gateway)
 {
 	struct rtentry *route;
 	char env_var[24];
 
+	add_text_route(tunnel, dest, mask, gateway);
 	if (tunnel->ipv4.split_routes == MAX_SPLIT_ROUTES)
 		return ERR_IPV4_NO_MEM;
 	if ((tunnel->ipv4.split_rt == NULL)
@@ -687,8 +810,7 @@ int ipv4_restore_routes(struct tunnel *tunnel)
 			// automatically restored on all linux distributions
 			ret = ipv4_set_route(def_rt);
 			if (ret != 0) {
-				log_warn("Could not restore default route (%s). "
-				         "Already restored?\n",
+				log_warn("Could not restore default route (%s). Already restored?\n",
 				         err_ipv4_str(ret));
 			}
 
@@ -709,7 +831,7 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 	FILE *file;
 	struct stat stat;
 	char ns1[28], ns2[28]; // 11 + 15 + 1 + 1
-	char *buffer, *line;
+	char *buffer;
 
 	tunnel->ipv4.ns_are_new = 1;
 
@@ -738,7 +860,7 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 	buffer = malloc(stat.st_size + 1);
 	if (buffer == NULL) {
 		log_warn("Could not read /etc/resolv.conf (%s).\n",
-		         "Not enough memory");
+		         strerror(errno));
 		goto err_close;
 	}
 
@@ -759,12 +881,12 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 		ns2[0] = '\0';
 	}
 
-	for (line = strtok(buffer, "\n"); line != NULL;
+	for (const char *line = strtok(buffer, "\n");
+	     line != NULL;
 	     line = strtok(NULL, "\n")) {
 		if (strcmp(line, ns1) == 0) {
 			tunnel->ipv4.ns_are_new = 0;
-			log_debug("Nameservers already present in "
-			          "/etc/resolv.conf.\n");
+			log_debug("Nameservers already present in /etc/resolv.conf.\n");
 			ret = 0;
 			goto err_free;
 		}
@@ -805,7 +927,7 @@ int ipv4_del_nameservers_from_resolv_conf(struct tunnel *tunnel)
 	FILE *file;
 	struct stat stat;
 	char ns1[27], ns2[27]; // 11 + 15 + 1
-	char *buffer, *line;
+	char *buffer;
 
 	// If nameservers were already there before setting up tunnel,
 	// don't delete them from /etc/resolv.conf
@@ -831,7 +953,7 @@ int ipv4_del_nameservers_from_resolv_conf(struct tunnel *tunnel)
 	buffer = malloc(stat.st_size + 1);
 	if (buffer == NULL) {
 		log_warn("Could not read /etc/resolv.conf (%s).\n",
-		         "Not enough memory");
+		         strerror(errno));
 		goto err_close;
 	}
 
@@ -855,7 +977,9 @@ int ipv4_del_nameservers_from_resolv_conf(struct tunnel *tunnel)
 		goto err_free;
 	}
 
-	for (line = strtok(buffer, "\n"); line != NULL; line = strtok(NULL, "\n")) {
+	for (const char *line = strtok(buffer, "\n");
+	     line != NULL;
+	     line = strtok(NULL, "\n")) {
 		if (strcmp(line, ns1) == 0) {
 			log_debug("Deleting \"%s\" from /etc/resolv.conf.\n", ns1);
 		} else if (strcmp(line, ns2) == 0) {

@@ -1,0 +1,12 @@
+38400
+:192.0.2.1
+noipdefault
+noaccomp
+noauth
+default-asyncmap
+nopcomp
+receive-all
+nodefaultroute
+nodetach
+lcp-max-configure 40
+mru 1354
