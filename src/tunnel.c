@@ -171,7 +171,7 @@ static int pppd_run(struct tunnel *tunnel)
 				"lcp-max-configure", "40",
 				"mru", "1354"
 			};
-			for (unsigned i = 0; i < sizeof v/sizeof v[0]; i++)
+			for (unsigned i = 0; i < ARRAY_SIZE(v); i++)
 				ofv_append_varr(&pppd_args, v[i]);
 		}
 
