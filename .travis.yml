@@ -21,14 +21,15 @@ script:
 env:
   global:
     # COVERITY_SCAN_TOKEN
-    - secure: "FXGMUAl9aosC8HuL8c56jp876I4Tg/duuP6vYOSyl6uWPva7fsXHQKgkhrPh5IuHDcC/seVJIbI88W9doPFKYcK3UMwgNk1op2K/BtcP5ZOWxCuyFha/J9n4dlUJqZRESV5DOKEcLPm/RuTFvLd/hfi29bL5W0zBPytT+bYJ9ydIdI5UtRXLOUjm4G4bV8/myDy8V7O1CYeBKaQ3X+f/H4pySRy4751UUpctTVOue7AvMclNmM5F4At1dFtqwoeDXXFE3+/4wOQlOXYKC6htVPooPPDgU4vNKc5XrGqPL80AEUAfIExMEeSh6nFxVsrHB5grGxEA0fGMq28jUByGQfCYI4FOgj8xNPM8POa26Mu4RZVWmAUQia4Sdun9wEIr+AbM7Vjr5QN1WvScSyfvt3StPKC1F0jutArWCwoL2YDbm8lcueCHjif/eGlD5SR7uNyRmkU1DoJqDbUV0SSj9h4unVHSdKESiEKgIsDkXvxpW8/Aajj0dwctWB2utGisjBIKw1OOfLXs6/aAdnvkQH/CZ4eCWZd/wpJGCMnAI5hs3Lep8d5hMOTF5LzFK3t8e/CVdSei5gSGVzEYLCANucQ86kngdz66bBAHQWtDplLPp2VCy0wJwyjxaZWunb2dvVz/4xlF0o5RafDM4uQ3fRoPLANjFQa6GyLreVt7tdQ="
+    - secure: "HuYAk43itUiq0YJjmyvCyOM3mnRo8bFqSwksOmQ5fjvQscVWqZg6M9h8Abb+lKAc9L9avrwObjhu3EmOqoZ9Cjtp4WS4IdESK/UNe/jHpODFknsKefPgP67Z/yEFNVU1+5pS0+r+gTWQcZMyJrWrDde0lWpWHR/W7rTtqIbZH8Bp/T7oUN5q10x8PBcOZi/yVqNNicyuERIvUkobro5k+e4rY1N1HkptKs4wVY8M4WZUHwokNtuVfs0yoGQtrpi1KVRWq8sDkb8DNTeNv0MMEoQYUmNlEWxPaKJ9DBr65ajGLHzwUkWaNJGYw7mXwXoBwn5uKOyoytRA6Tj1wbVj4ggqqq6P6tbIcZ4YUW6N72gRaqvCnm6mRnbDHQtvzpqqxtr585mD11mh0DNmB15rvjNcZU/4wHHNQBsFcYEr+fN2/2ef/T3n0dymnnv2uZ05d11V5uSC6XYt3h0VxMDwarOVvOcWKYIQqzs4Bhigd2982v3OlIi5tbOSzHkbiCSP1msOKd6/XpCiCFpqed2UtSGZukisp3wQNfPnUOWoguOJ38nNe2o2G/l6HNOLd6u3sFlhzzthnJ6LPFD1CD9LPaOVYIVrRr90l0B2j1vPQM03eiiw7P6XvI6hPdqAM3VSEyjyrzUJRCUXAA8tovRwKTFlc506FWiFlGBFXFFI3zs="
 
 addons:
   coverity_scan:
     project:
       name: adrienverge/openfortivpn
+      version: 1.7.0
       description: Client for PPP+SSL VPN tunnel services 
-    notification_email: adrienverge@users.noreply.github.com
+    notification_email: DimitriPapadopoulos@users.noreply.github.com
     build_command_prepend: ./configure --prefix=/usr --sysconfdir=/etc; make clean
-    build_command: make -j 4
+    build_command: make
     branch_pattern: coverity_scan
