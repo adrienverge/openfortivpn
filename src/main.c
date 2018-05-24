@@ -60,12 +60,12 @@
 "  -o <otp>, --otp=<otp>         One-Time-Password.\n" \
 "  --realm=<realm>               Use specified authentication realm on VPN gateway\n" \
 "                                when tunnel is up.\n" \
-"  --set-routes=[01]             Set if we should configure output roues through\n" \
+"  --set-routes=[01]             Set if openfortivpn should configure output roues through\n" \
 "                                the VPN when tunnel is up.\n" \
 "  --no-routes                   Do not configure routes, same as --set-routes=0.\n" \
 "  --half-internet-routes=[01]   Add two 0.0.0.0/1 and 128.0.0.0/1 routes with higher" \
 "                                priority instead of replacing the default route.\n" \
-"  --set-dns=[01]                Set if we should add VPN name servers in\n" \
+"  --set-dns=[01]                Set if openfortivpn should add VPN name servers in\n" \
 "                                /etc/resolv.conf\n" \
 "  --no-dns                      Do not reconfigure DNS, same as --set-dns=0\n" \
 "  --ca-file=<file>              Use specified PEM-encoded certificate bundle\n" \
