@@ -66,13 +66,15 @@ static void ofv_append_varr(struct ofv_varr *p, const char *x)
 		if (ndata) {
 			p->data = ndata;
 			p->cap = ncap;
-			p->data[p->off] = x;
-			p->data[++p->off] = NULL;
 		} else {
 			log_error("realloc: %s\n", strerror(errno));
 			assert(ndata);
+			return;
 		}
 	}
+	assert(p->off + 1 < p->cap);
+	p->data[p->off] = x;
+	p->data[++p->off] = NULL;
 }
 
 static int on_ppp_if_up(struct tunnel *tunnel)
