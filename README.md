@@ -25,7 +25,7 @@ Examples
 
 * Don't set IP routes and don't add VPN nameservers to `/etc/resolv.conf`:
   ```
-  openfortivpn vpn-gateway:8443 -u foo -p bar --no-routes --no-dns --pppd-no-peerdns
+  openfortivpn vpn-gateway:8443 -u foo -p bar --no-routes --pppd-no-peerdns
   ```
 * Using a config file:
   ```
@@ -38,8 +38,8 @@ Examples
   port = 8443
   username = foo
   password = bar
-  set-dns = 0
   set-routes = 0
+  pppd-use-peerdns = 0
   # X509 certificate sha256 sum, trust only this one!
   trusted-cert = e46d4aff08ba6914e64daa85bc6112a422fa7ce16631bff0b592a28556f993db
   ```
