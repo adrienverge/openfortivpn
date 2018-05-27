@@ -64,16 +64,18 @@ Connect to the specified authentication realm. Defaults to empty, which
 is usually what you want.
 .TP
 \fB\-\-set-routes=\fI<bool>\fR, \fB\-\-no-routes\fR
-Set if openfortivpn should try to configure IP routes through the VPN when tunnel is up. If used multiple times, the last one takes priority.
+Set if openfortivpn should try to configure IP routes through the VPN when
+tunnel is up. If used multiple times, the last one takes priority.
 
 \fB\-\-no-routes\fR is the same as \fB\-\-set-routes=\fI0\fR.
 .TP
-\fB\-\-half-internet-routes=\fI<bool>\fR, if set to 1, tells openfortivpn not
-to replace the default route by a different one, but to set up two 0.0.0.0/1
-and 128.0.0.0/1 routes with higher priority instead.
+\fB\-\-half-internet-routes=\fI<bool>\fR
+Set if openfortivpn should add two 0.0.0.0/1 and 128.0.0.0/1 routes with
+higher priority instead of replacing the default route.
 .TP
 \fB\-\-set-dns=\fI<bool>\fR, \fB\-\-no-dns\fR
-Set if openfortivpn should add VPN nameservers in /etc/resolv.conf when tunnel is up. If used multiple times, the last one takes priority.
+Set if openfortivpn should add VPN nameservers in /etc/resolv.conf when
+tunnel is up. If used multiple times, the last one takes priority.
 
 \fB\-\-no-dns\fR is the same as \fB\-\-set-dns=\fI0\fR.
 .TP
