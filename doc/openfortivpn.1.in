@@ -12,6 +12,7 @@ openfortivpn \- Client for PPP+SSL VPN tunnel services
 [\fB\-\-set-routes=<bool>\fR]
 [\fB\-\-no-routes\fR]
 [\fB\-\-set-dns=<bool>\fR]
+[\fB\-\-no-dns\fR]
 [\fB\-\-half-internet-routes=<bool>\fR]
 [\fB\-\-ca-file=\fI<file>\fR]
 [\fB\-\-user-cert=\fI<file>\fR]
@@ -72,9 +73,11 @@ tunnel is up. If used multiple times, the last one takes priority.
 Set if openfortivpn should add two 0.0.0.0/1 and 128.0.0.0/1 routes with
 higher priority instead of replacing the default route.
 .TP
-\fB\-\-set-dns=\fI<bool>\fR
+\fB\-\-set-dns=\fI<bool>\fR, \fB\-\-no-dns\fR
 Set if openfortivpn should add VPN nameservers in /etc/resolv.conf when
 tunnel is up. If used multiple times, the last one takes priority.
+
+\fB\-\-no-dns\fR is the same as \fB\-\-set-dns=\fI0\fR.
 .TP
 \fB\-\-ca-file=\fI<file>\fR
 Use specified PEM-encoded certificate bundle instead of system-wide store to
