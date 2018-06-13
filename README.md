@@ -76,7 +76,12 @@ For other distros, you'll need to build and install from source:
     /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 
     # Install Dependencies
-    brew install automake autoconf openssl@1.0
+    brew install automake autoconf openssl@1.0 pkg-config
+
+    # You may neet to make this openssl available to compilers
+    echo 'export LDFLAGS="-L/usr/local/opt/openssl/lib $LDFLAGS"' >> ~/.bash_profile
+    echo 'export CPPLAGS="-I/usr/local/opt/openssl/include $CPPFLAGS"' >> ~/.bash_profile
+
     ```
 
     On macOS, install 'openfortivpn'...
