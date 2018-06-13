@@ -135,19 +135,21 @@ int load_config(struct vpn_config *cfg, const char *filename)
 		val = equals + 1;
 
 		// Remove heading spaces
-		while (key[0] != '\0' && (key[0] == ' ' || key[0] == '\t'))
+		while (key[0] != '\0'
+		       && (key[0] == ' ' || key[0] == '\t' || key[0] == '\r'))
 			key++;
-		while (val[0] != '\0' && (val[0] == ' ' || val[0] == '\t'))
+		while (val[0] != '\0'
+		       && (val[0] == ' ' || val[0] == '\t' || val[0] == '\r'))
 			val++;
 		// Remove trailing spaces
 		for (i = strlen(key) - 1; i > 0; i--) {
-			if (key[i] == ' ' || key[i] == '\t')
+			if (key[i] == ' ' || key[i] == '\t' || key[i] == '\r')
 				key[i] = '\0';
 			else
 				break;
 		}
 		for (i = strlen(val) - 1; i > 0; i--) {
-			if (val[i] == ' ' || val[i] == '\t')
+			if (val[i] == ' ' || val[i] == '\t' || val[i] == '\r')
 				val[i] = '\0';
 			else
 				break;
