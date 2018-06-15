@@ -91,10 +91,4 @@ int strtob(const char *str);
 
 int load_config(struct vpn_config *cfg, const char *filename);
 
-inline int iswhitespace_like(const char character)
-{
-	return (character != '\0' \
-	        && (character == ' ' || character == '\t' || character == '\r'));
-}
-
 #endif
