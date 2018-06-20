@@ -61,7 +61,8 @@ Some Linux distibutions provide `openfortivpn` packages:
 * [Solus](https://packages.solus-project.com/unstable/o/openfortivpn/)
 
 On macOS both [Homebrew](http://brewformulas.org/Openfortivpn) and
-[MacPorts](https://www.macports.org) provide an `openfortivpn` package.
+[MacPorts](https://www.macports.org/ports.php?by=name&substr=openfortivpn)
+provide an `openfortivpn` package.
 Either [install Homebrew](https://brew.sh/) then install openfortivpn:
 ```shell
 # Install 'Homebrew'
