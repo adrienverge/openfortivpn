@@ -54,16 +54,16 @@
 struct ofv_varr {
 	unsigned cap;		// current capacity
 	unsigned off;		// next slot to write, always < max(cap - 1, 1)
-	const void **data;	// NULL terminated
+	const char **data;	// NULL terminated
 };
 
-static void ofv_append_varr(struct ofv_varr *p, const void *x)
+static void ofv_append_varr(struct ofv_varr *p, const char *x)
 {
 	if (p->off + 1 >= p->cap) {
-		const void **ndata;
+		const char **ndata;
 		unsigned ncap = (p->off + 1) * 2;
 		assert(p->off + 1 < ncap);
-		ndata = realloc(p->data, ncap * sizeof(const void *));
+		ndata = realloc(p->data, ncap * sizeof(const char *));
 		if (ndata) {
 			p->data = ndata;
 			p->cap = ncap;
@@ -172,7 +172,7 @@ static int pppd_run(struct tunnel *tunnel)
 				"lcp-max-configure", "40",
 				"mru", "1354"
 			};
-			for (unsigned i = 0; i < sizeof v/sizeof v[0]; i++)
+			for (unsigned i = 0; i < ARRAY_SIZE(v); i++)
 				ofv_append_varr(&pppd_args, v[i]);
 		}
 

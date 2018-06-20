@@ -8,7 +8,6 @@ this process.
 It is compatible with Fortinet VPNs.
 
 
-
 --------
 Examples
 --------
@@ -38,19 +37,48 @@ Examples
   port = 8443
   username = foo
   password = bar
-  set-dns = 0
   set-routes = 0
+  set-dns = 0
+  pppd-use-peerdns = 0
   # X509 certificate sha256 sum, trust only this one!
   trusted-cert = e46d4aff08ba6914e64daa85bc6112a422fa7ce16631bff0b592a28556f993db
   ```
-
 
 
 ----------
 Installing
 ----------
 
-openfortivpn is packaged for [Fedora](https://admin.fedoraproject.org/pkgdb/package/rpms/openfortivpn/), [openSUSE / SLE](https://software.opensuse.org/package/openfortivpn), [Gentoo](https://packages.gentoo.org/packages/net-vpn/openfortivpn), [NixOS](https://github.com/NixOS/nixpkgs/tree/master/pkgs/tools/networking/openfortivpn), [Arch Linux](https://aur.archlinux.org/packages/openfortivpn), [Debian (testing)](https://packages.debian.org/buster/openfortivpn) and [Solus](https://packages.solus-project.com/unstable/o/openfortivpn/) under the package name `openfortivpn`.
+### Installing existing packages
+
+Some Linux distibutions provide `openfortivpn` packages:
+* [Fedora](https://admin.fedoraproject.org/pkgdb/package/rpms/openfortivpn/)
+* [openSUSE / SLE](https://software.opensuse.org/package/openfortivpn)
+* [Gentoo](https://packages.gentoo.org/packages/net-vpn/openfortivpn)
+* [NixOS](https://github.com/NixOS/nixpkgs/tree/master/pkgs/tools/networking/openfortivpn)
+* [Arch Linux](https://aur.archlinux.org/packages/openfortivpn)
+* [Debian (testing)](https://packages.debian.org/buster/openfortivpn)
+* [Solus](https://packages.solus-project.com/unstable/o/openfortivpn/)
+
+On macOS both [Homebrew](http://brewformulas.org/Openfortivpn) and
+[MacPorts](https://www.macports.org/ports.php?by=name&substr=openfortivpn)
+provide an `openfortivpn` package.
+Either [install Homebrew](https://brew.sh/) then install openfortivpn:
+```shell
+# Install 'Homebrew'
+/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+
+# Install 'openfortivpn'
+brew install openfortivpn
+```
+
+or [install MacPorts](https://www.macports.org/install.php) then install openfortivpn:
+```shell
+# Install 'openfortivpn'
+sudo port install openfortivpn
+```
+
+### Building and installing from source
 
 For other distros, you'll need to build and install from source:
 
@@ -75,15 +103,12 @@ For other distros, you'll need to build and install from source:
     /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 
     # Install Dependencies
-    brew install automake autoconf openssl@1.0
-    ```
+    brew install automake autoconf openssl@1.0 pkg-config
 
-    On macOS, install 'openfortivpn'...
+    # You may need to make this openssl available to compilers
+    export LDFLAGS="-L/usr/local/opt/openssl/lib $LDFLAGS"
+    export CPPFLAGS="-I/usr/local/opt/openssl/include $CPPFLAGS"
     ```
-    brew install openfortivpn
-    ```
-    ...**or** build a version of your choice from source following the instructions in step 2.
-
 
 2.  Build and install.
 
@@ -124,7 +149,6 @@ Cmnd_Alias  OPENFORTIVPN = /usr/bin/openfortivpn
 As described in [#54](https://github.com/adrienverge/openfortivpn/issues/54), 
 a malicious user could use `--pppd-plugin` and `--pppd-log` options to divert 
 the program's behaviour.
-
 
 
 ------------

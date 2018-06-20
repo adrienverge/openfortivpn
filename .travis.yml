@@ -2,22 +2,33 @@ language: c
 
 sudo: false
 
-install:
-  - >
-      [ -f $HOME/astyle/build/gcc/bin/astyle ] || {
-        wget -O astyle_2.05.1_linux.tar.gz http://sourceforge.net/projects/astyle/files/astyle/astyle%202.05.1/astyle_2.05.1_linux.tar.gz/download;
-        tar -xf astyle_2.05.1_linux.tar.gz -C $HOME;
-        make -C $HOME/astyle/build/gcc;
-      }
-  - make -C $HOME/astyle/build/gcc prefix=$HOME install
-
 cache:
   directories:
-    - $HOME/astyle
+    - $HOME/.openfortivpn-deps
+
+before_install:
+  - tests/ci/install_astyle.sh $HOME/.openfortivpn-deps
+  - tests/ci/install_openssl.sh $HOME/.openfortivpn-deps
+
+install:
+  - ./autogen.sh
+  - PKG_CONFIG_PATH=$HOME/.openfortivpn-deps/lib/pkgconfig ./configure --prefix=/usr --sysconfdir=/etc
+  - make
 
 script:
   - ./tests/lint/run.sh
-  - >
-      ./autogen.sh
-      && ./configure --prefix=/usr --sysconfdir=/etc
-      && make
+
+env:
+  global:
+    # COVERITY_SCAN_TOKEN
+    - secure: "HuYAk43itUiq0YJjmyvCyOM3mnRo8bFqSwksOmQ5fjvQscVWqZg6M9h8Abb+lKAc9L9avrwObjhu3EmOqoZ9Cjtp4WS4IdESK/UNe/jHpODFknsKefPgP67Z/yEFNVU1+5pS0+r+gTWQcZMyJrWrDde0lWpWHR/W7rTtqIbZH8Bp/T7oUN5q10x8PBcOZi/yVqNNicyuERIvUkobro5k+e4rY1N1HkptKs4wVY8M4WZUHwokNtuVfs0yoGQtrpi1KVRWq8sDkb8DNTeNv0MMEoQYUmNlEWxPaKJ9DBr65ajGLHzwUkWaNJGYw7mXwXoBwn5uKOyoytRA6Tj1wbVj4ggqqq6P6tbIcZ4YUW6N72gRaqvCnm6mRnbDHQtvzpqqxtr585mD11mh0DNmB15rvjNcZU/4wHHNQBsFcYEr+fN2/2ef/T3n0dymnnv2uZ05d11V5uSC6XYt3h0VxMDwarOVvOcWKYIQqzs4Bhigd2982v3OlIi5tbOSzHkbiCSP1msOKd6/XpCiCFpqed2UtSGZukisp3wQNfPnUOWoguOJ38nNe2o2G/l6HNOLd6u3sFlhzzthnJ6LPFD1CD9LPaOVYIVrRr90l0B2j1vPQM03eiiw7P6XvI6hPdqAM3VSEyjyrzUJRCUXAA8tovRwKTFlc506FWiFlGBFXFFI3zs="
+
+addons:
+  coverity_scan:
+    project:
+      name: adrienverge/openfortivpn
+      description: Client for PPP+SSL VPN tunnel services 
+    notification_email: DimitriPapadopoulos@users.noreply.github.com
+    build_command_prepend: ./configure --prefix=/usr --sysconfdir=/etc; make clean
+    build_command: make
+    branch_pattern: coverity_scan
