@@ -101,7 +101,7 @@ static const char *find_header(const char *res, const char *header)
 		int line_len = (char *) memmem(line, BUFSZ, "\r\n", 2) - line;
 		int head_len = strlen(header);
 
-		if (line_len > head_len && !strncasecmp(line, header, head_len))
+		if (line_len >= head_len && !strncasecmp(line, header, head_len))
 			return line + head_len;
 		line += line_len + 2;
 	}
