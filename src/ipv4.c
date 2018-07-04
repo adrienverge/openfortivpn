@@ -119,6 +119,7 @@ static int ipv4_get_route(struct rtentry *route)
 {
 	size_t buffer_size = GET_ROUTE_BUFFER_CHUNK_SIZE;
 	char *buffer = malloc(buffer_size);
+	char *realloc_buffer;
 	int err = 0;
 
 	char *start, *line;
@@ -160,7 +161,13 @@ static int ipv4_get_route(struct rtentry *route)
 
 		if (bytes_read > 0 && line[bytes_read - 1] != '\n') {
 			buffer_size += GET_ROUTE_BUFFER_CHUNK_SIZE;
-			buffer = realloc(buffer, buffer_size);
+
+			realloc_buffer = realloc(buffer, buffer_size);
+			if (realloc_buffer) buffer = realloc_buffer;
+			else {
+				err = ERR_IPV4_SEE_ERRNO;
+				goto end;
+			}
 		}
 
 		line = buffer + total_bytes_read;
@@ -261,17 +268,25 @@ static int ipv4_get_route(struct rtentry *route)
 	// Cannot stat, mmap not lseek this special /proc file
 	fd = open("/proc/net/route", O_RDONLY);
 	if (fd == -1) {
-		err = return ERR_IPV4_SEE_ERRNO;
+		err = ERR_IPV4_SEE_ERRNO;
 		goto end;
 	}
 
 	int bytes_read;
-	while (bytes_read(fd, buffer + total_bytes_read, buffer_size - total_bytes_read - 1) > 0) {
+	while ((bytes_read = read(
+	                             fd, buffer + total_bytes_read,
+	                             buffer_size - total_bytes_read - 1)) > 0) {
 		total_bytes_read += bytes_read;
 
 		if ((buffer_size - total_bytes_read) < 1) {
 			buffer_size += GET_ROUTE_BUFFER_CHUNK_SIZE;
-			buffer = realloc(buffer, buffer_size)
+
+			realloc_buffer = realloc(buffer, buffer_size);
+			if (realloc_buffer) buffer = realloc_buffer;
+			else {
+				err = ERR_IPV4_SEE_ERRNO;
+				goto end;
+			}
 		}
 	}
 
@@ -491,9 +506,9 @@ static int ipv4_get_route(struct rtentry *route)
 		}
 		line = strtok_r(NULL, "\n", &saveptr1);
 	}
-#ifdef __APPLE__
+
 end:
-#endif
+
 	free(buffer);
 
 	if (err) return err;

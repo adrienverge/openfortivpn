@@ -93,12 +93,18 @@ int http_send(struct tunnel *tunnel, const char *request, ...)
 	return 1;
 }
 
-static const char *find_header(const char *res, const char *header, uint32_t response_size)
+static const char *find_header(
+        const char *res,
+        const char *header,
+        uint32_t response_size
+)
 {
 	const char *line = res;
 
 	while (memcmp(line, "\r\n", 2)) {
-		int line_len = (char *) memmem(line, response_size - (line - res), "\r\n", 2) - line;
+		int line_len = (char *) memmem(
+		                       line, response_size - (line - res), "\r\n", 2
+		               ) - line;
 		int head_len = strlen(header);
 
 		if (line_len >= head_len && !strncasecmp(line, header, head_len))
@@ -118,7 +124,11 @@ static const char *find_header(const char *res, const char *header, uint32_t res
  * @return     1         in case of success
  *             < 0       in case of error
  */
-int http_receive(struct tunnel *tunnel, char **response, uint32_t *response_size)
+int http_receive(
+        struct tunnel *tunnel,
+        char **response,
+        uint32_t *response_size
+)
 {
 	uint32_t res_size = BUFSZ;
 	char *buffer, *res;
@@ -147,13 +157,16 @@ int http_receive(struct tunnel *tunnel, char **response, uint32_t *response_size
 				if (eoh) {
 					const char *header;
 
-					header = find_header(buffer, "Content-Length: ", BUFSZ);
+					header = find_header(
+					                 buffer,
+					                 "Content-Length: ", BUFSZ);
 					header_size = eoh - buffer + 4;
 					if (header)
 						content_size = atoi(header);
 
 					if (find_header(buffer,
-					                "Transfer-Encoding: chunked", BUFSZ))
+					                "Transfer-Encoding: chunked",
+					                BUFSZ))
 						chunked = 1;
 				}
 			}
@@ -214,8 +227,13 @@ int http_receive(struct tunnel *tunnel, char **response, uint32_t *response_size
 	return 1;
 }
 
-static int do_http_request(struct tunnel *tunnel, const char *method,
-                           const char *uri, const char *data, char **response, uint32_t *response_size)
+static int do_http_request(struct tunnel *tunnel,
+                           const char *method,
+                           const char *uri,
+                           const char *data,
+                           char **response,
+                           uint32_t *response_size
+                          )
 {
 	int ret;
 	const char *template = ("%s %s HTTP/1.1\r\n"
@@ -247,13 +265,21 @@ static int do_http_request(struct tunnel *tunnel, const char *method,
  *             < 0       in case of error
  */
 static int http_request(struct tunnel *tunnel, const char *method,
-                        const char *uri, const char *data, char **response, uint32_t *response_size)
+                        const char *uri,
+                        const char *data,
+                        char **response,
+                        uint32_t *response_size
+                       )
 {
-	int ret = do_http_request(tunnel, method, uri, data, response, response_size);
+	int ret = do_http_request(
+	                  tunnel, method, uri, data, response, response_size);
 
 	if (ret == ERR_HTTP_SSL) {
 		ssl_connect(tunnel);
-		ret = do_http_request(tunnel, method, uri, data, response, response_size);
+		ret = do_http_request(
+		              tunnel, method, uri, data, response,
+		              response_size
+		      );
 	}
 
 	if (ret != 1)
@@ -305,7 +331,11 @@ end:
 	return ret;
 }
 
-static int get_auth_cookie(struct tunnel *tunnel, char *buf, uint32_t buffer_size)
+static int get_auth_cookie(
+        struct tunnel *tunnel,
+        char *buf,
+        uint32_t buffer_size
+)
 {
 	int ret = 0;
 	const char *line;
@@ -340,7 +370,12 @@ static int get_auth_cookie(struct tunnel *tunnel, char *buf, uint32_t buffer_siz
 }
 
 static
-int try_otp_auth(struct tunnel *tunnel, const char *buffer, char **res, uint32_t *response_size)
+int try_otp_auth(
+        struct tunnel *tunnel,
+        const char *buffer,
+        char **res,
+        uint32_t *response_size
+)
 {
 	char data[256];
 	char path[40];
@@ -502,7 +537,8 @@ int auth_log_in(struct tunnel *tunnel)
 	         "&redir=%%2Fremote%%2Findex&just_logged_in=1",
 	         username, password, realm);
 
-	ret = http_request(tunnel, "POST", "/remote/logincheck", data, &res, &response_size);
+	ret = http_request(
+	              tunnel, "POST", "/remote/logincheck", data, &res, &response_size);
 	if (ret != 1)
 		goto end;
 
@@ -558,7 +594,9 @@ int auth_log_in(struct tunnel *tunnel)
 		         "&code=%s&code2=&redir=%%2Fremote%%2Findex&just_logged_in=1",
 		         username, realm, reqid, polid, group, tokenresponse);
 
-		ret = http_request(tunnel, "POST", "/remote/logincheck", data, &res, &response_size);
+		ret = http_request(
+		              tunnel, "POST", "/remote/logincheck",
+		              data, &res, &response_size);
 		if (ret != 1)
 			goto end;
 
