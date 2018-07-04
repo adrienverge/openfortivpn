@@ -94,7 +94,7 @@ static int on_ppp_if_up(struct tunnel *tunnel)
 		}
 	}
 
-	if (tunnel->config->set_dns) {
+	if (tunnel->config->set_dns && !tunnel->config->pppd_use_peerdns) {
 		log_info("Adding VPN nameservers...\n");
 		ipv4_add_nameservers_to_resolv_conf(tunnel);
 	}
@@ -113,7 +113,7 @@ static int on_ppp_if_down(struct tunnel *tunnel)
 		ipv4_restore_routes(tunnel);
 	}
 
-	if (tunnel->config->set_dns) {
+	if (tunnel->config->set_dns && !tunnel->config->pppd_use_peerdns) {
 		log_info("Removing VPN nameservers...\n");
 		ipv4_del_nameservers_from_resolv_conf(tunnel);
 	}
@@ -176,7 +176,7 @@ static int pppd_run(struct tunnel *tunnel)
 				ofv_append_varr(&pppd_args, v[i]);
 		}
 
-		if (tunnel->config->pppd_use_peerdns)
+		if (tunnel->config->set_dns && tunnel->config->pppd_use_peerdns)
 			ofv_append_varr(&pppd_args, "usepeerdns");
 		if (tunnel->config->pppd_log) {
 			ofv_append_varr(&pppd_args, "debug");
