@@ -31,6 +31,7 @@
 #include <stdint.h>
 #include <errno.h>
 
+#define GET_ROUTE_BUFFER_SIZE 0x10000
 #define SHOW_ROUTE_BUFFER_SIZE 128
 
 static char show_route_buffer[SHOW_ROUTE_BUFFER_SIZE];
@@ -117,7 +118,7 @@ static inline void route_destroy(struct rtentry *route)
 static int ipv4_get_route(struct rtentry *route)
 {
 	size_t size;
-	char buffer[0x1000];
+	char buffer[GET_ROUTE_BUFFER_SIZE];
 	char *start, *line;
 	char *saveptr1 = NULL, *saveptr2 = NULL;
 	uint32_t rtdest, rtmask, rtgtw;
@@ -149,8 +150,14 @@ static int ipv4_get_route(struct rtentry *route)
 	line = buffer;
 	// Read the output a line at a time
 	while (fgets(line, len, fp) != NULL) {
-		len -= strlen(line);
-		line += strlen(line);
+		uint32_t bytes_read = strlen(line);
+		if (bytes_read > 0 && line[bytes_read - 1] != 0xa) {
+			log_error("routing table too large; please consider increasing the buffer size\n");
+			return ERR_IPV4_PROC_NET_ROUTE;
+		}
+
+		len -= bytes_read;
+		line += bytes_read;
 	}
 	size = sizeof(buffer)-1 - len;
 	pclose(fp);
