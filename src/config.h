@@ -90,5 +90,15 @@ int add_trusted_cert(struct vpn_config *cfg, const char *digest);
 int strtob(const char *str);
 
 int load_config(struct vpn_config *cfg, const char *filename);
+void destroy_vpn_config(struct vpn_config *cfg);
+
+/** merge source config into dest
+ *
+ * memory allocated dynamically is transferred with this function
+ * e.g. ownership goes to dest config
+ */
+void merge_config(struct vpn_config *dest, struct vpn_config *source);
+
+extern const struct vpn_config invalid_cfg;
 
 #endif
