@@ -126,33 +126,16 @@
 "      trusted-cert = othercertificatedigest6631bf...\n" \
 "  For a full-featured config see man openfortivpn(1).\n"
 
-static inline void destroy_vpn_config(struct vpn_config *cfg)
-{
-	while (cfg->cert_whitelist != NULL) {
-		struct x509_digest *tmp = cfg->cert_whitelist->next;
-		free(cfg->cert_whitelist);
-		cfg->cert_whitelist = tmp;
-	}
-	free(cfg->cipher_list);
-	free(cfg->user_key);
-	free(cfg->user_cert);
-	free(cfg->ca_file);
-	free(cfg->pppd_ipparam);
-	free(cfg->pppd_plugin);
-	free(cfg->pppd_log);
-}
-
 int main(int argc, char **argv)
 {
 	int ret = EXIT_FAILURE;
 	const char *config_file = SYSCONFDIR"/openfortivpn/config";
-	const char *host, *username = NULL, *password = NULL, *otp = NULL;
+	const char *host;
 	char *port_str;
 	long int port;
 
 	struct vpn_config cfg = {
 		.gateway_host = {'\0'},
-		// gateway_ip
 		.gateway_port = 0,
 		.username = {'\0'},
 		.password = {'\0'},
@@ -164,9 +147,11 @@ int main(int argc, char **argv)
 		.pppd_use_peerdns = 1,
 		.use_syslog = 0,
 		.half_internet_routes = 0,
+		.persistent = 0,
 		.pppd_log = NULL,
 		.pppd_plugin = NULL,
 		.pppd_ipparam = NULL,
+		.pppd_ifname = NULL,
 		.pppd_call = NULL,
 		.ca_file = NULL,
 		.user_cert = NULL,
@@ -176,6 +161,7 @@ int main(int argc, char **argv)
 		.cipher_list = NULL,
 		.cert_whitelist = NULL
 	};
+	struct vpn_config cli_cfg = invalid_cfg;
 
 	const struct option long_options[] = {
 		{"help",            no_argument,       0, 'h'},
@@ -186,18 +172,18 @@ int main(int argc, char **argv)
 		{"password",        required_argument, 0, 'p'},
 		{"otp",             required_argument, 0, 'o'},
 		{"set-routes",	    required_argument, 0, 0},
-		{"no-routes",       no_argument, &cfg.set_routes, 0},
+		{"no-routes",       no_argument, &cli_cfg.set_routes, 0},
 		{"half-internet-routes", required_argument, 0, 0},
 		{"set-dns",         required_argument, 0, 0},
-		{"no-dns",          no_argument, &cfg.set_dns, 0},
-		{"pppd-no-peerdns", no_argument, &cfg.pppd_use_peerdns, 0},
-		{"use-syslog",      no_argument, &cfg.use_syslog, 1},
+		{"no-dns",          no_argument, &cli_cfg.set_dns, 0},
+		{"pppd-no-peerdns", no_argument, &cli_cfg.pppd_use_peerdns, 0},
+		{"use-syslog",      no_argument, &cli_cfg.use_syslog, 1},
 		{"persistent",      required_argument, 0, 0},
 		{"ca-file",         required_argument, 0, 0},
 		{"user-cert",       required_argument, 0, 0},
 		{"user-key",        required_argument, 0, 0},
 		{"trusted-cert",    required_argument, 0, 0},
-		{"insecure-ssl",    no_argument, &cfg.insecure_ssl, 1},
+		{"insecure-ssl",    no_argument, &cli_cfg.insecure_ssl, 1},
 		{"cipher-list",     required_argument, 0, 0},
 		{"pppd-log",        required_argument, 0, 0},
 		{"pppd-plugin",     required_argument, 0, 0},
@@ -234,66 +220,66 @@ int main(int argc, char **argv)
 			}
 			if (strcmp(long_options[option_index].name,
 			           "pppd-log") == 0) {
-				cfg.pppd_log = strdup(optarg);
+				cli_cfg.pppd_log = strdup(optarg);
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
 			           "pppd-plugin") == 0) {
-				cfg.pppd_plugin = strdup(optarg);
+				cli_cfg.pppd_plugin = strdup(optarg);
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
 			           "pppd-ifname") == 0) {
-				cfg.pppd_ifname = strdup(optarg);
+				cli_cfg.pppd_ifname = strdup(optarg);
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
 			           "pppd-ipparam") == 0) {
-				cfg.pppd_ipparam = strdup(optarg);
+				cli_cfg.pppd_ipparam = strdup(optarg);
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
 			           "pppd-call") == 0) {
-				cfg.pppd_call = strdup(optarg);
+				cli_cfg.pppd_call = strdup(optarg);
 				break;
 			}
 			// --plugin is deprecated, --pppd-plugin should be used
-			if (cfg.pppd_plugin == NULL &&
+			if (cli_cfg.pppd_plugin == NULL &&
 			    strcmp(long_options[option_index].name,
 			           "plugin") == 0) {
-				cfg.pppd_plugin = strdup(optarg);
+				cli_cfg.pppd_plugin = strdup(optarg);
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
 			           "ca-file") == 0) {
-				cfg.ca_file = strdup(optarg);
+				cli_cfg.ca_file = strdup(optarg);
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
 			           "user-cert") == 0) {
-				cfg.user_cert = strdup(optarg);
+				cli_cfg.user_cert = strdup(optarg);
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
 			           "user-key") == 0) {
-				cfg.user_key = strdup(optarg);
+				cli_cfg.user_key = strdup(optarg);
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
 			           "realm") == 0) {
-				strncpy(cfg.realm, optarg, FIELD_SIZE);
-				cfg.realm[FIELD_SIZE] = '\0';
+				strncpy(cli_cfg.realm, optarg, FIELD_SIZE);
+				cli_cfg.realm[FIELD_SIZE] = '\0';
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
 			           "trusted-cert") == 0) {
-				if (add_trusted_cert(&cfg, optarg))
+				if (add_trusted_cert(&cli_cfg, optarg))
 					log_warn("Could not add certificate digest to whitelist.\n");
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
 			           "cipher-list") == 0) {
-				cfg.cipher_list = strdup(optarg);
+				cli_cfg.cipher_list = strdup(optarg);
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
@@ -304,7 +290,7 @@ int main(int argc, char **argv)
 					         optarg);
 					break;
 				}
-				cfg.set_routes = set_routes;
+				cli_cfg.set_routes = set_routes;
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
@@ -315,7 +301,7 @@ int main(int argc, char **argv)
 					         optarg);
 					break;
 				}
-				cfg.half_internet_routes = half_internet_routes;
+				cli_cfg.half_internet_routes = half_internet_routes;
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
@@ -326,7 +312,7 @@ int main(int argc, char **argv)
 					         optarg);
 					break;
 				}
-				cfg.persistent = persistent;
+				cli_cfg.persistent = persistent;
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
@@ -336,7 +322,7 @@ int main(int argc, char **argv)
 					log_warn("Bad set-dns option: \"%s\"\n", optarg);
 					break;
 				}
-				cfg.set_dns = set_dns;
+				cli_cfg.set_dns = set_dns;
 				break;
 			}
 			goto user_error;
@@ -354,13 +340,16 @@ int main(int argc, char **argv)
 			config_file = optarg;
 			break;
 		case 'u':
-			username = optarg;
+			strncpy(cli_cfg.username, optarg, FIELD_SIZE);
+			cli_cfg.username[FIELD_SIZE] = '\0';
 			break;
 		case 'p':
-			password = optarg;
+			strncpy(cli_cfg.password, optarg, FIELD_SIZE);
+			cli_cfg.password[FIELD_SIZE] = '\0';
 			break;
 		case 'o':
-			otp = optarg;
+			strncpy(cli_cfg.otp, optarg, FIELD_SIZE);
+			cli_cfg.otp[FIELD_SIZE] = '\0';
 			break;
 		default:
 			goto user_error;
@@ -369,21 +358,22 @@ int main(int argc, char **argv)
 
 	if (optind < argc - 1 || optind > argc)
 		goto user_error;
-	set_syslog(cfg.use_syslog);
 
-	if (password != NULL)
+	if (cli_cfg.password[0] != '\0')
 		log_warn("You should not pass the password on the command line. Type it interactively or use a config file instead.\n");
 
 	// Load config file
 	if (config_file[0] != '\0') {
 		ret = load_config(&cfg, config_file);
-		set_syslog(cfg.use_syslog);
 		if (ret == 0)
 			log_debug("Loaded config file \"%s\".\n", config_file);
 		else
 			log_warn("Could not load config file \"%s\" (%s).\n",
 			         config_file, err_cfg_str(ret));
 	}
+	// Then apply CLI config
+	merge_config(&cfg, &cli_cfg);
+	set_syslog(cfg.use_syslog);
 
 	// Read host and port from the command line
 	if (optind == argc - 1) {
@@ -403,19 +393,6 @@ int main(int argc, char **argv)
 			goto user_error;
 		}
 		cfg.gateway_port = port;
-	}
-	// Read username and password from the command line
-	if (username != NULL) {
-		strncpy(cfg.username, username, FIELD_SIZE);
-		cfg.username[FIELD_SIZE] = '\0';
-	}
-	if (password != NULL) {
-		strncpy(cfg.password, password, FIELD_SIZE);
-		cfg.password[FIELD_SIZE] = '\0';
-	}
-	if (otp != NULL) {
-		strncpy(cfg.otp, otp, FIELD_SIZE);
-		cfg.otp[FIELD_SIZE] = '\0';
 	}
 
 	// Check host and port
