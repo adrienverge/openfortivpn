@@ -775,6 +775,7 @@ int run_tunnel(struct vpn_config *config)
 		.on_ppp_if_up = on_ppp_if_up,
 		.on_ppp_if_down = on_ppp_if_down
 	};
+	char *cookie;
 
 	// Step 0: get gateway host IP
 	ret = get_gateway_host_ip(&tunnel);
@@ -789,14 +790,19 @@ int run_tunnel(struct vpn_config *config)
 
 	// Step 2: connect to the HTTP interface and authenticate to get a
 	// cookie
-	ret = auth_log_in(&tunnel);
-	if (ret != 1) {
-		log_error("Could not authenticate to gateway (%s).\n",
-		          err_http_str(ret));
-		ret = 1;
-		goto err_tunnel;
+	cookie = getenv("SVPNCOOKIE");
+	if (cookie != NULL) {
+		strncpy(config->cookie, cookie, strlen(cookie)+1);
+	} else {
+		ret = auth_log_in(&tunnel);
+		if (ret != 1) {
+			log_error("Could not authenticate to gateway (%s).\n",
+			          err_http_str(ret));
+			ret = 1;
+			goto err_tunnel;
+		}
+		log_info("Authenticated.\n");
 	}
-	log_info("Authenticated.\n");
 	log_debug("Cookie: %s\n", config->cookie);
 
 	ret = auth_request_vpn_allocation(&tunnel);

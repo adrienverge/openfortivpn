@@ -191,6 +191,14 @@ VPN_ROUTE_MASK_... the network mask for this route
 .br
 VPN_ROUTE_GATEWAY_... the gateway for the current route entry
 
+If an environment variable
+.B SVPNCOOKIE
+is present 
+.B openfortivpn
+will skip the authentication step and use that value as cookie. It assumes
+that some other mechanism (a surrounding GUI or scripting framework) has 
+already performed the login and recieved this cookie from the remote side.
+
 .SH CONFIG FILE
 Options can be taken from a configuration file. Options passed in the command
 line will override those from the config file, though. The default config file
