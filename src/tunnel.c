@@ -758,9 +758,8 @@ int ssl_connect(struct tunnel *tunnel)
 	}
 	SSL_set_mode(tunnel->ssl_handle, SSL_MODE_AUTO_RETRY);
 
-	if (tunnel->config->verify_cert)
-		if (ssl_verify_cert(tunnel))
-			return 1;
+	if (ssl_verify_cert(tunnel))
+		return 1;
 
 	// Disable SIGPIPE (occurs when trying to write to an already-closed
 	// socket).
