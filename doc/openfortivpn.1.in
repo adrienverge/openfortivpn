@@ -8,6 +8,7 @@ openfortivpn \- Client for PPP+SSL VPN tunnel services
 [\fI<host>\fR:\fI<port>\fR]
 [\fB\-u\fR \fI<user>\fR]
 [\fB\-p\fR \fI<pass>\fR]
+[\fB\-\-otp=\fI<otp>\fR]
 [\fB\-\-realm=\fI<realm>\fR]
 [\fB\-\-set-routes=<bool>\fR]
 [\fB\-\-no-routes\fR]
@@ -58,6 +59,9 @@ VPN account username.
 .TP
 \fB\-p \fI<pass>\fR, \fB\-\-password=\fI<pass>\fR
 VPN account password.
+.TP
+\fB\-o \fI<otp>\fR, \fB\-\-otp=\fI<otp>\fR
+One-Time-Password.
 .TP
 \fB\-\-realm=\fI<realm>\fR
 Connect to the specified authentication realm. Defaults to empty, which
