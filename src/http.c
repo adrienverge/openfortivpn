@@ -249,7 +249,7 @@ static int do_http_request(struct tunnel *tunnel,
 
 	ret = http_send(tunnel, template, method, uri,
 	                tunnel->config->gateway_host,
-	                tunnel->config->gateway_port, tunnel->config->cookie,
+	                tunnel->config->gateway_port, tunnel->cookie,
 	                strlen(data), data);
 	if (ret != 1)
 		return ret;
@@ -356,8 +356,8 @@ static int get_auth_cookie(
 				if (end != NULL)
 					end[0] = '\0';
 				log_debug("Cookie: %s\n", line);
-				strncpy(tunnel->config->cookie, line, COOKIE_SIZE);
-				tunnel->config->cookie[COOKIE_SIZE] = '\0';
+				strncpy(tunnel->cookie, line, COOKIE_SIZE);
+				tunnel->cookie[COOKIE_SIZE] = '\0';
 				if (strlen(line) > COOKIE_SIZE) {
 					log_error("Cookie larger than expected: %zu > %d\n",
 					          strlen(line), COOKIE_SIZE);
@@ -532,7 +532,7 @@ int auth_log_in(struct tunnel *tunnel)
 	url_encode(password, tunnel->config->password);
 	url_encode(realm, tunnel->config->realm);
 
-	tunnel->config->cookie[0] = '\0';
+	tunnel->cookie[0] = '\0';
 
 	snprintf(data, sizeof(data), "username=%s&credential=%s&realm=%s&ajax=1"
 	         "&redir=%%2Fremote%%2Findex&just_logged_in=1",
