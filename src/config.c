@@ -23,6 +23,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <sys/stat.h>
+#include <limits.h>
 
 
 const struct vpn_config invalid_cfg = {
@@ -231,7 +232,7 @@ int load_config(struct vpn_config *cfg, const char *filename)
 			cfg->half_internet_routes = half_internet_routes;
 		} else if (strcmp(key, "persistent") == 0) {
 			long int persistent = strtol(val, NULL, 0);
-			if (persistent < 0) {
+			if (persistent < 0 || persistent > UINT_MAX) {
 				log_warn("Bad value for persistent in config file: \"%s\".\n",
 				         val);
 				continue;

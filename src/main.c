@@ -307,7 +307,7 @@ int main(int argc, char **argv)
 			if (strcmp(long_options[option_index].name,
 			           "persistent") == 0) {
 				long int persistent = strtol(optarg, NULL, 0);
-				if ((persistent < 0) || (persistent >= UINT_MAX)) {
+				if (persistent < 0 || persistent > UINT_MAX) {
 					log_warn("Bad persistent option: \"%s\"\n",
 					         optarg);
 					break;
