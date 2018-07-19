@@ -32,7 +32,6 @@ const struct vpn_config invalid_cfg = {
 	.username = {'\0'},
 	.password = {'\0'},
 	.otp = {'\0'},
-	.cookie = {'\0'},
 	.realm = {'\0'},
 	.set_routes = -1,
 	.set_dns = -1,

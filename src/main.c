@@ -140,7 +140,6 @@ int main(int argc, char **argv)
 		.username = {'\0'},
 		.password = {'\0'},
 		.otp = {'\0'},
-		.cookie = {'\0'},
 		.realm = {'\0'},
 		.set_routes = 1,
 		.set_dns = 1,

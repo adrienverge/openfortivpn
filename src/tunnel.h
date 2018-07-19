@@ -56,6 +56,7 @@ struct tunnel {
 	struct vpn_config *config;
 
 	enum tunnel_state state;
+	char cookie[COOKIE_SIZE + 1];
 
 	struct ppp_packet_pool ssl_to_pty_pool;
 	struct ppp_packet_pool pty_to_ssl_pool;

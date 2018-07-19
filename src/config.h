@@ -60,13 +60,12 @@ struct vpn_config {
 	char		username[FIELD_SIZE + 1];
 	char		password[FIELD_SIZE + 1];
 	char		otp[FIELD_SIZE + 1];
-	char		cookie[COOKIE_SIZE + 1];
 	char		realm[FIELD_SIZE + 1];
 
 	int	set_routes;
 	int	set_dns;
-	int     pppd_use_peerdns;
-	int     use_syslog;
+	int	pppd_use_peerdns;
+	int	use_syslog;
 	int	half_internet_routes;
 
 	unsigned int	persistent;
@@ -75,11 +74,11 @@ struct vpn_config {
 	char	*pppd_plugin;
 	char	*pppd_ipparam;
 	char	*pppd_ifname;
-	char    *pppd_call;
+	char	*pppd_call;
 
-	char	                *ca_file;
-	char	                *user_cert;
-	char	                *user_key;
+	char			*ca_file;
+	char			*user_cert;
+	char			*user_key;
 	int			insecure_ssl;
 	char			*cipher_list;
 	struct x509_digest	*cert_whitelist;
