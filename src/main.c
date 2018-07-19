@@ -156,7 +156,6 @@ int main(int argc, char **argv)
 		.ca_file = NULL,
 		.user_cert = NULL,
 		.user_key = NULL,
-		.verify_cert = 1,
 		.insecure_ssl = 0,
 		.cipher_list = NULL,
 		.cert_whitelist = NULL

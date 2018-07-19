@@ -48,7 +48,6 @@ const struct vpn_config invalid_cfg = {
 	.ca_file = NULL,
 	.user_cert = NULL,
 	.user_key = NULL,
-	.verify_cert = -1,
 	.insecure_ssl = -1,
 	.cipher_list = NULL,
 	.cert_whitelist = NULL
@@ -390,8 +389,6 @@ void merge_config(struct vpn_config *dst, struct vpn_config *src)
 		free(dst->user_key);
 		dst->user_key = src->user_key;
 	}
-	if (src->verify_cert != invalid_cfg.verify_cert)
-		dst->verify_cert = src->verify_cert;
 	if (src->insecure_ssl != invalid_cfg.insecure_ssl)
 		dst->insecure_ssl = src->insecure_ssl;
 	if (src->cipher_list) {

@@ -80,7 +80,6 @@ struct vpn_config {
 	char	                *ca_file;
 	char	                *user_cert;
 	char	                *user_key;
-	int			verify_cert;
 	int			insecure_ssl;
 	char			*cipher_list;
 	struct x509_digest	*cert_whitelist;
