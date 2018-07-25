@@ -73,8 +73,8 @@
 "                                certificate.\n" \
 "  --user-cert=<file>            Use specified PEM-encoded certificate if the server\n" \
 "                                requires authentication with a certificate.\n" \
-"  --user-key=<file>             Use specified PEM-encoded key if the server if the\n" \
-"                                server requires authentication with a certificate.\n" \
+"  --user-key=<file>             Use specified PEM-encoded key if the server requires\n" \
+"                                authentication with a certificate.\n" \
 "  --use-syslog                  Log to syslog instead of terminal.\n" \
 "  --trusted-cert=<digest>       Trust a given gateway. If classical SSL\n" \
 "                                certificate validation fails, the gateway\n" \
