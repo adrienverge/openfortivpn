@@ -232,7 +232,7 @@ set-routes = 1
 .br
 half-internet-routes = 0
 .br
-# aternatively, use a specific pppd plugin instead
+# alternatively, use a specific pppd plugin instead
 .br
 # pppd-plugin = /usr/lib/pppd/default/some-plugin.so
 .br
