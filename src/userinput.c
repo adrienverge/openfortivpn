@@ -28,6 +28,7 @@ void read_password(const char *prompt, char *pass, size_t len)
 	int i;
 
 	printf("%s", prompt);
+	fflush(stdout);
 
 	// Try to hide user input
 	if (tcgetattr(STDIN_FILENO, &oldt) == 0) {
