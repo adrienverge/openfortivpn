@@ -485,7 +485,7 @@ int auth_log_in(struct tunnel *tunnel)
 	char reqid[32] = { '\0' };
 	char polid[32] = { '\0' };
 	char group[128] = { '\0' };
-	char data[256], token[128], tokenresponse[256];
+	char data[1024], token[128], tokenresponse[256];
 	char *res = NULL;
 
 	url_encode(username, tunnel->config->username);
@@ -494,7 +494,7 @@ int auth_log_in(struct tunnel *tunnel)
 
 	tunnel->config->cookie[0] = '\0';
 
-	snprintf(data, 256, "username=%s&credential=%s&realm=%s&ajax=1"
+	snprintf(data, sizeof(data), "username=%s&credential=%s&realm=%s&ajax=1"
 	         "&redir=%%2Fremote%%2Findex&just_logged_in=1",
 	         username, password, realm);
 
@@ -550,8 +550,9 @@ int auth_log_in(struct tunnel *tunnel)
 		}
 
 		url_encode(tokenresponse, cfg->otp);
-		snprintf(data, 256, "username=%s&realm=%s&reqid=%s&polid=%s&grp=%s"
-		         "&code=%s&code2=&redir=%%2Fremote%%2Findex&just_logged_in=1",
+		snprintf(data, sizeof(data), "username=%s&realm=%s&reqid=%s"
+		         "&polid=%s&grp=%s&code=%s&code2="
+		         "&redir=%%2Fremote%%2Findex&just_logged_in=1",
 		         username, realm, reqid, polid, group, tokenresponse);
 
 		ret = http_request(tunnel, "POST", "/remote/logincheck", data, &res);
