@@ -171,7 +171,7 @@ tries to first establish a tcp connection to this proxy (plain http, not encrypt
 and then makes a request to connect to the vpn host as given on the command line
 or in the config file. The proxy is supposed to forward any subsequent packets
 transparently to the vpn host, so that the tls layer of the connection effectively
-is establshed between the client and the vpn host, and the proxy just acts as a
+is established between the client and the vpn host, and the proxy just acts as a
 forwarding instance on the lower level of the tcp connection.
 
 The following environment variables are set by
