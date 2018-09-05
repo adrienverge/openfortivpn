@@ -31,6 +31,7 @@
 #include <stdint.h>
 #include <errno.h>
 
+#define IPV4_GET_ROUTE_BUFFER_SIZE 65536
 #define SHOW_ROUTE_BUFFER_SIZE 128
 
 static char show_route_buffer[SHOW_ROUTE_BUFFER_SIZE];
@@ -111,7 +112,7 @@ static inline void route_destroy(struct rtentry *route)
 static int ipv4_get_route(struct rtentry *route)
 {
 	size_t size;
-	char buffer[0x1000];
+	char buffer[IPV4_GET_ROUTE_BUFFER_SIZE];
 	char *start, *line;
 	char *saveptr1 = NULL, *saveptr2 = NULL;
 	uint32_t rtdest, rtmask, rtgtw;
