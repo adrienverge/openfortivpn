@@ -158,7 +158,7 @@ static int ipv4_get_route(struct rtentry *route)
 			realloc_buffer = realloc(buffer, buffer_size);
 			if (realloc_buffer) {
 				buffer = realloc_buffer;
-      } else {
+			} else {
 				err = ERR_IPV4_SEE_ERRNO;
 				goto end;
 			}
@@ -278,7 +278,7 @@ static int ipv4_get_route(struct rtentry *route)
 			realloc_buffer = realloc(buffer, buffer_size);
 			if (realloc_buffer) {
 				buffer = realloc_buffer;
-      } else {
+			} else {
 				err = ERR_IPV4_SEE_ERRNO;
 				goto end;
 			}
