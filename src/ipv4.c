@@ -992,7 +992,7 @@ int ipv4_del_nameservers_from_resolv_conf(struct tunnel *tunnel)
 		if (strcmp(line, ns1) == 0) {
 			log_debug("Deleting \"%s\" from /etc/resolv.conf.\n", ns1);
 		} else if (strcmp(line, ns2) == 0) {
-			log_debug("Deleting \"%s\" from /etc/resolv.conf.\n", ns1);
+			log_debug("Deleting \"%s\" from /etc/resolv.conf.\n", ns2);
 		} else {
 			fputs(line, file);
 			fputs("\n", file);
