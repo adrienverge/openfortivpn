@@ -223,7 +223,8 @@ int http_receive(
 	res[bytes_read] = '\0';
 
 	*response = res;
-	if (response_size != NULL) *response_size = res_size;
+	if (response_size != NULL)
+		*response_size = res_size;
 	return 1;
 }
 
