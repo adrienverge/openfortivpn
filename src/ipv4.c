@@ -31,7 +31,7 @@
 #include <stdint.h>
 #include <errno.h>
 
-#define IPV4_GET_ROUTE_BUFFER_SIZE 65536
+#define IPV4_GET_ROUTE_BUFFER_CHUNK_SIZE 65536
 #define SHOW_ROUTE_BUFFER_SIZE 128
 
 static char show_route_buffer[SHOW_ROUTE_BUFFER_SIZE];
@@ -111,8 +111,10 @@ static inline void route_destroy(struct rtentry *route)
  */
 static int ipv4_get_route(struct rtentry *route)
 {
-	size_t size;
-	char buffer[IPV4_GET_ROUTE_BUFFER_SIZE];
+	size_t buffer_size = IPV4_GET_ROUTE_BUFFER_CHUNK_SIZE;
+	char *buffer = malloc(buffer_size);
+	char *realloc_buffer;
+	int err = 0;
 	char *start, *line;
 	char *saveptr1 = NULL, *saveptr2 = NULL;
 	uint32_t rtdest, rtmask, rtgtw;
@@ -133,21 +135,37 @@ static int ipv4_get_route(struct rtentry *route)
 
 #ifdef __APPLE__
 	FILE *fp;
-	int len = sizeof(buffer) - 1;
+	uint32_t total_bytes_read = 0;
+
 	char *saveptr3 = NULL;
 
 	// Open the command for reading
 	fp = popen("/usr/sbin/netstat -f inet -rn", "r");
-	if (fp == NULL)
-		return ERR_IPV4_SEE_ERRNO;
+	if (fp == NULL) {
+		err = ERR_IPV4_SEE_ERRNO;
+		goto end;
+	}
 
 	line = buffer;
 	// Read the output a line at a time
-	while (fgets(line, len, fp) != NULL) {
-		len -= strlen(line);
-		line += strlen(line);
+	while (fgets(line, buffer_size - total_bytes_read - 1, fp) != NULL) {
+		uint32_t bytes_read = strlen(line);
+		total_bytes_read += bytes_read;
+
+		if (bytes_read > 0 && line[bytes_read - 1] != '\n') {
+			buffer_size += IPV4_GET_ROUTE_BUFFER_CHUNK_SIZE;
+
+			realloc_buffer = realloc(buffer, buffer_size);
+			if (realloc_buffer) {
+				buffer = realloc_buffer;
+			} else {
+				err = ERR_IPV4_SEE_ERRNO;
+				goto end;
+			}
+		}
+
+		line = buffer + total_bytes_read;
 	}
-	size = sizeof(buffer)-1 - len;
 	pclose(fp);
 
 	// reserve enough memory (256 shorts)
@@ -239,30 +257,56 @@ static int ipv4_get_route(struct rtentry *route)
 
 #else
 	int fd;
+	uint32_t total_bytes_read = 0;
+
 	// Cannot stat, mmap not lseek this special /proc file
 	fd = open("/proc/net/route", O_RDONLY);
-	if (fd == -1)
-		return ERR_IPV4_SEE_ERRNO;
-
-	size = read(fd, buffer, sizeof(buffer) - 1);
-	if (size == -1) {
-		close(fd);
-		return ERR_IPV4_SEE_ERRNO;
+	if (fd == -1) {
+		err = ERR_IPV4_SEE_ERRNO;
+		goto end;
 	}
+
+	int bytes_read;
+	while ((bytes_read = read(
+	                             fd, buffer + total_bytes_read,
+	                             buffer_size - total_bytes_read - 1)) > 0) {
+		total_bytes_read += bytes_read;
+
+		if ((buffer_size - total_bytes_read) < 1) {
+			buffer_size += IPV4_GET_ROUTE_BUFFER_CHUNK_SIZE;
+
+			realloc_buffer = realloc(buffer, buffer_size);
+			if (realloc_buffer) {
+				buffer = realloc_buffer;
+			} else {
+				err = ERR_IPV4_SEE_ERRNO;
+				goto end;
+			}
+		}
+	}
+
 	close(fd);
+
+	if (bytes_read < 0) {
+		err = ERR_IPV4_SEE_ERRNO;
+		goto end;
+	}
+
 #endif
 
-	if (size == 0) {
+	if (total_bytes_read == 0) {
 		log_debug("routing table is empty.\n");
-		return ERR_IPV4_PROC_NET_ROUTE;
+		err = ERR_IPV4_PROC_NET_ROUTE;
+		goto end;
 	}
-	buffer[size] = '\0';
+	buffer[total_bytes_read] = '\0';
 
 	// Skip first line
 	start = index(buffer, '\n');
 	if (start == NULL) {
 		log_debug("routing table is malformed.\n");
-		return ERR_IPV4_PROC_NET_ROUTE;
+		err = ERR_IPV4_PROC_NET_ROUTE;
+		goto end;
 	}
 	start++;
 
@@ -273,7 +317,8 @@ static int ipv4_get_route(struct rtentry *route)
 	start = index(++start, '\n');
 	if (start == NULL) {
 		log_debug("routing table is malformed.\n");
-		return ERR_IPV4_PROC_NET_ROUTE;
+		err = ERR_IPV4_PROC_NET_ROUTE;
+		goto end;
 	}
 
 #endif
@@ -458,9 +503,14 @@ static int ipv4_get_route(struct rtentry *route)
 		}
 		line = strtok_r(NULL, "\n", &saveptr1);
 	}
-#ifdef __APPLE__
+
 end:
-#endif
+
+	free(buffer);
+
+	if (err)
+		return err;
+
 	if (rtfound==0) {
 		// should not occur anymore unless there is no default route
 		log_debug("Route not found.\n");
@@ -468,6 +518,7 @@ end:
 		route_dest(route).s_addr = rtdest;
 		route_mask(route).s_addr = rtmask;
 		route_gtw(route).s_addr = rtgtw;
+
 		return ERR_IPV4_NO_SUCH_ROUTE;
 	}
 
