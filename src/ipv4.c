@@ -31,7 +31,7 @@
 #include <stdint.h>
 #include <errno.h>
 
-#define GET_ROUTE_BUFFER_CHUNK_SIZE 0x1000
+#define IPV4_GET_ROUTE_BUFFER_CHUNK_SIZE 65536
 #define SHOW_ROUTE_BUFFER_SIZE 128
 
 static char show_route_buffer[SHOW_ROUTE_BUFFER_SIZE];
@@ -73,9 +73,10 @@ static char *ipv4_show_route(struct rtentry *route)
 		strcat(show_route_buffer, " via ");
 		strncat(show_route_buffer, inet_ntoa(route_gtw(route)), 15);
 	}
-	if (route_iface(route)[0] != '\0') {
+	if (route_iface(route) != NULL) {
 		strcat(show_route_buffer, " dev ");
-		strncat(show_route_buffer, route_iface(route), ROUTE_IFACE_LEN - 1);
+		strncat(show_route_buffer, route_iface(route),
+		        SHOW_ROUTE_BUFFER_SIZE - strlen(show_route_buffer) - 1);
 	}
 
 	return show_route_buffer;
@@ -84,11 +85,6 @@ static char *ipv4_show_route(struct rtentry *route)
 static inline int route_init(struct rtentry *route)
 {
 	memset(route, 0, sizeof(*route));
-
-	route_iface(route) = malloc(ROUTE_IFACE_LEN);
-	if (route_iface(route) == NULL)
-		return ERR_IPV4_NO_MEM;
-	route_iface(route)[0] = '\0';
 
 	cast_addr(&(route)->rt_dst)->sin_family = AF_INET;
 	cast_addr(&(route)->rt_genmask)->sin_family = AF_INET;
@@ -99,10 +95,8 @@ static inline int route_init(struct rtentry *route)
 
 static inline void route_destroy(struct rtentry *route)
 {
-	if (route_iface(route) != NULL) {
-		free(route_iface(route));
-		route_iface(route) = NULL;
-	}
+	free(route_iface(route));
+	route_iface(route) = NULL;
 }
 
 /*
@@ -117,11 +111,10 @@ static inline void route_destroy(struct rtentry *route)
  */
 static int ipv4_get_route(struct rtentry *route)
 {
-	size_t buffer_size = GET_ROUTE_BUFFER_CHUNK_SIZE;
+	size_t buffer_size = IPV4_GET_ROUTE_BUFFER_CHUNK_SIZE;
 	char *buffer = malloc(buffer_size);
 	char *realloc_buffer;
 	int err = 0;
-
 	char *start, *line;
 	char *saveptr1 = NULL, *saveptr2 = NULL;
 	uint32_t rtdest, rtmask, rtgtw;
@@ -160,11 +153,12 @@ static int ipv4_get_route(struct rtentry *route)
 		total_bytes_read += bytes_read;
 
 		if (bytes_read > 0 && line[bytes_read - 1] != '\n') {
-			buffer_size += GET_ROUTE_BUFFER_CHUNK_SIZE;
+			buffer_size += IPV4_GET_ROUTE_BUFFER_CHUNK_SIZE;
 
 			realloc_buffer = realloc(buffer, buffer_size);
-			if (realloc_buffer) buffer = realloc_buffer;
-			else {
+			if (realloc_buffer) {
+				buffer = realloc_buffer;
+      } else {
 				err = ERR_IPV4_SEE_ERRNO;
 				goto end;
 			}
@@ -279,11 +273,12 @@ static int ipv4_get_route(struct rtentry *route)
 		total_bytes_read += bytes_read;
 
 		if ((buffer_size - total_bytes_read) < 1) {
-			buffer_size += GET_ROUTE_BUFFER_CHUNK_SIZE;
+			buffer_size += IPV4_GET_ROUTE_BUFFER_CHUNK_SIZE;
 
 			realloc_buffer = realloc(buffer, buffer_size);
-			if (realloc_buffer) buffer = realloc_buffer;
-			else {
+			if (realloc_buffer) {
+				buffer = realloc_buffer;
+      } else {
 				err = ERR_IPV4_SEE_ERRNO;
 				goto end;
 			}
@@ -491,8 +486,10 @@ static int ipv4_get_route(struct rtentry *route)
 				route_gtw(route).s_addr = gtw;
 				route->rt_flags = flags;
 
-				strncpy(route_iface(route), iface,
-				        ROUTE_IFACE_LEN - 1);
+				free(route_iface(route));
+				route_iface(route) = strdup(iface);
+				if (!route_iface(route))
+					return ERR_IPV4_NO_MEM;
 
 #ifndef __APPLE__
 				// we do not have these values from Mac OS X netstat,
@@ -541,7 +538,8 @@ static int ipv4_set_route(struct rtentry *route)
 		strncat(cmd, inet_ntoa(route_gtw(route)), 15);
 	} else {
 		strcat(cmd, " -interface ");
-		strcat(cmd, route_iface(route));
+		strncat(cmd, route_iface(route),
+		        SHOW_ROUTE_BUFFER_SIZE - strlen(cmd) - 1);
 	}
 
 	log_debug("%s\n", cmd);
@@ -728,7 +726,10 @@ int ipv4_add_split_vpn_route(struct tunnel *tunnel, char *dest, char *mask,
 		route_gtw(route).s_addr = inet_addr(gateway);
 		route->rt_flags |= RTF_GATEWAY;
 	} else {
-		strncpy(route_iface(route), tunnel->ppp_iface, ROUTE_IFACE_LEN - 1);
+		free(route_iface(route));
+		route_iface(route) = strdup(tunnel->ppp_iface);
+		if (!route_iface(route))
+			return ERR_IPV4_NO_MEM;
 	}
 
 	return 0;
@@ -742,8 +743,10 @@ static int ipv4_set_split_routes(struct tunnel *tunnel)
 		struct rtentry *route;
 		int ret;
 		route = &tunnel->ipv4.split_rt[i];
-		strncpy(route_iface(route), tunnel->ppp_iface,
-		        ROUTE_IFACE_LEN - 1);
+		free(route_iface(route));
+		route_iface(route) = strdup(tunnel->ppp_iface);
+		if (!route_iface(route))
+			return ERR_IPV4_NO_MEM;
 		if (route_gtw(route).s_addr == 0)
 			route_gtw(route).s_addr = tunnel->ipv4.ip_addr.s_addr;
 		route->rt_flags |= RTF_GATEWAY;
@@ -781,7 +784,10 @@ static int ipv4_set_default_routes(struct tunnel *tunnel)
 		route_gtw(ppp_rt).s_addr = inet_addr("0.0.0.0");
 		log_debug("Setting new default route...\n");
 
-		strncpy(route_iface(ppp_rt), tunnel->ppp_iface, ROUTE_IFACE_LEN - 1);
+		free(route_iface(ppp_rt));
+		route_iface(ppp_rt) = strdup(tunnel->ppp_iface);
+		if (!route_iface(ppp_rt))
+			return ERR_IPV4_NO_MEM;
 
 		ret = ipv4_set_route(ppp_rt);
 		if (ret == ERR_IPV4_SEE_ERRNO && errno == EEXIST) {
@@ -799,7 +805,10 @@ static int ipv4_set_default_routes(struct tunnel *tunnel)
 		route_dest(ppp_rt).s_addr = inet_addr("0.0.0.0");
 		route_mask(ppp_rt).s_addr = inet_addr("128.0.0.0");
 
-		strncpy(route_iface(ppp_rt), tunnel->ppp_iface, ROUTE_IFACE_LEN - 1);
+		free(route_iface(ppp_rt));
+		route_iface(ppp_rt) = strdup(tunnel->ppp_iface);
+		if (!route_iface(ppp_rt))
+			return ERR_IPV4_NO_MEM;
 
 		ret = ipv4_set_route(ppp_rt);
 		if (ret == ERR_IPV4_SEE_ERRNO && errno == EEXIST) {
@@ -1033,7 +1042,7 @@ int ipv4_del_nameservers_from_resolv_conf(struct tunnel *tunnel)
 		if (strcmp(line, ns1) == 0) {
 			log_debug("Deleting \"%s\" from /etc/resolv.conf.\n", ns1);
 		} else if (strcmp(line, ns2) == 0) {
-			log_debug("Deleting \"%s\" from /etc/resolv.conf.\n", ns1);
+			log_debug("Deleting \"%s\" from /etc/resolv.conf.\n", ns2);
 		} else {
 			fputs(line, file);
 			fputs("\n", file);

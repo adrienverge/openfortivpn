@@ -9,8 +9,8 @@ openfortivpn_SOURCES = src/config.c src/config.h src/hdlc.c src/hdlc.h \
 openfortivpn_CFLAGS = -Wall --pedantic -std=gnu99
 openfortivpn_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\"
 
-openfortivpn_CPPFLAGS += $(OPENSSL_CFLAGS)
-openfortivpn_LDADD = $(OPENSSL_LIBS)
+openfortivpn_CPPFLAGS += $(OPENSSL_CFLAGS) $(LIBSYSTEMD_CFLAGS)
+openfortivpn_LDADD = $(OPENSSL_LIBS) $(LIBSYSTEMD_LIBS)
 
 DISTCHECK_CONFIGURE_FLAGS = CFLAGS=-Werror
 
@@ -29,6 +29,6 @@ install-data-hook:
 dist_man_MANS = doc/openfortivpn.1
 
 doc/openfortivpn.1: $(srcdir)/doc/openfortivpn.1.in
-	sed -e 's|[@]SYSCONFDIR[@]|$(sysconfdir)|g;s|[@]DATADIR[@]|$(datadir)|g;' $^ >$@
+	mkdir -p doc; sed -e 's|[@]SYSCONFDIR[@]|$(sysconfdir)|g;s|[@]DATADIR[@]|$(datadir)|g;' $^ >$@
 
 EXTRA_DIST = LICENSE README.md doc/openfortivpn.1.in $(data_DATA)
