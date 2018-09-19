@@ -60,7 +60,7 @@
 "  -o <otp>, --otp=<otp>         One-Time-Password.\n" \
 "  --realm=<realm>               Use specified authentication realm on VPN gateway\n" \
 "                                when tunnel is up.\n" \
-"  --set-routes=[01]             Set if openfortivpn should configure output roues through\n" \
+"  --set-routes=[01]             Set if openfortivpn should configure output routes through\n" \
 "                                the VPN when tunnel is up.\n" \
 "  --no-routes                   Do not configure routes, same as --set-routes=0.\n" \
 "  --half-internet-routes=[01]   Add two 0.0.0.0/1 and 128.0.0.0/1 routes with higher\n" \
@@ -73,8 +73,8 @@
 "                                certificate.\n" \
 "  --user-cert=<file>            Use specified PEM-encoded certificate if the server\n" \
 "                                requires authentication with a certificate.\n" \
-"  --user-key=<file>             Use specified PEM-encoded key if the server if the\n" \
-"                                server requires authentication with a certificate.\n" \
+"  --user-key=<file>             Use specified PEM-encoded key if the server requires\n" \
+"                                authentication with a certificate.\n" \
 "  --use-syslog                  Log to syslog instead of terminal.\n" \
 "  --trusted-cert=<digest>       Trust a given gateway. If classical SSL\n" \
 "                                certificate validation fails, the gateway\n" \
@@ -359,6 +359,8 @@ int main(int argc, char **argv)
 
 	if (cli_cfg.password[0] != '\0')
 		log_warn("You should not pass the password on the command line. Type it interactively or use a config file instead.\n");
+
+	log_debug("openfortivpn " VERSION "\n", config_file);
 
 	// Load config file
 	if (config_file[0] != '\0') {

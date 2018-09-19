@@ -50,6 +50,9 @@
 #include <signal.h>
 #include <sys/wait.h>
 #include <assert.h>
+#if HAVE_SYSTEMD
+#include <systemd/sd-daemon.h>
+#endif
 
 struct ofv_varr {
 	unsigned cap;		// current capacity
@@ -100,6 +103,10 @@ static int on_ppp_if_up(struct tunnel *tunnel)
 	}
 
 	log_info("Tunnel is up and running.\n");
+
+#if HAVE_SYSTEMD
+	sd_notify(0, "READY=1");
+#endif
 
 	return 0;
 }
