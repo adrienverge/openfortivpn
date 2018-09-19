@@ -508,7 +508,8 @@ end:
 
 	free(buffer);
 
-	if (err) return err;
+	if (err)
+		return err;
 
 	if (rtfound==0) {
 		// should not occur anymore unless there is no default route
