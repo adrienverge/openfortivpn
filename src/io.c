@@ -360,7 +360,7 @@ err_free_buf:
 	 && pkt_data(packet)[2] == 0x01 \
 	 && pkt_data(packet)[4] == 0x00 \
 	 && pkt_data(packet)[5] == 0x04) || \
-	((packet)-> len == 12 \
+	((packet)-> len >= 12 \
 	 && pkt_data(packet)[0] == 0x80 \
 	 && pkt_data(packet)[1] == 0x21 \
 	 && pkt_data(packet)[2] == 0x02)
