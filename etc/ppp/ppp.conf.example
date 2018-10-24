@@ -1,0 +1,12 @@
+# Example configuration for a ppp client
+# for more examples see
+# https://github.com/freebsd/freebsd-base-graphics/blob/master/share/examples/ppp/ppp.conf.sample
+
+vpn-client: 
+ set dial
+ set speed 38400
+ set mru 1354
+ set login
+ set timeout 0
+ disable deflate pred1 
+ deny deflate pred1

@@ -70,11 +70,16 @@ struct vpn_config {
 
 	unsigned int	persistent;
 
+#if HAVE_USR_SBIN_PPPD
 	char	*pppd_log;
 	char	*pppd_plugin;
 	char	*pppd_ipparam;
 	char	*pppd_ifname;
-	char	*pppd_call;
+	char    *pppd_call;
+#endif
+#if HAVE_USR_SBIN_PPP
+	char	*ppp_system;
+#endif
 
 	char			*ca_file;
 	char			*user_cert;

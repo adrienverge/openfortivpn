@@ -39,11 +39,16 @@ const struct vpn_config invalid_cfg = {
 	.use_syslog = -1,
 	.half_internet_routes = -1,
 	.persistent = -1,
+#if HAVE_USR_SBIN_PPPD
 	.pppd_log = NULL,
 	.pppd_plugin = NULL,
 	.pppd_ipparam = NULL,
 	.pppd_ifname = NULL,
 	.pppd_call = NULL,
+#endif
+#if HAVE_USR_SBIN_PPP
+	.ppp_system = NULL,
+#endif
 	.ca_file = NULL,
 	.user_cert = NULL,
 	.user_key = NULL,
@@ -236,6 +241,7 @@ int load_config(struct vpn_config *cfg, const char *filename)
 				continue;
 			}
 			cfg->persistent = persistent;
+#if HAVE_USR_SBIN_PPPD
 		} else if (strcmp(key, "pppd-use-peerdns") == 0) {
 			int pppd_use_peerdns = strtob(val);
 			if (pppd_use_peerdns < 0) {
@@ -259,6 +265,16 @@ int load_config(struct vpn_config *cfg, const char *filename)
 		} else if (strcmp(key, "pppd-call") == 0) {
 			free(cfg->pppd_call);
 			cfg->pppd_call = strdup(val);
+#else
+		} else if (strcmp(key, "pppd") == 0) {
+			log_warn("Ignoring pppd option \"%s\".\n", key);
+#endif
+		} else if (strcmp(key, "ppp-system") == 0) {
+#if HAVE_USR_SBIN_PPP
+			cfg->ppp_system = strdup(val);
+#else
+			log_warn("Ignoring option \"%s\".\n", key);
+#endif
 		} else if (strcmp(key, "use-syslog") == 0) {
 			int use_syslog = strtob(val);
 			if (use_syslog < 0) {
@@ -314,11 +330,16 @@ err_close:
 
 void destroy_vpn_config(struct vpn_config *cfg)
 {
+#if HAVE_USR_SBIN_PPPD
 	free(cfg->pppd_log);
 	free(cfg->pppd_plugin);
 	free(cfg->pppd_ipparam);
 	free(cfg->pppd_ifname);
 	free(cfg->pppd_call);
+#endif
+#if HAVE_USR_SBIN_PPP
+	free(cfg->ppp_system);
+#endif
 	free(cfg->ca_file);
 	free(cfg->user_cert);
 	free(cfg->user_key);
@@ -356,6 +377,7 @@ void merge_config(struct vpn_config *dst, struct vpn_config *src)
 		dst->half_internet_routes = src->half_internet_routes;
 	if (src->persistent != invalid_cfg.persistent)
 		dst->persistent = src->persistent;
+#if HAVE_USR_SBIN_PPPD
 	if (src->pppd_log) {
 		free(dst->pppd_log);
 		dst->pppd_log = src->pppd_log;
@@ -376,6 +398,13 @@ void merge_config(struct vpn_config *dst, struct vpn_config *src)
 		free(dst->pppd_call);
 		dst->pppd_call = src->pppd_call;
 	}
+#endif
+#if HAVE_USR_SBIN_PPP
+	if (src->ppp_system) {
+		free(dst->ppp_system);
+		dst->ppp_system = src->ppp_system;
+	}
+#endif
 	if (src->ca_file) {
 		free(dst->ca_file);
 		dst->ca_file = src->ca_file;

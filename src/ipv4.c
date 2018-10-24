@@ -30,6 +30,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <errno.h>
+#include <limits.h>
 
 #define IPV4_GET_ROUTE_BUFFER_CHUNK_SIZE 65536
 #define SHOW_ROUTE_BUFFER_SIZE 128
@@ -133,14 +134,52 @@ static int ipv4_get_route(struct rtentry *route)
 	route_mask(route).s_addr = inet_addr("0.0.0.0");
 	route_gtw(route).s_addr = inet_addr("0.0.0.0");
 
-#ifdef __APPLE__
+#if HAVE_PROC_NET_ROUTE
+	/* this is not present on Mac OSX and FreeBSD */
+	int fd;
+	uint32_t total_bytes_read = 0;
+
+	// Cannot stat, mmap not lseek this special /proc file
+	fd = open("/proc/net/route", O_RDONLY);
+	if (fd == -1) {
+		err = ERR_IPV4_SEE_ERRNO;
+		goto end;
+	}
+
+	int bytes_read;
+	while ((bytes_read = read(
+	                             fd, buffer + total_bytes_read,
+	                             buffer_size - total_bytes_read - 1)) > 0) {
+		total_bytes_read += bytes_read;
+
+		if ((buffer_size - total_bytes_read) < 1) {
+			buffer_size += IPV4_GET_ROUTE_BUFFER_CHUNK_SIZE;
+
+			realloc_buffer = realloc(buffer, buffer_size);
+			if (realloc_buffer) {
+				buffer = realloc_buffer;
+			} else {
+				err = ERR_IPV4_SEE_ERRNO;
+				goto end;
+			}
+		}
+	}
+
+	close(fd);
+
+	if (bytes_read < 0) {
+		err = ERR_IPV4_SEE_ERRNO;
+		goto end;
+	}
+
+#else
 	FILE *fp;
 	uint32_t total_bytes_read = 0;
 
 	char *saveptr3 = NULL;
 
 	// Open the command for reading
-	fp = popen("/usr/sbin/netstat -f inet -rn", "r");
+	fp = popen(NETSTAT_PATH" -f inet -rn", "r");
 	if (fp == NULL) {
 		err = ERR_IPV4_SEE_ERRNO;
 		goto end;
@@ -255,43 +294,6 @@ static int ipv4_get_route(struct rtentry *route)
 	flag_table['Y'] = RTF_PROXY & USHRT_MAX;
 #endif
 
-#else
-	int fd;
-	uint32_t total_bytes_read = 0;
-
-	// Cannot stat, mmap not lseek this special /proc file
-	fd = open("/proc/net/route", O_RDONLY);
-	if (fd == -1) {
-		err = ERR_IPV4_SEE_ERRNO;
-		goto end;
-	}
-
-	int bytes_read;
-	while ((bytes_read = read(
-	                             fd, buffer + total_bytes_read,
-	                             buffer_size - total_bytes_read - 1)) > 0) {
-		total_bytes_read += bytes_read;
-
-		if ((buffer_size - total_bytes_read) < 1) {
-			buffer_size += IPV4_GET_ROUTE_BUFFER_CHUNK_SIZE;
-
-			realloc_buffer = realloc(buffer, buffer_size);
-			if (realloc_buffer) {
-				buffer = realloc_buffer;
-			} else {
-				err = ERR_IPV4_SEE_ERRNO;
-				goto end;
-			}
-		}
-	}
-
-	close(fd);
-
-	if (bytes_read < 0) {
-		err = ERR_IPV4_SEE_ERRNO;
-		goto end;
-	}
-
 #endif
 
 	if (total_bytes_read == 0) {
@@ -310,8 +312,8 @@ static int ipv4_get_route(struct rtentry *route)
 	}
 	start++;
 
-#ifdef __APPLE__
-	// Skip 3 more lines on Mac OSX
+#if !HAVE_PROC_NET_ROUTE
+	// Skip 3 more lines from netstat output on Mac OSX and on FreeBSD
 	start = index(start, '\n');
 	start = index(++start, '\n');
 	start = index(++start, '\n');
@@ -320,7 +322,6 @@ static int ipv4_get_route(struct rtentry *route)
 		err = ERR_IPV4_PROC_NET_ROUTE;
 		goto end;
 	}
-
 #endif
 
 	// Look for the route
@@ -329,7 +330,24 @@ static int ipv4_get_route(struct rtentry *route)
 		char *iface;
 		uint32_t dest, mask, gtw;
 		unsigned short flags;
-#ifdef __APPLE__
+#if HAVE_PROC_NET_ROUTE
+		unsigned short irtt;
+		short metric;
+		unsigned long mtu, window;
+
+		iface = strtok_r(line, "\t", &saveptr2);
+		dest = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
+		gtw = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
+		flags = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
+		strtok_r(NULL, "\t", &saveptr2); // "RefCnt"
+		strtok_r(NULL, "\t", &saveptr2); // "Use"
+		metric = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
+		mask = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
+		mtu = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
+		window = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
+		irtt = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
+#else
+		/* parse netstat output on Mac OSX and BSD */
 		char tmp_ip_string[16];
 		struct in_addr dstaddr;
 		int pos;
@@ -410,27 +428,13 @@ static int ipv4_get_route(struct rtentry *route)
 		// this is the reason for the 256 entries mentioned above
 		for (pos = 0; pos < strlen(tmpstr); pos++)
 			flags |= flag_table[(unsigned char)tmpstr[pos]];
+#ifndef __FreeBSD__
 		strtok_r(NULL, " ", &saveptr2); // "Refs"
 		strtok_r(NULL, " ", &saveptr2); // "Use"
+#endif
 		iface = strtok_r(NULL, " ", &saveptr2); // "Netif"
 		log_debug("- Interface: %s\n", iface);
 		log_debug("\n");
-#else
-		unsigned short irtt;
-		short metric;
-		unsigned long mtu, window;
-
-		iface = strtok_r(line, "\t", &saveptr2);
-		dest = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
-		gtw = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
-		flags = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
-		strtok_r(NULL, "\t", &saveptr2); // "RefCnt"
-		strtok_r(NULL, "\t", &saveptr2); // "Use"
-		metric = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
-		mask = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
-		mtu = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
-		window = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
-		irtt = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
 #endif
 		/*
 		 * Now that we have parsed a routing entry, check if it
@@ -473,7 +477,7 @@ static int ipv4_get_route(struct rtentry *route)
 		if (((dest & mask) == (rtdest & rtmask & mask))
 		    && (mask >= route_mask(route).s_addr)
 		    && (mask <= rtmask)) {
-#ifndef __APPLE__
+#if HAVE_PROC_NET_ROUTE
 			if (((mask == route_mask(route).s_addr)
 			     && (metric <= route->rt_metric))
 			    || (rtfound == 0)
@@ -491,7 +495,7 @@ static int ipv4_get_route(struct rtentry *route)
 				if (!route_iface(route))
 					return ERR_IPV4_NO_MEM;
 
-#ifndef __APPLE__
+#if HAVE_PROC_NET_ROUTE
 				// we do not have these values from Mac OS X netstat,
 				// so stay with defaults denoted by values of 0
 				route->rt_metric = metric;
@@ -503,9 +507,7 @@ static int ipv4_get_route(struct rtentry *route)
 		}
 		line = strtok_r(NULL, "\n", &saveptr1);
 	}
-
 end:
-
 	free(buffer);
 
 	if (err)
@@ -527,7 +529,21 @@ end:
 
 static int ipv4_set_route(struct rtentry *route)
 {
-#ifdef __APPLE__
+#ifdef HAVE_RT_ENTRY_WITH_RT_DST
+	/* we can copy rtentry struct directly between openfortivpn and kernel */
+	log_debug("ip route add %s\n", ipv4_show_route(route));
+
+	int sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
+
+	if (sockfd < 0)
+		return ERR_IPV4_SEE_ERRNO;
+	if (ioctl(sockfd, SIOCADDRT, route) == -1) {
+		close(sockfd);
+		return ERR_IPV4_SEE_ERRNO;
+	}
+	close(sockfd);
+#else
+	/* we have to use the route command as tool for route manipulation */
 	char cmd[SHOW_ROUTE_BUFFER_SIZE];
 
 	strcpy(cmd, "route -n add -net ");
@@ -548,18 +564,6 @@ static int ipv4_set_route(struct rtentry *route)
 	int res = system(cmd);
 	if (res == -1)
 		return ERR_IPV4_SEE_ERRNO;
-#else
-	log_debug("ip route add %s\n", ipv4_show_route(route));
-
-	int sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
-
-	if (sockfd < 0)
-		return ERR_IPV4_SEE_ERRNO;
-	if (ioctl(sockfd, SIOCADDRT, route) == -1) {
-		close(sockfd);
-		return ERR_IPV4_SEE_ERRNO;
-	}
-	close(sockfd);
 #endif
 
 	return 0;
@@ -567,20 +571,8 @@ static int ipv4_set_route(struct rtentry *route)
 
 static int ipv4_del_route(struct rtentry *route)
 {
-#ifdef __APPLE__
-	char cmd[SHOW_ROUTE_BUFFER_SIZE];
-
-	strcpy(cmd, "route -n delete ");
-	strncat(cmd, inet_ntoa(route_dest(route)), 15);
-	strcat(cmd, " -netmask ");
-	strncat(cmd, inet_ntoa(route_mask(route)), 15);
-
-	log_debug("%s\n", cmd);
-
-	int res = system(cmd);
-	if (res == -1)
-		return ERR_IPV4_SEE_ERRNO;
-#else
+#ifdef HAVE_RT_ENTRY_WITH_RT_DST
+	/* we can copy rtentry struct directly between openfortivpn and kernel */
 	struct rtentry tmp;
 	int sockfd;
 
@@ -601,6 +593,19 @@ static int ipv4_del_route(struct rtentry *route)
 		return ERR_IPV4_SEE_ERRNO;
 	}
 	close(sockfd);
+#else
+	char cmd[SHOW_ROUTE_BUFFER_SIZE];
+
+	strcpy(cmd, "route -n delete ");
+	strncat(cmd, inet_ntoa(route_dest(route)), 15);
+	strcat(cmd, " -netmask ");
+	strncat(cmd, inet_ntoa(route_mask(route)), 15);
+
+	log_debug("%s\n", cmd);
+
+	int res = system(cmd);
+	if (res == -1)
+		return ERR_IPV4_SEE_ERRNO;
 #endif
 	return 0;
 }
@@ -662,6 +667,8 @@ err_destroy:
 	return ret;
 }
 
+
+#if HAVE_USR_SBIN_PPPD
 static void add_text_route(struct tunnel *tunnel, const char *dest,
                            const char *mask, const char *gw)
 {
@@ -685,6 +692,7 @@ static void add_text_route(struct tunnel *tunnel, const char *dest,
 		log_error("realloc: %s\n", strerror(errno));
 	}
 }
+#endif
 
 int ipv4_add_split_vpn_route(struct tunnel *tunnel, char *dest, char *mask,
                              char *gateway)
@@ -692,7 +700,9 @@ int ipv4_add_split_vpn_route(struct tunnel *tunnel, char *dest, char *mask,
 	struct rtentry *route;
 	char env_var[24];
 
+#if HAVE_USR_SBIN_PPPD
 	add_text_route(tunnel, dest, mask, gateway);
+#endif
 	if (tunnel->ipv4.split_routes == MAX_SPLIT_ROUTES)
 		return ERR_IPV4_NO_MEM;
 	if ((tunnel->ipv4.split_rt == NULL)
