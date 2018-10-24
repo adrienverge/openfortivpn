@@ -55,7 +55,6 @@
 #include <systemd/sd-daemon.h>
 #endif
 
-
 struct ofv_varr {
 	unsigned cap;		// current capacity
 	unsigned off;		// next slot to write, always < max(cap - 1, 1)
