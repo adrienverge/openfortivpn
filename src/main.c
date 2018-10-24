@@ -204,7 +204,7 @@ int main(int argc, char **argv)
 		{"insecure-ssl",    no_argument, &cli_cfg.insecure_ssl, 1},
 		{"cipher-list",     required_argument, 0, 0},
 #if HAVE_USR_SBIN_PPPD
-		{"pppd-no-peerdns", no_argument, &cfg.pppd_use_peerdns, 0},
+		{"pppd-no-peerdns", no_argument, &cli_cfg.pppd_use_peerdns, 0},
 		{"pppd-log",        required_argument, 0, 0},
 		{"pppd-plugin",     required_argument, 0, 0},
 		{"pppd-ipparam",    required_argument, 0, 0},

@@ -253,8 +253,13 @@ static void *pppd_read(void *arg)
 			packet = repacket;
 			packet->len = pktsize;
 
-			log_debug("ppp ---> gateway (%d bytes)\n", packet->len);
+			log_debug("%s ---> gateway (%d bytes)\n", PPP_DAEMON,
+			          packet->len);
+#if HAVE_USR_SBIN_PPPD
+			log_packet("pppd:   ", packet->len, pkt_data(packet));
+#else
 			log_packet("ppp:   ", packet->len, pkt_data(packet));
+#endif
 			pool_push(&tunnel->pty_to_ssl_pool, packet);
 
 			off_r += frm_len;
@@ -457,7 +462,7 @@ static void *ssl_read(void *arg)
 			goto exit;
 		}
 
-		log_debug("gateway ---> ppp (%d bytes)\n", packet->len);
+		log_debug("gateway ---> %s (%d bytes)\n", PPP_DAEMON, packet->len);
 		log_packet("gtw:    ", packet->len, pkt_data(packet));
 		pool_push(&tunnel->ssl_to_pty_pool, packet);
 

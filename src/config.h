@@ -42,6 +42,12 @@ static inline const char *err_cfg_str(int code)
 	return "unknown";
 }
 
+#if HAVE_USR_SBIN_PPPD
+#define PPP_DAEMON "pppd"
+#else
+#define PPP_DAEMON "ppp"
+#endif
+
 #define SHA256LEN	(256 / 8)
 #define SHA256STRLEN	(2 * SHA256LEN + 1)
 

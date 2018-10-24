@@ -278,14 +278,9 @@ static const char * const pppd_message[] = {
 
 static int pppd_terminate(struct tunnel *tunnel)
 {
-#if HAVE_USR_SBIN_PPPD
-	char pppd_name[] = "pppd";
-#else
-	char pppd_name[] = "ppp";
-#endif
 	close(tunnel->pppd_pty);
 
-	log_debug("Waiting for %s to exit...\n", pppd_name);
+	log_debug("Waiting for %s to exit...\n", PPP_DAEMON);
 
 	int status;
 	if (waitpid(tunnel->pppd_pid, &status, 0) == -1) {
@@ -295,24 +290,24 @@ static int pppd_terminate(struct tunnel *tunnel)
 	if (WIFEXITED(status)) {
 		int exit_status = WEXITSTATUS(status);
 		log_debug("waitpid: %s exit status code %d\n",
-		          pppd_name, exit_status);
+		          PPP_DAEMON, exit_status);
 #if HAVE_USR_SBIN_PPPD
 		if (exit_status >= ARRAY_SIZE(pppd_message) || exit_status < 0) {
-			log_error("pppd: Returned an unknown exit status: %d\n",
-			          exit_status);
+			log_error("%s: Returned an unknown exit status: %d\n",
+			          PPP_DAEMON, exit_status);
 		} else {
 			switch (exit_status) {
 			case 0: // success
-				log_debug("pppd: %s\n",
-				          pppd_message[exit_status]);
+				log_debug("%s: %s\n",
+				          PPP_DAEMON, pppd_message[exit_status]);
 				break;
 			case 16: // emitted when exiting normally
-				log_info("pppd: %s\n",
-				         pppd_message[exit_status]);
+				log_info("%s: %s\n",
+				         PPP_DAEMON, pppd_message[exit_status]);
 				break;
 			default:
-				log_error("pppd: %s\n",
-				          pppd_message[exit_status]);
+				log_error("%s: %s\n",
+				          PPP_DAEMON, pppd_message[exit_status]);
 				break;
 			}
 		}
@@ -320,25 +315,26 @@ static int pppd_terminate(struct tunnel *tunnel)
 		// ppp exit codes in the FreeBSD case
 		switch (exit_status) {
 		case 0: // success and EX_NORMAL as defined in ppp source directly
-			log_debug("ppp: %s\n", pppd_message[exit_status]);
+			log_debug("%s: %s\n", PPP_DAEMON, pppd_message[exit_status]);
 			break;
 		case 1:
 		case 127:
 		case 255: // abnormal exit with hard-coded error codes in ppp
-			log_error("ppp: exited with return value of %d\n",
-			          exit_status);
+			log_error("%s: exited with return value of %d\n",
+			          PPP_DAEMON, exit_status);
 			break;
 		default:
-			log_error("ppp: %s (%d)\n", strerror(exit_status), exit_status);
+			log_error("%s: %s (%d)\n", PPP_DAEMON, strerror(exit_status),
+			          exit_status);
 			break;
 		}
 #endif
 	} else if (WIFSIGNALED(status)) {
 		int signal_number = WTERMSIG(status);
 		log_debug("waitpid: %s terminated by signal %d\n",
-		          pppd_name, signal_number);
+		          PPP_DAEMON, signal_number);
 		log_error("%s: terminated by signal: %s\n",
-		          pppd_name, strsignal(signal_number));
+		          PPP_DAEMON, strsignal(signal_number));
 	}
 
 	return 0;
@@ -829,11 +825,6 @@ int ssl_connect(struct tunnel *tunnel)
 
 int run_tunnel(struct vpn_config *config)
 {
-#if HAVE_USR_SBIN_PPPD
-	char pppd_name[] = "pppd";
-#else
-	char pppd_name[] = "ppp";
-#endif
 	int ret;
 	struct tunnel tunnel = {
 		.config = config,
@@ -929,7 +920,7 @@ int run_tunnel(struct vpn_config *config)
 
 err_start_tunnel:
 	pppd_terminate(&tunnel);
-	log_info("Terminated %s.\n", pppd_name);
+	log_info("Terminated %s.\n", PPP_DAEMON);
 err_tunnel:
 	log_info("Closed connection to gateway.\n");
 	tunnel.state = STATE_DOWN;
