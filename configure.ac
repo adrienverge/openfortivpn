@@ -21,7 +21,7 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 PKG_CHECK_MODULES(OPENSSL, [libcrypto >= 0.9.8 libssl >= 0.9.8], [], [AC_MSG_ERROR([Cannot find OpenSSL 0.9.8 or higher.])])
 AC_CHECK_LIB([pthread], [pthread_create], [], [AC_MSG_ERROR([Cannot find libpthread.])])
 AC_CHECK_LIB([util], [forkpty], [], [AC_MSG_ERROR([Cannot find libutil.])])
-PKG_CHECK_MODULES(LIBSYSTEMD, [libsystemd], [AC_DEFINE(HAVE_SYSTEMD)], [ ])
+PKG_CHECK_MODULES(LIBSYSTEMD, [libsystemd], [AC_DEFINE(HAVE_SYSTEMD)], [AC_MSG_RESULT([libsystemd not present])])
 
 # Checks for header files.
 AC_CHECK_HEADERS([arpa/inet.h assert.h ctype.h errno.h fcntl.h getopt.h ifaddrs.h limits.h netdb.h net/if.h netinet/in.h netinet/tcp.h pthread.h signal.h stdarg.h stdint.h stdio.h stdlib.h string.h sys/ioctl.h syslog.h sys/socket.h sys/stat.h sys/types.h sys/wait.h termios.h unistd.h], [], AC_MSG_ERROR([Required header not found]))
