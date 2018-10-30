@@ -622,6 +622,12 @@ static int ipv4_del_route(struct rtentry *route)
 	strcat(cmd, " -netmask ");
 	strncat(cmd, inet_ntoa(route_mask(route)), 15);
 
+	if (!(route->rt_flags & RTF_GATEWAY)) {
+		strcat(cmd, " -interface ");
+		strncat(cmd, route_iface(route),
+		        SHOW_ROUTE_BUFFER_SIZE - strlen(cmd) - 1);
+	}
+
 	log_debug("%s\n", cmd);
 
 	int res = system(cmd);
