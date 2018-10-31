@@ -244,18 +244,6 @@ AC_ARG_ENABLE([proc],
 			[Enable route manipulations directly via /proc/net/route \
 			when cross-compiling, use --disable-proc for the opposite]))
 
-
-# when neither ppp nor pppd are enabled, assume the previous behavior (for travis)
-AS_IF([test "x$with_ppp" = "xno" -a "x$with_pppd" = "xno"], [
-   with_pppd="yes"
-])
-
-# when both are enabled, give pppd the higher priority (we can only use one of them)
-AS_IF([test "x$with_ppp" = "xyes" -a "x$with_pppd" = "xyes"], [
-   with_ppp="no"
-])
-
-
 # Checks for existence of specific files.
 AC_CHECK_FILE([/proc/net/route],[
   AS_IF([test "x$enable_proc" = "x" ], [
@@ -291,6 +279,18 @@ AC_CHECK_FILE(/usr/sbin/pppd,[
 ],[])
 
 
+# when neither ppp nor pppd are enabled, assume the previous behavior (for travis)
+AS_IF([test "x$with_ppp" = "xno" -a "x$with_pppd" = "xno" ], [
+   with_pppd="yes"
+])
+AS_IF([test "x$with_ppp" = "x" -a "x$with_pppd" = "x" ], [
+   with_pppd="yes"
+])
+
+# when both are enabled, give pppd the higher priority (we can only use one of them)
+AS_IF([test "x$with_ppp" = "xyes" -a "x$with_pppd" = "xyes"], [
+   with_ppp="no"
+])
 
 AS_IF([test "x$with_ppp" = "xyes"], [
 	AC_DEFINE(HAVE_USR_SBIN_PPP, 1)
