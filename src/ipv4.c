@@ -667,15 +667,6 @@ int ipv4_protect_tunnel_route(struct tunnel *tunnel)
 			goto err_destroy;
 	}
 
-	ret = ipv4_get_route(def_rt);
-	if (ret != 0) {
-		log_warn("Could not get current default route (%s).\n",
-		         err_ipv4_str(ret));
-		log_warn("Protecting tunnel route has failed. But this can be working except for some cases.\n");
-		goto err_destroy;
-	}
-
-
 	// Back up default route
 	route_dest(def_rt).s_addr = inet_addr("0.0.0.0");
 	route_mask(def_rt).s_addr = inet_addr("0.0.0.0");
