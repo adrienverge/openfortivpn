@@ -208,33 +208,10 @@ int main() {
   AC_MSG_RESULT(yes)
 ], AC_MSG_RESULT(no) )
 
-with_ppp=no
-with_pppd=no
+NETSTAT_PATH=""
+PPP_PATH=""
 
-# Checks for existence of specific files.
-NETSTAT_PATH=
-AC_CHECK_FILE(/proc/net/route,[
-  enable_proc=yes
-],[
-  AC_CHECK_FILE(/usr/sbin/netstat,[
-    NETSTAT_PATH=/usr/sbin/netstat
-  ],[
-    AC_CHECK_FILE(/usr/bin/netstat,[
-      NETSTAT_PATH=/usr/bin/netstat
-    ],[])
-  ])
-])
-
-AC_CHECK_FILE(/usr/sbin/ppp,[
-  PPP_PATH=/usr/sbin/ppp
-  with_ppp=yes
-],[])
-AC_CHECK_FILE(/usr/sbin/pppd,[
-  PPP_PATH=/usr/sbin/pppd
-  with_pppd=yes
-],[])
-
-# possibility to override default locations
+# prepare possibility to override default locations
 AC_ARG_WITH([netstat],
         AS_HELP_STRING([--with-netstat],
                        [Set the path to the netstat executable on MacOSX or FreeBSD]),
@@ -246,8 +223,8 @@ AC_ARG_WITH([pppd],
                        [Set the path to the pppd daemon executable]),
         AS_IF([test ! "x$with_pppd" = "xno" -a ! "x$with_pppd" = "xyes"],[
 		PPP_PATH="$withval"
-		with_pppd=yes
-		with_ppp=no
+		with_pppd="yes"
+		with_ppp="no"
 	])
 )
 # and this is for the ppp user space client on FreeBSD
@@ -256,20 +233,64 @@ AC_ARG_WITH([ppp],
                        [Set the path to the ppp userspace client on FreeBSD]),
         AS_IF([test ! "x$with_ppp" = "xno" -a ! "x$with_ppp" = "xyes"],[
 		PPP_PATH="$withval"
-		with_ppp=yes
-		with_pppd=no
+		with_ppp="yes"
+		with_pppd="no"
 	])
 )
 
 # override for /proc/net/route detection
 AC_ARG_ENABLE([proc],
 	AS_HELP_STRING([--enable-proc],
-			[Enable route manipulations directly via /proc/net/route when cross-compiling]))
+			[Enable route manipulations directly via /proc/net/route \
+			when cross-compiling, use --disable-proc for the opposite]))
 
-# assume the previous behavior for travis
+
+# when neither ppp nor pppd are enabled, assume the previous behavior (for travis)
 AS_IF([test "x$with_ppp" = "xno" -a "x$with_pppd" = "xno"], [
-   with_pppd=yes
+   with_pppd="yes"
 ])
+
+# when both are enabled, give pppd the higher priority (we can only use one of them)
+AS_IF([test "x$with_ppp" = "xyes" -a "x$with_pppd" = "xyes"], [
+   with_ppp="no"
+])
+
+
+# Checks for existence of specific files.
+AC_CHECK_FILE([/proc/net/route],[
+  AS_IF([test "x$enable_proc" = "x" ], [
+    enable_proc="yes"
+  ])
+],[
+  AS_IF([test "x$NETSTAT_PATH" = "x" ], [
+    AC_CHECK_FILE([/usr/sbin/netstat],[
+      NETSTAT_PATH="/usr/sbin/netstat"
+    ],[
+      AC_CHECK_FILE([/usr/bin/netstat],[
+	NETSTAT_PATH="/usr/bin/netstat"
+      ],[])
+    ])
+  ])
+])
+
+AC_CHECK_FILE(/usr/sbin/ppp,[
+  AS_IF([test "x$PPP_PATH" = "x" ], [
+    PPP_PATH="/usr/sbin/ppp"
+  ])
+  AS_IF([test "x$with_ppp" = "x" ], [
+    with_ppp="yes"
+  ])
+],[])
+AC_CHECK_FILE(/usr/sbin/pppd,[
+  AS_IF([test "x$PPP_PATH" = "x" ], [
+    PPP_PATH="/usr/sbin/pppd"
+  ])
+  AS_IF([test "x$with_pppd" = "x" ], [
+    with_pppd="yes"
+  ])
+],[])
+
+
 
 AS_IF([test "x$with_ppp" = "xyes"], [
 	AC_DEFINE(HAVE_USR_SBIN_PPP, 1)
@@ -282,7 +303,7 @@ AS_IF([test "x$with_pppd" = "xyes"], [
 	AC_DEFINE(HAVE_USR_SBIN_PPPD, 0)
 ])
 AS_IF([test "x$enable_proc" = "xyes"], [
-	AC_DEFINE(HAVE_PROC_NET_ROUTE)
+	AC_DEFINE(HAVE_PROC_NET_ROUTE, 1)
 ],[
 	AC_DEFINE(HAVE_PROC_NET_ROUTE, 0)
 ])
