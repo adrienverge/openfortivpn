@@ -18,11 +18,27 @@
 #ifndef _OPENFORTIVPN_IPV4_H
 #define _OPENFORTIVPN_IPV4_H
 
+#include <sys/types.h>
+#include <sys/socket.h>
+#ifdef HAVE_SYS_MUTEX_H
+/* Mac OSX and BSD wants this explicit include */
+#include <sys/mutex.h>
+#endif
 #include <netinet/in.h>
 #include <net/route.h>
+#include <net/if.h>
+#ifdef HAVE_NET_IF_IF_VAR_H
+/* on FreeBSD we need this additional header */
+#include <net/if_var.h>
+#endif
 
-#ifdef __APPLE__
-#include <sys/socket.h>
+#if !HAVE_RT_ENTRY_WITH_RT_DST
+/* On MacOSX and FreeBSD struct rtentry is not directly available.
+ * On FreeBSD one could #define _WANT_RTENTRY but the struct does not
+ * contain rt_dst for instance. The entries for mask and destination
+ * are maintained in a separate radix_tree structure by the routing
+ * table instance. We can not simply copy rtentry structures.
+ */
 
 /* This structure gets passed by the SIOCADDRT and SIOCDELRT calls. */
 struct rtentry {

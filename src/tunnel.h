@@ -32,11 +32,14 @@
 #include "config.h"
 #include "io.h"
 #include "ipv4.h"
+#if HAVE_LIBUTIL_H
+#include "libutil.h"
+#endif
 
 #include <openssl/ssl.h>
 #include <sys/types.h>
 
-#ifdef __APPLE__
+#ifdef __clang__
 /*
  * Get rid of OSX 10.7 and greater deprecation warnings
  * see for instance https://wiki.openssl.org/index.php/Hostname_validation

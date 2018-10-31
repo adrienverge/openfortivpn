@@ -90,6 +90,7 @@ For other distros, you'll need to build and install from source:
     * Gentoo Linux: `net-dialup/ppp` `pkg-config`
     * openSUSE: `gcc` `automake` `autoconf` `libopenssl-devel` `pkg-config`
     * macOS(Homebrew): `automake` `autoconf` `openssl@1.0` `pkg-config`
+    * FreeBSD: `automake` `autoconf` `libressl` `pkgconf`
 
     On Linux, if you manage your kernel yourself, ensure to compile those modules:
     ```

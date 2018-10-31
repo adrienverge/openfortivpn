@@ -39,6 +39,7 @@
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
+#include <sys/ioctl.h>
 #include <openssl/err.h>
 #include <openssl/x509v3.h>
 #if HAVE_PTY_H
@@ -140,12 +141,12 @@ static int pppd_run(struct tunnel *tunnel)
 	};
 #endif
 
-	static const char pppd_path[] = "/usr/sbin/pppd";
-
-	if (access(pppd_path, F_OK) != 0) {
-		log_error("%s: %s.\n", pppd_path, strerror(errno));
+	static const char ppp_path[] = PPP_PATH;
+	if (access(ppp_path, F_OK) != 0) {
+		log_error("%s: %s.\n", ppp_path, strerror(errno));
 		return 1;
 	}
+	log_debug("ppp_path: %s\n", ppp_path);
 
 #ifdef HAVE_STRUCT_TERMIOS
 	pid = forkpty(&amaster, NULL, &termp, NULL);
@@ -157,15 +158,31 @@ static int pppd_run(struct tunnel *tunnel)
 		log_error("forkpty: %s\n", strerror(errno));
 		return 1;
 	} else if (pid == 0) { // child process
+
 		struct ofv_varr pppd_args = { 0, 0, NULL };
 
+#if HAVE_USR_SBIN_PPP
+		/*
+		* assume there is a default configuration to start.
+		* Support for taking options from the command line
+		* e.g. the name of the configuration or options
+		* to send interactively to ppp will be added later
+		*/
+		const char *v[] = {
+			ppp_path,
+			"-direct"
+		};
+		for (unsigned i = 0; i < sizeof v/sizeof v[0]; i++)
+			ofv_append_varr(&pppd_args, v[i]);
+#endif
+#if HAVE_USR_SBIN_PPPD
 		if (tunnel->config->pppd_call) {
-			ofv_append_varr(&pppd_args, pppd_path);
+			ofv_append_varr(&pppd_args, ppp_path);
 			ofv_append_varr(&pppd_args, "call");
 			ofv_append_varr(&pppd_args, tunnel->config->pppd_call);
 		} else {
 			const char *v[] = {
-				pppd_path,
+				ppp_path,
 				"38400", // speed
 				":192.0.2.1", // <local_IP_address>:<remote_IP_address>
 				"noipdefault",
@@ -182,7 +199,6 @@ static int pppd_run(struct tunnel *tunnel)
 			for (unsigned i = 0; i < ARRAY_SIZE(v); i++)
 				ofv_append_varr(&pppd_args, v[i]);
 		}
-
 		if (tunnel->config->set_dns && tunnel->config->pppd_use_peerdns)
 			ofv_append_varr(&pppd_args, "usepeerdns");
 		if (tunnel->config->pppd_log) {
@@ -202,10 +218,17 @@ static int pppd_run(struct tunnel *tunnel)
 			ofv_append_varr(&pppd_args, "ifname");
 			ofv_append_varr(&pppd_args, tunnel->config->pppd_ifname);
 		}
+#endif
+#if HAVE_USR_SBIN_PPP
+		if (tunnel->config->ppp_system) {
+			ofv_append_varr(&pppd_args, tunnel->config->ppp_system);
+		}
+#endif
 
 		close(tunnel->ssl_socket);
 		execv(pppd_args.data[0], (char *const *)pppd_args.data);
 		free(pppd_args.data);
+
 		/*
 		 * The following call to fprintf() doesn't work, probably
 		 * because of the prior call to forkpty().
@@ -257,7 +280,8 @@ static int pppd_terminate(struct tunnel *tunnel)
 {
 	close(tunnel->pppd_pty);
 
-	log_debug("Waiting for pppd to exit...\n");
+	log_debug("Waiting for %s to exit...\n", PPP_DAEMON);
+
 	int status;
 	if (waitpid(tunnel->pppd_pid, &status, 0) == -1) {
 		log_error("waitpid: %s\n", strerror(errno));
@@ -265,28 +289,52 @@ static int pppd_terminate(struct tunnel *tunnel)
 	}
 	if (WIFEXITED(status)) {
 		int exit_status = WEXITSTATUS(status);
-		log_debug("waitpid: pppd exit status code %d\n", exit_status);
-		if (exit_status >= ARRAY_SIZE(pppd_message) || exit_status < 0)
-			log_error("pppd: Returned an unknown exit status: %d\n",
-			          exit_status);
-		else
+		log_debug("waitpid: %s exit status code %d\n",
+		          PPP_DAEMON, exit_status);
+#if HAVE_USR_SBIN_PPPD
+		if (exit_status >= ARRAY_SIZE(pppd_message) || exit_status < 0) {
+			log_error("%s: Returned an unknown exit status: %d\n",
+			          PPP_DAEMON, exit_status);
+		} else {
 			switch (exit_status) {
 			case 0: // success
-				log_debug("pppd: %s\n", pppd_message[exit_status]);
+				log_debug("%s: %s\n",
+				          PPP_DAEMON, pppd_message[exit_status]);
 				break;
 			case 16: // emitted when exiting normally
-				log_info("pppd: %s\n", pppd_message[exit_status]);
+				log_info("%s: %s\n",
+				         PPP_DAEMON, pppd_message[exit_status]);
 				break;
 			default:
-				log_error("pppd: %s\n", pppd_message[exit_status]);
+				log_error("%s: %s\n",
+				          PPP_DAEMON, pppd_message[exit_status]);
 				break;
 			}
+		}
+#else
+		// ppp exit codes in the FreeBSD case
+		switch (exit_status) {
+		case 0: // success and EX_NORMAL as defined in ppp source directly
+			log_debug("%s: %s\n", PPP_DAEMON, pppd_message[exit_status]);
+			break;
+		case 1:
+		case 127:
+		case 255: // abnormal exit with hard-coded error codes in ppp
+			log_error("%s: exited with return value of %d\n",
+			          PPP_DAEMON, exit_status);
+			break;
+		default:
+			log_error("%s: %s (%d)\n", PPP_DAEMON, strerror(exit_status),
+			          exit_status);
+			break;
+		}
+#endif
 	} else if (WIFSIGNALED(status)) {
 		int signal_number = WTERMSIG(status);
-		log_debug("waitpid: pppd terminated by signal %d\n",
-		          signal_number);
-		log_error("pppd: terminated by signal: %s\n",
-		          strsignal(signal_number));
+		log_debug("waitpid: %s terminated by signal %d\n",
+		          PPP_DAEMON, signal_number);
+		log_error("%s: terminated by signal: %s\n",
+		          PPP_DAEMON, strsignal(signal_number));
 	}
 
 	return 0;
@@ -304,10 +352,17 @@ int ppp_interface_is_up(struct tunnel *tunnel)
 	}
 
 	for (ifa = ifap; ifa != NULL; ifa = ifa->ifa_next) {
-		if (((tunnel->config->pppd_ifname
-		      && strstr(ifa->ifa_name, tunnel->config->pppd_ifname) != NULL)
-		     || strstr(ifa->ifa_name, "ppp") != NULL)
-		    && ifa->ifa_flags & IFF_UP) {
+		if ((
+#if HAVE_USR_SBIN_PPPD
+		            (tunnel->config->pppd_ifname
+		             && strstr(ifa->ifa_name, tunnel->config->pppd_ifname)
+		             != NULL)
+		            || strstr(ifa->ifa_name, "ppp") != NULL)
+#endif
+#if HAVE_USR_SBIN_PPP
+		    strstr(ifa->ifa_name, "tun") != NULL)
+#endif
+			&& ifa->ifa_flags& IFF_UP) {
 			if (&(ifa->ifa_addr->sa_family) != NULL
 			    && ifa->ifa_addr->sa_family == AF_INET) {
 				struct in_addr if_ip_addr =
@@ -783,11 +838,13 @@ int run_tunnel(struct vpn_config *config)
 	};
 
 	// Step 0: get gateway host IP
+	log_debug("Resolving gateway host ip\n");
 	ret = get_gateway_host_ip(&tunnel);
 	if (ret)
 		goto err_tunnel;
 
 	// Step 1: open a SSL connection to the gateway
+	log_debug("Establishing ssl connection\n");
 	ret = ssl_connect(&tunnel);
 	if (ret)
 		goto err_tunnel;
@@ -819,6 +876,7 @@ int run_tunnel(struct vpn_config *config)
 		goto err_tunnel;
 
 	// Step 3: get configuration
+	log_debug("Retrieving configuration\n");
 	ret = auth_get_config(&tunnel);
 	if (ret != 1) {
 		log_error("Could not get VPN configuration (%s).\n",
@@ -828,11 +886,13 @@ int run_tunnel(struct vpn_config *config)
 	}
 
 	// Step 4: run a pppd process
+	log_debug("Establishing the tunnel\n");
 	ret = pppd_run(&tunnel);
 	if (ret)
 		goto err_tunnel;
 
 	// Step 5: ask gateway to start tunneling
+	log_debug("Switch to tunneling mode\n");
 	ret = http_send(&tunnel,
 	                "GET /remote/sslvpn-tunnel HTTP/1.1\r\n"
 	                "Host: sslvpn\r\n"
@@ -848,8 +908,10 @@ int run_tunnel(struct vpn_config *config)
 	ret = 0;
 
 	// Step 6: perform io between pppd and the gateway, while tunnel is up
+	log_debug("Starting IO through the tunnel\n");
 	io_loop(&tunnel);
 
+	log_debug("disconnecting\n");
 	if (tunnel.state == STATE_UP)
 		if (tunnel.on_ppp_if_down != NULL)
 			tunnel.on_ppp_if_down(&tunnel);
@@ -858,7 +920,7 @@ int run_tunnel(struct vpn_config *config)
 
 err_start_tunnel:
 	pppd_terminate(&tunnel);
-	log_info("Terminated pppd.\n");
+	log_info("Terminated %s.\n", PPP_DAEMON);
 err_tunnel:
 	log_info("Closed connection to gateway.\n");
 	tunnel.state = STATE_DOWN;

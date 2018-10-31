@@ -39,11 +39,11 @@
 #include <string.h>
 #include <errno.h>
 
-#ifdef __APPLE__
-
-/* Mac OS X defines sem_init but actually does not implement them */
+#if HAVE_MACH_MACH_H
+/* this is typical for mach kernel used on Mac OSX */
 #include <mach/mach.h>
 
+/* Mac OS X defines sem_init but actually does not implement them */
 typedef semaphore_t os_semaphore_t;
 
 #define SEM_INIT(sem, x, value)	semaphore_create(mach_task_self(), sem, \
@@ -253,8 +253,13 @@ static void *pppd_read(void *arg)
 			packet = repacket;
 			packet->len = pktsize;
 
-			log_debug("pppd ---> gateway (%d bytes)\n", packet->len);
+			log_debug("%s ---> gateway (%d bytes)\n", PPP_DAEMON,
+			          packet->len);
+#if HAVE_USR_SBIN_PPPD
 			log_packet("pppd:   ", packet->len, pkt_data(packet));
+#else
+			log_packet("ppp:   ", packet->len, pkt_data(packet));
+#endif
 			pool_push(&tunnel->pty_to_ssl_pool, packet);
 
 			off_r += frm_len;
@@ -359,7 +364,11 @@ err_free_buf:
 	 && pkt_data(packet)[1] == 0x21 \
 	 && pkt_data(packet)[2] == 0x01 \
 	 && pkt_data(packet)[4] == 0x00 \
-	 && pkt_data(packet)[5] == 0x04)
+	 && pkt_data(packet)[5] == 0x04) || \
+	((packet)-> len >= 12 \
+	 && pkt_data(packet)[0] == 0x80 \
+	 && pkt_data(packet)[1] == 0x21 \
+	 && pkt_data(packet)[2] == 0x02)
 
 static inline void set_tunnel_ips(struct tunnel *tunnel,
                                   struct ppp_packet *packet)
@@ -453,7 +462,7 @@ static void *ssl_read(void *arg)
 			goto exit;
 		}
 
-		log_debug("gateway ---> pppd (%d bytes)\n", packet->len);
+		log_debug("gateway ---> %s (%d bytes)\n", PPP_DAEMON, packet->len);
 		log_packet("gtw:    ", packet->len, pkt_data(packet));
 		pool_push(&tunnel->ssl_to_pty_pool, packet);
 
@@ -469,7 +478,9 @@ static void *ssl_read(void *arg)
 				strncat(line, inet_ntoa(tunnel->ipv4.ns2_addr), 15);
 				strcat(line, "]");
 				log_info("Got addresses: %s\n", line);
-			} else if (packet_is_end_negociation(packet)) {
+			}
+			if (packet_is_end_negociation(packet)) {
+				log_info("negotiation complete\n");
 				SEM_POST(&sem_if_config);
 			}
 		}
@@ -606,7 +617,7 @@ int io_loop(struct tunnel *tunnel)
 	}
 
 // on osx this prevents the program from being stopped with ctrl-c
-#ifndef __APPLE__
+#if !HAVE_MACH_MACH_H
 	// Disable SIGINT and SIGTERM for the future spawned threads
 	sigset_t sigset, oldset;
 	sigemptyset(&sigset);
@@ -635,7 +646,7 @@ int io_loop(struct tunnel *tunnel)
 	if (pthread_create(&if_config_thread, NULL, if_config, tunnel))
 		goto err_thread;
 
-#ifndef __APPLE__
+#if !HAVE_MACH_MACH_H
 	// Restore the signal for the main thread
 	pthread_sigmask(SIG_SETMASK, &oldset, NULL);
 #endif
