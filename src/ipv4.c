@@ -178,6 +178,13 @@ static int ipv4_get_route(struct rtentry *route)
 
 	char *saveptr3 = NULL;
 
+	static const char netstat_path[] = NETSTAT_PATH;
+	if (access(netstat_path, F_OK) != 0) {
+		log_error("%s: %s.\n", netstat_path, strerror(errno));
+		return 1;
+	}
+	log_debug("netstat_path: %s\n", netstat_path);
+
 	// Open the command for reading
 	fp = popen(NETSTAT_PATH" -f inet -rn", "r");
 	if (fp == NULL) {
@@ -546,7 +553,12 @@ static int ipv4_set_route(struct rtentry *route)
 	/* we have to use the route command as tool for route manipulation */
 	char cmd[SHOW_ROUTE_BUFFER_SIZE];
 
-	strcpy(cmd, "route -n add -net ");
+	if (access("/sbin/route", F_OK) != 0) {
+		log_error("/sbin/route: %s.\n", strerror(errno));
+		return 1;
+	}
+
+	strcpy(cmd, "/sbin/route -n add -net ");
 	strncat(cmd, inet_ntoa(route_dest(route)), 15);
 	strcat(cmd, " -netmask ");
 	strncat(cmd, inet_ntoa(route_mask(route)), 15);
@@ -596,7 +608,12 @@ static int ipv4_del_route(struct rtentry *route)
 #else
 	char cmd[SHOW_ROUTE_BUFFER_SIZE];
 
-	strcpy(cmd, "route -n delete ");
+	if (access("/sbin/route", F_OK) != 0) {
+		log_error("/sbin/route: %s.\n", strerror(errno));
+		return 1;
+	}
+
+	strcpy(cmd, "/sbin/route -n delete ");
 	strncat(cmd, inet_ntoa(route_dest(route)), 15);
 	strcat(cmd, " -netmask ");
 	strncat(cmd, inet_ntoa(route_mask(route)), 15);
