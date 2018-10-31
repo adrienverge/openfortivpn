@@ -15,7 +15,7 @@ PKG_PROG_PKG_CONFIG
 # Helps support multiarch by setting 'host_os' and 'host_cpu'
 AC_CANONICAL_HOST
 
-AM_SILENT_RULES([yes])
+m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 # Checks for libraries.
 PKG_CHECK_MODULES(OPENSSL, [libcrypto >= 0.9.8 libssl >= 0.9.8], [], [AC_MSG_ERROR([Cannot find OpenSSL 0.9.8 or higher.])])
@@ -23,8 +23,56 @@ AC_CHECK_LIB([pthread], [pthread_create], [], [AC_MSG_ERROR([Cannot find libpthr
 AC_CHECK_LIB([util], [forkpty], [], [AC_MSG_ERROR([Cannot find libutil.])])
 PKG_CHECK_MODULES(LIBSYSTEMD, [libsystemd], [AC_DEFINE(HAVE_SYSTEMD)], [AC_MSG_RESULT([libsystemd not present])])
 
-# Checks for header files.
-AC_CHECK_HEADERS([arpa/inet.h assert.h ctype.h errno.h fcntl.h getopt.h ifaddrs.h limits.h mach/mach.h netdb.h net/if.h netinet/in.h netinet/tcp.h net/route.h pty.h semaphore.h signal.h stdarg.h stddef.h stdint.h stdio.h stdlib.h string.h strings.h sys/ioctl.h syslog.h sys/socket.h sys/stat.h sys/time.h sys/types.h sys/wait.h termios.h unistd.h util.h])
+# we assume presence of the follwowing C standard headers
+# and ommit them in the follwoing header checks
+#
+# assert.h
+# ctype.h
+# errno.h
+# limits.h
+# signal.h
+# stdarg.h
+# stdint.h
+# stdio.h
+# stdlib.h
+# string.h
+
+# Checks for required header files.
+AC_CHECK_HEADERS([ \
+arpa/inet.h \
+fcntl.h \
+getopt.h \
+ifaddrs.h \
+netdb.h \
+net/if.h \
+netinet/in.h \
+netinet/tcp.h \
+pthread.h \
+sys/ioctl.h \
+syslog.h \
+sys/socket.h \
+sys/stat.h \
+sys/types.h \
+sys/wait.h \
+termios.h \
+unistd.h \
+], [], AC_MSG_ERROR([Required header not found]))
+
+# Checks for header files with prerequisites of other headers.
+AC_CHECK_HEADERS([net/route.h], [], AC_MSG_ERROR([Required header not found]), [#include <net/if.h>])
+
+# Checks for optional header files.
+AC_CHECK_HEADERS([ \
+libutil.h \
+mach/mach.h \
+pty.h \
+semaphore.h \
+sys/mutex.h \
+util.h \
+])
+
+# Checks for optional header files with prerequisites of other headers.
+AC_CHECK_HEADERS([net/if_var.h],[],[],[#include <net/if.h>])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_INLINE
@@ -40,7 +88,97 @@ AC_CHECK_TYPES([struct termios], [], [], [#include <termios.h>])
 # Checks for library functions.
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
-AC_CHECK_FUNCS([atoi close connect execv exit _exit fclose fcntl fflush fopen forkpty fprintf fputs free freeaddrinfo freeifaddrs freopen fwrite getaddrinfo getchar getenv getopt_long htons index inet_addr inet_ntoa isatty isdigit isspace malloc memcpy memmem memmove memset ntohs open openlog pclose popen printf pthread_cancel pthread_cond_init pthread_cond_signal pthread_cond_wait pthread_join pthread_mutexattr_init pthread_mutex_destroy pthread_mutex_init pthread_mutex_lock pthread_mutex_unlock pthread_sigmask puts read realloc rewind select setenv sigaddset sigemptyset signal snprintf socket sprintf strcasestr strcat strchr strcmp strcpy strdup strerror strlen strncasecmp strncat strncpy strsignal strstr strtok strtok_r strtol syslog system tcsetattr usleep vprintf vsnprintf vsyslog write], [], AC_MSG_ERROR([Required function not present]))
+AC_CHECK_FUNCS([ \
+atoi \
+close \
+connect \
+execv \
+exit \
+_exit \
+fclose \
+fcntl \
+fflush \
+fopen \
+forkpty \
+fprintf \
+fputs \
+free \
+freeaddrinfo \
+freeifaddrs \
+freopen \
+fwrite \
+getaddrinfo \
+getchar \
+getenv \
+getopt_long \
+htons \
+index \
+inet_addr \
+inet_ntoa \
+isatty \
+isdigit \
+isspace \
+malloc \
+memcpy \
+memmem \
+memmove \
+memset \
+ntohs \
+open \
+openlog \
+pclose \
+popen \
+printf \
+pthread_cancel \
+pthread_cond_init \
+pthread_cond_signal \
+pthread_cond_wait \
+pthread_join \
+pthread_mutexattr_init \
+pthread_mutex_destroy \
+pthread_mutex_init \
+pthread_mutex_lock \
+pthread_mutex_unlock \
+pthread_sigmask \
+puts \
+read \
+realloc \
+rewind \
+select \
+setenv \
+sigaddset \
+sigemptyset \
+signal \
+snprintf \
+socket \
+sprintf \
+strcasestr \
+strcat \
+strchr \
+strcmp \
+strcpy \
+strdup \
+strerror \
+strlen \
+strncasecmp \
+strncat \
+strncpy \
+strsignal \
+strstr \
+strtok \
+strtok_r \
+strtol \
+syslog \
+system \
+tcsetattr \
+usleep \
+vprintf \
+vsnprintf \
+vsyslog \
+write \
+], [], AC_MSG_ERROR([Required function not found]))
+
+# Checks for optional functions.
 AC_CHECK_FUNCS([pthread_mutexattr_setrobust])
 # Use PKG_CHECK_MODULES compiler/linker flags
 save_openssl_CPPFLAGS="${CPPFLAGS}"
@@ -51,4 +189,127 @@ AC_CHECK_FUNCS([X509_check_host])
 CPPFLAGS="${save_openssl_CPPFLAGS}"
 LIBS="${save_openssl_LIBS}"
 
+# Specialised checks for particular features.
+AC_MSG_CHECKING(whether rtentry is available and has rt_dst )
+AC_TRY_RUN([
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <net/route.h>
+static inline struct sockaddr_in *cast_addr(struct sockaddr *addr)
+{
+       return (struct sockaddr_in *) addr;
+}
+struct rtentry route;
+int main() {
+  cast_addr(&(&route)->rt_dst)->sin_family = AF_INET;
+  return (cast_addr(&(&route)->rt_dst)->sin_family == AF_INET) ? 0 : 1; }
+], [
+  AC_DEFINE(HAVE_RT_ENTRY_WITH_RT_DST)
+  AC_MSG_RESULT(yes)
+], AC_MSG_RESULT(no) )
+
+NETSTAT_PATH=""
+PPP_PATH=""
+
+# prepare possibility to override default locations
+AC_ARG_WITH([netstat],
+        AS_HELP_STRING([--with-netstat],
+                       [Set the path to the netstat executable on MacOSX or FreeBSD]),
+        NETSTAT_PATH="$withval"
+)
+# this is for the pppd daemon executable
+AC_ARG_WITH([pppd],
+        AS_HELP_STRING([--with-pppd],
+                       [Set the path to the pppd daemon executable]),
+        AS_IF([test ! "x$with_pppd" = "xno" -a ! "x$with_pppd" = "xyes"],[
+		PPP_PATH="$withval"
+		with_pppd="yes"
+		with_ppp="no"
+	])
+)
+# and this is for the ppp user space client on FreeBSD
+AC_ARG_WITH([ppp],
+        AS_HELP_STRING([--with-ppp],
+                       [Set the path to the ppp userspace client on FreeBSD]),
+        AS_IF([test ! "x$with_ppp" = "xno" -a ! "x$with_ppp" = "xyes"],[
+		PPP_PATH="$withval"
+		with_ppp="yes"
+		with_pppd="no"
+	])
+)
+
+# override for /proc/net/route detection
+AC_ARG_ENABLE([proc],
+	AS_HELP_STRING([--enable-proc],
+			[Enable route manipulations directly via /proc/net/route \
+			when cross-compiling, use --disable-proc for the opposite]))
+
+# Checks for existence of specific files.
+AC_CHECK_FILE([/proc/net/route],[
+  AS_IF([test "x$enable_proc" = "x" ], [
+    enable_proc="yes"
+  ])
+],[
+  AS_IF([test "x$NETSTAT_PATH" = "x" ], [
+    AC_CHECK_FILE([/usr/sbin/netstat],[
+      NETSTAT_PATH="/usr/sbin/netstat"
+    ],[
+      AC_CHECK_FILE([/usr/bin/netstat],[
+	NETSTAT_PATH="/usr/bin/netstat"
+      ],[])
+    ])
+  ])
+])
+
+AC_CHECK_FILE(/usr/sbin/ppp,[
+  AS_IF([test "x$PPP_PATH" = "x" ], [
+    PPP_PATH="/usr/sbin/ppp"
+  ])
+  AS_IF([test "x$with_ppp" = "x" ], [
+    with_ppp="yes"
+  ])
+],[])
+AC_CHECK_FILE(/usr/sbin/pppd,[
+  AS_IF([test "x$PPP_PATH" = "x" ], [
+    PPP_PATH="/usr/sbin/pppd"
+  ])
+  AS_IF([test "x$with_pppd" = "x" ], [
+    with_pppd="yes"
+  ])
+],[])
+
+
+# when neither ppp nor pppd are enabled, assume the previous behavior (for travis)
+AS_IF([test "x$with_ppp" = "xno" -a "x$with_pppd" = "xno" ], [
+   with_pppd="yes"
+])
+AS_IF([test "x$with_ppp" = "x" -a "x$with_pppd" = "x" ], [
+   with_pppd="yes"
+])
+
+# when both are enabled, give pppd the higher priority (we can only use one of them)
+AS_IF([test "x$with_ppp" = "xyes" -a "x$with_pppd" = "xyes"], [
+   with_ppp="no"
+])
+
+AS_IF([test "x$with_ppp" = "xyes"], [
+	AC_DEFINE(HAVE_USR_SBIN_PPP, 1)
+],[
+	AC_DEFINE(HAVE_USR_SBIN_PPP, 0)
+])
+AS_IF([test "x$with_pppd" = "xyes"], [
+	AC_DEFINE(HAVE_USR_SBIN_PPPD, 1)
+],[
+	AC_DEFINE(HAVE_USR_SBIN_PPPD, 0)
+])
+AS_IF([test "x$enable_proc" = "xyes"], [
+	AC_DEFINE(HAVE_PROC_NET_ROUTE, 1)
+],[
+	AC_DEFINE(HAVE_PROC_NET_ROUTE, 0)
+])
+
+AC_SUBST(PPP_PATH)
+AC_SUBST(NETSTAT_PATH)
+
+AC_CONFIG_COMMANDS([timestamp], [touch src/.dirstamp])
 AC_OUTPUT(Makefile)

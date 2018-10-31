@@ -42,6 +42,12 @@ static inline const char *err_cfg_str(int code)
 	return "unknown";
 }
 
+#if HAVE_USR_SBIN_PPPD
+#define PPP_DAEMON "pppd"
+#else
+#define PPP_DAEMON "ppp"
+#endif
+
 #define SHA256LEN	(256 / 8)
 #define SHA256STRLEN	(2 * SHA256LEN + 1)
 
@@ -70,11 +76,16 @@ struct vpn_config {
 
 	unsigned int	persistent;
 
+#if HAVE_USR_SBIN_PPPD
 	char	*pppd_log;
 	char	*pppd_plugin;
 	char	*pppd_ipparam;
 	char	*pppd_ifname;
 	char	*pppd_call;
+#endif
+#if HAVE_USR_SBIN_PPP
+	char	*ppp_system;
+#endif
 
 	char			*ca_file;
 	char			*user_cert;
