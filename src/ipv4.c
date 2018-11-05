@@ -643,29 +643,10 @@ int ipv4_protect_tunnel_route(struct tunnel *tunnel)
 {
 	struct rtentry *gtw_rt = &tunnel->ipv4.gtw_rt;
 	struct rtentry *def_rt = &tunnel->ipv4.def_rt;
-	struct rtentry tmp_rt;
 	int ret;
-	int tmp_route_removed = 0;
 
 	route_init(def_rt);
 	route_init(gtw_rt);
-	route_init(&tmp_rt);
-
-	// Back up default route on ppp_iface if present
-	route_dest(&tmp_rt).s_addr = inet_addr("0.0.0.0");
-	route_mask(&tmp_rt).s_addr = inet_addr("0.0.0.0");
-	route_iface(&tmp_rt) = strdup(tunnel->ppp_iface);
-
-	ret = ipv4_get_route(&tmp_rt);
-	if (ret == 0) {
-		log_warn("removing default route from %s.\n",
-		         tunnel->ppp_iface);
-		ret = ipv4_del_route(&tmp_rt);
-		if (ret == 0)
-			tmp_route_removed = 1;
-		else
-			goto err_destroy;
-	}
 
 	// Back up default route
 	route_dest(def_rt).s_addr = inet_addr("0.0.0.0");
@@ -677,16 +658,6 @@ int ipv4_protect_tunnel_route(struct tunnel *tunnel)
 		         err_ipv4_str(ret));
 		log_warn("Protecting tunnel route has failed. But this can be working except for some cases.\n");
 		goto err_destroy;
-	}
-
-	// restore default route on ppp_iface
-	if (tmp_route_removed) {
-		ret = ipv4_set_route(&tmp_rt);
-		if (ret != 0) {
-			log_warn("Could not restore default route (%s). Already restored?\n",
-			         err_ipv4_str(ret));
-		}
-		route_destroy(&tmp_rt);
 	}
 
 	// Set the up a route to the tunnel gateway
@@ -721,7 +692,6 @@ int ipv4_protect_tunnel_route(struct tunnel *tunnel)
 err_destroy:
 	route_destroy(def_rt);
 	tunnel->ipv4.route_to_vpn_is_added = 0;
-	route_destroy(&tmp_rt);
 	return ret;
 }
 
