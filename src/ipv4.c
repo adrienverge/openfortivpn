@@ -488,8 +488,12 @@ static int ipv4_get_route(struct rtentry *route)
 		if (((dest & mask) == (rtdest & rtmask & mask))
 		    && (mask >= route_mask(route).s_addr)
 		    && (mask <= rtmask)
-		    && ((route_iface(route)== NULL)
-		        || (strcmp(iface, route_iface(route)) == 0))) {
+		    && ((route_iface(route) == NULL)
+		        || (strcmp(iface, route_iface(route)) == 0)
+		        || ((strlen(route_iface(route))>0)
+		            && (route_iface(route)[0] == '!')
+		            && (strcmp(iface, &route_iface(route)[1]) != 0))
+		       )) {
 #if HAVE_PROC_NET_ROUTE
 			if (((mask == route_mask(route).s_addr)
 			     && (metric <= route->rt_metric))
@@ -651,6 +655,8 @@ int ipv4_protect_tunnel_route(struct tunnel *tunnel)
 	// Back up default route
 	route_dest(def_rt).s_addr = inet_addr("0.0.0.0");
 	route_mask(def_rt).s_addr = inet_addr("0.0.0.0");
+	route_iface(def_rt) = malloc(strlen(tunnel->ppp_iface)+2);
+	sprintf(route_iface(def_rt),"!%s",tunnel->ppp_iface);
 
 	ret = ipv4_get_route(def_rt);
 	if (ret != 0) {
@@ -663,6 +669,8 @@ int ipv4_protect_tunnel_route(struct tunnel *tunnel)
 	// Set the up a route to the tunnel gateway
 	route_dest(gtw_rt).s_addr = tunnel->config->gateway_ip.s_addr;
 	route_mask(gtw_rt).s_addr = inet_addr("255.255.255.255");
+	route_iface(gtw_rt) = malloc(strlen(tunnel->ppp_iface)+2);
+	sprintf(route_iface(gtw_rt),"!%s",tunnel->ppp_iface);
 	ret = ipv4_get_route(gtw_rt);
 	if (ret != 0) {
 		log_warn("Could not get route to gateway (%s).\n",
