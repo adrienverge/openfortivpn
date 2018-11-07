@@ -458,8 +458,11 @@ int main(int argc, char **argv)
 	if (cfg.otp[0] != '\0')
 		log_debug("One-time password = \"%s\"\n", cfg.otp);
 
-	if (geteuid() != 0)
-		log_warn("This process was not spawned with root privileges, this will probably not work.\n");
+	if (geteuid() != 0) {
+		log_error("This process was not spawned with root privileges, which are required.\n");
+		ret = EXIT_FAILURE;
+		goto exit;
+	}
 
 	do {
 		if (run_tunnel(&cfg) != 0)
