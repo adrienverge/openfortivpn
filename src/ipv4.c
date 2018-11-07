@@ -490,9 +490,9 @@ static int ipv4_get_route(struct rtentry *route)
 		    && (mask <= rtmask)
 		    && ((route_iface(route) == NULL)
 		        || (strcmp(iface, route_iface(route)) == 0)
-		        || ((strlen(route_iface(route))>0)
-		            && (route_iface(route)[0] == '!')
-		            && (strcmp(iface, &route_iface(route)[1]) != 0))
+		        || (strlen(route_iface(route)) > 0
+		            && route_iface(route)[0] == '!'
+		            && strcmp(iface, &route_iface(route)[1]) != 0)
 		       )) {
 #if HAVE_PROC_NET_ROUTE
 			if (((mask == route_mask(route).s_addr)
