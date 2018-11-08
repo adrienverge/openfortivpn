@@ -655,7 +655,7 @@ int ipv4_protect_tunnel_route(struct tunnel *tunnel)
 	// Back up default route
 	route_dest(def_rt).s_addr = inet_addr("0.0.0.0");
 	route_mask(def_rt).s_addr = inet_addr("0.0.0.0");
-	route_iface(def_rt) = malloc(strlen(tunnel->ppp_iface)+2);
+	route_iface(def_rt) = malloc(strlen(tunnel->ppp_iface) + 2);
 	sprintf(route_iface(def_rt),"!%s",tunnel->ppp_iface);
 
 	ret = ipv4_get_route(def_rt);
@@ -669,7 +669,7 @@ int ipv4_protect_tunnel_route(struct tunnel *tunnel)
 	// Set the up a route to the tunnel gateway
 	route_dest(gtw_rt).s_addr = tunnel->config->gateway_ip.s_addr;
 	route_mask(gtw_rt).s_addr = inet_addr("255.255.255.255");
-	route_iface(gtw_rt) = malloc(strlen(tunnel->ppp_iface)+2);
+	route_iface(gtw_rt) = malloc(strlen(tunnel->ppp_iface) + 2);
 	sprintf(route_iface(gtw_rt),"!%s",tunnel->ppp_iface);
 	ret = ipv4_get_route(gtw_rt);
 	if (ret != 0) {
