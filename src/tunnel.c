@@ -854,8 +854,7 @@ int run_tunnel(struct vpn_config *config)
 	// cookie
 	ret = auth_log_in(&tunnel);
 	if (ret != 1) {
-		log_error("Could not authenticate to gateway (%s).\n",
-		          err_http_str(ret));
+		log_error("Could not authenticate to gateway. Please check the password, client certificate, etc.\n");
 		ret = 1;
 		goto err_tunnel;
 	}
