@@ -30,7 +30,9 @@
 
 static inline const char *err_http_str(int code)
 {
-	if (code == ERR_HTTP_INVALID)
+	if (code > 0)
+		return "HTTP status code";
+	else if (code == ERR_HTTP_INVALID)
 		return "Invalid input";
 	else if (code == ERR_HTTP_TOO_LONG)
 		return "Request too long";
