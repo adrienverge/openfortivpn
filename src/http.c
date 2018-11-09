@@ -552,7 +552,8 @@ int auth_log_in(struct tunnel *tunnel)
 
 	if (strncmp(res, "HTTP/1.1 200 OK\r\n", 17)) {
 		char word[17];
-		if (sscanf(res, "%s %d", word, &ret) < 2)
+
+		if (sscanf(res, "%16s %d", word, &ret) < 2)
 			ret = ERR_HTTP_BAD_RES_CODE;
 		goto end;
 	}
@@ -606,7 +607,8 @@ int auth_log_in(struct tunnel *tunnel)
 
 		if (strncmp(res, "HTTP/1.1 200 OK\r\n", 17)) {
 			char word[17];
-			if (sscanf(res, "%s %d", word, &ret) < 2)
+
+			if (sscanf(res, "%16s %d", word, &ret) < 2)
 				ret = ERR_HTTP_BAD_RES_CODE;
 			goto end;
 		}
@@ -641,7 +643,8 @@ static int parse_xml_config(struct tunnel *tunnel, const char *buffer)
 
 	if (strncmp(buffer, "HTTP/1.1 200 OK\r\n", 17)) {
 		char word[17];
-		if (sscanf(buffer, "%s %d", word, &ret) < 2)
+
+		if (sscanf(buffer, "%16s %d", word, &ret) < 2)
 			ret = ERR_HTTP_BAD_RES_CODE;
 		return ret;
 	}
