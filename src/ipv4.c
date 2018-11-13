@@ -568,10 +568,18 @@ static int ipv4_set_route(struct rtentry *route)
 		return 1;
 	}
 
-	strcpy(cmd, "/sbin/route -n add -net ");
+
+	strcpy(cmd, "/sbin/route -n add ");
+	if (route->rt_flags & RTF_HOST)
+		strcat(cmd, "-host ");
+	else
+		strcat(cmd, "-net ");
+
 	strncat(cmd, inet_ntoa(route_dest(route)), 15);
-	strcat(cmd, " -netmask ");
-	strncat(cmd, inet_ntoa(route_mask(route)), 15);
+	if (!(route->rt_flags & RTF_HOST)) {
+		strcat(cmd, " -netmask ");
+		strncat(cmd, inet_ntoa(route_mask(route)), 15);
+	}
 	if (route->rt_flags & RTF_GATEWAY) {
 		strcat(cmd, " ");
 		strncat(cmd, inet_ntoa(route_gtw(route)), 15);
@@ -623,12 +631,22 @@ static int ipv4_del_route(struct rtentry *route)
 		return 1;
 	}
 
-	strcpy(cmd, "/sbin/route -n delete ");
-	strncat(cmd, inet_ntoa(route_dest(route)), 15);
-	strcat(cmd, " -netmask ");
-	strncat(cmd, inet_ntoa(route_mask(route)), 15);
 
-	if (!(route->rt_flags & RTF_GATEWAY)) {
+	strcpy(cmd, "/sbin/route -n delete ");
+	if (route->rt_flags & RTF_HOST)
+		strcat(cmd, "-host ");
+	else
+		strcat(cmd, "-net ");
+
+	strncat(cmd, inet_ntoa(route_dest(route)), 15);
+	if (!(route->rt_flags & RTF_HOST)) {
+		strcat(cmd, " -netmask ");
+		strncat(cmd, inet_ntoa(route_mask(route)), 15);
+	}
+	if (route->rt_flags & RTF_GATEWAY) {
+		strcat(cmd, " ");
+		strncat(cmd, inet_ntoa(route_gtw(route)), 15);
+	} else {
 		strcat(cmd, " -interface ");
 		strncat(cmd, route_iface(route),
 		        SHOW_ROUTE_BUFFER_SIZE - strlen(cmd) - 1);
@@ -656,7 +674,7 @@ int ipv4_protect_tunnel_route(struct tunnel *tunnel)
 	route_dest(def_rt).s_addr = inet_addr("0.0.0.0");
 	route_mask(def_rt).s_addr = inet_addr("0.0.0.0");
 	route_iface(def_rt) = malloc(strlen(tunnel->ppp_iface) + 2);
-	sprintf(route_iface(def_rt),"!%s",tunnel->ppp_iface);
+	sprintf(route_iface(def_rt), "!%s", tunnel->ppp_iface);
 
 	ret = ipv4_get_route(def_rt);
 	if (ret != 0) {
@@ -670,6 +688,15 @@ int ipv4_protect_tunnel_route(struct tunnel *tunnel)
 	route_dest(gtw_rt).s_addr = tunnel->config->gateway_ip.s_addr;
 	route_mask(gtw_rt).s_addr = inet_addr("255.255.255.255");
 	route_iface(gtw_rt) = malloc(strlen(tunnel->ppp_iface) + 2);
+	sprintf(route_iface(gtw_rt), "%s", tunnel->ppp_iface);
+	ret = ipv4_get_route(gtw_rt);
+	if ((ret == 0)
+	    && (route_dest(gtw_rt).s_addr == tunnel->config->gateway_ip.s_addr)
+	    && (route_mask(gtw_rt).s_addr == inet_addr("255.255.255.255"))) {
+		log_debug("removing wrong route to vpn server...\n");
+		log_debug("ip route show %s\n", ipv4_show_route(gtw_rt));
+		ipv4_del_route(gtw_rt);
+	}
 	sprintf(route_iface(gtw_rt),"!%s",tunnel->ppp_iface);
 	ret = ipv4_get_route(gtw_rt);
 	if (ret != 0) {
@@ -794,9 +821,14 @@ static int ipv4_set_split_routes(struct tunnel *tunnel)
 		route_iface(route) = strdup(tunnel->ppp_iface);
 		if (!route_iface(route))
 			return ERR_IPV4_NO_MEM;
+#ifndef HAVE_RT_ENTRY_WITH_RT_DST
+		if (route_gtw(route).s_addr == tunnel->ipv4.ip_addr.s_addr)
+			route_gtw(route).s_addr = 0;
 		if (route_gtw(route).s_addr == 0)
-			route_gtw(route).s_addr = tunnel->ipv4.ip_addr.s_addr;
-		route->rt_flags |= RTF_GATEWAY;
+			route->rt_flags &= ~RTF_GATEWAY;
+#endif
+		if (route_gtw(route).s_addr != 0)
+			route->rt_flags |= RTF_GATEWAY;
 		ret = ipv4_set_route(route);
 		if (ret == ERR_IPV4_SEE_ERRNO && errno == EEXIST)
 			log_warn("Route to gateway exists already.\n");
