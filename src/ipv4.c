@@ -364,7 +364,7 @@ static int ipv4_get_route(struct rtentry *route)
 		int pos;
 		char *tmpstr;
 
-		log_debug("line: %s\n", line);
+		log_debug_details("line: %s\n", line);
 
 		saveptr3 = NULL;
 		dest = UINT32_MAX;
@@ -375,7 +375,7 @@ static int ipv4_get_route(struct rtentry *route)
 			// we have arrived at the end of ipv4 output
 			goto end;
 		}
-		log_debug("- Destination: %s\n", tmpstr);
+		log_debug_details("- Destination: %s\n", tmpstr);
 		// replace literal "default" route by IPV4 numbers-and-dots notation
 		if (strncmp(tmpstr, "default", 7) == 0) {
 			dest = 0;
@@ -425,13 +425,13 @@ static int ipv4_get_route(struct rtentry *route)
 			}
 
 		}
-		log_debug("- Destination IP Hex: %x\n", dest);
-		log_debug("- Destination Mask Hex: %x\n", mask);
+		log_debug_details("- Destination IP Hex: %x\n", dest);
+		log_debug_details("- Destination Mask Hex: %x\n", mask);
 		// "Gateway"
 		gtw = 0;
 		if (inet_aton(strtok_r(NULL, " ", &saveptr2), &dstaddr)) {
 			gtw = dstaddr.s_addr;
-			log_debug("- Gateway Mask Hex: %x\n", gtw);
+			log_debug_details("- Gateway Mask Hex: %x\n", gtw);
 		}
 		// "Flags"
 		tmpstr = strtok_r(NULL, " ", &saveptr2);
@@ -444,8 +444,8 @@ static int ipv4_get_route(struct rtentry *route)
 		if (have_use) strtok_r(NULL, " ", &saveptr2); // "Use"
 
 		iface = strtok_r(NULL, " ", &saveptr2); // "Netif"
-		log_debug("- Interface: %s\n", iface);
-		log_debug("\n");
+		log_debug_details("- Interface: %s\n", iface);
+		log_debug_details("\n");
 #endif
 		/*
 		 * Now that we have parsed a routing entry, check if it

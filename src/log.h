@@ -55,6 +55,8 @@ void do_log(int verbosity, const char *format, ...);
 	log_level(OFV_LOG_INFO, __VA_ARGS__)
 #define log_debug(...) \
 	log_level(OFV_LOG_DEBUG, __VA_ARGS__)
+#define log_debug_details(...) \
+	log_level(OFV_LOG_DEBUG_PACKETS, __VA_ARGS__)
 
 #define log_packet(...) \
 	do { \
