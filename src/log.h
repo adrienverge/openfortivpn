@@ -28,7 +28,7 @@ enum log_verbosity {
 	OFV_LOG_WARN  = 2,
 	OFV_LOG_INFO  = 3,
 	OFV_LOG_DEBUG = 4,
-	OFV_LOG_DEBUG_PACKETS = 5
+	OFV_LOG_DEBUG_DETAILS = 5
 };
 
 extern enum log_verbosity loglevel;
@@ -56,11 +56,11 @@ void do_log(int verbosity, const char *format, ...);
 #define log_debug(...) \
 	log_level(OFV_LOG_DEBUG, __VA_ARGS__)
 #define log_debug_details(...) \
-	log_level(OFV_LOG_DEBUG_PACKETS, __VA_ARGS__)
+	log_level(OFV_LOG_DEBUG_DETAILS, __VA_ARGS__)
 
 #define log_packet(...) \
 	do { \
-		if (loglevel >= OFV_LOG_DEBUG_PACKETS) \
+		if (loglevel >= OFV_LOG_DEBUG_DETAILS) \
 			do_log_packet(__VA_ARGS__); \
 	} while (0)
 
