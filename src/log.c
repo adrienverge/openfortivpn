@@ -39,7 +39,7 @@ struct log_param_s {
 	int syslog_prio;
 };
 
-static const struct log_param_s log_params[OFV_LOG_DEBUG_PACKETS + 1] = {
+static const struct log_param_s log_params[OFV_LOG_DEBUG_DETAILS + 1] = {
 	{ "        ", "",           LOG_ERR},
 	{ "ERROR:  ", "\033[0;31m", LOG_ERR},
 	{ "WARN:   ", "\033[0;33m", LOG_WARNING},
@@ -71,7 +71,7 @@ void set_syslog(int use_syslog)
 
 void increase_verbosity(void)
 {
-	if (loglevel < OFV_LOG_DEBUG_PACKETS)
+	if (loglevel < OFV_LOG_DEBUG_DETAILS)
 		loglevel++;
 }
 void decrease_verbosity(void)
