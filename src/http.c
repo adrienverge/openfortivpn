@@ -81,6 +81,8 @@ int http_send(struct tunnel *tunnel, const char *request, ...)
 	else if (length >= BUFSZ)
 		return ERR_HTTP_TOO_LONG;
 
+	log_debug_details("http_send : \n%s\n", buffer);
+
 	while (n == 0)
 		n = safe_ssl_write(tunnel->ssl_handle, (uint8_t *) buffer,
 		                   length);
@@ -147,6 +149,7 @@ int http_receive(
 		                  (uint8_t *) buffer + bytes_read,
 		                  BUFSZ - 1 - bytes_read);
 		if (n > 0) {
+			log_debug_details("http_receive : \n%s\n", buffer);
 			const char *eoh;
 
 			bytes_read += n;
