@@ -38,7 +38,7 @@ Please see Github [commit history](https://github.com/adrienverge/openfortivpn/c
 More Information
 ----------------
 
-* For a list of knwon issues please check the
+* For a list of known issues please check the
   [issues list](https://github.com/adrienverge/openfortivpn/issues) on GitHub.
 * We try to avoid backwards incompatible changes, but sometimes it is not
   avoidable. When we are aware of compatibility issues, then we recommend to
