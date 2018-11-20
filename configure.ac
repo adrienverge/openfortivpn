@@ -282,9 +282,11 @@ AC_CHECK_FILE(/usr/sbin/pppd,[
 # when neither ppp nor pppd are enabled, assume the previous behavior (for travis)
 AS_IF([test "x$with_ppp" = "xno" -a "x$with_pppd" = "xno" ], [
    with_pppd="yes"
+   PPP_PATH="/usr/sbin/pppd"
 ])
 AS_IF([test "x$with_ppp" = "x" -a "x$with_pppd" = "x" ], [
    with_pppd="yes"
+   PPP_PATH="/usr/sbin/pppd"
 ])
 
 # when both are enabled, give pppd the higher priority (we can only use one of them)
