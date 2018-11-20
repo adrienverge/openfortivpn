@@ -788,9 +788,12 @@ int ssl_connect(struct tunnel *tunnel)
 	if (!tunnel->config->insecure_ssl && !tunnel->config->cipher_list) {
 		const char *cipher_list = "HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4";
 
-		if (tunnel->config->cipher_list)
-			cipher_list = tunnel->config->cipher_list;
-		if (!SSL_set_cipher_list(tunnel->ssl_handle, cipher_list)) {
+		tunnel->config->cipher_list = strdup(cipher_list);
+	}
+
+	if (tunnel->config->cipher_list) {
+		if (!SSL_set_cipher_list(tunnel->ssl_handle,
+		                         tunnel->config->cipher_list)) {
 			log_error("SSL_set_cipher_list failed: %s\n",
 			          ERR_error_string(ERR_peek_last_error(), NULL));
 			return 1;
