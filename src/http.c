@@ -50,8 +50,8 @@ static void url_encode(char *dest, const char *str)
 			static const char hex[] = "0123456789ABCDEF";
 
 			*dest++ = '%';
-			*dest++ = hex[*str >> 4];
-			*dest++ = hex[*str & 15];
+			*dest++ = hex[(unsigned char)*str >> 4];
+			*dest++ = hex[(unsigned char)*str & 15];
 		}
 		str++;
 	}
