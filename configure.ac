@@ -260,18 +260,19 @@ AC_CHECK_FILE([/proc/net/route],[
     ])
   ])
 ])
-
-AC_CHECK_FILE(/usr/sbin/ppp,[
+AC_PATH_PROG(PPP, [ppp], [/usr/sbin/ppp], "$PATH:/sbin:/usr/sbin")
+AC_CHECK_FILE("$PPP",[
   AS_IF([test "x$PPP_PATH" = "x" ], [
-    PPP_PATH="/usr/sbin/ppp"
+    PPP_PATH="$PPP"
   ])
   AS_IF([test "x$with_ppp" = "x" ], [
     with_ppp="yes"
   ])
 ],[])
-AC_CHECK_FILE(/usr/sbin/pppd,[
+AC_PATH_PROG(PPPD, [pppd], [/usr/sbin/pppd], "$PATH:/sbin:/usr/sbin")
+AC_CHECK_FILE("$PPPD",[
   AS_IF([test "x$PPP_PATH" = "x" ], [
-    PPP_PATH="/usr/sbin/pppd"
+    PPP_PATH="$PPPD"
   ])
   AS_IF([test "x$with_pppd" = "x" ], [
     with_pppd="yes"
