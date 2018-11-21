@@ -89,6 +89,7 @@ AC_CHECK_TYPES([struct termios], [], [], [#include <termios.h>])
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([ \
+access \
 atoi \
 close \
 connect \
@@ -98,27 +99,35 @@ _exit \
 fclose \
 fcntl \
 fflush \
+fileno \
 fopen \
 forkpty \
 fprintf \
+fputc \
 fputs \
+fread \
 free \
 freeaddrinfo \
 freeifaddrs \
 freopen \
 fwrite \
+gai_strerror \
 getaddrinfo \
 getchar \
 getenv \
+geteuid \
+getifaddrs \
 getopt_long \
 htons \
 index \
 inet_addr \
 inet_ntoa \
+ioctl \
 isatty \
 isdigit \
 isspace \
 malloc \
+memcmp \
 memcpy \
 memmem \
 memmove \
@@ -126,6 +135,8 @@ memset \
 ntohs \
 open \
 openlog \
+optarg \
+optind \
 pclose \
 popen \
 printf \
@@ -133,25 +144,36 @@ pthread_cancel \
 pthread_cond_init \
 pthread_cond_signal \
 pthread_cond_wait \
+pthread_create \
 pthread_join \
 pthread_mutexattr_init \
 pthread_mutex_destroy \
 pthread_mutex_init \
 pthread_mutex_lock \
 pthread_mutex_unlock \
+pthread_self \
 pthread_sigmask \
+putchar \
 puts \
 read \
 realloc \
 rewind \
 select \
+sem_destroy \
+sem_init \
+sem_post \
+sem_wait \
 setenv \
+setsockopt \
 sigaddset \
 sigemptyset \
 signal \
+sleep \
 snprintf \
 socket \
 sprintf \
+sscanf \
+strcasecmp \
 strcasestr \
 strcat \
 strchr \
@@ -162,6 +184,7 @@ strerror \
 strlen \
 strncasecmp \
 strncat \
+strncmp \
 strncpy \
 strsignal \
 strstr \
@@ -170,11 +193,13 @@ strtok_r \
 strtol \
 syslog \
 system \
+tcgetattr \
 tcsetattr \
 usleep \
 vprintf \
 vsnprintf \
 vsyslog \
+waitpid \
 write \
 ], [], AC_MSG_ERROR([Required function not found]))
 
@@ -261,30 +286,45 @@ AC_CHECK_FILE([/proc/net/route],[
   ])
 ])
 
-AC_CHECK_FILE(/usr/sbin/ppp,[
+# check for ppp user space client
+AC_PATH_PROG(PPP, [ppp], [/usr/sbin/ppp], "$PATH:/sbin:/usr/sbin")
+AC_CHECK_FILE([$PPP], [
   AS_IF([test "x$PPP_PATH" = "x" ], [
-    PPP_PATH="/usr/sbin/ppp"
+    PPP_PATH="$PPP"
   ])
   AS_IF([test "x$with_ppp" = "x" ], [
     with_ppp="yes"
   ])
 ],[])
-AC_CHECK_FILE(/usr/sbin/pppd,[
+
+# check for pppd
+AC_PATH_PROG(PPPD, [pppd], [/usr/sbin/pppd], "$PATH:/sbin:/usr/sbin")
+AC_CHECK_FILE([$PPPD], [
   AS_IF([test "x$PPP_PATH" = "x" ], [
-    PPP_PATH="/usr/sbin/pppd"
+    PPP_PATH="$PPPD"
   ])
   AS_IF([test "x$with_pppd" = "x" ], [
     with_pppd="yes"
   ])
 ],[])
 
+# replace empty settings with "no"
+AS_IF([test "x$with_ppp" = "x" ], [
+    with_ppp="no"
+])
+AS_IF([test "x$with_pppd" = "x" ], [
+    with_pppd="no"
+])
 
 # when neither ppp nor pppd are enabled, assume the previous behavior (for travis)
 AS_IF([test "x$with_ppp" = "xno" -a "x$with_pppd" = "xno" ], [
-   with_pppd="yes"
-])
-AS_IF([test "x$with_ppp" = "x" -a "x$with_pppd" = "x" ], [
-   with_pppd="yes"
+   AS_IF([test "x$uname" = "xFreeBSD" ], [
+     PPP_PATH="/usr/sbin/ppp"
+     with_ppp="yes"
+   ], [
+     with_pppd="yes"
+     PPP_PATH="/usr/sbin/pppd"
+   ])
 ])
 
 # when both are enabled, give pppd the higher priority (we can only use one of them)
