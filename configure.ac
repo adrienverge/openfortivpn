@@ -147,7 +147,6 @@ pthread_cond_wait \
 pthread_create \
 pthread_join \
 pthread_mutexattr_init \
-pthread_mutexattr_setrobust \
 pthread_mutex_destroy \
 pthread_mutex_init \
 pthread_mutex_lock \
@@ -286,8 +285,10 @@ AC_CHECK_FILE([/proc/net/route],[
     ])
   ])
 ])
+
+# check for ppp user space client
 AC_PATH_PROG(PPP, [ppp], [/usr/sbin/ppp], "$PATH:/sbin:/usr/sbin")
-AC_CHECK_FILE("$PPP",[
+AC_CHECK_FILE([$PPP], [
   AS_IF([test "x$PPP_PATH" = "x" ], [
     PPP_PATH="$PPP"
   ])
@@ -295,8 +296,10 @@ AC_CHECK_FILE("$PPP",[
     with_ppp="yes"
   ])
 ],[])
+
+# check for pppd
 AC_PATH_PROG(PPPD, [pppd], [/usr/sbin/pppd], "$PATH:/sbin:/usr/sbin")
-AC_CHECK_FILE("$PPPD",[
+AC_CHECK_FILE([$PPPD], [
   AS_IF([test "x$PPP_PATH" = "x" ], [
     PPP_PATH="$PPPD"
   ])
@@ -305,15 +308,23 @@ AC_CHECK_FILE("$PPPD",[
   ])
 ],[])
 
+# replace empty settings with "no"
+AS_IF([test "x$with_ppp" = "x" ], [
+    with_ppp="no"
+])
+AS_IF([test "x$with_pppd" = "x" ], [
+    with_pppd="no"
+])
 
 # when neither ppp nor pppd are enabled, assume the previous behavior (for travis)
 AS_IF([test "x$with_ppp" = "xno" -a "x$with_pppd" = "xno" ], [
-   with_pppd="yes"
-   PPP_PATH="/usr/sbin/pppd"
-])
-AS_IF([test "x$with_ppp" = "x" -a "x$with_pppd" = "x" ], [
-   with_pppd="yes"
-   PPP_PATH="/usr/sbin/pppd"
+   AS_IF([test "x$uname" = "xFreeBSD" ], [
+     PPP_PATH="/usr/sbin/ppp"
+     with_ppp="yes"
+   ], [
+     with_pppd="yes"
+     PPP_PATH="/usr/sbin/pppd"
+   ])
 ])
 
 # when both are enabled, give pppd the higher priority (we can only use one of them)
