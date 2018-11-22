@@ -47,7 +47,7 @@ static void url_encode(char *dest, const char *str)
 		else if (*str == ' ')
 			*dest++ = '+';
 		else {
-			static const char hex[] = "0123456789abcdef";
+			static const char hex[] = "0123456789ABCDEF";
 
 			*dest++ = '%';
 			*dest++ = hex[*str >> 4];
