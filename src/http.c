@@ -244,7 +244,7 @@ static int do_http_request(struct tunnel *tunnel,
 	                        "Host: %s:%d\r\n"
 	                        "User-Agent: Mozilla/5.0 SV1\r\n"
 	                        "Accept: text/plain\r\n"
-	                        "Accept-Encoding: identify\r\n"
+	                        "Accept-Encoding: identity\r\n"
 	                        "Content-Type: application/x-www-form-urlencoded\r\n"
 	                        "Cookie: %s\r\n"
 	                        "Content-Length: %d\r\n"
