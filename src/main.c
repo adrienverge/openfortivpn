@@ -56,7 +56,7 @@
 #endif
 
 #define usage \
-"Usage: openfortivpn [<host>:<port>] [-u <user>] [-p <pass>]\n" \
+"Usage: openfortivpn [<host>[:<port>]] [-u <user>] [-p <pass>]\n" \
 "                    [--realm=<realm>] [--otp=<otp>] [--set-routes=<0|1>]\n" \
 "                    [--half-internet-routes=<0|1>] [--set-dns=<0|1>]\n" \
 PPPD_USAGE \
@@ -148,11 +148,10 @@ int main(int argc, char **argv)
 	const char *config_file = SYSCONFDIR"/openfortivpn/config";
 	const char *host;
 	char *port_str;
-	long int port;
 
 	struct vpn_config cfg = {
 		.gateway_host = {'\0'},
-		.gateway_port = 0,
+		.gateway_port = 443,
 		.username = {'\0'},
 		.password = {'\0'},
 		.otp = {'\0'},
@@ -414,20 +413,17 @@ int main(int argc, char **argv)
 	if (optind == argc - 1) {
 		host = argv[optind++];
 		port_str = strchr(host, ':');
-		if (port_str == NULL) {
-			log_error("Specify a valid host:port couple.\n");
-			goto user_error;
+		if (port_str != NULL) {
+			port_str[0] = '\0';
+			port_str++;
+			cfg.gateway_port = strtol(port_str, NULL, 0);
+			if (cfg.gateway_port <= 0 || cfg.gateway_port > 65535) {
+				log_error("Specify a valid port.\n");
+				goto user_error;
+			}
 		}
-		port_str[0] = '\0';
 		strncpy(cfg.gateway_host, host, FIELD_SIZE);
 		cfg.gateway_host[FIELD_SIZE] = '\0';
-		port_str++;
-		port = strtol(port_str, NULL, 0);
-		if (port <= 0 || port > 65535) {
-			log_error("Specify a valid port.\n");
-			goto user_error;
-		}
-		cfg.gateway_port = port;
 	}
 
 	// Check host and port
