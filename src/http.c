@@ -500,6 +500,16 @@ int try_otp_auth(
 				return -1;
 			url_encode(d, cfg->otp);
 			d += strlen(d);
+			/*  realm workaround */
+			if (cfg->realm[0] != '\0') {
+				l = strlen(cfg->realm);
+				if (!SPACE_AVAILABLE(3 * l + 8))
+					return -1;
+				strcat(d, "&realm=");
+				d += strlen(d);
+				url_encode(d, cfg->realm);
+				d += strlen(d);
+			}
 		} else if (strncmp(t, "submit", 6) == 0) {
 			/* avoid adding another '&' */
 			n = v = e = NULL;
