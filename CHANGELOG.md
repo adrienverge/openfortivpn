@@ -11,10 +11,18 @@ Legend
 Releases
 --------
 
-### Upcoming release (current master)
+This high level changelog is usually updated when a release is tagged.
+On the master branch there may be changes that are not (yet) described here.
 
-Note: This list is going to change and perhaps needs some review before the next release is tagged.
+### 1.8.1
 
+* [~] Support longer passowrds by allocation of a larger buffer
+* [-] With version 1.8.0 /etc/resolv.conf was not updated anymore in some situations.
+  To avoid this regression the change "Rationalize DNS options" has been reverted again
+  to restore the behavior of versions up to 1.7.1.
+* [-] Correctly use realm together with two factor authentication
+* [~] If no port is specified use standard https port similar as vendor client
+* [-] Fix value of Accept-Encoding request header
 * [-] Bugfix in url_encode for non alphanumerical characters
 * [-] HTML URL Encoding with uppercase characters
 * [-] Honor Cipher-list option 
@@ -199,6 +207,7 @@ Usage: openfortivpn <host>:<port> -u <user> -p <pass>
        openfortivpn --help 
        openfortivpn --version
 ```
+
 ### Details of the changes
 
 This is a high level changelog meant to provide a rough overview about the version history of openfortivpn. Please see the Github [commit history](https://github.com/adrienverge/openfortivpn/commits) for more details of the individual changes listed here, and for a complete list of the internal code changes.
