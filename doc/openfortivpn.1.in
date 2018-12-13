@@ -119,8 +119,8 @@ $ openssl s_client -connect \fI<host:port>\fR
 (default: HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4)
 .TP
 \fB\-\-pppd-no-peerdns\fR
-Deprecated; do not ask peer ppp server for DNS server addresses and do not make
-pppd rewrite /etc/resolv.conf.
+Do not ask peer ppp server for DNS server addresses and do not make pppd
+rewrite /etc/resolv.conf.
 .TP
 \fB\-\-pppd-log=\fI<file>\fR
 Set pppd in debug mode and save its logs into \fI<file>\fR.
@@ -235,6 +235,8 @@ set-dns = 0
 set-routes = 1
 .br
 half-internet-routes = 0
+.br
+pppd-use-peerdns = 1
 .br
 # alternatively, use a specific pppd plugin instead
 .br
