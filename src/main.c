@@ -34,8 +34,8 @@
 "                    [--pppd-call=<name>] [--pppd-plugin=<file>]\n"
 
 #define PPPD_HELP \
-"  --pppd-no-peerdns             Deprecated; do not ask peer ppp server for DNS server\n" \
-"                                addresses and do not make pppd rewrite /etc/resolv.conf\n" \
+"  --pppd-no-peerdns             Do not ask peer ppp server for DNS server addresses\n" \
+"                                and do not make pppd rewrite /etc/resolv.conf\n" \
 "  --pppd-log=<file>             Set pppd in debug mode and save its logs into\n" \
 "                                <file>.\n" \
 "  --pppd-plugin=<file>          Use specified pppd plugin instead of configuring\n" \
