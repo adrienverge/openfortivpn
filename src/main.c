@@ -27,6 +27,9 @@
 #include <string.h>
 #include <limits.h>
 
+#define PWD_BUFSIZ	4096
+
+
 #if HAVE_USR_SBIN_PPPD
 #define PPPD_USAGE \
 "                    [--pppd-no-peerdns] [--pppd-log=<file>]\n" \
@@ -440,8 +443,8 @@ int main(int argc, char **argv)
 		if (cfg.password != NULL) {
 			free(cfg.password);
 		}
-		char *tmp_password = malloc(BUFSIZ); // allocate large buffer
-		read_password("VPN account password: ", tmp_password, BUFSIZ);
+		char *tmp_password = malloc(PWD_BUFSIZ); // allocate large buffer
+		read_password("VPN account password: ", tmp_password, PWD_BUFSIZ);
 		cfg.password = strdup(tmp_password); // copy string of correct size
 		free(tmp_password);
 	}
