@@ -440,9 +440,7 @@ int main(int argc, char **argv)
 	}
 	// If no password given, interactively ask user
 	if (cfg.password == NULL || cfg.password[0] == '\0') {
-		if (cfg.password != NULL) {
-			free(cfg.password);
-		}
+		free(cfg.password);
 		char *tmp_password = malloc(PWD_BUFSIZ); // allocate large buffer
 		read_password("VPN account password: ", tmp_password, PWD_BUFSIZ);
 		cfg.password = strdup(tmp_password); // copy string of correct size
