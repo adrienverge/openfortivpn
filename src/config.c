@@ -30,7 +30,7 @@ const struct vpn_config invalid_cfg = {
 	.gateway_host = {'\0'},
 	.gateway_port = 0,
 	.username = {'\0'},
-	.password = {'\0'},
+	.password = NULL,
 	.otp = {'\0'},
 	.realm = {'\0'},
 	.set_routes = -1,
@@ -201,8 +201,7 @@ int load_config(struct vpn_config *cfg, const char *filename)
 			strncpy(cfg->username, val, FIELD_SIZE - 1);
 			cfg->username[FIELD_SIZE] = '\0';
 		} else if (strcmp(key, "password") == 0) {
-			strncpy(cfg->password, val, FIELD_SIZE - 1);
-			cfg->password[FIELD_SIZE] = '\0';
+			cfg->password = strdup(val);
 		} else if (strcmp(key, "otp") == 0) {
 			strncpy(cfg->otp, val, FIELD_SIZE - 1);
 			cfg->otp[FIELD_SIZE] = '\0';
@@ -330,6 +329,7 @@ err_close:
 
 void destroy_vpn_config(struct vpn_config *cfg)
 {
+	free(cfg->password);
 #if HAVE_USR_SBIN_PPPD
 	free(cfg->pppd_log);
 	free(cfg->pppd_plugin);
@@ -359,8 +359,8 @@ void merge_config(struct vpn_config *dst, struct vpn_config *src)
 		dst->gateway_port = src->gateway_port;
 	if (src->username[0])
 		strcpy(dst->username, src->username);
-	if (src->password[0])
-		strcpy(dst->password, src->password);
+	if (src->password != NULL && src->password[0])
+		dst->password = strdup(src->password);
 	if (src->otp[0])
 		strcpy(dst->otp, src->otp);
 	if (src->realm[0])

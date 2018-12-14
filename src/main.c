@@ -27,6 +27,9 @@
 #include <string.h>
 #include <limits.h>
 
+#define PWD_BUFSIZ	4096
+
+
 #if HAVE_USR_SBIN_PPPD
 #define PPPD_USAGE \
 "                    [--pppd-no-peerdns] [--pppd-log=<file>]\n" \
@@ -153,7 +156,7 @@ int main(int argc, char **argv)
 		.gateway_host = {'\0'},
 		.gateway_port = 443,
 		.username = {'\0'},
-		.password = {'\0'},
+		.password = NULL,
 		.otp = {'\0'},
 		.realm = {'\0'},
 		.set_routes = 1,
@@ -376,8 +379,7 @@ int main(int argc, char **argv)
 			cli_cfg.username[FIELD_SIZE] = '\0';
 			break;
 		case 'p':
-			strncpy(cli_cfg.password, optarg, FIELD_SIZE);
-			cli_cfg.password[FIELD_SIZE] = '\0';
+			cli_cfg.password = strdup(optarg);
 			break;
 		case 'o':
 			strncpy(cli_cfg.otp, optarg, FIELD_SIZE);
@@ -391,7 +393,7 @@ int main(int argc, char **argv)
 	if (optind < argc - 1 || optind > argc)
 		goto user_error;
 
-	if (cli_cfg.password[0] != '\0')
+	if (cli_cfg.password != NULL && cli_cfg.password[0] != '\0')
 		log_warn("You should not pass the password on the command line. Type it interactively or use a config file instead.\n");
 
 	log_debug("openfortivpn " VERSION "\n", config_file);
@@ -437,9 +439,13 @@ int main(int argc, char **argv)
 		goto user_error;
 	}
 	// If no password given, interactively ask user
-	if (cfg.password[0] == '\0')
-		read_password("VPN account password: ", cfg.password,
-		              FIELD_SIZE);
+	if (cfg.password == NULL || cfg.password[0] == '\0') {
+		free(cfg.password);
+		char *tmp_password = malloc(PWD_BUFSIZ); // allocate large buffer
+		read_password("VPN account password: ", tmp_password, PWD_BUFSIZ);
+		cfg.password = strdup(tmp_password); // copy string of correct size
+		free(tmp_password);
+	}
 	// Check password
 	if (cfg.password[0] == '\0') {
 		log_error("Specify a password.\n");
