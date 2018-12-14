@@ -85,7 +85,7 @@ For other distros, you'll need to build and install from source:
 
 1.  Install build dependencies.
 
-    * RHEL/CentOS/Fedora: `gcc` `automake` `autoconf` `openssl-devel` `pkg-config`
+    * RHEL/CentOS/Fedora: `gcc` `automake` `autoconf` `openssl-devel` `make` `pkg-config`
     * Debian/Ubuntu: `gcc` `automake` `autoconf` `libssl-dev` `make` `pkg-config`
     * Arch Linux: `gcc` `automake` `autoconf` `openssl` `pkg-config`
     * Gentoo Linux: `net-dialup/ppp` `pkg-config`
@@ -124,6 +124,7 @@ For other distros, you'll need to build and install from source:
     If you need to specify the openssl location you can set the
     `$PKG_CONFIG_PATH` environment variable.
 
+    Finally, install runtime dependency `ppp` or `pppd`.
 
 ----------------
 Running as root?
