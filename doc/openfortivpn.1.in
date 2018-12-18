@@ -1,4 +1,4 @@
-.TH OPENFORTIVPN 1 "October 23, 2017" ""
+.TH OPENFORTIVPN 1 "December 18, 2018" ""
 
 .SH NAME
 openfortivpn \- Client for PPP+SSL VPN tunnel services
