@@ -38,7 +38,8 @@
 
 #define PPPD_HELP \
 "  --pppd-no-peerdns             Do not ask peer ppp server for DNS server addresses\n" \
-"                                and do not make pppd rewrite /etc/resolv.conf\n" \
+"                                and do not make pppd rewrite /etc/resolv.conf,\n" \
+"                                nor openfortivpn will modify DNS resolution then.\n" \
 "  --pppd-log=<file>             Set pppd in debug mode and save its logs into\n" \
 "                                <file>.\n" \
 "  --pppd-plugin=<file>          Use specified pppd plugin instead of configuring\n" \
@@ -96,7 +97,7 @@ PPPD_USAGE \
 "  --half-internet-routes=[01]   Add two 0.0.0.0/1 and 128.0.0.0/1 routes with higher\n" \
 "                                priority instead of replacing the default route.\n" \
 "  --set-dns=[01]                Set if openfortivpn should add VPN name servers in\n" \
-"                                /etc/resolv.conf\n" \
+"                                /etc/resolv.conf, pppd must provide the DNS servers.\n" \
 "  --no-dns                      Do not reconfigure DNS, same as --set-dns=0\n" \
 "  --ca-file=<file>              Use specified PEM-encoded certificate bundle\n" \
 "                                instead of system-wide store to verify the gateway\n" \
