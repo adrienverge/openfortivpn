@@ -1,11 +1,11 @@
-.TH OPENFORTIVPN 1 "October 23, 2017" ""
+.TH OPENFORTIVPN 1 "December 18, 2018" ""
 
 .SH NAME
 openfortivpn \- Client for PPP+SSL VPN tunnel services
 
 .SH SYNOPSIS
 .B openfortivpn
-[\fI<host>\fR:\fI<port>\fR]
+[\fI<host>\fR[:\fI<port>\fR]]
 [\fB\-u\fR \fI<user>\fR]
 [\fB\-p\fR \fI<pass>\fR]
 [\fB\-\-otp=\fI<otp>\fR]
@@ -46,7 +46,7 @@ connects to a VPN by setting up a tunnel to the gateway at
 .SH OPTIONS
 .TP
 \fB\-\-help\fR
-Show this help message and exit.
+Show the help message and exit.
 .TP
 \fB\-\-version\fR
 Show version and exit.
@@ -80,6 +80,10 @@ higher priority instead of replacing the default route.
 \fB\-\-set-dns=\fI<bool>\fR, \fB\-\-no-dns\fR
 Set if openfortivpn should add VPN nameservers in /etc/resolv.conf when
 tunnel is up. If used multiple times, the last one takes priority.
+This option requires that the dns entries are requested from the peer.
+So, \fB\-\-pppd-no-peerdns\fR conflicts with \fB\-\-set-dns=\fI1\fR.
+Note that there may be other mechanisms to update /etc/resolv.conf
+which may require that openfortivpn is called with \fB\-\-no-dns\fR.
 
 \fB\-\-no-dns\fR is the same as \fB\-\-set-dns=\fI0\fR.
 .TP
@@ -120,7 +124,11 @@ $ openssl s_client -connect \fI<host:port>\fR
 .TP
 \fB\-\-pppd-no-peerdns\fR
 Do not ask peer ppp server for DNS server addresses and do not make pppd
-rewrite /etc/resolv.conf.
+rewrite /etc/resolv.conf. If the DNS server addresses are not requested,
+also \fB\-\-set-dns=\fI1\fR has no effect. On the other hand, with
+\fB\-\-set-dns=\fI0\fR, when pppd requests DNS server addresses, there
+may be othter mechanisms, such as an pppd-ip-up-script that do the update
+of /etc/resolv.conf.
 .TP
 \fB\-\-pppd-log=\fI<file>\fR
 Set pppd in debug mode and save its logs into \fI<file>\fR.
@@ -144,8 +152,12 @@ This can be useful on Debian and Ubuntu, where unprivileged users in
 group `dip' can invoke `pppd call <name>' to make pppd read and apply
 options from /etc/ppp/peers/<name> (including privileged ones).
 .TP
+\fB\-\-ppp-system=\fI<string>\fR
+Only available if compiled for ppp user space client (e.g. on FreeBSD).
+Connect to the specified system as defined in /etc/ppp/ppp.conf
+.TP
 \fB\-\-persistent\=\fI<interval>\fR
-Runs the vpn persistently in an endless loop and tries to reconnect forever.
+Run the vpn persistently in an endless loop and try to reconnect forever.
 The reconnect interval may be specified in seconds, where 0 means
 no reconnect is done (this is the default).
 .TP
@@ -157,7 +169,7 @@ Decrease verbosity. Can be used multiple times to be even less verbose.
 
 .SH ENVIRONMENT and proxy support
 .B openfortivpn
-can be run behind a http that supports the http connect command.
+can be run behind a http proxy that supports the http connect command.
 It checks if one of the environment variables
 .B https_proxy HTTPS_PROXY all_proxy ALL_PROXY
 is set which are supposed to contain a string of the format
@@ -194,6 +206,9 @@ VPN_ROUTE_DEST_... the destination network of the route
 VPN_ROUTE_MASK_... the network mask for this route
 .br
 VPN_ROUTE_GATEWAY_... the gateway for the current route entry
+
+If not compiled for pppd the pppd options and features that rely on them are not
+available. On FreeBSD \fB\-\-ppp-system\fR is available instead.
 
 .SH CONFIG FILE
 Options can be taken from a configuration file. Options passed in the command
@@ -246,9 +261,13 @@ pppd-use-peerdns = 1
 .br
 # pppd-log = /var/log/pppd.log
 .br
-# pass an ipparam string to pppd
+# pass ppp interface name to pppd (if supported by a patched pppd)
 .br
-# pppd-ipparam = somestringtopasstopppd
+# pppd-ifname = ppp1
+.br
+# pass an ipparam string to pppd, e.g. the device name (a similar use case)
+.br
+# pppd-ipparam = 'device=$DEVICE'
 .br
 insecure-ssl = 0
 .br

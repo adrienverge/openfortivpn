@@ -29,7 +29,6 @@
 
 #define PWD_BUFSIZ	4096
 
-
 #if HAVE_USR_SBIN_PPPD
 #define PPPD_USAGE \
 "                    [--pppd-no-peerdns] [--pppd-log=<file>]\n" \
@@ -38,7 +37,8 @@
 
 #define PPPD_HELP \
 "  --pppd-no-peerdns             Do not ask peer ppp server for DNS server addresses\n" \
-"                                and do not make pppd rewrite /etc/resolv.conf\n" \
+"                                and do not make pppd rewrite /etc/resolv.conf,\n" \
+"                                nor openfortivpn will modify DNS resolution then.\n" \
 "  --pppd-log=<file>             Set pppd in debug mode and save its logs into\n" \
 "                                <file>.\n" \
 "  --pppd-plugin=<file>          Use specified pppd plugin instead of configuring\n" \
@@ -78,7 +78,6 @@ PPPD_USAGE \
 "the gateway and this process.\n" \
 "\n"
 
-
 #define help_options \
 "Options:\n" \
 "  -h --help                     Show this help message and exit.\n" \
@@ -96,7 +95,7 @@ PPPD_USAGE \
 "  --half-internet-routes=[01]   Add two 0.0.0.0/1 and 128.0.0.0/1 routes with higher\n" \
 "                                priority instead of replacing the default route.\n" \
 "  --set-dns=[01]                Set if openfortivpn should add VPN name servers in\n" \
-"                                /etc/resolv.conf\n" \
+"                                /etc/resolv.conf, pppd must provide the DNS servers.\n" \
 "  --no-dns                      Do not reconfigure DNS, same as --set-dns=0\n" \
 "  --ca-file=<file>              Use specified PEM-encoded certificate bundle\n" \
 "                                instead of system-wide store to verify the gateway\n" \
@@ -119,17 +118,16 @@ PPPD_USAGE \
 "                                you can try with the cipher suggested in the output\n" \
 "                                of 'openssl s_client -connect <host:port>'\n" \
 "                                (e.g. AES256-GCM-SHA384)\n" \
-PPPD_HELP \
 "  --persistent=<interval>       Run the vpn persistently in a loop and try to re-\n" \
 "                                connect every <interval> seconds when dropping out\n" \
 "  -v                            Increase verbosity. Can be used multiple times\n" \
 "                                to be even more verbose.\n" \
 "  -q                            Decrease verbosity. Can be used multiple times\n" \
-"                                to be even less verbose.\n" \
-"\n"
+"                                to be even less verbose.\n"
 
 
 #define help_config \
+"\n" \
 "Config file:\n" \
 "  Options can be taken from a configuration file. Options passed in the\n" \
 "  command line will override those from the config file, though. The default\n" \
@@ -362,7 +360,8 @@ int main(int argc, char **argv)
 			}
 			goto user_error;
 		case 'h':
-			printf("%s%s%s%s", usage, summary, help_options, help_config);
+			printf("%s%s%s%s%s", usage, summary, help_options,
+			       PPPD_HELP, help_config);
 			ret = EXIT_SUCCESS;
 			goto exit;
 		case 'v':
