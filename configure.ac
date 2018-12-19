@@ -316,7 +316,7 @@ AS_IF([test "x$with_pppd" = "x" ], [
     with_pppd="no"
 ])
 
-# when neither ppp nor pppd are enabled, assume the previous behavior (for travis)
+# when neither ppp nor pppd are enabled fall back to a sensible choice for the platform
 AS_IF([test "x$with_ppp" = "xno" -a "x$with_pppd" = "xno" ], [
    AS_IF([test "x$uname" = "xFreeBSD" ], [
      PPP_PATH="/usr/sbin/ppp"
@@ -327,29 +327,42 @@ AS_IF([test "x$with_ppp" = "xno" -a "x$with_pppd" = "xno" ], [
    ])
 ])
 
-# when both are enabled, give pppd the higher priority (we can only use one of them)
+# When both are enabled, give pppd the higher priority (we can only use one of them).
+# Note that PPP_PATH should already be correct since pppd is detected later
+# and PPP_PATH is overwritten during detection.
 AS_IF([test "x$with_ppp" = "xyes" -a "x$with_pppd" = "xyes"], [
    with_ppp="no"
 ])
 
 AS_IF([test "x$with_ppp" = "xyes"], [
 	AC_DEFINE(HAVE_USR_SBIN_PPP, 1)
+	AC_MSG_NOTICE([HAVE_USR_SBIN_PPP... 1])
 ],[
 	AC_DEFINE(HAVE_USR_SBIN_PPP, 0)
+	AC_MSG_NOTICE([HAVE_USR_SBIN_PPP... 0])
 ])
 AS_IF([test "x$with_pppd" = "xyes"], [
 	AC_DEFINE(HAVE_USR_SBIN_PPPD, 1)
+	AC_MSG_NOTICE([HAVE_USR_SBIN_PPPD... 1])
 ],[
 	AC_DEFINE(HAVE_USR_SBIN_PPPD, 0)
+	AC_MSG_NOTICE([HAVE_USR_SBIN_PPPD... 0])
 ])
 AS_IF([test "x$enable_proc" = "xyes"], [
 	AC_DEFINE(HAVE_PROC_NET_ROUTE, 1)
+	AC_MSG_NOTICE([HAVE_PROC_NET_ROUTE... 1])
 ],[
 	AC_DEFINE(HAVE_PROC_NET_ROUTE, 0)
+	AC_MSG_NOTICE([HAVE_PROC_NET_ROUTE... 0])
 ])
 
 AC_SUBST(PPP_PATH)
+AC_MSG_NOTICE([PPP_PATH...] $PPP_PATH)
+
 AC_SUBST(NETSTAT_PATH)
+AS_IF([test "x$NETSTAT_PATH" != "x" ], [
+    AC_MSG_NOTICE([NETSTAT_PATH...] $NETSTAT_PATH)
+])
 
 AC_CONFIG_COMMANDS([timestamp], [touch src/.dirstamp])
 AC_OUTPUT(Makefile)
