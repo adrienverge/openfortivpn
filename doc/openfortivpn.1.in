@@ -9,6 +9,7 @@ openfortivpn \- Client for PPP+SSL VPN tunnel services
 [\fB\-u\fR \fI<user>\fR]
 [\fB\-p\fR \fI<pass>\fR]
 [\fB\-\-otp=\fI<otp>\fR]
+[\fB\-\-otp-delay=\fI<delay>\fR]
 [\fB\-\-realm=\fI<realm>\fR]
 [\fB\-\-set-routes=<bool>\fR]
 [\fB\-\-no-routes\fR]
@@ -62,6 +63,11 @@ VPN account password.
 .TP
 \fB\-o \fI<otp>\fR, \fB\-\-otp=\fI<otp>\fR
 One-Time-Password.
+.TP
+\fB\-\-otp\-delay\=\fI<delay>\fR
+Set the amount of time to wait before sending the One-Time-Password.
+The delay time must be specified in seconds, where 0 means
+no wait (this is the default).
 .TP
 \fB\-\-realm=\fI<realm>\fR
 Connect to the specified authentication realm. Defaults to empty, which

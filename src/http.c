@@ -27,6 +27,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #define BUFSZ 0x8000
 
@@ -373,6 +374,14 @@ static int get_auth_cookie(
 	return ret;
 }
 
+static void delay_otp(struct tunnel *tunnel)
+{
+	if (tunnel->config->otp_delay > 0) {
+		log_info("Delaying OTP by %d seconds...\n", tunnel->config->otp_delay);
+		sleep(tunnel->config->otp_delay);
+	}
+}
+
 static
 int try_otp_auth(
         struct tunnel *tunnel,
@@ -558,6 +567,8 @@ int auth_log_in(struct tunnel *tunnel)
 
 	/* Probably one-time password required */
 	if (strncmp(res, "HTTP/1.1 401 Authorization Required\r\n", 37) == 0) {
+		delay_otp(tunnel);
+
 		ret = try_otp_auth(tunnel, res, &res, &response_size);
 		if (ret != 1)
 			goto end;
@@ -612,6 +623,7 @@ int auth_log_in(struct tunnel *tunnel)
 		         "&redir=%%2Fremote%%2Findex&just_logged_in=1",
 		         username, realm, reqid, polid, group, tokenresponse);
 
+		delay_otp(tunnel);
 		ret = http_request(
 		              tunnel, "POST", "/remote/logincheck",
 		              data, &res, &response_size);
