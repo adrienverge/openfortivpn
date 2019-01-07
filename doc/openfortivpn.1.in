@@ -10,6 +10,7 @@ openfortivpn \- Client for PPP+SSL VPN tunnel services
 [\fB\-p\fR \fI<pass>\fR]
 [\fB\-\-otp=\fI<otp>\fR]
 [\fB\-\-otp\-prompt=\fI<prompt>\fR]
+[\fB\-\-otp\-delay=\fI<delay>\fR]
 [\fB\-\-realm=\fI<realm>\fR]
 [\fB\-\-set\-routes=<bool>\fR]
 [\fB\-\-no\-routes\fR]
@@ -67,6 +68,11 @@ One-Time-Password.
 .TP
 \fB\-\-otp\-prompt=\fI<prompt>\fR
 Search for the otp password prompt starting with the string \fI<prompt>\fR.
+.TP
+\fB\-\-otp\-delay\=\fI<delay>\fR
+Set the amount of time to wait before sending the One-Time-Password.
+The delay time must be specified in seconds, where 0 means
+no wait (this is the default).
 .TP
 \fB\-\-realm=\fI<realm>\fR
 Connect to the specified authentication realm. Defaults to empty, which
@@ -239,6 +245,8 @@ password = bar
 # useful for a gui that passes a config file to openfortivpn
 .br
 # otp = 123456
+.br
+# otp\-delay = 0
 .br
 # otp\-prompt = Please
 .br

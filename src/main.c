@@ -60,7 +60,7 @@
 
 #define usage \
 "Usage: openfortivpn [<host>[:<port>]] [-u <user>] [-p <pass>]\n" \
-"                    [--realm=<realm>] [--otp=<otp>]\n" \
+"                    [--realm=<realm>] [--otp=<otp>] [--otp-delay=<delay>]\n" \
 "                    [--otp-prompt=<prompt>] [--set-routes=<0|1>]\n" \
 "                    [--half-internet-routes=<0|1>] [--set-dns=<0|1>]\n" \
 PPPD_USAGE \
@@ -89,6 +89,7 @@ PPPD_USAGE \
 "  -p <pass>, --password=<pass>  VPN account password.\n" \
 "  -o <otp>, --otp=<otp>         One-Time-Password.\n" \
 "  --otp-prompt=<prompt>         Search for the otp prompt starting with this string\n" \
+"  --otp-delay=<delay>	         Wait <delay> seconds before sending the OTP.\n" \
 "  --realm=<realm>               Use specified authentication realm on VPN gateway\n" \
 "                                when tunnel is up.\n" \
 "  --set-routes=[01]             Set if openfortivpn should configure output routes through\n" \
@@ -159,6 +160,7 @@ int main(int argc, char **argv)
 		.password = NULL,
 		.otp = {'\0'},
 		.otp_prompt = NULL,
+		.otp_delay = 0,
 		.realm = {'\0'},
 		.set_routes = 1,
 		.set_dns = 1,
@@ -194,6 +196,7 @@ int main(int argc, char **argv)
 		{"password",        required_argument, 0, 'p'},
 		{"otp",             required_argument, 0, 'o'},
 		{"otp-prompt",      required_argument, 0, 0},
+		{"otp-delay",       required_argument, 0, 0},
 		{"set-routes",	    required_argument, 0, 0},
 		{"no-routes",       no_argument, &cli_cfg.set_routes, 0},
 		{"half-internet-routes", required_argument, 0, 0},
@@ -344,6 +347,17 @@ int main(int argc, char **argv)
 					break;
 				}
 				cli_cfg.half_internet_routes = half_internet_routes;
+				break;
+			}
+			if (strcmp(long_options[option_index].name,
+			           "otp-delay") == 0) {
+				long int otp_delay = strtol(optarg, NULL, 0);
+				if (otp_delay < 0 || otp_delay > UINT_MAX) {
+					log_warn("Bad otp-delay option: \"%s\"\n",
+					         optarg);
+					break;
+				}
+				cli_cfg.otp_delay = otp_delay;
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
