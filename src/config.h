@@ -67,6 +67,7 @@ struct vpn_config {
 	char		*password;
 	char		otp[FIELD_SIZE + 1];
 	char		*otp_prompt;
+	unsigned int  otp_delay;
 	char		realm[FIELD_SIZE + 1];
 
 	int	set_routes;

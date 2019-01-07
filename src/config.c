@@ -33,6 +33,7 @@ const struct vpn_config invalid_cfg = {
 	.password = NULL,
 	.otp = {'\0'},
 	.otp_prompt = NULL,
+	.otp_delay = -1,
 	.realm = {'\0'},
 	.set_routes = -1,
 	.set_dns = -1,
@@ -209,6 +210,14 @@ int load_config(struct vpn_config *cfg, const char *filename)
 		} else if (strcmp(key, "otp-prompt") == 0) {
 			free(cfg->otp_prompt);
 			cfg->otp_prompt = strdup(val);
+		} else if (strcmp(key, "otp-delay") == 0) {
+			long int otp_delay = strtol(val, NULL, 0);
+			if (otp_delay < 0 || otp_delay > UINT_MAX) {
+				log_warn("Bad value for otp-delay in config file: \"%s\".\n",
+				         val);
+				continue;
+			}
+			cfg->otp_delay = otp_delay;
 		} else if (strcmp(key, "realm") == 0) {
 			strncpy(cfg->realm, val, FIELD_SIZE - 1);
 			cfg->realm[FIELD_SIZE] = '\0';
@@ -368,6 +377,8 @@ void merge_config(struct vpn_config *dst, struct vpn_config *src)
 		dst->password = strdup(src->password);
 	if (src->otp[0])
 		strcpy(dst->otp, src->otp);
+	if (src->otp_delay != invalid_cfg.otp_delay)
+		dst->otp_delay = src->otp_delay;
 	if (src->realm[0])
 		strcpy(dst->realm, src->realm);
 	if (src->set_routes != invalid_cfg.set_routes)
