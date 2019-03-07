@@ -347,16 +347,16 @@ static int ipv4_get_route(struct rtentry *route)
 		unsigned long mtu, window;
 
 		iface = strtok_r(line, "\t", &saveptr2);
-		dest = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
-		gtw = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
-		flags = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
+		dest = strtoul(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
+		gtw = strtoul(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
+		flags = strtoul(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
 		strtok_r(NULL, "\t", &saveptr2); // "RefCnt"
 		strtok_r(NULL, "\t", &saveptr2); // "Use"
-		metric = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
-		mask = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
-		mtu = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
-		window = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
-		irtt = strtol(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
+		metric = strtoul(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
+		mask = strtoul(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
+		mtu = strtoul(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
+		window = strtoul(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
+		irtt = strtoul(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
 #else
 		/* parse netstat output on Mac OSX and BSD */
 		char tmp_ip_string[16];
@@ -392,7 +392,7 @@ static int ipv4_get_route(struct rtentry *route)
 
 				// break CIDR up into address and mask part
 				strcpy(tmp_ip_string, strtok_r(tmpstr, "/", &saveptr3));
-				mask = strtol(saveptr3, NULL, 10);
+				mask = strtoul(saveptr3, NULL, 10);
 				// convert from CIDR to ipv4 mask
 				mask = 0xffffffff << (32-mask);
 
