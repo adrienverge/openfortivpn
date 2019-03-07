@@ -191,6 +191,7 @@ strstr \
 strtok \
 strtok_r \
 strtol \
+strtoul \
 syslog \
 system \
 tcgetattr \
