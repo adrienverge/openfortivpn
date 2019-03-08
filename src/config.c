@@ -32,6 +32,7 @@ const struct vpn_config invalid_cfg = {
 	.username = {'\0'},
 	.password = NULL,
 	.otp = {'\0'},
+	.otp_prompt = NULL,
 	.realm = {'\0'},
 	.set_routes = -1,
 	.set_dns = -1,
@@ -205,6 +206,9 @@ int load_config(struct vpn_config *cfg, const char *filename)
 		} else if (strcmp(key, "otp") == 0) {
 			strncpy(cfg->otp, val, FIELD_SIZE - 1);
 			cfg->otp[FIELD_SIZE] = '\0';
+		} else if (strcmp(key, "otp-prompt") == 0) {
+			free(cfg->otp_prompt);
+			cfg->otp_prompt = strdup(val);
 		} else if (strcmp(key, "realm") == 0) {
 			strncpy(cfg->realm, val, FIELD_SIZE - 1);
 			cfg->realm[FIELD_SIZE] = '\0';
@@ -330,6 +334,7 @@ err_close:
 void destroy_vpn_config(struct vpn_config *cfg)
 {
 	free(cfg->password);
+	free(cfg->otp_prompt);
 #if HAVE_USR_SBIN_PPPD
 	free(cfg->pppd_log);
 	free(cfg->pppd_plugin);
