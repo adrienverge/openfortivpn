@@ -31,13 +31,14 @@
 
 #if HAVE_USR_SBIN_PPPD
 #define PPPD_USAGE \
-"                    [--pppd-no-peerdns] [--pppd-log=<file>]\n" \
+"                    [--pppd-use-peerdns=<0|1>] [--pppd-log=<file>]\n" \
 "                    [--pppd-ifname=<string>] [--pppd-ipparam=<string>]\n" \
 "                    [--pppd-call=<name>] [--pppd-plugin=<file>]\n"
 
 #define PPPD_HELP \
-"  --pppd-no-peerdns             Do not ask peer ppp server for DNS server addresses\n" \
-"                                and do not make pppd rewrite /etc/resolv.conf,\n" \
+"  --pppd-use-peerdns=[01]       Whether to ask peer ppp server for DNS server\n" \
+"                                addresses and make pppd rewrite /etc/resolv.conf.\n" \
+"  --pppd-no-peerdns             Same as --pppd-use-peerdns=0. Neiter pppd\n" \
 "                                nor openfortivpn will modify DNS resolution then.\n" \
 "  --pppd-log=<file>             Set pppd in debug mode and save its logs into\n" \
 "                                <file>.\n" \
@@ -211,6 +212,7 @@ int main(int argc, char **argv)
 		{"insecure-ssl",    no_argument, &cli_cfg.insecure_ssl, 1},
 		{"cipher-list",     required_argument, 0, 0},
 #if HAVE_USR_SBIN_PPPD
+		{"pppd-use-peerdns", required_argument, 0, 0},
 		{"pppd-no-peerdns", no_argument, &cli_cfg.pppd_use_peerdns, 0},
 		{"pppd-log",        required_argument, 0, 0},
 		{"pppd-plugin",     required_argument, 0, 0},
@@ -250,6 +252,17 @@ int main(int argc, char **argv)
 				goto exit;
 			}
 #if HAVE_USR_SBIN_PPPD
+			if (strcmp(long_options[option_index].name,
+			           "pppd-use-peerdns") == 0) {
+				int pppd_use_peerdns = strtob(optarg);
+				if (pppd_use_peerdns < 0) {
+					log_warn("Bad pppd-use-peerdns option: \"%s\"\n",
+					         optarg);
+					break;
+				}
+				cli_cfg.pppd_use_peerdns = pppd_use_peerdns;
+				break;
+			}
 			if (strcmp(long_options[option_index].name,
 			           "pppd-log") == 0) {
 				cli_cfg.pppd_log = strdup(optarg);
