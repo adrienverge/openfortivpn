@@ -190,7 +190,7 @@ int load_config(struct vpn_config *cfg, const char *filename)
 			strncpy(cfg->gateway_host, val, FIELD_SIZE);
 			cfg->gateway_host[FIELD_SIZE] = '\0';
 		} else if (strcmp(key, "port") == 0) {
-			long int port = strtol(val, NULL, 0);
+			unsigned long int port = strtoul(val, NULL, 0);
 			if (port <= 0 || port > 65535) {
 				log_warn("Bad port in config file: \"%d\".\n",
 				         port);
@@ -233,8 +233,8 @@ int load_config(struct vpn_config *cfg, const char *filename)
 			}
 			cfg->half_internet_routes = half_internet_routes;
 		} else if (strcmp(key, "persistent") == 0) {
-			long int persistent = strtol(val, NULL, 0);
-			if (persistent < 0 || persistent > UINT_MAX) {
+			unsigned long int persistent = strtoul(val, NULL, 0);
+			if (persistent > UINT_MAX) {
 				log_warn("Bad value for persistent in config file: \"%s\".\n",
 				         val);
 				continue;

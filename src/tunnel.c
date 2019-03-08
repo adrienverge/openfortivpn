@@ -452,7 +452,7 @@ static int tcp_connect(struct tunnel *tunnel)
 		if (proxy_port != NULL) {
 			proxy_port[0] = '\0';
 			proxy_port++;
-			server.sin_port = htons(strtol(proxy_port, NULL, 10));
+			server.sin_port = htons(strtoul(proxy_port, NULL, 10));
 		} else {
 			server.sin_port = htons(tunnel->config->gateway_port);
 		}
