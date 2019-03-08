@@ -410,6 +410,8 @@ int try_otp_auth(
 	 * Fall back to default prompt if not found/parseable
 	 */
 	p = strstr(s, "Please");
+	if (tunnel->config->otp_prompt != NULL)
+		p = strstr(s, tunnel->config->otp_prompt);
 	if (p) {
 		e = strchr(p, '<');
 		if (e != NULL) {

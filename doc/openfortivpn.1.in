@@ -1,4 +1,4 @@
-.TH OPENFORTIVPN 1 "December 18, 2018" ""
+.TH OPENFORTIVPN 1 "March 11, 2019" ""
 
 .SH NAME
 openfortivpn \- Client for PPP+SSL VPN tunnel services
@@ -9,25 +9,27 @@ openfortivpn \- Client for PPP+SSL VPN tunnel services
 [\fB\-u\fR \fI<user>\fR]
 [\fB\-p\fR \fI<pass>\fR]
 [\fB\-\-otp=\fI<otp>\fR]
+[\fB\-\-otp\-prompt=\fI<prompt>\fR]
 [\fB\-\-realm=\fI<realm>\fR]
-[\fB\-\-set-routes=<bool>\fR]
-[\fB\-\-no-routes\fR]
-[\fB\-\-set-dns=<bool>\fR]
-[\fB\-\-no-dns\fR]
-[\fB\-\-half-internet-routes=<bool>\fR]
-[\fB\-\-ca-file=\fI<file>\fR]
+[\fB\-\-set\-routes=<bool>\fR]
+[\fB\-\-no\-routes\fR]
+[\fB\-\-set\-dns=<bool>\fR]
+[\fB\-\-no\-dns\fR]
+[\fB\-\-half\-internet\-routes=<bool>\fR]
+[\fB\-\-ca\-file=\fI<file>\fR]
 [\fB\-\-user-cert=\fI<file>\fR]
-[\fB\-\-user-key=\fI<file>\fR]
-[\fB\-\-use-syslog\fR]
-[\fB\-\-trusted-cert=\fI<digest>\fR]
-[\fB\-\-insecure-ssl\fR]
-[\fB\-\-cipher-list=\fI<ciphers>\fR]
-[\fB\-\-pppd-no-peerdns\fR]
-[\fB\-\-pppd-log=\fI<file>\fR]
-[\fB\-\-pppd-plugin=\fI<file>\fR]
-[\fB\-\-pppd-ipparam=\fI<string>\fR]
-[\fB\-\-pppd-ifname=\fI<string>\fR]
-[\fB\-\-pppd-call=\fI<name>\fR]
+[\fB\-\-user\-key=\fI<file>\fR]
+[\fB\-\-use\-syslog\fR]
+[\fB\-\-trusted\-cert=\fI<digest>\fR]
+[\fB\-\-insecure\-ssl\fR]
+[\fB\-\-cipher\-list=\fI<ciphers>\fR]
+[\fB\-\-pppd\-use\-peerdns=<bool>\fR]
+[\fB\-\-pppd\-no\-peerdns\fR]
+[\fB\-\-pppd\-log=\fI<file>\fR]
+[\fB\-\-pppd\-plugin=\fI<file>\fR]
+[\fB\-\-pppd\-ipparam=\fI<string>\fR]
+[\fB\-\-pppd\-ifname=\fI<string>\fR]
+[\fB\-\-pppd\-call=\fI<name>\fR]
 [\fB\-\-persistent=\fI<interval>\fR]
 [\fB\-c\fR \fI<file>\fR]
 [\fB\-v|\-q\fR]
@@ -63,57 +65,60 @@ VPN account password.
 \fB\-o \fI<otp>\fR, \fB\-\-otp=\fI<otp>\fR
 One-Time-Password.
 .TP
+\fB\-\-otp\-prompt=\fI<prompt>\fR
+Search for the otp password prompt starting with the string \fI<prompt>\fR.
+.TP
 \fB\-\-realm=\fI<realm>\fR
 Connect to the specified authentication realm. Defaults to empty, which
 is usually what you want.
 .TP
-\fB\-\-set-routes=\fI<bool>\fR, \fB\-\-no-routes\fR
+\fB\-\-set\-routes=\fI<bool>\fR, \fB\-\-no-routes\fR
 Set if openfortivpn should try to configure IP routes through the VPN when
 tunnel is up. If used multiple times, the last one takes priority.
 
-\fB\-\-no-routes\fR is the same as \fB\-\-set-routes=\fI0\fR.
+\fB\-\-no\-routes\fR is the same as \fB\-\-set-routes=\fI0\fR.
 .TP
-\fB\-\-half-internet-routes=\fI<bool>\fR
+\fB\-\-half\-internet\-routes=\fI<bool>\fR
 Set if openfortivpn should add two 0.0.0.0/1 and 128.0.0.0/1 routes with
 higher priority instead of replacing the default route.
 .TP
-\fB\-\-set-dns=\fI<bool>\fR, \fB\-\-no-dns\fR
+\fB\-\-set\-dns=\fI<bool>\fR, \fB\-\-no\-dns\fR
 Set if openfortivpn should add VPN nameservers in /etc/resolv.conf when
 tunnel is up. If used multiple times, the last one takes priority.
 This option requires that the dns entries are requested from the peer.
-So, \fB\-\-pppd-no-peerdns\fR conflicts with \fB\-\-set-dns=\fI1\fR.
+So, \fB\-\-pppd\-no\-peerdns\fR conflicts with \fB\-\-set\-dns=\fI1\fR.
 Note that there may be other mechanisms to update /etc/resolv.conf
-which may require that openfortivpn is called with \fB\-\-no-dns\fR.
+which may require that openfortivpn is called with \fB\-\-no\-dns\fR.
 
-\fB\-\-no-dns\fR is the same as \fB\-\-set-dns=\fI0\fR.
+\fB\-\-no\-dns\fR is the same as \fB\-\-set\-dns=\fI0\fR.
 .TP
-\fB\-\-ca-file=\fI<file>\fR
+\fB\-\-ca\-file=\fI<file>\fR
 Use specified PEM-encoded certificate bundle instead of system-wide store to
 verify the gateway certificate.
 .TP
-\fB\-\-user-cert=\fI<file>\fR
+\fB\-\-user\-cert=\fI<file>\fR
 Use specified PEM-encoded certificate if the server requires authentication
 with a certificate.
 .TP
-\fB\-\-user-key=\fI<file>\fR
+\fB\-\-user\-key=\fI<file>\fR
 Use specified PEM-encoded key if the server requires authentication with
 a certificate.
 .TP
-\fB\-\-use-syslog\fR
+\fB\-\-use\-syslog\fR
 Log to syslog instead of terminal.
 .TP
-\fB\-\-trusted-cert=\fI<digest>\fR
+\fB\-\-trusted\-cert=\fI<digest>\fR
 Trust a given gateway. If classical SSL certificate validation fails, the
 gateway certificate will be matched against this value. \fI<digest>\fR is the
 X509 certificate's sha256 sum. This option can be used multiple times to trust
 several certificates.
 .TP
-\fB\-\-insecure-ssl\fR
+\fB\-\-insecure\-ssl\fR
 Do not disable insecure SSL protocols/ciphers.
-If your server requires a specific cipher, consider using \fB\-\-cipher-list\fR
+If your server requires a specific cipher, consider using \fB\-\-cipher\-list\fR
 instead.
 .TP
-\fB\-\-cipher-list=\fI<ciphers>\fR
+\fB\-\-cipher\-list=\fI<ciphers>\fR
 Openssl ciphers to use. If default does not work, you can try alternatives
 such as HIGH:!MD5:!RC4 or as suggested by the Cipher: line in the output of
 \fBopenssl\fP(1) (e.g. AES256-GCM-SHA384):
@@ -122,37 +127,37 @@ $ openssl s_client -connect \fI<host:port>\fR
 
 (default: HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4)
 .TP
-\fB\-\-pppd-no-peerdns\fR
+\fB\-\-pppd\-no\-peerdns\fR
 Do not ask peer ppp server for DNS server addresses and do not make pppd
 rewrite /etc/resolv.conf. If the DNS server addresses are not requested,
-also \fB\-\-set-dns=\fI1\fR has no effect. On the other hand, with
-\fB\-\-set-dns=\fI0\fR, when pppd requests DNS server addresses, there
-may be othter mechanisms, such as an pppd-ip-up-script that do the update
+also \fB\-\-set\-dns=\fI1\fR has no effect. On the other hand, with
+\fB\-\-set\-dns=\fI0\fR, when pppd requests DNS server addresses, there
+may be othter mechanisms, such as an pppd\-ip\-up-script that do the update
 of /etc/resolv.conf.
 .TP
-\fB\-\-pppd-log=\fI<file>\fR
+\fB\-\-pppd\-log=\fI<file>\fR
 Set pppd in debug mode and save its logs into \fI<file>\fR.
 .TP
-\fB\-\-pppd-plugin=\fI<file>\fR
+\fB\-\-pppd\-plugin=\fI<file>\fR
 Use specified pppd plugin instead of configuring the resolver and routes
 directly.
 .TP
-\fB\-\-pppd-ipparam=\fI<string>\fR
-Provides an extra parameter to the ip-up, ip-pre-up and ip-down scripts. See man
+\fB\-\-pppd\-ipparam=\fI<string>\fR
+Provides an extra parameter to the ip\-up, ip\-pre\-up and ip\-down scripts. See man
 .BR pppd(8)
 for further details
 .TP
-\fB\-\-pppd-ifname=\fI<string>\fR
+\fB\-\-pppd\-ifname=\fI<string>\fR
 Set the ppp interface name. Only if supported by pppd. Patched versions of pppd
 implement this option but may not be available on your platform.
 .TP
-\fB\-\-pppd-call=\fI<name>\fR
+\fB\-\-pppd\-call=\fI<name>\fR
 Drop usual arguments from pppd command line and add `call <name>' instead.
 This can be useful on Debian and Ubuntu, where unprivileged users in
 group `dip' can invoke `pppd call <name>' to make pppd read and apply
 options from /etc/ppp/peers/<name> (including privileged ones).
 .TP
-\fB\-\-ppp-system=\fI<string>\fR
+\fB\-\-ppp\-system=\fI<string>\fR
 Only available if compiled for ppp user space client (e.g. on FreeBSD).
 Connect to the specified system as defined in /etc/ppp/ppp.conf
 .TP
@@ -208,7 +213,7 @@ VPN_ROUTE_MASK_... the network mask for this route
 VPN_ROUTE_GATEWAY_... the gateway for the current route entry
 
 If not compiled for pppd the pppd options and features that rely on them are not
-available. On FreeBSD \fB\-\-ppp-system\fR is available instead.
+available. On FreeBSD \fB\-\-ppp\-system\fR is available instead.
 
 .SH CONFIG FILE
 Options can be taken from a configuration file. Options passed in the command
@@ -221,56 +226,70 @@ An empty template for the config file is installed to
 A config file looks like:
 # this is a comment
 .br
-host = vpn-gateway
+host = vpn\-gateway
 .br
-port = 8443
+port = 443
 .br
 username = foo
 .br
 password = bar
 .br
-user-cert = @SYSCONFDIR@/openfortivpn/user-cert.pem
+# realm = some-realm
 .br
-user-key = @SYSCONFDIR@/openfortivpn/user-key.pem
+# useful for a gui that passes a config file to openfortivpn
+.br
+# otp = 123456
+.br
+# otp\-prompt = Please
+.br
+user\-cert = @SYSCONFDIR@/openfortivpn/user\-cert.pem
+.br
+user\-key = @SYSCONFDIR@/openfortivpn/user\-key.pem
 .br
 # the sha256 digest of the trusted host certs obtained by
 .br
-# openssl dgst -sha256 server-cert.pem:
+# openssl dgst -sha256 server\-cert.pem:
 .br
-trusted-cert = certificatedigest4daa8c5fe6c...
+trusted\-cert = certificatedigest4daa8c5fe6c...
 .br
-trusted-cert = othercertificatedigest6631bf...
+trusted\-cert = othercertificatedigest6631bf...
 .br
 # This would specify a ca bundle instead of system-wide store
 .br
-# ca-file = @SYSCONFDIR@/openfortivpn/ca-bundle.pem
+# ca\-file = @SYSCONFDIR@/openfortivpn/ca\-bundle.pem
 .br
-set-dns = 0
+set\-dns = 0
 .br
-set-routes = 1
+set\-routes = 1
 .br
-half-internet-routes = 0
+half\-internet\-routes = 0
 .br
-pppd-use-peerdns = 1
+pppd\-use\-peerdns = 1
 .br
 # alternatively, use a specific pppd plugin instead
 .br
-# pppd-plugin = /usr/lib/pppd/default/some-plugin.so
+# pppd\-plugin = /usr/lib/pppd/default/some\-plugin.so
 .br
 # for debugging pppd write logs here
 .br
-# pppd-log = /var/log/pppd.log
+# pppd\-log = /var/log/pppd.log
 .br
 # pass ppp interface name to pppd (if supported by a patched pppd)
 .br
-# pppd-ifname = ppp1
+# pppd\-ifname = ppp1
 .br
 # pass an ipparam string to pppd, e.g. the device name (a similar use case)
 .br
-# pppd-ipparam = 'device=$DEVICE'
+# pppd\-ipparam = 'device=$DEVICE'
 .br
-insecure-ssl = 0
+# instruct pppd to call a script instead of passing arguments (if pppd supports it)
 .br
-cipher-list = HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4
+# pppd\-call = script
+.br
+# use\-syslog = 0
+.br
+insecure\-ssl = 0
+.br
+cipher\-list = HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4
 .br
 persistent = 0

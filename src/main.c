@@ -60,7 +60,8 @@
 
 #define usage \
 "Usage: openfortivpn [<host>[:<port>]] [-u <user>] [-p <pass>]\n" \
-"                    [--realm=<realm>] [--otp=<otp>] [--set-routes=<0|1>]\n" \
+"                    [--realm=<realm>] [--otp=<otp>]\n" \
+"                    [--otp-prompt=<prompt>] [--set-routes=<0|1>]\n" \
 "                    [--half-internet-routes=<0|1>] [--set-dns=<0|1>]\n" \
 PPPD_USAGE \
 "                    [--ca-file=<file>]\n" \
@@ -87,6 +88,7 @@ PPPD_USAGE \
 "  -u <user>, --username=<user>  VPN account username.\n" \
 "  -p <pass>, --password=<pass>  VPN account password.\n" \
 "  -o <otp>, --otp=<otp>         One-Time-Password.\n" \
+"  --otp-prompt=<prompt>         Search for the otp prompt starting with this string\n" \
 "  --realm=<realm>               Use specified authentication realm on VPN gateway\n" \
 "                                when tunnel is up.\n" \
 "  --set-routes=[01]             Set if openfortivpn should configure output routes through\n" \
@@ -156,6 +158,7 @@ int main(int argc, char **argv)
 		.username = {'\0'},
 		.password = NULL,
 		.otp = {'\0'},
+		.otp_prompt = NULL,
 		.realm = {'\0'},
 		.set_routes = 1,
 		.set_dns = 1,
@@ -190,6 +193,7 @@ int main(int argc, char **argv)
 		{"username",        required_argument, 0, 'u'},
 		{"password",        required_argument, 0, 'p'},
 		{"otp",             required_argument, 0, 'o'},
+		{"otp-prompt",      required_argument, 0, 0},
 		{"set-routes",	    required_argument, 0, 0},
 		{"no-routes",       no_argument, &cli_cfg.set_routes, 0},
 		{"half-internet-routes", required_argument, 0, 0},
@@ -313,6 +317,11 @@ int main(int argc, char **argv)
 			if (strcmp(long_options[option_index].name,
 			           "cipher-list") == 0) {
 				cli_cfg.cipher_list = strdup(optarg);
+				break;
+			}
+			if (strcmp(long_options[option_index].name,
+			           "otp-prompt") == 0) {
+				cli_cfg.otp_prompt = strdup(optarg);
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
