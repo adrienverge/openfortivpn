@@ -1,4 +1,4 @@
-.TH OPENFORTIVPN 1 "March 11, 2019" ""
+.TH OPENFORTIVPN 1 "March 12, 2019" ""
 
 .SH NAME
 openfortivpn \- Client for PPP+SSL VPN tunnel services
@@ -18,7 +18,7 @@ openfortivpn \- Client for PPP+SSL VPN tunnel services
 [\fB\-\-no\-dns\fR]
 [\fB\-\-half\-internet\-routes=<bool>\fR]
 [\fB\-\-ca\-file=\fI<file>\fR]
-[\fB\-\-user-cert=\fI<file>\fR]
+[\fB\-\-user\-cert=\fI<file>\fR]
 [\fB\-\-user\-key=\fI<file>\fR]
 [\fB\-\-use\-syslog\fR]
 [\fB\-\-trusted\-cert=\fI<digest>\fR]
@@ -31,6 +31,7 @@ openfortivpn \- Client for PPP+SSL VPN tunnel services
 [\fB\-\-pppd\-ipparam=\fI<string>\fR]
 [\fB\-\-pppd\-ifname=\fI<string>\fR]
 [\fB\-\-pppd\-call=\fI<name>\fR]
+[\fB\-\-ppp\-system=\fI<string>\fR]
 [\fB\-\-persistent=\fI<interval>\fR]
 [\fB\-c\fR \fI<file>\fR]
 [\fB\-v|\-q\fR]
@@ -133,13 +134,15 @@ $ openssl s_client -connect \fI<host:port>\fR
 
 (default: HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4)
 .TP
-\fB\-\-pppd\-no\-peerdns\fR
-Do not ask peer ppp server for DNS server addresses and do not make pppd
+\fB\-\-use\-peer\-dns=\fI<bool>\fR, \fB\-\-pppd\-no\-peerdns\fR
+Whether to ask peer ppp server for DNS server addresses and do not make pppd
 rewrite /etc/resolv.conf. If the DNS server addresses are not requested,
 also \fB\-\-set\-dns=\fI1\fR has no effect. On the other hand, with
 \fB\-\-set\-dns=\fI0\fR, when pppd requests DNS server addresses, there
 may be othter mechanisms, such as an pppd\-ip\-up-script that do the update
 of /etc/resolv.conf.
+
+\fB\-\-pppd\-no\-peerdns\fR is the same as \fB\-\-pppd\-use\-peerdns=\fI0\fR.
 .TP
 \fB\-\-pppd\-log=\fI<file>\fR
 Set pppd in debug mode and save its logs into \fI<file>\fR.
