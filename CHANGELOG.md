@@ -14,6 +14,15 @@ Releases
 This high level changelog is usually updated when a release is tagged.
 On the master branch there may be changes that are not (yet) described here.
 
+### 1.9.0
+
+* [+] update of the man page, especially about the dns settings
+* [+] improved configure output: show detected paths for use at runtime
+* [-] correctly convert parsed values, fix for an issue e.g. on Raspbian
+* [+] make search string for the otp-prompt configurable
+* [+] add an option to specify a configurable delay during otp authentication
+* [~] make the options that control usepeerdns more consistent
+
 ### 1.8.1
 
 * [~] Support longer passowrds by allocation of a larger buffer
