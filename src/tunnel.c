@@ -133,6 +133,8 @@ static int pppd_run(struct tunnel *tunnel)
 {
 	pid_t pid;
 	int amaster;
+	int slave_stderr;
+
 #ifdef HAVE_STRUCT_TERMIOS
 	struct termios termp = {
 		.c_cflag = B9600,
@@ -148,6 +150,8 @@ static int pppd_run(struct tunnel *tunnel)
 	}
 	log_debug("ppp_path: %s\n", ppp_path);
 
+	slave_stderr = dup(STDERR_FILENO);
+
 #ifdef HAVE_STRUCT_TERMIOS
 	pid = forkpty(&amaster, NULL, &termp, NULL);
 #else
@@ -160,6 +164,9 @@ static int pppd_run(struct tunnel *tunnel)
 	} else if (pid == 0) { // child process
 
 		struct ofv_varr pppd_args = { 0, 0, NULL };
+
+		dup2(slave_stderr, STDERR_FILENO);
+		close(slave_stderr);
 
 #if HAVE_USR_SBIN_PPP
 		/*
@@ -229,14 +236,10 @@ static int pppd_run(struct tunnel *tunnel)
 		execv(pppd_args.data[0], (char *const *)pppd_args.data);
 		free(pppd_args.data);
 
-		/*
-		 * The following call to fprintf() doesn't work, probably
-		 * because of the prior call to forkpty().
-		 * TODO: print a meaningful message using strerror(errno)
-		 */
 		fprintf(stderr, "execvp: %s\n", strerror(errno));
 		_exit(EXIT_FAILURE);
 	}
+	close(slave_stderr);
 
 	// Set non-blocking
 	int flags = fcntl(amaster, F_GETFL, 0);
