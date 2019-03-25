@@ -212,6 +212,11 @@ static int pppd_run(struct tunnel *tunnel)
 			ofv_append_varr(&pppd_args, "debug");
 			ofv_append_varr(&pppd_args, "logfile");
 			ofv_append_varr(&pppd_args, tunnel->config->pppd_log);
+		} else {
+			/* pppd defaults to logging to fd=1, clobbering the
+			 * actual PPP data */
+			ofv_append_varr(&pppd_args, "logfd");
+			ofv_append_varr(&pppd_args, "2");
 		}
 		if (tunnel->config->pppd_plugin) {
 			ofv_append_varr(&pppd_args, "plugin");
