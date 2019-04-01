@@ -160,14 +160,14 @@ static int pinentry_exchange(int to, int from, char **retstr,
 	return pinentry_read(from, retstr);
 }
 
-static void pinentry_read_password(const char *pinentry, const char *prompt,
-                                   char *pass, size_t len)
+static void pinentry_read_password(const char *pinentry, const char *hint,
+                                   const char *prompt, char *pass, size_t len)
 {
 	int from_pinentry[2];
 	int to_pinentry[2];
 	int pinentry_status;
 	pid_t pinentry_pid;
-	char *escaped_prompt;
+	char *escaped;
 	char *retstr;
 	int ret;
 
@@ -237,10 +237,15 @@ static void pinentry_read_password(const char *pinentry, const char *prompt,
 	if (ret)
 		goto out;
 
-	escaped_prompt = uri_escape(prompt);
+	escaped = uri_escape(hint);
+	pinentry_exchange(to_pinentry[1], from_pinentry[0], NULL,
+	                  "SETKEYINFO %s\n", escaped);
+	free(escaped);
+
+	escaped = uri_escape(prompt);
 	ret = pinentry_exchange(to_pinentry[1], from_pinentry[0], &retstr,
-	                        "SETPROMPT %s\n", escaped_prompt);
-	free(escaped_prompt);
+	                        "SETPROMPT %s\n", escaped);
+	free(escaped);
 	if (ret)
 		log_error("Failed to set prompt: %s\n", retstr);
 	free(retstr);
@@ -270,15 +275,15 @@ out:
 		perror("waitpid");
 }
 
-void read_password(const char *pinentry, const char *prompt,
-                   char *pass, size_t len)
+void read_password(const char *pinentry, const char *hint,
+                   const char *prompt, char *pass, size_t len)
 {
 	int masked = 0;
 	struct termios oldt, newt;
 	int i;
 
 	if (pinentry && *pinentry) {
-		pinentry_read_password(pinentry, prompt, pass, len);
+		pinentry_read_password(pinentry, hint, prompt, pass, len);
 		return;
 	}
 
