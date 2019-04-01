@@ -20,6 +20,6 @@
 
 #include <sys/types.h>
 
-void read_password(const char *prompt, char *pass, size_t len);
+void read_password(const char *pinentry, const char *prompt, char *pass, size_t len);
 
 #endif
