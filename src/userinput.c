@@ -1,5 +1,6 @@
 /*
  *  Copyright (C) 2015 Davíð Steinn Geirsson
+ *  Copyright (C) 2019 Lubomir Rintel <lkundrak@v3.sk>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,16 +17,270 @@
  */
 
 #include "userinput.h"
+#include "log.h"
 
+#include <sys/types.h>
+#include <sys/wait.h>
+
+#include <ctype.h>
+#include <errno.h>
+#include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <termios.h>
 #include <unistd.h>
 
-void read_password(const char *prompt, char *pass, size_t len)
+static char *uri_escape(const char *string)
+{
+	char *escaped = NULL;
+	int allocated_len = 0;
+	int real_len = 0;
+	int i;
+
+	for (i = 0; string[i]; i++) {
+		if (allocated_len + 4 >= real_len) {
+			allocated_len += 16;
+			escaped = realloc(escaped, allocated_len);
+		}
+		if (isalnum(string[i]))
+			escaped[real_len++] = string[i];
+		else
+			real_len += sprintf(&escaped[real_len], "%%%02X", string[i]);
+	}
+	escaped[real_len] = '\0';
+
+	return escaped;
+}
+
+static char *uri_unescape(const char *string)
+{
+	int escaped_len = strlen(string) + 1;
+	char *unescaped = malloc(escaped_len);
+	int real_len = 0;
+	int i = 0;
+
+	while (string[i]) {
+		if (string[i] == '%' && isxdigit(string[i + 1])
+		    && isxdigit(string[i + 2])) {
+			sscanf(&string[i + 1], "%02hhx",
+			       (unsigned char *)&unescaped[real_len]);
+			i += 3;
+		} else if (string[i] == '%' && string[i + 1] == '%') {
+			unescaped[real_len] = '%';
+			i += 2;
+		} else {
+			unescaped[real_len] = string[i];
+			i += 1;
+		}
+		real_len++;
+	}
+	unescaped[real_len] = '\0';
+
+	return unescaped;
+}
+
+static int pinentry_read(int from, char **retstr)
+{
+	int bufsiz = 0;
+	char *buf = NULL;
+	int len = 0;
+	int ret;
+
+	do {
+		if (bufsiz - len < 64) {
+			bufsiz += 64;
+			buf = realloc(buf, bufsiz);
+			if (buf == NULL) {
+				if (retstr)
+					*retstr = strdup(strerror(errno));
+				return -1;
+			}
+		}
+
+		ret = read(from, &buf[len], bufsiz - len);
+		if (ret == -1) {
+			free(buf);
+			if (retstr)
+				*retstr = strdup(strerror(errno));
+			return -1;
+		}
+		if (ret == 0) {
+			free(buf);
+			if (retstr)
+				*retstr = strdup("Short read");
+			return -1;
+		}
+		len += ret;
+	} while (buf[len - 1] != '\n');
+	*strchr(buf, '\n') = '\0';
+
+	if (strcmp(buf, "OK") == 0 || strncmp(buf, "OK ", 3) == 0
+	    || strncmp(buf, "D ", 2) == 0) {
+		if (retstr) {
+			*retstr = strchr(buf, ' ');
+			*retstr = *retstr ? uri_unescape(*retstr + 1) : NULL;
+		}
+		free(buf);
+		return 0;
+	}
+
+	if (strncmp(buf, "ERR ", 4) == 0 || strncmp(buf, "S ERROR", 7) == 0) {
+		ret = atoi(&buf[4]);
+		if (!ret)
+			ret = -1;
+		if (retstr) {
+			*retstr = strchr(&buf[4], ' ');
+			*retstr = *retstr ? uri_unescape(*retstr + 1) : NULL;
+		}
+		free(buf);
+		return ret;
+	}
+
+	free(buf);
+	if (retstr)
+		*retstr = strdup("pinentry protocol error");
+
+	return -1;
+}
+
+static int pinentry_exchange(int to, int from, char **retstr,
+                             const char *format, ...)
+{
+	va_list ap;
+
+	va_start(ap, format);
+	if (vdprintf(to, format, ap) == 0) {
+		if (retstr)
+			*retstr = strdup(strerror(errno));
+		return -1;
+	}
+	va_end(ap);
+
+	return pinentry_read(from, retstr);
+}
+
+static void pinentry_read_password(const char *pinentry, const char *prompt,
+                                   char *pass, size_t len)
+{
+	int from_pinentry[2];
+	int to_pinentry[2];
+	int pinentry_status;
+	pid_t pinentry_pid;
+	char *escaped_prompt;
+	char *retstr;
+	int ret;
+
+	*pass = '\0';
+
+	if (pipe(from_pinentry) == -1) {
+		perror("pipe");
+		return;
+	}
+
+	if (pipe(to_pinentry) == -1) {
+		perror("pipe");
+		close(from_pinentry[0]);
+		close(from_pinentry[1]);
+		return;
+	}
+
+	pinentry_pid = fork();
+	if (pinentry_pid == -1) {
+		perror("fork");
+		return;
+	}
+
+	if (pinentry_pid == 0) {
+		close(to_pinentry[1]);
+		if (dup2(to_pinentry[0], STDIN_FILENO) == -1) {
+			perror("dup2");
+			exit(1);
+		}
+		close(to_pinentry[0]);
+
+		close(from_pinentry[0]);
+		if (dup2(from_pinentry[1], STDOUT_FILENO) == -1) {
+			perror("dup2");
+			exit(1);
+		}
+		close(from_pinentry[1]);
+
+		execlp(pinentry, pinentry, NULL);
+		perror(pinentry);
+		exit(1);
+	}
+
+	close(to_pinentry[0]);
+	close(from_pinentry[1]);
+
+	ret = pinentry_read(from_pinentry[0], &retstr);
+	if (ret)
+		log_error("Error: %s\n", retstr);
+	free(retstr);
+	if (ret)
+		goto out;
+
+	ret = pinentry_exchange(to_pinentry[1], from_pinentry[0], &retstr,
+	                        "SETTITLE %s\n", "VPN Password");
+	if (ret)
+		log_error("Failed to set title: %s\n", retstr);
+	free(retstr);
+	if (ret)
+		goto out;
+
+	ret = pinentry_exchange(to_pinentry[1], from_pinentry[0], &retstr,
+	                        "SETDESC %s\n", "VPN Requires a Password");
+	if (ret)
+		log_error("Failed to set description: %s\n", retstr);
+	free(retstr);
+	if (ret)
+		goto out;
+
+	escaped_prompt = uri_escape(prompt);
+	ret = pinentry_exchange(to_pinentry[1], from_pinentry[0], &retstr,
+	                        "SETPROMPT %s\n", escaped_prompt);
+	free(escaped_prompt);
+	if (ret)
+		log_error("Failed to set prompt: %s\n", retstr);
+	free(retstr);
+	if (ret)
+		goto out;
+
+	ret = pinentry_exchange(to_pinentry[1], from_pinentry[0], &retstr,
+	                        "GETPIN\n");
+	if (ret) {
+		log_error("Failed to get PIN: %s\n", retstr);
+		free(retstr);
+		goto out;
+	}
+
+	if (retstr) {
+		strncpy(pass, retstr, len);
+		free(retstr);
+	} else {
+		log_error("No password given\n");
+	}
+
+out:
+	close(to_pinentry[1]);
+	close(from_pinentry[0]);
+
+	if (waitpid(pinentry_pid, &pinentry_status, 0) == -1)
+		perror("waitpid");
+}
+
+void read_password(const char *pinentry, const char *prompt,
+                   char *pass, size_t len)
 {
 	int masked = 0;
 	struct termios oldt, newt;
 	int i;
+
+	if (pinentry && *pinentry) {
+		pinentry_read_password(pinentry, prompt, pass, len);
+		return;
+	}
 
 	printf("%s", prompt);
 	fflush(stdout);
