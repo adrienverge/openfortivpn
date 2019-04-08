@@ -94,12 +94,15 @@ struct vpn_config {
 	char			*user_cert;
 	char			*user_key;
 	int			insecure_ssl;
+	int			min_tls;
+	int			seclevel_1;
 	char			*cipher_list;
 	struct x509_digest	*cert_whitelist;
 };
 
 int add_trusted_cert(struct vpn_config *cfg, const char *digest);
 int strtob(const char *str);
+int parse_min_tls(const char *str);
 
 int load_config(struct vpn_config *cfg, const char *filename);
 void destroy_vpn_config(struct vpn_config *cfg);

@@ -793,13 +793,30 @@ int ssl_connect(struct tunnel *tunnel)
 		return 1;
 	}
 
-	if (!tunnel->config->insecure_ssl && !tunnel->config->cipher_list) {
-		const char *cipher_list = "HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4";
-
-		tunnel->config->cipher_list = strdup(cipher_list);
+	if (!tunnel->config->insecure_ssl) {
+		if (!tunnel->config->cipher_list) {
+			const char *cipher_list;
+			if (tunnel->config->seclevel_1)
+				cipher_list = "HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4"
+				              "@SECLEVEL=1";
+			else
+				cipher_list = "HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4";
+			tunnel->config->cipher_list = strdup(cipher_list);
+		}
+	} else {
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+		if (tunnel->config->min_tls <= 0) {
+			tunnel->config->min_tls = TLS1_VERSION;
+		}
+#endif
+		if (!tunnel->config->cipher_list && tunnel->config->seclevel_1) {
+			const char *cipher_list = "DEFAULT@SECLEVEL=1";
+			tunnel->config->cipher_list = strdup(cipher_list);
+		}
 	}
 
 	if (tunnel->config->cipher_list) {
+		log_debug("Setting cipher list to: %s", tunnel->config->cipher_list);
 		if (!SSL_set_cipher_list(tunnel->ssl_handle,
 		                         tunnel->config->cipher_list)) {
 			log_error("SSL_set_cipher_list failed: %s\n",
@@ -807,6 +824,19 @@ int ssl_connect(struct tunnel *tunnel)
 			return 1;
 		}
 	}
+
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+	if (tunnel->config->min_tls > 0) {
+		log_debug("Setting min proto version to: 0x%x\n",
+		          tunnel->config->min_tls);
+		if (!SSL_set_min_proto_version(tunnel->ssl_handle,
+		                               tunnel->config->min_tls)) {
+			log_error("SSL_set_min_proto_version failed: %s\n",
+			          ERR_error_string(ERR_peek_last_error(), NULL));
+			return 1;
+		}
+	}
+#endif
 
 	if (!SSL_set_fd(tunnel->ssl_handle, tunnel->ssl_socket)) {
 		log_error("SSL_set_fd: %s\n",
