@@ -25,6 +25,7 @@
 #include <sys/stat.h>
 #include <limits.h>
 #include <openssl/tls1.h>
+#include <openssl/x509.h.h>  /* work around OpenSSL bug, missing STACK_OF definition */
 
 const struct vpn_config invalid_cfg = {
 	.gateway_host = {'\0'},
