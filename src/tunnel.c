@@ -183,7 +183,7 @@ static int pppd_run(struct tunnel *tunnel)
 		} else {
 			const char *v[] = {
 				ppp_path,
-				"38400", // speed
+				"115200", // speed
 				":192.0.2.1", // <local_IP_address>:<remote_IP_address>
 				"noipdefault",
 				"noaccomp",
