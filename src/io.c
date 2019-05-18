@@ -330,7 +330,8 @@ static void *pppd_write(void *arg)
 			}
 			n = write(tunnel->pppd_pty, &hdlc_buffer[written],
 			          len - written);
-			// sometimes write() even returns EAGAIN after a successful select()
+			// sometimes write() even returns EAGAIN 
+			// even after a successful select()
 			if ((n == -1) && (errno != EAGAIN)) {
 				log_error("write: %s\n", strerror(errno));
 				goto err_free_buf;
