@@ -1,4 +1,4 @@
-.TH OPENFORTIVPN 1 "October 24, 2019" ""
+.TH OPENFORTIVPN 1 "November 27, 2019" ""
 
 .SH NAME
 openfortivpn \- Client for PPP+SSL VPN tunnel services
@@ -110,8 +110,8 @@ Use specified PEM-encoded certificate if the server requires authentication
 with a certificate.
 .TP
 \fB\-\-user-cert=\fIpkcs11:\fR
-Use at least the string pkcs11: for using a smartcard. Takes also
-full or partially PKCS11-URI (p11tool --list-token-urls)
+Use at least the string pkcs11: for using a smartcard. It takes the full 
+or a partial PKCS11-URI (p11tool --list-token-urls)
 
   --user-cert = pkcs11:
 
@@ -119,7 +119,7 @@ full or partially PKCS11-URI (p11tool --list-token-urls)
 
   --user-cert = pkcs11:model=PKCS%2315%20emulated;manufacturer=piv_II;serial=012345678;token=someuser
 
-\fBRequires OpenSSL PKCS engine!
+\fBThis feature requires OpenSSL PKCS engine!
 .TP
 \fB\-\-user\-key=\fI<file>\fR
 Use specified PEM-encoded key if the server requires authentication with

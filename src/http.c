@@ -566,7 +566,6 @@ int auth_log_in(struct tunnel *tunnel)
 	uint32_t response_size;
 
 	url_encode(username, tunnel->config->username);
-	url_encode(password, tunnel->config->password);
 	url_encode(realm, tunnel->config->realm);
 
 	tunnel->cookie[0] = '\0';
@@ -576,10 +575,16 @@ int auth_log_in(struct tunnel *tunnel)
 		ret = http_request(tunnel, "GET", "/remote/login",
 		                   data, &res, &response_size);
 	} else {
-		snprintf(data, sizeof(data), "username=%s&credential=%s&realm=%s&ajax=1"
-		         "&redir=%%2Fremote%%2Findex&just_logged_in=1",
-		         username, password, realm);
-
+		if (tunnel->config->password == '\0') {
+			snprintf(data, sizeof(data), "username=%s&realm=%s&ajax=1"
+			         "&redir=%%2Fremote%%2Findex&just_logged_in=1",
+			         username, realm);
+		} else {
+			url_encode(password, tunnel->config->password);
+			snprintf(data, sizeof(data), "username=%s&credential=%s&realm=%s&ajax=1"
+			         "&redir=%%2Fremote%%2Findex&just_logged_in=1",
+			         username, password, realm);
+		}
 		ret = http_request(tunnel, "POST", "/remote/logincheck",
 		                   data, &res, &response_size);
 	}

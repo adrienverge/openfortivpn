@@ -512,30 +512,25 @@ int main(int argc, char **argv)
 		goto user_error;
 	}
 	// Check username
-	if (cfg.username[0] == '\0') {
+	if (cfg.username[0] == '\0' && cfg.use_engine != 1) {
 		log_error("Specify an username.\n");
 		goto user_error;
 	}
-	// If no password given, interactively ask user
-	if (cfg.password == NULL || cfg.password[0] == '\0') {
-		free(cfg.password);
+	// If username but no password given, interactively ask user
+	if (cfg.password == NULL && cfg.username[0] != '\0' ) {
 		char *tmp_password = malloc(PWD_BUFSIZ); // allocate large buffer
 		read_password(cfg.pinentry, "password",
 		              "VPN account password: ", tmp_password, PWD_BUFSIZ);
 		cfg.password = strdup(tmp_password); // copy string of correct size
 		free(tmp_password);
 	}
-	// Check password
-	if (cfg.password[0] == '\0') {
-		log_error("Specify a password.\n");
-		goto user_error;
-	}
-
 	log_debug("Config host = \"%s\"\n", cfg.gateway_host);
 	log_debug("Config realm = \"%s\"\n", cfg.realm);
 	log_debug("Config port = \"%d\"\n", cfg.gateway_port);
-	log_debug("Config username = \"%s\"\n", cfg.username);
-	log_debug_all("Config password = \"%s\"\n", cfg.password);
+	if (cfg.username[0] != '\0')
+		log_debug("Config username = \"%s\"\n", cfg.username);
+	if (cfg.password != NULL)
+		log_debug_all("Config password = \"%s\"\n", cfg.password);
 	if (cfg.otp[0] != '\0')
 		log_debug("One-time password = \"%s\"\n", cfg.otp);
 
