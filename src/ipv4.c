@@ -912,9 +912,10 @@ static int ipv4_set_default_routes(struct tunnel *tunnel)
 
 int ipv4_set_tunnel_routes(struct tunnel *tunnel)
 {
-	int ret = ipv4_protect_tunnel_route(tunnel);
+	struct vpn_config *cfg = tunnel->config;
 
-	if (tunnel->ipv4.split_routes)
+	int ret = ipv4_protect_tunnel_route(tunnel);
+	if (cfg->half_internet_routes == 1 && tunnel->ipv4.split_routes)
 		// try even if ipv4_protect_tunnel_route has failed
 		return ipv4_set_split_routes(tunnel);
 	else if (ret == 0) {
@@ -937,8 +938,7 @@ int ipv4_restore_routes(struct tunnel *tunnel)
 		if (ret != 0)
 			log_warn("Could not delete route to vpn server (%s).\n",
 			         err_ipv4_str(ret));
-		if ((cfg->half_internet_routes == 0) &&
-		    (tunnel->ipv4.split_routes == 0)) {
+		if (cfg->half_internet_routes == 0) {
 			ret = ipv4_del_route(ppp_rt);
 			if (ret != 0)
 				log_warn("Could not delete route through tunnel (%s).\n",
