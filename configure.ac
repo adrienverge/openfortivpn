@@ -270,7 +270,8 @@ AC_ARG_ENABLE([proc],
 			[Enable route manipulations directly via /proc/net/route \
 			when cross-compiling, use --disable-proc for the opposite]))
 
-# Checks for existence of specific files.
+# Checks for existence of specific files if not cross-compiling.
+AS_IF([test "x$enable_proc" = "x" ], [
 AC_CHECK_FILE([/proc/net/route],[
   AS_IF([test "x$enable_proc" = "x" ], [
     enable_proc="yes"
@@ -286,9 +287,11 @@ AC_CHECK_FILE([/proc/net/route],[
     ])
   ])
 ])
+])
 
-# check for ppp user space client
+# check for ppp user space client if not specified
 AC_PATH_PROG(PPP, [ppp], [/usr/sbin/ppp], "$PATH:/sbin:/usr/sbin")
+AS_IF([test "x$PPP" = "x" ], [
 AC_CHECK_FILE([$PPP], [
   AS_IF([test "x$PPP_PATH" = "x" ], [
     PPP_PATH="$PPP"
@@ -297,9 +300,10 @@ AC_CHECK_FILE([$PPP], [
     with_ppp="yes"
   ])
 ],[])
-
-# check for pppd
+])
+# check for pppd if not specified
 AC_PATH_PROG(PPPD, [pppd], [/usr/sbin/pppd], "$PATH:/sbin:/usr/sbin")
+AS_IF([test "x$PPPD" = "x" ], [
 AC_CHECK_FILE([$PPPD], [
   AS_IF([test "x$PPP_PATH" = "x" ], [
     PPP_PATH="$PPPD"
@@ -308,7 +312,7 @@ AC_CHECK_FILE([$PPPD], [
     with_pppd="yes"
   ])
 ],[])
-
+])
 # replace empty settings with "no"
 AS_IF([test "x$with_ppp" = "x" ], [
     with_ppp="no"
