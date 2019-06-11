@@ -216,6 +216,16 @@ CPPFLAGS="${save_openssl_CPPFLAGS}"
 LIBS="${save_openssl_LIBS}"
 
 # Specialised checks for particular features.
+# When cross compile, don't run the tests.
+AC_ARG_WITH([rt_dst],
+	AS_HELP_STRING([--with-rt_dst],
+			  [disable rtentry with rt_dst testing (for linux target when cross compile)]),
+	AS_IF([test "x$with_rt_dst" = "xyes"],[
+	AC_MSG_NOTICE([HAVE_RT_ENTRY_WITH_RT_DST... 1])
+	AC_DEFINE(HAVE_RT_ENTRY_WITH_RT_DST)
+	])
+)
+AS_IF([test "x$with_rt_dst" = "x" ], [
 AC_MSG_CHECKING(whether rtentry is available and has rt_dst )
 AC_TRY_RUN([
 #include <sys/types.h>
@@ -233,6 +243,7 @@ int main() {
   AC_DEFINE(HAVE_RT_ENTRY_WITH_RT_DST)
   AC_MSG_RESULT(yes)
 ], AC_MSG_RESULT(no) )
+])
 
 NETSTAT_PATH=""
 PPP_PATH=""
