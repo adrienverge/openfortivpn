@@ -302,7 +302,7 @@ AC_CHECK_FILE([/proc/net/route],[
 
 # check for ppp user space client if not specified
 AC_PATH_PROG(PPP, [ppp], [/usr/sbin/ppp], "$PATH:/sbin:/usr/sbin")
-AS_IF([test "x$PPP" = "x" ], [
+AS_IF([test "x$PPP_PATH" = "x" ], [
 AC_CHECK_FILE([$PPP], [
   AS_IF([test "x$PPP_PATH" = "x" ], [
     PPP_PATH="$PPP"
@@ -314,7 +314,7 @@ AC_CHECK_FILE([$PPP], [
 ])
 # check for pppd if not specified
 AC_PATH_PROG(PPPD, [pppd], [/usr/sbin/pppd], "$PATH:/sbin:/usr/sbin")
-AS_IF([test "x$PPPD" = "x" ], [
+AS_IF([test "x$PPP_PATH" = "x" ], [
 AC_CHECK_FILE([$PPPD], [
   AS_IF([test "x$PPP_PATH" = "x" ], [
     PPP_PATH="$PPPD"
