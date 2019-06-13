@@ -132,8 +132,14 @@ int parse_min_tls(const char *str)
 		return TLS1_1_VERSION;
 	case '2':
 		return TLS1_2_VERSION;
+#if OPENSSL_VERSION_NUMBER < 0x020000000L
+	/* 
+	 * libressl uses version numbers starting with major version 2 
+	 * but does not yet support TLS 1.3
+	 */
 	case '3':
 		return TLS1_3_VERSION;
+#endif
 #endif
 	default:
 		return -1;
