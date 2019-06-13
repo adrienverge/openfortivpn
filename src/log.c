@@ -39,11 +39,12 @@ struct log_param_s {
 	int syslog_prio;
 };
 
-static const struct log_param_s log_params[OFV_LOG_DEBUG_DETAILS + 1] = {
+static const struct log_param_s log_params[OFV_LOG_DEBUG_ALL + 1] = {
 	{ "        ", "",           LOG_ERR},
 	{ "ERROR:  ", "\033[0;31m", LOG_ERR},
 	{ "WARN:   ", "\033[0;33m", LOG_WARNING},
 	{ "INFO:   ", "",           LOG_INFO},
+	{ "DEBUG:  ", "\033[0;90m", LOG_DEBUG},
 	{ "DEBUG:  ", "\033[0;90m", LOG_DEBUG},
 	{ "DEBUG:  ", "\033[0;90m", LOG_DEBUG},
 };
@@ -71,7 +72,7 @@ void set_syslog(int use_syslog)
 
 void increase_verbosity(void)
 {
-	if (loglevel < OFV_LOG_DEBUG_DETAILS)
+	if (loglevel < OFV_LOG_DEBUG_ALL)
 		loglevel++;
 }
 void decrease_verbosity(void)
@@ -88,7 +89,7 @@ void do_log(int verbosity, const char *format, ...)
 	pthread_mutex_lock(&mutex);
 
 	// Use sane default if wrong verbosity specified
-	if (verbosity > OFV_LOG_DEBUG_DETAILS || verbosity < 0)
+	if (verbosity > OFV_LOG_DEBUG_ALL || verbosity < 0)
 		verbosity = OFV_LOG_MUTE;
 	lp = &log_params[verbosity];
 
