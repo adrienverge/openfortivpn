@@ -501,7 +501,7 @@ int main(int argc, char **argv)
 	log_debug("Config realm = \"%s\"\n", cfg.realm);
 	log_debug("Config port = \"%d\"\n", cfg.gateway_port);
 	log_debug("Config username = \"%s\"\n", cfg.username);
-	log_debug("Config password = \"%s\"\n", "********");
+	log_debug_all("Config password = \"%s\"\n", cfg.password);
 	if (cfg.otp[0] != '\0')
 		log_debug("One-time password = \"%s\"\n", cfg.otp);
 

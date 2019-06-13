@@ -70,19 +70,32 @@ int http_send(struct tunnel *tunnel, const char *request, ...)
 {
 	va_list args;
 	char buffer[BUFSZ];
+	char logbuffer[BUFSZ];
 	int length;
 	int n = 0;
 
 	va_start(args, request);
 	length = vsnprintf(buffer, BUFSZ, request, args);
 	va_end(args);
+	strcpy(logbuffer,buffer);
+	if (loglevel <= OFV_LOG_DEBUG_DETAILS && tunnel->config->password[0]!='\0') {
+		char* pwstart;
+		pwstart = strstr(logbuffer, tunnel->config->password);
+		if (pwstart != NULL) {
+			int pos, pwlen, i;
+			pos = pwstart - logbuffer;
+			pwlen = strlen(tunnel->config->password);
+			for (i=pos; i<pos+pwlen; i++)
+				logbuffer[i]='*';
+		}
+	}
 
 	if (length < 0)
 		return ERR_HTTP_INVALID;
 	else if (length >= BUFSZ)
 		return ERR_HTTP_TOO_LONG;
 
-	log_debug_details("%s: \n%s\n", __func__, buffer);
+	log_debug_details("%s: \n%s\n", __func__, logbuffer);
 
 	while (n == 0)
 		n = safe_ssl_write(tunnel->ssl_handle, (uint8_t *) buffer,
