@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT([openfortivpn], [1.8.1])
+AC_INIT([openfortivpn], [1.9.0])
 AC_CONFIG_SRCDIR([src/main.c])
 AM_INIT_AUTOMAKE([foreign subdir-objects])
 
@@ -216,6 +216,16 @@ CPPFLAGS="${save_openssl_CPPFLAGS}"
 LIBS="${save_openssl_LIBS}"
 
 # Specialised checks for particular features.
+# When cross compile, don't run the tests.
+AC_ARG_WITH([rt_dst],
+	AS_HELP_STRING([--with-rt_dst],
+			  [disable rtentry with rt_dst testing (for linux target when cross compile)]),
+	AS_IF([test "x$with_rt_dst" = "xyes"],[
+	AC_MSG_NOTICE([HAVE_RT_ENTRY_WITH_RT_DST... 1])
+	AC_DEFINE(HAVE_RT_ENTRY_WITH_RT_DST)
+	])
+)
+AS_IF([test "x$with_rt_dst" = "x" ], [
 AC_MSG_CHECKING(whether rtentry is available and has rt_dst )
 AC_TRY_RUN([
 #include <sys/types.h>
@@ -233,6 +243,7 @@ int main() {
   AC_DEFINE(HAVE_RT_ENTRY_WITH_RT_DST)
   AC_MSG_RESULT(yes)
 ], AC_MSG_RESULT(no) )
+])
 
 NETSTAT_PATH=""
 PPP_PATH=""
@@ -270,7 +281,8 @@ AC_ARG_ENABLE([proc],
 			[Enable route manipulations directly via /proc/net/route \
 			when cross-compiling, use --disable-proc for the opposite]))
 
-# Checks for existence of specific files.
+# Checks for existence of specific files if not cross-compiling.
+AS_IF([test "x$enable_proc" = "x" ], [
 AC_CHECK_FILE([/proc/net/route],[
   AS_IF([test "x$enable_proc" = "x" ], [
     enable_proc="yes"
@@ -286,9 +298,11 @@ AC_CHECK_FILE([/proc/net/route],[
     ])
   ])
 ])
+])
 
-# check for ppp user space client
+# check for ppp user space client if not specified
 AC_PATH_PROG(PPP, [ppp], [/usr/sbin/ppp], "$PATH:/sbin:/usr/sbin")
+AS_IF([test "x$PPP_PATH" = "x" ], [
 AC_CHECK_FILE([$PPP], [
   AS_IF([test "x$PPP_PATH" = "x" ], [
     PPP_PATH="$PPP"
@@ -297,9 +311,10 @@ AC_CHECK_FILE([$PPP], [
     with_ppp="yes"
   ])
 ],[])
-
-# check for pppd
+])
+# check for pppd if not specified
 AC_PATH_PROG(PPPD, [pppd], [/usr/sbin/pppd], "$PATH:/sbin:/usr/sbin")
+AS_IF([test "x$PPP_PATH" = "x" ], [
 AC_CHECK_FILE([$PPPD], [
   AS_IF([test "x$PPP_PATH" = "x" ], [
     PPP_PATH="$PPPD"
@@ -308,7 +323,7 @@ AC_CHECK_FILE([$PPPD], [
     with_pppd="yes"
   ])
 ],[])
-
+])
 # replace empty settings with "no"
 AS_IF([test "x$with_ppp" = "x" ], [
     with_ppp="no"

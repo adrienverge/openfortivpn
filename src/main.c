@@ -61,6 +61,7 @@
 
 #define usage \
 "Usage: openfortivpn [<host>[:<port>]] [-u <user>] [-p <pass>]\n" \
+"                    [--pinentry=<program>]\n" \
 "                    [--realm=<realm>] [--otp=<otp>] [--otp-delay=<delay>]\n" \
 "                    [--otp-prompt=<prompt>] [--set-routes=<0|1>]\n" \
 "                    [--half-internet-routes=<0|1>] [--set-dns=<0|1>]\n" \
@@ -91,6 +92,7 @@ PPPD_USAGE \
 "  -o <otp>, --otp=<otp>         One-Time-Password.\n" \
 "  --otp-prompt=<prompt>         Search for the otp prompt starting with this string\n" \
 "  --otp-delay=<delay>	         Wait <delay> seconds before sending the OTP.\n" \
+"  --pinentry=<program>          Use the program to supply a secret instead of asking for it\n" \
 "  --realm=<realm>               Use specified authentication realm on VPN gateway\n" \
 "                                when tunnel is up.\n" \
 "  --set-routes=[01]             Set if openfortivpn should configure output routes through\n" \
@@ -162,6 +164,7 @@ int main(int argc, char **argv)
 		.otp = {'\0'},
 		.otp_prompt = NULL,
 		.otp_delay = 0,
+		.pinentry = NULL,
 		.realm = {'\0'},
 		.set_routes = 1,
 		.set_dns = 1,
@@ -192,6 +195,7 @@ int main(int argc, char **argv)
 		{"help",            no_argument,       0, 'h'},
 		{"version",         no_argument,       0, 0},
 		{"config",          required_argument, 0, 'c'},
+		{"pinentry",        required_argument, 0, 0},
 		{"realm",           required_argument, 0, 0},
 		{"username",        required_argument, 0, 'u'},
 		{"password",        required_argument, 0, 'p'},
@@ -316,6 +320,11 @@ int main(int argc, char **argv)
 			if (strcmp(long_options[option_index].name,
 			           "user-key") == 0) {
 				cli_cfg.user_key = strdup(optarg);
+				break;
+			}
+			if (strcmp(long_options[option_index].name,
+			           "pinentry") == 0) {
+				cli_cfg.pinentry = strdup(optarg);
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
@@ -477,7 +486,8 @@ int main(int argc, char **argv)
 	if (cfg.password == NULL || cfg.password[0] == '\0') {
 		free(cfg.password);
 		char *tmp_password = malloc(PWD_BUFSIZ); // allocate large buffer
-		read_password("VPN account password: ", tmp_password, PWD_BUFSIZ);
+		read_password(cfg.pinentry, "password",
+		              "VPN account password: ", tmp_password, PWD_BUFSIZ);
 		cfg.password = strdup(tmp_password); // copy string of correct size
 		free(tmp_password);
 	}

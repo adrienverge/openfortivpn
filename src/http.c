@@ -500,7 +500,8 @@ int try_otp_auth(
 			size_t l;
 			v = NULL;
 			if (cfg->otp[0] == '\0') {
-				read_password(p, cfg->otp, FIELD_SIZE);
+				read_password(cfg->pinentry, "otp",
+				              p, cfg->otp, FIELD_SIZE);
 				if (cfg->otp[0] == '\0') {
 					log_error("No OTP specified\n");
 					return 0;
@@ -611,7 +612,8 @@ int auth_log_in(struct tunnel *tunnel)
 		get_value_from_response(res, "polid=", polid, 32);
 
 		if (cfg->otp[0] == '\0') {
-			read_password("Two-factor authentication token: ",
+			read_password(cfg->pinentry, "otp",
+			              "Two-factor authentication token: ",
 			              cfg->otp, FIELD_SIZE);
 			if (cfg->otp[0] == '\0') {
 				log_error("No token specified\n");

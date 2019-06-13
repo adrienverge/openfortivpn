@@ -34,6 +34,7 @@ const struct vpn_config invalid_cfg = {
 	.otp = {'\0'},
 	.otp_prompt = NULL,
 	.otp_delay = -1,
+	.pinentry = NULL,
 	.realm = {'\0'},
 	.set_routes = -1,
 	.set_dns = -1,
@@ -218,6 +219,9 @@ int load_config(struct vpn_config *cfg, const char *filename)
 				continue;
 			}
 			cfg->otp_delay = otp_delay;
+		} else if (strcmp(key, "pinentry") == 0) {
+			free(cfg->pinentry);
+			cfg->pinentry = strdup(val);
 		} else if (strcmp(key, "realm") == 0) {
 			strncpy(cfg->realm, val, FIELD_SIZE - 1);
 			cfg->realm[FIELD_SIZE] = '\0';
@@ -344,6 +348,7 @@ void destroy_vpn_config(struct vpn_config *cfg)
 {
 	free(cfg->password);
 	free(cfg->otp_prompt);
+	free(cfg->pinentry);
 #if HAVE_USR_SBIN_PPPD
 	free(cfg->pppd_log);
 	free(cfg->pppd_plugin);
@@ -379,6 +384,10 @@ void merge_config(struct vpn_config *dst, struct vpn_config *src)
 		strcpy(dst->otp, src->otp);
 	if (src->otp_delay != invalid_cfg.otp_delay)
 		dst->otp_delay = src->otp_delay;
+	if (src->pinentry) {
+		free(dst->pinentry);
+		dst->pinentry = src->pinentry;
+	}
 	if (src->realm[0])
 		strcpy(dst->realm, src->realm);
 	if (src->set_routes != invalid_cfg.set_routes)
