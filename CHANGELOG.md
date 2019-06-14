@@ -14,6 +14,19 @@ Releases
 This high level changelog is usually updated when a release is tagged.
 On the master branch there may be changes that are not (yet) described here.
 
+### 1.10.0
+
+* [-] fix openssl 1.1.x compatibility issues 
+* [~] Connect to old TLSv1.0 software - override new openssl defaults.
+* [~] suppress cleartext password in debug detail output / add new verbosity level
+* [~] increase speed setting for pppd
+* [-] work around EAGAIN issue on FreeBSD
+* [~] configure.ac: rt_dst: don't run tests when option is passed
+* [~] configure.ac: don't check file path if --with/--disable specified
+* [+] userinput: pass a hint to the pinentry program
+* [-] tunnel: make pppd default to logging to stderr
+* [-] tunnel: pass our stderr to the pppd slave
+
 ### 1.9.0
 
 * [+] update of the man page, especially about the dns settings
