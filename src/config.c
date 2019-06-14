@@ -24,7 +24,8 @@
 #include <ctype.h>
 #include <sys/stat.h>
 #include <limits.h>
-
+#include <openssl/x509.h>  /* work around OpenSSL bug: missing definition of STACK_OF */
+#include <openssl/tls1.h>
 
 const struct vpn_config invalid_cfg = {
 	.gateway_host = {'\0'},
@@ -57,6 +58,8 @@ const struct vpn_config invalid_cfg = {
 	.user_key = NULL,
 	.insecure_ssl = -1,
 	.cipher_list = NULL,
+	.min_tls = -1,
+	.seclevel_1 = -1,
 	.cert_whitelist = NULL
 };
 
@@ -108,6 +111,39 @@ int strtob(const char *str)
 	if (i < 0 || i > 1)
 		return -1;
 	return i;
+}
+
+/*
+ * Converts string to tls version
+ *
+ * @params[in] str  the string to read from
+ * @return          openssl version or -1
+ */
+int parse_min_tls(const char *str)
+{
+	if (str[0] != '1' || str[1] != '.' || str[2] == 0 || str[3] != 0) {
+		return -1;
+	}
+	switch (str[2]) {
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+	case '0':
+		return TLS1_VERSION;
+	case '1':
+		return TLS1_1_VERSION;
+	case '2':
+		return TLS1_2_VERSION;
+#if OPENSSL_VERSION_NUMBER < 0x020000000L
+	/*
+	 * libressl uses version numbers starting with major version 2
+	 * but does not yet support TLS 1.3
+	 */
+	case '3':
+		return TLS1_3_VERSION;
+#endif
+#endif
+	default:
+		return -1;
+	}
 }
 
 /*
@@ -328,6 +364,25 @@ int load_config(struct vpn_config *cfg, const char *filename)
 		} else if (strcmp(key, "cipher-list") == 0) {
 			free(cfg->cipher_list);
 			cfg->cipher_list = strdup(val);
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+		} else if (strcmp(key, "min-tls") == 0) {
+			int min_tls = parse_min_tls(val);
+			if (min_tls == -1) {
+				log_warn("Bad min-tls in config file: \"%s\".\n",
+				         val);
+				continue;
+			} else {
+				cfg->min_tls = min_tls;
+			}
+#endif
+		} else if (strcmp(key, "seclevel-1") == 0) {
+			int seclevel_1 = strtob(val);
+			if (seclevel_1 < 0) {
+				log_warn("Bad seclevel-1 in config file: \"%s\".\n",
+				         val);
+				continue;
+			}
+			cfg->seclevel_1 = seclevel_1;
 		} else {
 			log_warn("Bad key in config file: \"%s\".\n", key);
 			goto err_free;
@@ -448,6 +503,11 @@ void merge_config(struct vpn_config *dst, struct vpn_config *src)
 		free(dst->cipher_list);
 		dst->cipher_list = src->cipher_list;
 	}
+	if (src->min_tls > 0) {
+		dst->min_tls = src->min_tls;
+	}
+	if (src->seclevel_1 != invalid_cfg.seclevel_1)
+		dst->seclevel_1 = src->seclevel_1;
 	if (src->cert_whitelist) {
 		while (dst->cert_whitelist != NULL) {
 			struct x509_digest *tmp = dst->cert_whitelist->next;

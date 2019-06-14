@@ -81,6 +81,14 @@ PPPD_USAGE \
 "the gateway and this process.\n" \
 "\n"
 
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+#define help_min_tls ""
+#else
+#define help_min_tls " This option\n" \
+"                                is not supported by your openssl library."
+#endif
+
+
 #define help_options \
 "Options:\n" \
 "  -h --help                     Show this help message and exit.\n" \
@@ -118,12 +126,18 @@ PPPD_USAGE \
 "                                This option can be used multiple times to trust\n" \
 "                                several certificates.\n" \
 "  --insecure-ssl                Do not disable insecure SSL protocols/ciphers.\n" \
-"                                If your server requires a specific cipher, consider\n" \
-"                                using --cipher-list instead.\n" \
+"                                Also enable TLSv1.0 if applicable.\n" \
+"                                If your server requires a specific cipher or protocol,\n" \
+"                                consider using --cipher-list and/or --min-tls instead.\n" \
 "  --cipher-list=<ciphers>       Openssl ciphers to use. If default does not work\n" \
 "                                you can try with the cipher suggested in the output\n" \
 "                                of 'openssl s_client -connect <host:port>'\n" \
 "                                (e.g. AES256-GCM-SHA384)\n" \
+"  --min-tls                     Use minimum tls version instead of system default.\n" \
+"                                Valid values are 1.0, 1.1, 1.2, 1.3." help_min_tls "\n" \
+"  --seclevel-1                  If --cipher-list is not specified, add @SECLEVEL=1 to\n" \
+"                                (compiled in) list of ciphers. This lowers limits on\n" \
+"                                dh key.\n" \
 "  --persistent=<interval>       Run the vpn persistently in a loop and try to re-\n" \
 "                                connect every <interval> seconds when dropping out\n" \
 "  -v                            Increase verbosity. Can be used multiple times\n" \
@@ -186,6 +200,8 @@ int main(int argc, char **argv)
 		.user_cert = NULL,
 		.user_key = NULL,
 		.insecure_ssl = 0,
+		.min_tls = 0,
+		.seclevel_1 = 0,
 		.cipher_list = NULL,
 		.cert_whitelist = NULL
 	};
@@ -215,6 +231,10 @@ int main(int argc, char **argv)
 		{"trusted-cert",    required_argument, 0, 0},
 		{"insecure-ssl",    no_argument, &cli_cfg.insecure_ssl, 1},
 		{"cipher-list",     required_argument, 0, 0},
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+		{"min-tls",         required_argument, 0, 0},
+#endif
+		{"seclevel-1",      no_argument, &cli_cfg.seclevel_1, 1},
 #if HAVE_USR_SBIN_PPPD
 		{"pppd-use-peerdns", required_argument, 0, 0},
 		{"pppd-no-peerdns", no_argument, &cli_cfg.pppd_use_peerdns, 0},
@@ -344,6 +364,19 @@ int main(int argc, char **argv)
 				cli_cfg.cipher_list = strdup(optarg);
 				break;
 			}
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+			if (strcmp(long_options[option_index].name,
+			           "min-tls") == 0) {
+				int min_tls = parse_min_tls(optarg);
+				if (min_tls == -1) {
+					log_warn("Bad min-tls option: \"%s\"\n",
+					         optarg);
+				} else {
+					cli_cfg.min_tls = min_tls;
+				}
+				break;
+			}
+#endif
 			if (strcmp(long_options[option_index].name,
 			           "otp-prompt") == 0) {
 				cli_cfg.otp_prompt = strdup(optarg);
