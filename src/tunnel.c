@@ -55,6 +55,11 @@
 #include <systemd/sd-daemon.h>
 #endif
 
+// we use this constant in the source, so define a fallback if not defined
+#ifndef OPENSSL_API_COMPAT
+#define OPENSSL_API_COMPAT 0x0908000L
+#endif
+
 struct ofv_varr {
 	unsigned cap;		// current capacity
 	unsigned off;		// next slot to write, always < max(cap - 1, 1)
@@ -720,10 +725,13 @@ int ssl_connect(struct tunnel *tunnel)
 	if (tunnel->ssl_socket == -1)
 		return 1;
 
+	// registration is deprecated from openssl 1.1.0 onwards
+#if OPENSSL_API_COMPAT < 0x10100000L
 	// Register the error strings for libcrypto & libssl
 	SSL_load_error_strings();
 	// Register the available ciphers and digests
 	SSL_library_init();
+#endif
 
 	tunnel->ssl_context = SSL_CTX_new(SSLv23_client_method());
 	if (tunnel->ssl_context == NULL) {
