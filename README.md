@@ -107,9 +107,10 @@ For other distros, you'll need to build and install from source:
     # Install Dependencies
     brew install automake autoconf openssl@1.0 pkg-config
 
-    # You may need to make this openssl available to compilers
+    # You may need to make this openssl available to compilers and pkg-config
     export LDFLAGS="-L/usr/local/opt/openssl/lib $LDFLAGS"
     export CPPFLAGS="-I/usr/local/opt/openssl/include $CPPFLAGS"
+    export PKG_CONFIG_PATH="/usr/local/opt/openssl/lib/pkgconfig:$PKG_CONFIG_PATH"
     ```
 
 2.  Build and install.
@@ -121,8 +122,9 @@ For other distros, you'll need to build and install from source:
     sudo make install
     ```
 
-    If you need to specify the openssl location you can set the
-    `$PKG_CONFIG_PATH` environment variable.
+    If you need to specify the openssl location you can set the `$PKG_CONFIG_PATH`
+    environment variable. For fine-tuning check the available configure arguments 
+    with `./configure --help` especially when you are cross compiling.
 
     Finally, install runtime dependency `ppp` or `pppd`.
 
