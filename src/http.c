@@ -45,8 +45,11 @@ static void url_encode(char *dest, const char *str)
 		if (isalnum(*str) || *str == '-' || *str == '_'
 		    || *str == '.' || *str == '~')
 			*dest++ = *str;
-		else if (*str == ' ')
-			*dest++ = '+';
+		else if (*str == ' ') {
+			*dest++ = '%';
+			*dest++ = '2';
+			*dest++ = '0';
+		}
 		else {
 			static const char hex[] = "0123456789ABCDEF";
 
