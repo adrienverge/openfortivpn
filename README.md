@@ -45,6 +45,29 @@ Examples
   ```
 
 
+---------
+Smartcard
+---------
+
+Smartcard support needs `openssl pkcs engine` and `opensc` to be installed.
+
+To make use of your smartcard put at least `pkcs11:` to the user-cert config or commandline.
+Takes full or partially PKCS11 token URI.
+
+```
+user-cert = pkcs11:
+user-cert = pkcs11:token=someuser
+user-cert = pkcs11:model=PKCS%2315%20emulated;manufacturer=piv_II;serial=012345678;token=someuser
+```
+
+In most cases `user-cert = pkcs11:` will do it, but if needed you can get the token-URI
+with `p11tool --list-token-urls`.
+
+Multiple readers are not supported.
+
+Tested with Yubikey, but other PIV enabled smartcards may work too.
+
+
 ----------
 Installing
 ----------
