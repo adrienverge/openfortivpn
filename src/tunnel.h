@@ -80,8 +80,8 @@ struct tunnel {
 };
 
 struct token {
-        const char *uri;
-        X509 *cert;
+	const char *uri;
+	X509 *cert;
 };
 
 int ppp_interface_is_up(struct tunnel *tunnel);

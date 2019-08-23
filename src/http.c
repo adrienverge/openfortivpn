@@ -574,18 +574,17 @@ int auth_log_in(struct tunnel *tunnel)
 
 	if (tunnel->config->use_engine) {
 		snprintf(data, sizeof(data), "cert=&nup=1");
-		ret = http_request(
-			tunnel, "GET", "/remote/login", data, &res, &response_size);
+		ret = http_request(tunnel, "GET", "/remote/login",
+		                   data, &res, &response_size);
 	} else {
-
 		snprintf(data, sizeof(data), "username=%s&credential=%s&realm=%s&ajax=1"
 		         "&redir=%%2Fremote%%2Findex&just_logged_in=1",
 		         username, password, realm);
-	
-		ret = http_request(
-			tunnel, "POST", "/remote/logincheck", data, &res, &response_size);
+
+		ret = http_request(tunnel, "POST", "/remote/logincheck",
+		                   data, &res, &response_size);
 	}
-	
+
 	if (ret != 1)
 		goto end;
 
