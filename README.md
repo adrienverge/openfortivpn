@@ -52,7 +52,7 @@ Smartcard
 Smartcard support needs `openssl pkcs engine` and `opensc` to be installed.
 
 To make use of your smartcard put at least `pkcs11:` to the user-cert config or commandline.
-Takes full or partially PKCS11 token URI. Also username and password must not be empty, but 
+Takes full or partially PKCS#11 token URI. Also username and password must not be empty, but 
 doesn't get used. So you can type in anything.
 
 ```
