@@ -116,6 +116,7 @@ PPPD_USAGE \
 "                                certificate.\n" \
 "  --user-cert=<file>            Use specified PEM-encoded certificate if the server\n" \
 "                                requires authentication with a certificate.\n" \
+"  --user-cert=pkcs11:           Use smartcard. Takes also partial or full PKCS11-URI.\n" \
 "  --user-key=<file>             Use specified PEM-encoded key if the server requires\n" \
 "                                authentication with a certificate.\n" \
 "  --use-syslog                  Log to syslog instead of terminal.\n" \

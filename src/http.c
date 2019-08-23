@@ -45,6 +45,8 @@ static void url_encode(char *dest, const char *str)
 		if (isalnum(*str) || *str == '-' || *str == '_'
 		    || *str == '.' || *str == '~')
 			*dest++ = *str;
+//                else if (*str == ' ')
+//                        *dest++ = '+';
 		else {
 			static const char hex[] = "0123456789ABCDEF";
 
@@ -570,12 +572,20 @@ int auth_log_in(struct tunnel *tunnel)
 
 	tunnel->cookie[0] = '\0';
 
-	snprintf(data, sizeof(data), "username=%s&credential=%s&realm=%s&ajax=1"
-	         "&redir=%%2Fremote%%2Findex&just_logged_in=1",
-	         username, password, realm);
+	if (tunnel->config->use_engine) {
+		snprintf(data, sizeof(data), "cert=&nup=1");
+		ret = http_request(
+			tunnel, "GET", "/remote/login", data, &res, &response_size);
+	} else {
 
-	ret = http_request(
-	              tunnel, "POST", "/remote/logincheck", data, &res, &response_size);
+		snprintf(data, sizeof(data), "username=%s&credential=%s&realm=%s&ajax=1"
+		         "&redir=%%2Fremote%%2Findex&just_logged_in=1",
+		         username, password, realm);
+	
+		ret = http_request(
+			tunnel, "POST", "/remote/logincheck", data, &res, &response_size);
+	}
+	
 	if (ret != 1)
 		goto end;
 

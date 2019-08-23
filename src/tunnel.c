@@ -42,6 +42,7 @@
 #include <sys/ioctl.h>
 #include <openssl/err.h>
 #include <openssl/x509v3.h>
+#include <openssl/engine.h>
 #if HAVE_PTY_H
 #include <pty.h>
 #elif HAVE_UTIL_H
@@ -754,31 +755,92 @@ int ssl_connect(struct tunnel *tunnel)
 		}
 	}
 
-	if (tunnel->config->user_cert) {
-		if (!SSL_CTX_use_certificate_file(
-		            tunnel->ssl_context, tunnel->config->user_cert,
-		            SSL_FILETYPE_PEM)) {
-			log_error("SSL_CTX_use_certificate_file: %s\n",
-			          ERR_error_string(ERR_peek_last_error(), NULL));
-			return 1;
-		}
-	}
+        /* Use engine for PIV if user-cert config starts with pkcs11 URI: */
+        if (tunnel->config->use_engine > 0) {
 
-	if (tunnel->config->user_key) {
-		if (!SSL_CTX_use_PrivateKey_file(
-		            tunnel->ssl_context, tunnel->config->user_key,
-		            SSL_FILETYPE_PEM)) {
-			log_error("SSL_CTX_use_PrivateKey_file: %s\n",
-			          ERR_error_string(ERR_peek_last_error(), NULL));
-			return 1;
-		}
-	}
+                ENGINE *e;
+                ENGINE_load_builtin_engines();
+                e = ENGINE_by_id("pkcs11");
+                if(!e) {
+                    log_error("Could not load pkcs11 Engine: %s\n",
+                    	ERR_error_string(ERR_peek_last_error(), NULL));
+                    return 1;
+                }
+                if(!ENGINE_init(e)) {
+                    log_error("Could not init pkcs11 Engine: %s\n",
+                    	ERR_error_string(ERR_peek_last_error(), NULL));
+                    ENGINE_free(e);
+                    return 1;
+                }
+                if(!ENGINE_set_default_RSA(e))
+                    abort();
 
-	if (tunnel->config->user_cert && tunnel->config->user_key) {
-		if (!SSL_CTX_check_private_key(tunnel->ssl_context)) {
-			log_error("SSL_CTX_check_private_key: %s\n",
-			          ERR_error_string(ERR_peek_last_error(), NULL));
-			return 1;
+                ENGINE_finish(e);
+                ENGINE_free(e);
+
+                struct token parms;
+                parms.uri = tunnel->config->user_cert;
+                parms.cert = NULL;
+
+                if (!ENGINE_ctrl_cmd(e, "LOAD_CERT_CTRL", 0, &parms, NULL, 1)) {
+                        log_error("PKCS11 ENGINE_ctrl_cmd: %s\n", 
+                        	ERR_error_string(ERR_peek_last_error(), NULL));
+                        return 1;
+                }
+
+                if (!SSL_CTX_use_certificate(tunnel->ssl_context, parms.cert)) {
+                        log_error("PKCS11 SSL_CTX_use_certificate: %s\n", 
+                        	ERR_error_string(ERR_peek_last_error(), NULL));
+                        return 1;
+                }
+
+                EVP_PKEY *privkey = ENGINE_load_private_key(e, parms.uri, UI_OpenSSL(), NULL);
+                if (!privkey) {
+                        log_error("PKCS11 ENGINE_load_private_key: %s\n",
+                        	ERR_error_string(ERR_peek_last_error(), NULL));
+                        return 1;
+                }
+
+                if (!SSL_CTX_use_PrivateKey(tunnel->ssl_context, privkey)) {
+                        log_error("PKCS11 SSL_CTX_use_PrivateKey_file: %s\n",
+                        	ERR_error_string(ERR_peek_last_error(), NULL));
+                        return 1;
+                }
+
+                if (!SSL_CTX_check_private_key(tunnel->ssl_context)) {
+                        log_error("PKCS11 SSL_CTX_check_private_key: %s\n",
+                        	ERR_error_string(ERR_peek_last_error(), NULL));
+                        return 1;
+                }
+
+        } else {        /* end PKCS11-engine */
+
+		if (tunnel->config->user_cert) {
+			if (!SSL_CTX_use_certificate_file(
+			      tunnel->ssl_context, tunnel->config->user_cert,
+		      	      SSL_FILETYPE_PEM)) {
+		      	log_error("SSL_CTX_use_certificate_file: %s\n",
+			      	    ERR_error_string(ERR_peek_last_error(), NULL));
+				return 1;
+			}
+		}
+
+		if (tunnel->config->user_key) {
+			if (!SSL_CTX_use_PrivateKey_file(
+		        	    tunnel->ssl_context, tunnel->config->user_key,
+		        	    SSL_FILETYPE_PEM)) {
+		        	    log_error("SSL_CTX_use_PrivateKey_file: %s\n",
+		        	    ERR_error_string(ERR_peek_last_error(), NULL));
+				return 1;
+			}
+		}
+
+		if (tunnel->config->user_cert && tunnel->config->user_key) {
+			if (!SSL_CTX_check_private_key(tunnel->ssl_context)) {
+				log_error("SSL_CTX_check_private_key: %s\n",
+			        	  ERR_error_string(ERR_peek_last_error(), NULL));
+			        	  return 1;
+			}
 		}
 	}
 

@@ -19,6 +19,7 @@ openfortivpn \- Client for PPP+SSL VPN tunnel services
 [\fB\-\-half\-internet\-routes=<bool>\fR]
 [\fB\-\-ca\-file=\fI<file>\fR]
 [\fB\-\-user\-cert=\fI<file>\fR]
+[\fB\-\-user-cert=\fIpkcs11:\fR]
 [\fB\-\-user\-key=\fI<file>\fR]
 [\fB\-\-use\-syslog\fR]
 [\fB\-\-trusted\-cert=\fI<digest>\fR]
@@ -106,6 +107,18 @@ verify the gateway certificate.
 \fB\-\-user\-cert=\fI<file>\fR
 Use specified PEM-encoded certificate if the server requires authentication
 with a certificate.
+.TP
+\fB\-\-user-cert=\fIpkcs11:\fR
+Use at least the string pkcs11: for using a smartcard. Takes also 
+full or partially PKCS11-URI (p11tool --list-token-urls)
+
+  --user-cert = pkcs11:
+
+  --user-cert = pkcs11:token=someuser
+
+  --user-cert = pkcs11:model=PKCS%2315%20emulated;manufacturer=piv_II;serial=012345678;token=someuser
+
+\fBRequires openssl pkcs engine!
 .TP
 \fB\-\-user\-key=\fI<file>\fR
 Use specified PEM-encoded key if the server requires authentication with
