@@ -364,6 +364,7 @@ static int ipv4_get_route(struct rtentry *route)
 		int pos;
 		char *tmpstr;
 
+		log_debug_details("\n");
 		log_debug_details("line: %s\n", line);
 
 		saveptr3 = NULL;
@@ -423,6 +424,11 @@ static int ipv4_get_route(struct rtentry *route)
 				// convert from CIDR to ipv4 mask
 				mask = 0xffffffff << (32-((dot_count + 1) * 8));
 			}
+			// convert mask to reversed byte order
+			mask = ((mask & 0xff000000) >> 24)
+			       | ((mask & 0xff0000) >> 8)
+			       | ((mask & 0xff00) << 8)
+			       | ((mask & 0xff) << 24);
 
 		}
 		log_debug_details("- Destination IP Hex: %x\n", dest);
@@ -445,7 +451,6 @@ static int ipv4_get_route(struct rtentry *route)
 
 		iface = strtok_r(NULL, " ", &saveptr2); // "Netif"
 		log_debug_details("- Interface: %s\n", iface);
-		log_debug_details("\n");
 #endif
 		/*
 		 * Now that we have parsed a routing entry, check if it
@@ -520,6 +525,8 @@ static int ipv4_get_route(struct rtentry *route)
 				route->rt_window = window;
 				route->rt_irtt = irtt;
 			}
+#else
+				log_debug_details("- route matches\n");
 #endif
 		}
 		line = strtok_r(NULL, "\n", &saveptr1);
