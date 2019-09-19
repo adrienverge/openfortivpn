@@ -395,7 +395,7 @@ static int ipv4_get_route(struct rtentry *route)
 				strcpy(tmp_ip_string, strtok_r(tmpstr, "/", &saveptr3));
 				mask = strtoul(saveptr3, NULL, 10);
 				// convert from CIDR to ipv4 mask
-				mask = 0xffffffff >> (32-mask);
+				mask = 0xffffffff << (32-mask);
 
 				is_mask_set = 1;
 			} else if (inet_aton(tmpstr, &dstaddr)) {
@@ -422,8 +422,13 @@ static int ipv4_get_route(struct rtentry *route)
 
 			if (!is_mask_set) {
 				// convert from CIDR to ipv4 mask
-				mask = 0xffffffff >> (32-((dot_count + 1) * 8));
+				mask = 0xffffffff << (32-((dot_count + 1) * 8));
 			}
+			// convert mask to reversed byte order
+			mask = ((mask & 0xff000000) >> 24)
+			       | ((mask & 0xff0000) >> 8)
+			       | ((mask & 0xff00) << 8)
+			       | ((mask & 0xff) << 24);
 
 		}
 		log_debug_details("- Destination IP Hex: %x\n", dest);
