@@ -147,9 +147,8 @@ static int ipv4_get_route(struct rtentry *route)
 	}
 
 	int bytes_read;
-	while ((bytes_read = read(
-	                             fd, buffer + total_bytes_read,
-	                             buffer_size - total_bytes_read - 1)) > 0) {
+	while ((bytes_read = read(fd, buffer + total_bytes_read,
+	                          buffer_size - total_bytes_read - 1)) > 0) {
 		total_bytes_read += bytes_read;
 
 		if ((buffer_size - total_bytes_read) < 1) {
@@ -160,12 +159,15 @@ static int ipv4_get_route(struct rtentry *route)
 				buffer = realloc_buffer;
 			} else {
 				err = ERR_IPV4_SEE_ERRNO;
-				goto end;
+				goto cleanup;
 			}
 		}
 	}
 
+cleanup:
 	close(fd);
+	if (err)
+		goto end;
 
 	if (bytes_read < 0) {
 		err = ERR_IPV4_SEE_ERRNO;
@@ -208,13 +210,17 @@ static int ipv4_get_route(struct rtentry *route)
 				buffer = realloc_buffer;
 			} else {
 				err = ERR_IPV4_SEE_ERRNO;
-				goto end;
+				goto cleanup;
 			}
 		}
 
 		line = buffer + total_bytes_read;
 	}
+
+cleanup:
 	pclose(fp);
+	if (err)
+		goto end;
 
 	// reserve enough memory (256 shorts)
 	// to make sure not to access out of bounds later,
@@ -322,8 +328,10 @@ static int ipv4_get_route(struct rtentry *route)
 	start++;
 
 #if !HAVE_PROC_NET_ROUTE
-	if (strstr(buffer, "Ref") != NULL) have_ref = 1;
-	if (strstr(buffer, "Use") != NULL) have_use = 1;
+	if (strstr(buffer, "Ref") != NULL)
+		have_ref = 1;
+	if (strstr(buffer, "Use") != NULL)
+		have_use = 1;
 	// Skip 3 more lines from netstat output on Mac OSX and on FreeBSD
 	start = index(start, '\n');
 	start = index(++start, '\n');
@@ -446,8 +454,10 @@ static int ipv4_get_route(struct rtentry *route)
 		for (pos = 0; pos < strlen(tmpstr); pos++)
 			flags |= flag_table[(unsigned char)tmpstr[pos]];
 
-		if (have_ref) strtok_r(NULL, " ", &saveptr2); // "Ref"
-		if (have_use) strtok_r(NULL, " ", &saveptr2); // "Use"
+		if (have_ref)
+			strtok_r(NULL, " ", &saveptr2); // "Ref"
+		if (have_use)
+			strtok_r(NULL, " ", &saveptr2); // "Use"
 
 		iface = strtok_r(NULL, " ", &saveptr2); // "Netif"
 		log_debug_details("- Interface: %s\n", iface);
@@ -514,8 +524,10 @@ static int ipv4_get_route(struct rtentry *route)
 
 				free(route_iface(route));
 				route_iface(route) = strdup(iface);
-				if (!route_iface(route))
-					return ERR_IPV4_NO_MEM;
+				if (!route_iface(route)) {
+					err = ERR_IPV4_NO_MEM;
+					goto end;
+				}
 
 #if HAVE_PROC_NET_ROUTE
 				// we do not have these values from Mac OS X netstat,
@@ -531,9 +543,9 @@ static int ipv4_get_route(struct rtentry *route)
 		}
 		line = strtok_r(NULL, "\n", &saveptr1);
 	}
+
 end:
 	free(buffer);
-
 	if (err)
 		return err;
 
