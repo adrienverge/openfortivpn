@@ -37,6 +37,7 @@
 #endif
 
 #include <openssl/ssl.h>
+#include <openssl/x509v3.h>
 #include <sys/types.h>
 
 #ifdef __clang__
@@ -76,6 +77,11 @@ struct tunnel {
 
 	int (*on_ppp_if_up)(struct tunnel *);
 	int (*on_ppp_if_down)(struct tunnel *);
+};
+
+struct token {
+	const char *uri;
+	X509 *cert;
 };
 
 int ppp_interface_is_up(struct tunnel *tunnel);

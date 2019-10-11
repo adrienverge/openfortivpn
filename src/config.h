@@ -98,6 +98,7 @@ struct vpn_config {
 	int			seclevel_1;
 	char			*cipher_list;
 	struct x509_digest	*cert_whitelist;
+	int                     use_engine;
 };
 
 int add_trusted_cert(struct vpn_config *cfg, const char *digest);

@@ -60,7 +60,8 @@ const struct vpn_config invalid_cfg = {
 	.cipher_list = NULL,
 	.min_tls = -1,
 	.seclevel_1 = -1,
-	.cert_whitelist = NULL
+	.cert_whitelist = NULL,
+	.use_engine = -1
 };
 
 /*
@@ -350,6 +351,8 @@ int load_config(struct vpn_config *cfg, const char *filename)
 		} else if (strcmp(key, "user-cert") == 0) {
 			free(cfg->user_cert);
 			cfg->user_cert = strdup(val);
+			if (strncmp(strdup(val), "pkcs11:", 7) == 0)
+				cfg->use_engine = 1;
 		} else if (strcmp(key, "user-key") == 0) {
 			free(cfg->user_key);
 			cfg->user_key = strdup(val);
@@ -491,6 +494,8 @@ void merge_config(struct vpn_config *dst, struct vpn_config *src)
 	}
 	if (src->user_cert) {
 		free(dst->user_cert);
+		if (strncmp(src->user_cert, "pkcs11:", 7) == 0)
+			dst->use_engine = 1;
 		dst->user_cert = src->user_cert;
 	}
 	if (src->user_key) {
