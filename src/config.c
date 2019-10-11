@@ -351,7 +351,7 @@ int load_config(struct vpn_config *cfg, const char *filename)
 		} else if (strcmp(key, "user-cert") == 0) {
 			free(cfg->user_cert);
 			cfg->user_cert = strdup(val);
-			if (strncmp(strdup(val), "pkcs11:", 7) == 0)
+			if (strncmp(cfg->user_cert, "pkcs11:", 7) == 0)
 				cfg->use_engine = 1;
 		} else if (strcmp(key, "user-key") == 0) {
 			free(cfg->user_key);
