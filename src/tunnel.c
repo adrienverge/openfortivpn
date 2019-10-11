@@ -546,7 +546,7 @@ static int tcp_connect(struct tunnel *tunnel)
 			 */
 			ssize_t bytes_read = read(handle, &(request[j]), 1);
 			if (bytes_read < 1) {
-				log_error("Proxy response is unexpectedly large and cannot fit in the %d-bytes buffer.\n",
+				log_error("Proxy response is unexpectedly large and cannot fit in the %lu-bytes buffer.\n",
 				          ARRAY_SIZE(request));
 				goto err_proxy_response;
 			}
