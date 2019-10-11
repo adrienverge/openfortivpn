@@ -205,7 +205,7 @@ static void *pppd_read(void *arg)
 			log_error("read: %s\n", strerror(errno));
 			break;
 		} else if (n == 0) {
-			log_warn("read returned %d\n", n);
+			log_warn("read returned %ld\n", n);
 			continue;
 		} else if (first_time) {
 			// pppd did talk, now we can write to it if we want
@@ -253,7 +253,7 @@ static void *pppd_read(void *arg)
 			packet = repacket;
 			packet->len = pktsize;
 
-			log_debug("%s ---> gateway (%d bytes)\n", PPP_DAEMON,
+			log_debug("%s ---> gateway (%lu bytes)\n", PPP_DAEMON,
 			          packet->len);
 #if HAVE_USR_SBIN_PPPD
 			log_packet("pppd:   ", packet->len, pkt_data(packet));
@@ -463,7 +463,7 @@ static void *ssl_read(void *arg)
 			goto exit;
 		}
 
-		log_debug("gateway ---> %s (%d bytes)\n", PPP_DAEMON, packet->len);
+		log_debug("gateway ---> %s (%lu bytes)\n", PPP_DAEMON, packet->len);
 		log_packet("gtw:    ", packet->len, pkt_data(packet));
 		pool_push(&tunnel->ssl_to_pty_pool, packet);
 
