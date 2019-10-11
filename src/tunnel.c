@@ -164,11 +164,7 @@ static int pppd_run(struct tunnel *tunnel)
 	pid = forkpty(&amaster, NULL, NULL, NULL);
 #endif
 
-	if (pid == -1) {
-		log_error("forkpty: %s\n", strerror(errno));
-		close(slave_stderr);
-		return 1;
-	} else if (pid == 0) { // child process
+	if (pid == 0) { // child process
 
 		struct ofv_varr pppd_args = { 0, 0, NULL };
 
@@ -250,6 +246,12 @@ static int pppd_run(struct tunnel *tunnel)
 
 		fprintf(stderr, "execvp: %s\n", strerror(errno));
 		_exit(EXIT_FAILURE);
+	} else {
+		close(slave_stderr);
+		if (pid == -1) {
+			log_error("forkpty: %s\n", strerror(errno));
+			return 1;
+		}
 	}
 
 	// Set non-blocking
