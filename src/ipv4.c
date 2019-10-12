@@ -135,7 +135,7 @@ static int ipv4_get_route(struct rtentry *route)
 	route_gtw(route).s_addr = inet_addr("0.0.0.0");
 
 #if HAVE_PROC_NET_ROUTE
-	/* this is not present on Mac OSX and FreeBSD */
+	/* this is not present on Mac OS X and FreeBSD */
 	int fd;
 	uint32_t total_bytes_read = 0;
 
@@ -238,7 +238,7 @@ cleanup:
 	 * Also, not all flags might be allowed in the context
 	 * of ipv4, and the code depends on which ones are
 	 * actually implemented on the target platform, which
-	 * might also be varying between OSX versions.
+	 * might also be varying between Mac OS X versions.
 	 *
 	 */
 
@@ -332,7 +332,7 @@ cleanup:
 		have_ref = 1;
 	if (strstr(buffer, "Use") != NULL)
 		have_use = 1;
-	// Skip 3 more lines from netstat output on Mac OSX and on FreeBSD
+	// Skip 3 more lines from netstat output on Mac OS X and on FreeBSD
 	start = index(start, '\n');
 	start = index(++start, '\n');
 	start = index(++start, '\n');
@@ -366,7 +366,7 @@ cleanup:
 		window = strtoul(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
 		irtt = strtoul(strtok_r(NULL, "\t", &saveptr2), NULL, 16);
 #else
-		/* parse netstat output on Mac OSX and BSD */
+		/* parse netstat output on Mac OS X and BSD */
 		char tmp_ip_string[16];
 		struct in_addr dstaddr;
 		int pos;
@@ -486,7 +486,7 @@ cleanup:
 		 * when the mask is at least as large as the one we may
 		 * have already found in a previous iteration (a larger
 		 * netmask corresponds to a smaller network in this
-		 * representation, and has a higher prority by default).
+		 * representation, and has a higher priority by default).
 		 * Also, only consider routing entries for which the
 		 * netmask is not larger than the netmask used in the
 		 * argument when calling the function - so that we can

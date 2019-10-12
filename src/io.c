@@ -40,7 +40,7 @@
 #include <errno.h>
 
 #if HAVE_MACH_MACH_H
-/* this is typical for mach kernel used on Mac OSX */
+/* this is typical for mach kernel used on Mac OS X */
 #include <mach/mach.h>
 
 /* Mac OS X defines sem_init but actually does not implement them */
@@ -437,10 +437,10 @@ static void *ssl_read(void *arg)
 			goto exit;
 		}
 
-		total = header[0] << 8 | header[1];
-		magic = header[2] << 8 | header[3];
-		size = header[4] << 8 | header[5];
-		if (magic != 0x5050 || total != size + 6) {
+		total = (header[0] << 8) | header[1];
+		magic = (header[2] << 8) | header[3];
+		size = (header[4] << 8) | header[5];
+		if (magic != 0x5050 || total != 6 + size) {
 			log_error("Received bad header from gateway:\n");
 			debug_bad_packet(tunnel, header);
 			break;

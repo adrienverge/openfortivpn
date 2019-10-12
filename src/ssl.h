@@ -36,7 +36,7 @@
 
 #ifdef __clang__
 /*
- * Get rid of OSX 10.7 and greater deprecation warnings
+ * Get rid of Mac OS X 10.7 and greater deprecation warnings
  * see for instance https://wiki.openssl.org/index.php/Hostname_validation
  * this pragma selectively suppresses this type of warnings in clang
  */
@@ -46,7 +46,7 @@
 #ifndef ERESTART
 /*
  * ERESTART is one of the recoverable errors which might be returned.
- * However, in OSX and BSD this constant is not defined in errno.h
+ * However, in Mac OS X and BSD this constant is not defined in errno.h
  * so we define a dummy value here.
  */
 #define ERESTART -1
@@ -114,7 +114,7 @@ static inline int handle_ssl_error(SSL *ssl, int ret)
 /*
  * Reads data from the SSL connection.
  *
- * @return  > 0            in case of success (number of bytes transfered)
+ * @return  > 0            in case of success (number of bytes transferred)
  *          ERR_SSL_AGAIN  if the caller should try again
  *          < 0            in case of error
  */
@@ -157,7 +157,7 @@ static inline int safe_ssl_read_all(SSL *ssl, uint8_t *buf, int bufsize)
  * SSL_get_mode), SSL_write() will only report success once the complete chunk
  * has been written.
  *
- * @return  > 0            in case of success (number of bytes transfered)
+ * @return  > 0            in case of success (number of bytes transferred)
  *          ERR_SSL_AGAIN  if the caller should try again
  *          < 0            in case of error
  */

@@ -115,10 +115,10 @@ int strtob(const char *str)
 }
 
 /*
- * Converts string to tls version
+ * Converts string to TLS version
  *
  * @params[in] str  the string to read from
- * @return          openssl version or -1
+ * @return          OpenSSL version or -1
  */
 int parse_min_tls(const char *str)
 {

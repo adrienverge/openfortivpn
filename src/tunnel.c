@@ -478,7 +478,7 @@ static int tcp_connect(struct tunnel *tunnel)
 		log_debug("proxy_host: %s\n", proxy_host);
 		log_debug("proxy_port: %s\n", proxy_port);
 		server.sin_addr.s_addr = inet_addr(proxy_host);
-		// if host is given as fqhn we have to do a dns lookup
+		// if host is given as a FQDN we have to do a DNS lookup
 		if (server.sin_addr.s_addr == INADDR_NONE) {
 			const struct addrinfo hints = { .ai_family = AF_INET };
 			struct addrinfo *result = NULL;
@@ -718,7 +718,7 @@ static void ssl_disconnect(struct tunnel *tunnel)
 }
 
 /*
- * Connects to the gateway and initiate a SSL session.
+ * Connects to the gateway and initiate an SSL session.
  */
 int ssl_connect(struct tunnel *tunnel)
 {
@@ -728,7 +728,7 @@ int ssl_connect(struct tunnel *tunnel)
 	if (tunnel->ssl_socket == -1)
 		return 1;
 
-	// registration is deprecated from openssl 1.1.0 onwards
+	// registration is deprecated from OpenSSL 1.1.0 onward
 #if OPENSSL_API_COMPAT < 0x10100000L
 	// Register the error strings for libcrypto & libssl
 	SSL_load_error_strings();

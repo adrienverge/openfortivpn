@@ -58,7 +58,7 @@ const char *xml_find(char t, const char *needle, const char *buf, int nest)
 
 /*
  * Poor man's XML attribute parser. Takes the first string as a quoting
- * character and consumes characters until the next occurence or an end
+ * character and consumes characters until the next occurrence or an end
  * of the buffer. Doesn't return more than 15 characters (enough for an
  * IPv4 address textural form).
  *
