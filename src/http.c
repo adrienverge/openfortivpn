@@ -426,7 +426,7 @@ int try_otp_auth(
 		return -1;
 	strncpy(path, s, e - s);
 	path[e - s] = '\0';
-	/* Try to get password prompt, asume it starts with 'Please'
+	/* Try to get password prompt, assume it starts with 'Please'
 	 * Fall back to default prompt if not found/parseable
 	 */
 	p = strstr(s, "Please");
@@ -467,7 +467,7 @@ int try_otp_auth(
 		t += 6;
 		if (strncmp(t, "hidden", 6) == 0 || strncmp(t, "password", 8) == 0) {
 			/* We try to be on the safe side
-			 * and url-encode the variable name
+			 * and URL-encode the variable name
 			 */
 			/* Append '&' if we found something in last round */
 			if (d > data) {

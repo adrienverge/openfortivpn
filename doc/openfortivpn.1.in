@@ -69,7 +69,7 @@ VPN account password.
 One-Time-Password.
 .TP
 \fB\-\-otp\-prompt=\fI<prompt>\fR
-Search for the otp password prompt starting with the string \fI<prompt>\fR.
+Search for the OTP password prompt starting with the string \fI<prompt>\fR.
 .TP
 \fB\-\-otp\-delay\=\fI<delay>\fR
 Set the amount of time to wait before sending the One-Time-Password.
@@ -93,7 +93,7 @@ higher priority instead of replacing the default route.
 \fB\-\-set\-dns=\fI<bool>\fR, \fB\-\-no\-dns\fR
 Set if openfortivpn should add VPN nameservers in /etc/resolv.conf when
 tunnel is up. If used multiple times, the last one takes priority.
-This option requires that the dns entries are requested from the peer.
+This option requires that the DNS entries are requested from the peer.
 So, \fB\-\-pppd\-no\-peerdns\fR conflicts with \fB\-\-set\-dns=\fI1\fR.
 Note that there may be other mechanisms to update /etc/resolv.conf
 which may require that openfortivpn is called with \fB\-\-no\-dns\fR.
@@ -118,7 +118,7 @@ full or partially PKCS11-URI (p11tool --list-token-urls)
 
   --user-cert = pkcs11:model=PKCS%2315%20emulated;manufacturer=piv_II;serial=012345678;token=someuser
 
-\fBRequires openssl pkcs engine!
+\fBRequires OpenSSL PKCS engine!
 .TP
 \fB\-\-user\-key=\fI<file>\fR
 Use specified PEM-encoded key if the server requires authentication with
@@ -139,7 +139,7 @@ If your server requires a specific cipher, consider using \fB\-\-cipher\-list\fR
 instead.
 .TP
 \fB\-\-cipher\-list=\fI<ciphers>\fR
-Openssl ciphers to use. If default does not work, you can try alternatives
+OpenSSL ciphers to use. If default does not work, you can try alternatives
 such as HIGH:!MD5:!RC4 or as suggested by the Cipher: line in the output of
 \fBopenssl\fP(1) (e.g. AES256-GCM-SHA384):
 
@@ -152,7 +152,7 @@ Whether to ask peer ppp server for DNS server addresses and do not make pppd
 rewrite /etc/resolv.conf. If the DNS server addresses are not requested,
 also \fB\-\-set\-dns=\fI1\fR has no effect. On the other hand, with
 \fB\-\-set\-dns=\fI0\fR, when pppd requests DNS server addresses, there
-may be othter mechanisms, such as an pppd\-ip\-up-script that do the update
+may be other mechanisms, such as an pppd\-ip\-up-script that do the update
 of /etc/resolv.conf.
 
 \fB\-\-pppd\-no\-peerdns\fR is the same as \fB\-\-pppd\-use\-peerdns=\fI0\fR.
@@ -184,7 +184,7 @@ Only available if compiled for ppp user space client (e.g. on FreeBSD).
 Connect to the specified system as defined in /etc/ppp/ppp.conf
 .TP
 \fB\-\-persistent\=\fI<interval>\fR
-Run the vpn persistently in an endless loop and try to reconnect forever.
+Run the VPN persistently in an endless loop and try to reconnect forever.
 The reconnect interval may be specified in seconds, where 0 means
 no reconnect is done (this is the default).
 .TP
@@ -196,7 +196,7 @@ Decrease verbosity. Can be used multiple times to be even less verbose.
 
 .SH ENVIRONMENT and proxy support
 .B openfortivpn
-can be run behind a http proxy that supports the http connect command.
+can be run behind an HTTP proxy that supports the HTTP connect command.
 It checks if one of the environment variables
 .B https_proxy HTTPS_PROXY all_proxy ALL_PROXY
 is set which are supposed to contain a string of the format
@@ -207,15 +207,15 @@ where
 .B [host]
 is the ip or the fully qualified host name of the proxy server
 .B [port]
-is the tcp port number where the proxy is listening for
+is the TCP port number where the proxy is listening for
 incoming connections. If one of these variables is defined,
 .B openfortivpn
-tries to first establish a tcp connection to this proxy (plain http, not encrypted),
-and then makes a request to connect to the vpn host as given on the command line
+tries to first establish a TCP connection to this proxy (plain HTTP, not encrypted),
+and then makes a request to connect to the VPN host as given on the command line
 or in the config file. The proxy is supposed to forward any subsequent packets
-transparently to the vpn host, so that the tls layer of the connection effectively
-is established between the client and the vpn host, and the proxy just acts as a
-forwarding instance on the lower level of the tcp connection.
+transparently to the VPN host, so that the TLS layer of the connection effectively
+is established between the client and the VPN host, and the proxy just acts as a
+forwarding instance on the lower level of the TCP connection.
 
 The following environment variables are set by
 .B openfortivpn

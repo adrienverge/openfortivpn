@@ -21,7 +21,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #ifdef HAVE_SYS_MUTEX_H
-/* Mac OSX and BSD wants this explicit include */
+/* Mac OS X and BSD wants this explicit include */
 #include <sys/mutex.h>
 #endif
 #include <netinet/in.h>
@@ -33,7 +33,7 @@
 #endif
 
 #if !HAVE_RT_ENTRY_WITH_RT_DST
-/* On MacOSX and FreeBSD struct rtentry is not directly available.
+/* On Mac OS X and FreeBSD struct rtentry is not directly available.
  * On FreeBSD one could #define _WANT_RTENTRY but the struct does not
  * contain rt_dst for instance. The entries for mask and destination
  * are maintained in a separate radix_tree structure by the routing

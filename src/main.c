@@ -38,7 +38,7 @@
 #define PPPD_HELP \
 "  --pppd-use-peerdns=[01]       Whether to ask peer ppp server for DNS server\n" \
 "                                addresses and make pppd rewrite /etc/resolv.conf.\n" \
-"  --pppd-no-peerdns             Same as --pppd-use-peerdns=0. Neiter pppd\n" \
+"  --pppd-no-peerdns             Same as --pppd-use-peerdns=0. Neither pppd\n" \
 "                                nor openfortivpn will modify DNS resolution then.\n" \
 "  --pppd-log=<file>             Set pppd in debug mode and save its logs into\n" \
 "                                <file>.\n" \
@@ -85,7 +85,7 @@ PPPD_USAGE \
 #define help_min_tls ""
 #else
 #define help_min_tls " This option\n" \
-"                                is not supported by your openssl library."
+"                                is not supported by your OpenSSL library."
 #endif
 
 
@@ -98,7 +98,7 @@ PPPD_USAGE \
 "  -u <user>, --username=<user>  VPN account username.\n" \
 "  -p <pass>, --password=<pass>  VPN account password.\n" \
 "  -o <otp>, --otp=<otp>         One-Time-Password.\n" \
-"  --otp-prompt=<prompt>         Search for the otp prompt starting with this string\n" \
+"  --otp-prompt=<prompt>         Search for the OTP prompt starting with this string\n" \
 "  --otp-delay=<delay>	         Wait <delay> seconds before sending the OTP.\n" \
 "  --pinentry=<program>          Use the program to supply a secret instead of asking for it\n" \
 "  --realm=<realm>               Use specified authentication realm on VPN gateway\n" \
@@ -127,14 +127,14 @@ PPPD_USAGE \
 "                                This option can be used multiple times to trust\n" \
 "                                several certificates.\n" \
 "  --insecure-ssl                Do not disable insecure SSL protocols/ciphers.\n" \
-"                                Also enable TLSv1.0 if applicable.\n" \
+"                                Also enable TLS v1.0 if applicable.\n" \
 "                                If your server requires a specific cipher or protocol,\n" \
 "                                consider using --cipher-list and/or --min-tls instead.\n" \
-"  --cipher-list=<ciphers>       Openssl ciphers to use. If default does not work\n" \
+"  --cipher-list=<ciphers>       OpenSSL ciphers to use. If default does not work\n" \
 "                                you can try with the cipher suggested in the output\n" \
 "                                of 'openssl s_client -connect <host:port>'\n" \
 "                                (e.g. AES256-GCM-SHA384)\n" \
-"  --min-tls                     Use minimum tls version instead of system default.\n" \
+"  --min-tls                     Use minimum TLS version instead of system default.\n" \
 "                                Valid values are 1.0, 1.1, 1.2, 1.3." help_min_tls "\n" \
 "  --seclevel-1                  If --cipher-list is not specified, add @SECLEVEL=1 to\n" \
 "                                (compiled in) list of ciphers. This lowers limits on\n" \
