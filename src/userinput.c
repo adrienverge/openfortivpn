@@ -153,6 +153,7 @@ static int pinentry_exchange(int to, int from, char **retstr,
 	if (vdprintf(to, format, ap) == 0) {
 		if (retstr)
 			*retstr = strdup(strerror(errno));
+		va_end(ap);
 		return -1;
 	}
 	va_end(ap);
