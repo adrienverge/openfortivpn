@@ -32,22 +32,22 @@ def main():
     exit_status = 0
 
     for arg in sys.argv[1:]:
-        with open(arg, 'r') as source_file:
+        with open(arg, "r") as source_file:
             for i, line in enumerate(source_file):
                 line = line.rstrip()
                 # Lines that end with a string are exempted
                 if endswithstring(line):
                     continue
                 # Replace tabs with 8 spaces
-                line = line.replace('\t', '        ')
+                line = line.replace("\t", "        ")
                 # Lines longer than MAX are reported as an error
                 if len(line) > MAX:
-                    print('{}: {}: line too long ({} characters)'
+                    print("{}: {}: line too long ({} characters)"
                           .format(arg, i, len(line)))
                     exit_status = 1
 
     sys.exit(exit_status)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
