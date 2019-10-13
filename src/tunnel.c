@@ -61,8 +61,6 @@
 #define OPENSSL_API_COMPAT 0x0908000L
 #endif
 
-#define MAX(a,b) (((a)>(b))?(a):(b))
-
 struct ofv_varr {
 	unsigned cap;		// current capacity
 	unsigned off;		// next slot to write, always < max(cap - 1, 1)
@@ -71,10 +69,10 @@ struct ofv_varr {
 
 static void ofv_append_varr(struct ofv_varr *p, const char *x)
 {
-	if (p->off >= p->cap - 1) {
+	if (p->off + 1 >= p->cap) {
 		const char **ndata;
 		unsigned ncap = (p->off + 1) * 2;
-		assert(p->off < MAX(ncap - 1, 1));
+		assert(p->off + 1 < ncap);
 		ndata = realloc(p->data, ncap * sizeof(const char *));
 		if (ndata) {
 			p->data = ndata;
@@ -85,7 +83,7 @@ static void ofv_append_varr(struct ofv_varr *p, const char *x)
 			return;
 		}
 	}
-	assert(p->off < MAX(p->cap - 1, 1));
+	assert(p->off + 1 < p->cap);
 	p->data[p->off] = x;
 	p->data[++p->off] = NULL;
 }
