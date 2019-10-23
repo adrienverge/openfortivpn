@@ -1,4 +1,4 @@
-.TH OPENFORTIVPN 1 "March 12, 2019" ""
+.TH OPENFORTIVPN 1 "October 24, 2019" ""
 
 .SH NAME
 openfortivpn \- Client for PPP+SSL VPN tunnel services
@@ -93,9 +93,8 @@ higher priority instead of replacing the default route.
 \fB\-\-set\-dns=\fI<bool>\fR, \fB\-\-no\-dns\fR
 Set if openfortivpn should add DNS name servers in /etc/resolv.conf when
 tunnel is up. If used multiple times, the last one takes priority.
-This option requires that the DNS entries are requested from the peer.
-So, \fB\-\-pppd\-no\-peerdns\fR conflicts with \fB\-\-set\-dns=\fI1\fR.
-Note that there may be other mechanisms to update /etc/resolv.conf
+Note that there may be other mechanisms to update /etc/resolv.conf,
+e.g., \fB\-\-pppd\-use\-peerdns\fR in conjunction with an ip-up-script,
 which may require that openfortivpn is called with \fB\-\-no\-dns\fR.
 Also a dns\-suffix may be received from the peer and added to
 /etc/resolv.conf in the turn of adding the name servers.
@@ -150,12 +149,9 @@ $ openssl s_client -connect \fI<host:port>\fR
 (default: HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4)
 .TP
 \fB\-\-use\-peer\-dns=\fI<bool>\fR, \fB\-\-pppd\-no\-peerdns\fR
-Whether to ask peer ppp server for DNS server addresses and do not make pppd
-rewrite /etc/resolv.conf. If the DNS server addresses are not requested,
-also \fB\-\-set\-dns=\fI1\fR has no effect. On the other hand, with
-\fB\-\-set\-dns=\fI0\fR, when pppd requests DNS server addresses, there
-may be other mechanisms, such as an pppd\-ip\-up-script that do the update
-of /etc/resolv.conf.
+Whether to ask peer ppp server for DNS server addresses and let pppd
+rewrite /etc/resolv.conf. If the DNS server addresses are requested,
+also \fB\-\-set\-dns=\fI1\fR may race with the mechanisms in pppd.
 
 \fB\-\-pppd\-no\-peerdns\fR is the same as \fB\-\-pppd\-use\-peerdns=\fI0\fR.
 .TP

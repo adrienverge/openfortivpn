@@ -28,6 +28,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <arpa/inet.h>
 
 #define BUFSZ 0x8000
 
@@ -686,6 +687,7 @@ static int parse_xml_config(struct tunnel *tunnel, const char *buffer)
 {
 	const char *val;
 	char *gateway;
+	char *dns_server;
 	int ret = 0;
 
 	if (strncmp(buffer, "HTTP/1.1 200 OK\r\n", 17)) {
@@ -717,6 +719,21 @@ static int parse_xml_config(struct tunnel *tunnel, const char *buffer)
 			break;
 		}
 	}
+
+	// The dns servers
+	val = buffer;
+	while ((val = xml_find('<', "dns", val, 2))) {
+		if (xml_find(' ', "ip=", val, 1)) {
+			dns_server = xml_get(xml_find(' ', "ip=", val, 1));
+			log_debug("found dns server %s in xml config", dns_server);
+			if (!tunnel->ipv4.ns1_addr.s_addr)
+				tunnel->ipv4.ns1_addr.s_addr = inet_addr(dns_server);
+			else if (!tunnel->ipv4.ns2_addr.s_addr)
+				tunnel->ipv4.ns2_addr.s_addr = inet_addr(dns_server);
+			free(dns_server);
+		}
+	}
+
 	// Routes the tunnel wants to push
 	val = xml_find('<', "split-tunnel-info", buffer, 1);
 	while ((val = xml_find('<', "addr", val, 2))) {

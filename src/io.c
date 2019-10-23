@@ -376,11 +376,13 @@ static inline void set_tunnel_ips(struct tunnel *tunnel,
 {
 	memcpy(&tunnel->ipv4.ip_addr.s_addr, &pkt_data(packet)[8],
 	       sizeof(uint32_t));
-	if (packet->len >= 18 && pkt_data(packet)[12] == 0x81) {
+	if (packet->len >= 18 && pkt_data(packet)[12] == 0x81
+	    && tunnel->config->pppd_use_peerdns) {
 		memcpy(&tunnel->ipv4.ns1_addr.s_addr, &pkt_data(packet)[14],
 		       sizeof(uint32_t));
 	}
-	if (packet->len >= 24 && pkt_data(packet)[18] == 0x83) {
+	if (packet->len >= 24 && pkt_data(packet)[18] == 0x83
+	    && tunnel->config->pppd_use_peerdns) {
 		memcpy(&tunnel->ipv4.ns2_addr.s_addr, &pkt_data(packet)[20],
 		       sizeof(uint32_t));
 	}
