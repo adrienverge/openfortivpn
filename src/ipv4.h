@@ -68,7 +68,10 @@ struct ipv4_config {
 
 	struct in_addr	ns1_addr;
 	struct in_addr	ns2_addr;
-	int		ns_are_new; // were ns already in /etc/resolv.conf?
+	char		*dns_suffix;
+	int		ns1_was_there;  // were ns1 already in /etc/resolv.conf?
+	int		ns2_was_there;  // were ns2 already in /etc/resolv.conf?
+	int		dns_suffix_was_there; // was the dns suffix already there?
 	int		split_routes;
 	int		route_to_vpn_is_added;
 

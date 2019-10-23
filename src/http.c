@@ -699,12 +699,24 @@ static int parse_xml_config(struct tunnel *tunnel, const char *buffer)
 	// Skip the HTTP header
 	buffer = strstr(buffer, "\r\n\r\n");
 
+
 	// The address of a local end of a router
 	val = xml_find('<', "assigned-addr", buffer, 1);
 	gateway = xml_get(xml_find(' ', "ipv4=", val, 1));
 	if (!gateway)
 		log_warn("No gateway address, using interface for routing\n");
 
+	// The dns search string
+	val = buffer;
+	while ((val = xml_find('<', "dns", val, 2))) {
+		if (xml_find(' ', "domain=", val, 1)) {
+			tunnel->ipv4.dns_suffix
+			        = xml_get(xml_find(' ', "domain=", val, 1));
+			log_debug("found dns suffix %s in xml config",
+			          tunnel->ipv4.dns_suffix);
+			break;
+		}
+	}
 	// Routes the tunnel wants to push
 	val = xml_find('<', "split-tunnel-info", buffer, 1);
 	while ((val = xml_find('<', "addr", val, 2))) {

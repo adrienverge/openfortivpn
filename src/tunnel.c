@@ -947,6 +947,7 @@ int run_tunnel(struct vpn_config *config)
 		.ssl_handle = NULL,
 		.ipv4.ns1_addr.s_addr = 0,
 		.ipv4.ns2_addr.s_addr = 0,
+		.ipv4.dns_suffix = NULL,
 		.on_ppp_if_up = on_ppp_if_up,
 		.on_ppp_if_down = on_ppp_if_down
 	};
