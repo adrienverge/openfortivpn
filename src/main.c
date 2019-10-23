@@ -38,8 +38,8 @@
 #define PPPD_HELP \
 "  --pppd-use-peerdns=[01]       Whether to ask peer ppp server for DNS server\n" \
 "                                addresses and make pppd rewrite /etc/resolv.conf.\n" \
-"  --pppd-no-peerdns             Same as --pppd-use-peerdns=0. Neither pppd\n" \
-"                                nor openfortivpn will modify DNS resolution then.\n" \
+"  --pppd-no-peerdns             Same as --pppd-use-peerdns=0. pppd will not\n" \
+"                                modify DNS resolution then.\n" \
 "  --pppd-log=<file>             Set pppd in debug mode and save its logs into\n" \
 "                                <file>.\n" \
 "  --pppd-plugin=<file>          Use specified pppd plugin instead of configuring\n" \
@@ -187,7 +187,7 @@ int main(int argc, char **argv)
 		.half_internet_routes = 0,
 		.persistent = 0,
 #if HAVE_USR_SBIN_PPPD
-		.pppd_use_peerdns = 1,
+		.pppd_use_peerdns = 0,
 		.pppd_log = NULL,
 		.pppd_plugin = NULL,
 		.pppd_ipparam = NULL,
