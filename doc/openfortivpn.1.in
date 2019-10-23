@@ -91,12 +91,14 @@ Set if openfortivpn should add two 0.0.0.0/1 and 128.0.0.0/1 routes with
 higher priority instead of replacing the default route.
 .TP
 \fB\-\-set\-dns=\fI<bool>\fR, \fB\-\-no\-dns\fR
-Set if openfortivpn should add VPN nameservers in /etc/resolv.conf when
+Set if openfortivpn should add DNS name servers in /etc/resolv.conf when
 tunnel is up. If used multiple times, the last one takes priority.
 This option requires that the DNS entries are requested from the peer.
 So, \fB\-\-pppd\-no\-peerdns\fR conflicts with \fB\-\-set\-dns=\fI1\fR.
 Note that there may be other mechanisms to update /etc/resolv.conf
 which may require that openfortivpn is called with \fB\-\-no\-dns\fR.
+Also a dns\-suffix may be received from the peer and added to
+/etc/resolv.conf in the turn of adding the name servers.
 
 \fB\-\-no\-dns\fR is the same as \fB\-\-set\-dns=\fI0\fR.
 .TP

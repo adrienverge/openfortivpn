@@ -108,8 +108,8 @@ PPPD_USAGE \
 "  --no-routes                   Do not configure routes, same as --set-routes=0.\n" \
 "  --half-internet-routes=[01]   Add two 0.0.0.0/1 and 128.0.0.0/1 routes with higher\n" \
 "                                priority instead of replacing the default route.\n" \
-"  --set-dns=[01]                Set if openfortivpn should add VPN name servers in\n" \
-"                                /etc/resolv.conf, pppd must provide the DNS servers.\n" \
+"  --set-dns=[01]                Set if openfortivpn should add DNS name servers \n" \
+"                                and domain seach list in /etc/resolv.conf.\n" \
 "  --no-dns                      Do not reconfigure DNS, same as --set-dns=0\n" \
 "  --ca-file=<file>              Use specified PEM-encoded certificate bundle\n" \
 "                                instead of system-wide store to verify the gateway\n" \
