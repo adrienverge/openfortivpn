@@ -129,7 +129,6 @@ static int ipv4_get_route(struct rtentry *route)
 	rtmask = route_mask(route).s_addr;
 	rtgtw = route_gtw(route).s_addr;
 
-
 	// initialize the output record
 	route_dest(route).s_addr = inet_addr("0.0.0.0");
 	route_mask(route).s_addr = inet_addr("0.0.0.0");
@@ -588,7 +587,6 @@ static int ipv4_set_route(struct rtentry *route)
 		return 1;
 	}
 
-
 	strcpy(cmd, "/sbin/route -n add ");
 	if (route->rt_flags & RTF_HOST)
 		strcat(cmd, "-host ");
@@ -650,7 +648,6 @@ static int ipv4_del_route(struct rtentry *route)
 		log_error("/sbin/route: %s.\n", strerror(errno));
 		return 1;
 	}
-
 
 	strcpy(cmd, "/sbin/route -n delete ");
 	if (route->rt_flags & RTF_HOST)
@@ -749,7 +746,6 @@ err_destroy:
 	tunnel->ipv4.route_to_vpn_is_added = 0;
 	return ret;
 }
-
 
 #if HAVE_USR_SBIN_PPPD
 static void add_text_route(struct tunnel *tunnel, const char *dest,

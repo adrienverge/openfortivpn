@@ -701,7 +701,6 @@ static int parse_xml_config(struct tunnel *tunnel, const char *buffer)
 	// Skip the HTTP header
 	buffer = strstr(buffer, "\r\n\r\n");
 
-
 	// The address of a local end of a router
 	val = xml_find('<', "assigned-addr", buffer, 1);
 	gateway = xml_get(xml_find(' ', "ipv4=", val, 1));
