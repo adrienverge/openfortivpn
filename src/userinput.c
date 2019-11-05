@@ -42,6 +42,8 @@ static char *uri_escape(const char *string)
 		if (allocated_len + 4 >= real_len) {
 			allocated_len += 16;
 			escaped = realloc(escaped, allocated_len);
+			// bail out if realloc fails
+			if (escaped == NULL) return NULL;
 		}
 		if (isalnum(string[i]))
 			escaped[real_len++] = string[i];
@@ -96,6 +98,7 @@ static int pinentry_read(int from, char **retstr)
 					*retstr = strdup(strerror(errno));
 				return -1;
 			}
+			buf[bufsiz-1] = '\0';
 		}
 
 		ret = read(from, &buf[len], bufsiz - len);
@@ -113,7 +116,8 @@ static int pinentry_read(int from, char **retstr)
 		}
 		len += ret;
 	} while (buf[len - 1] != '\n');
-	*strchr(buf, '\n') = '\0';
+	// overwrite the newline with a null character
+	buf[len - 1] = '\0';
 
 	if (strcmp(buf, "OK") == 0 || strncmp(buf, "OK ", 3) == 0
 	    || strncmp(buf, "D ", 2) == 0) {
@@ -239,9 +243,13 @@ static void pinentry_read_password(const char *pinentry, const char *hint,
 		goto out;
 
 	escaped = uri_escape(hint);
-	pinentry_exchange(to_pinentry[1], from_pinentry[0], NULL,
-	                  "SETKEYINFO %s\n", escaped);
+	ret = pinentry_exchange(to_pinentry[1], from_pinentry[0], NULL,
+	                        "SETKEYINFO %s\n", escaped);
+	if (ret)
+		log_error("Failed to set keyinfo\n");
 	free(escaped);
+	if (ret)
+		goto out;
 
 	escaped = uri_escape(prompt);
 	ret = pinentry_exchange(to_pinentry[1], from_pinentry[0], &retstr,
