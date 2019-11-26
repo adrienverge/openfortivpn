@@ -50,10 +50,13 @@ Smartcard
 ---------
 
 Smartcard support needs `openssl pkcs engine` and `opensc` to be installed.
+The pkcs11-engine from libp11 needs to be compiled with p11-kit-devel installed.
+Check [#464](https://github.com/adrienverge/openfortivpn/issues/464) for a discussion 
+of known issues in this area.
 
-To make use of your smartcard put at least `pkcs11:` to the user-cert config or commandline.
-Takes full or partially PKCS#11 token URI. Also username and password must not be empty, but 
-doesn't get used. So you can type in anything.
+To make use of your smartcard put at least `pkcs11:` to the user-cert config or commandline 
+option. It takes the full or a partial PKCS#11 token URI. Also username and password currently 
+may not be empty, but don't get used. So you should fill in dummy values.
 
 ```
 user-cert = pkcs11:
@@ -66,9 +69,11 @@ password = none
 In most cases `user-cert = pkcs11:` will do it, but if needed you can get the token-URI
 with `p11tool --list-token-urls`.
 
-Multiple readers are not supported.
+Multiple readers are currently not supported.
 
-Tested with Yubikey, but other PIV enabled smartcards may work too.
+Smartcard support has been tested with Yubikey under Linux, but other PIV enabled 
+smartcards may work too. On Mac OS X Mojave it is known that the pkcs eingine-by-id is not found.
+
 
 
 ----------
