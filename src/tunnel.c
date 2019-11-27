@@ -169,7 +169,7 @@ static int pppd_run(struct tunnel *tunnel)
 	slave_stderr = dup(STDERR_FILENO);
 
 	if (slave_stderr < 0) {
-		log_error("slave stderr %d\n", slave_stderr);
+		log_error("slave stderr %s\n", strerror(errno));
 		return 1;
 	}
 

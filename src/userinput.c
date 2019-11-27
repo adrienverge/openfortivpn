@@ -43,7 +43,8 @@ static char *uri_escape(const char *string)
 			allocated_len += 16;
 			escaped = realloc(escaped, allocated_len);
 			// bail out if realloc fails
-			if (escaped == NULL) return NULL;
+			if (escaped == NULL)
+				return NULL;
 		}
 		if (isalnum(string[i]))
 			escaped[real_len++] = string[i];
