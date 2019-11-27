@@ -55,7 +55,7 @@ Check [#464](https://github.com/adrienverge/openfortivpn/issues/464) for a discu
 of known issues in this area.
 
 To make use of your smartcard put at least `pkcs11:` to the user-cert config or commandline
-option. It takes the full or a partial PKCS#11 token URI. 
+option. It takes the full or a partial PKCS#11 token URI.
 
 ```
 user-cert = pkcs11:
