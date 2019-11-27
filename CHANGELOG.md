@@ -16,7 +16,7 @@ On the master branch there may be changes that are not (yet) described here.
 
 ### 1.10.0
 
-* [-] fix openssl 1.1.x compatibility issues 
+* [-] fix openssl 1.1.x compatibility issues
 * [~] Connect to old TLSv1.0 software - override new openssl defaults.
 * [~] suppress cleartext password in debug detail output / add new verbosity level
 * [~] increase speed setting for pppd
@@ -47,8 +47,8 @@ On the master branch there may be changes that are not (yet) described here.
 * [-] Fix value of Accept-Encoding request header
 * [-] Bugfix in url_encode for non alphanumerical characters
 * [-] HTML URL Encoding with uppercase characters
-* [-] Honor Cipher-list option 
-* [~] Improved detection of pppd/ppp client during configure stage 
+* [-] Honor Cipher-list option
+* [~] Improved detection of pppd/ppp client during configure stage
 
 ### 1.8.0
 
@@ -56,7 +56,7 @@ On the master branch there may be changes that are not (yet) described here.
 * [~] On Mac OSX and FreeBSD moved netstat parsing output to higher debug level
 * [~] When logging traffic also show http traffic (not only tunneled traffic)
 * [~] Improve error message in case of login failure
-* [~] Require root privileges for running. They are needed at various places.  
+* [~] Require root privileges for running. They are needed at various places.
   Previously, just a warning was issued, but in later stage things have failed.
 * [-] On Mac OSX the protection of the route to the vpn gateway may have failed
 * [~] Invert order of ssl libraries (this may help linking on some platforms)
@@ -67,13 +67,13 @@ On the master branch there may be changes that are not (yet) described here.
 * [+] Support systemd notification upon tunnel up
 * [+] Support building in a separate directory
 * [~] Change the way to read passwords such that backspace etc. should work as usual
-* [~] Rationalize DNS options: pppd and openfortivpn were updating /etc/resolv.conf.  
+* [~] Rationalize DNS options: pppd and openfortivpn were updating /etc/resolv.conf.
   Check man page and help output for the documentation of the current behavior.
 
 ### 1.7.1
 
 * [~] Be more tolerant about white space in config file
-* [~] Make better usage of pkg-config 
+* [~] Make better usage of pkg-config
 * [~] Rework linking against OpenSSL
 * [-] Build again on Mac OSX where pthread_mutexattr_setrobust is not available
 
@@ -93,7 +93,7 @@ On the master branch there may be changes that are not (yet) described here.
 * [-] Fix possible buffer overflow in in long requests
 * [~] Code improvements in terms of header inclusion and some other coverity warnings
 * [+] Add proxy support
-* [~] Use the compiled-in fixed full path to pppd 
+* [~] Use the compiled-in fixed full path to pppd
 * [+] Support pppd ifname option
 * [+] Print a clear error message at runtime if pppd does not exist
 * [+] Print clear text error messages of pppd upon failure
@@ -111,7 +111,7 @@ On the master branch there may be changes that are not (yet) described here.
 * [+] Add pppd-no-peerdns and pppd-log option
 * [~] Allow passing the otp via the config file for use with NetworkManager plugin
 * [-] Fix issues initializing memory and with build system
-* [+] Support building against Openssl 1.1 
+* [+] Support building against Openssl 1.1
 * [~] use pkg-config for configuration of openssl instead of configure option
 * [-] Fix string handling of the command line arguments
 
@@ -224,9 +224,9 @@ On the master branch there may be changes that are not (yet) described here.
 * Start tracking openfortivpn - in this version with the following features:
 ```
 Usage: openfortivpn <host>:<port> -u <user> -p <pass>
-                    [--no-routes] [--no-dns] [--pppd-log=<filename>] 
+                    [--no-routes] [--no-dns] [--pppd-log=<filename>]
                     [-v|-q]
-       openfortivpn --help 
+       openfortivpn --help
        openfortivpn --version
 ```
 

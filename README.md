@@ -1,8 +1,8 @@
 openfortivpn
 ============
 
-openfortivpn is a client for PPP+SSL VPN tunnel services.  
-It spawns a pppd process and operates the communication between the gateway and 
+openfortivpn is a client for PPP+SSL VPN tunnel services.
+It spawns a pppd process and operates the communication between the gateway and
 this process.
 
 It is compatible with Fortinet VPNs.
@@ -51,11 +51,11 @@ Smartcard
 
 Smartcard support needs `openssl pkcs engine` and `opensc` to be installed.
 The pkcs11-engine from libp11 needs to be compiled with p11-kit-devel installed.
-Check [#464](https://github.com/adrienverge/openfortivpn/issues/464) for a discussion 
+Check [#464](https://github.com/adrienverge/openfortivpn/issues/464) for a discussion
 of known issues in this area.
 
-To make use of your smartcard put at least `pkcs11:` to the user-cert config or commandline 
-option. It takes the full or a partial PKCS#11 token URI. Also username and password currently 
+To make use of your smartcard put at least `pkcs11:` to the user-cert config or commandline
+option. It takes the full or a partial PKCS#11 token URI. Also username and password currently
 may not be empty, but don't get used. So you should fill in dummy values.
 
 ```
@@ -71,7 +71,7 @@ with `p11tool --list-token-urls`.
 
 Multiple readers are currently not supported.
 
-Smartcard support has been tested with Yubikey under Linux, but other PIV enabled 
+Smartcard support has been tested with Yubikey under Linux, but other PIV enabled
 smartcards may work too. On Mac OS X Mojave it is known that the pkcs eingine-by-id is not found.
 
 
@@ -154,7 +154,7 @@ For other distros, you'll need to build and install from source:
     ```
 
     If you need to specify the openssl location you can set the `$PKG_CONFIG_PATH`
-    environment variable. For fine-tuning check the available configure arguments 
+    environment variable. For fine-tuning check the available configure arguments
     with `./configure --help` especially when you are cross compiling.
 
     Finally, install runtime dependency `ppp` or `pppd`.
@@ -169,8 +169,8 @@ openfortivpn needs elevated privileges at three steps during tunnel set up:
 * when setting IP routes through VPN (when the tunnel is up);
 * when adding nameservers to `/etc/resolv.conf` (when the tunnel is up).
 
-For these reasons, you may need to use `sudo openfortivpn`.  
-If you need it to be usable by non-sudoer users, you might consider adding an 
+For these reasons, you may need to use `sudo openfortivpn`.
+If you need it to be usable by non-sudoer users, you might consider adding an
 entry in `/etc/sudoers`.
 
 For example:
@@ -181,9 +181,9 @@ Cmnd_Alias  OPENFORTIVPN = /usr/bin/openfortivpn
 %adm       ALL = (ALL) OPENFORTIVPN
 ```
 
-**Warning**: Make sure only trusted users can run openfortivpn as root!  
-As described in [#54](https://github.com/adrienverge/openfortivpn/issues/54), 
-a malicious user could use `--pppd-plugin` and `--pppd-log` options to divert 
+**Warning**: Make sure only trusted users can run openfortivpn as root!
+As described in [#54](https://github.com/adrienverge/openfortivpn/issues/54),
+a malicious user could use `--pppd-plugin` and `--pppd-log` options to divert
 the program's behaviour.
 
 
@@ -193,5 +193,5 @@ Contributing
 
 Feel free to make pull requests!
 
-C coding style should follow the 
+C coding style should follow the
 [Linux kernel Documentation/CodingStyle](http://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/tree/Documentation/process/coding-style.rst?id=refs/heads/master).
