@@ -14,6 +14,17 @@ Releases
 This high level changelog is usually updated when a release is tagged.
 On the master branch there may be changes that are not (yet) described here.
 
+### 1.11.0
+
+* [+] allow to connect with empty password (and with smartcard instead of username)
+* [~] properly handle manipulations of resolv.conf
+* [+] support dns-suffix feature
+* [-] several codacy fixes
+* [+] Add smartcard support with openssl-engine
+* [-] correctly shift masks for cidr notation on MAC
+* [-] one-byte fix to build with lcc compiler
+* [-] pass space character as %20 instead of encoding it as '+'
+
 ### 1.10.0
 
 * [-] fix openssl 1.1.x compatibility issues
