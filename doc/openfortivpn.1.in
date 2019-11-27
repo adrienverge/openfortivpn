@@ -110,7 +110,7 @@ Use specified PEM-encoded certificate if the server requires authentication
 with a certificate.
 .TP
 \fB\-\-user-cert=\fIpkcs11:\fR
-Use at least the string pkcs11: for using a smartcard. Takes also 
+Use at least the string pkcs11: for using a smartcard. Takes also
 full or partially PKCS11-URI (p11tool --list-token-urls)
 
   --user-cert = pkcs11:

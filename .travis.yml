@@ -27,7 +27,7 @@ addons:
   coverity_scan:
     project:
       name: adrienverge/openfortivpn
-      description: Client for PPP+SSL VPN tunnel services 
+      description: Client for PPP+SSL VPN tunnel services
     notification_email: DimitriPapadopoulos@users.noreply.github.com
     build_command_prepend: ./configure --prefix=/usr --sysconfdir=/etc; make clean
     build_command: make
