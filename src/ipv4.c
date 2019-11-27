@@ -122,6 +122,25 @@ static int ipv4_get_route(struct rtentry *route)
 	uint32_t rtdest, rtmask, rtgtw;
 	int rtfound = 0;
 
+	/* initialize the buffer with zeroes, aiming to address the
+	 * coverity issue "TAINTED_SCALAR passed to a tainted sink"
+	 *
+	 * Later on, the routing table is read into this buffer using
+	 * read() and therefore the content of the buffer is considered
+	 * tainted. strtok_r internally uses it in a loop boundary.
+	 * The theoretical problem is that the loop could iterate forever,
+	 * if the buffer contains a huge string which doesn't contain
+	 * the token character, which we are parsing for.
+	 *
+	 * We can declare this as a false positive, because
+	 * - the routing table is to some extent trusted input,
+	 * - it's not that large,
+	 * - and the loop in strtok_r increments the pointer in each
+	 *   interation until it reaches the area where we have ensured
+	 *   that there is a delimiting '\0' character by proper
+	 *   initialization. We ensure this also when growing the buffer.
+	 */
+	memset(buffer, '\0', IPV4_GET_ROUTE_BUFFER_CHUNK_SIZE);
 	log_debug("ip route show %s\n", ipv4_show_route(route));
 
 	// store what we are looking for
@@ -161,6 +180,7 @@ static int ipv4_get_route(struct rtentry *route)
 				err = ERR_IPV4_SEE_ERRNO;
 				goto cleanup;
 			}
+			buffer[buffer_size-1] = '\0';
 		}
 	}
 
@@ -342,6 +362,12 @@ cleanup:
 		goto end;
 	}
 #endif
+
+	if (index(start, '\n') == NULL) {
+		log_debug("routing table is malformed.\n");
+		err = ERR_IPV4_PROC_NET_ROUTE;
+		goto end;
+	}
 
 	// Look for the route
 	line = strtok_r(start, "\n", &saveptr1);
