@@ -188,11 +188,11 @@ static int pppd_run(struct tunnel *tunnel)
 
 #if HAVE_USR_SBIN_PPP
 		/*
-		* assume there is a default configuration to start.
-		* Support for taking options from the command line
-		* e.g. the name of the configuration or options
-		* to send interactively to ppp will be added later
-		*/
+		 * assume there is a default configuration to start.
+		 * Support for taking options from the command line
+		 * e.g. the name of the configuration or options
+		 * to send interactively to ppp will be added later
+		 */
 		const char *v[] = {
 			ppp_path,
 			"-direct"
@@ -240,8 +240,10 @@ static int pppd_run(struct tunnel *tunnel)
 			if (ofv_append_varr(&pppd_args, tunnel->config->pppd_log))
 				return 1;
 		} else {
-			/* pppd defaults to logging to fd=1, clobbering the
-			 * actual PPP data */
+			/*
+			 * pppd defaults to logging to fd=1, clobbering the
+			 * actual PPP data
+			 */
 			if (ofv_append_varr(&pppd_args, "logfd"))
 				return 1;
 			if (ofv_append_varr(&pppd_args, "2"))

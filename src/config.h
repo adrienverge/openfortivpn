@@ -108,7 +108,8 @@ int parse_min_tls(const char *str);
 int load_config(struct vpn_config *cfg, const char *filename);
 void destroy_vpn_config(struct vpn_config *cfg);
 
-/** merge source config into dest
+/*
+ * merge source config into dest
  *
  * memory allocated dynamically is transferred with this function
  * e.g. ownership goes to dest config
