@@ -122,7 +122,8 @@ static int ipv4_get_route(struct rtentry *route)
 	uint32_t rtdest, rtmask, rtgtw;
 	int rtfound = 0;
 
-	/* initialize the buffer with zeroes, aiming to address the
+	/*
+	 * initialize the buffer with zeroes, aiming to address the
 	 * coverity issue "TAINTED_SCALAR passed to a tainted sink"
 	 *
 	 * Later on, the routing table is read into this buffer using

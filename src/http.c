@@ -188,8 +188,7 @@ int http_receive(
 			}
 
 			if (header_size) {
-				/* We saw the whole header, */
-				/* let's check if the body is done as well */
+				/* We saw the whole header, is the body done as well? */
 				if (chunked) {
 					/* Last chunk terminator. Done naively. */
 					if (bytes_read >= 7 &&
@@ -427,7 +426,8 @@ int try_otp_auth(
 		return -1;
 	strncpy(path, s, e - s);
 	path[e - s] = '\0';
-	/* Try to get password prompt, assume it starts with 'Please'
+	/*
+	 * Try to get password prompt, assume it starts with 'Please'
 	 * Fall back to default prompt if not found/parseable
 	 */
 	p = strstr(s, "Please");
@@ -452,7 +452,8 @@ int try_otp_auth(
 	/* Search for all inputs */
 	while ((s = strcasestr(s, "<INPUT"))) {
 		s += 6;
-		/* check if we found parameters for a later INPUT
+		/*
+		 * check if we found parameters for a later INPUT
 		 * during last round
 		 */
 		if (s < t || s < n || (v && s < v))
@@ -467,10 +468,12 @@ int try_otp_auth(
 		n += 6;
 		t += 6;
 		if (strncmp(t, "hidden", 6) == 0 || strncmp(t, "password", 8) == 0) {
-			/* We try to be on the safe side
+			/*
+			 * We try to be on the safe side
 			 * and URL-encode the variable name
+			 *
+			 * Append '&' if we found something in last round
 			 */
-			/* Append '&' if we found something in last round */
 			if (d > data) {
 				if (!SPACE_AVAILABLE(1))
 					return -1;
@@ -612,7 +615,8 @@ int auth_log_in(struct tunnel *tunnel)
 	if (ret == ERR_HTTP_NO_COOKIE) {
 		struct vpn_config *cfg = tunnel->config;
 
-		/* If the response body includes a tokeninfo= parameter,
+		/*
+		 * If the response body includes a tokeninfo= parameter,
 		 * it means the VPN gateway expects two-factor authentication.
 		 * It sends a one-time authentication credential for example
 		 * by email or SMS, and expects to receive it back in the

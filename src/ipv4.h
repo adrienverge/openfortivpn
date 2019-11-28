@@ -33,7 +33,8 @@
 #endif
 
 #if !HAVE_RT_ENTRY_WITH_RT_DST
-/* On Mac OS X and FreeBSD struct rtentry is not directly available.
+/*
+ * On Mac OS X and FreeBSD struct rtentry is not directly available.
  * On FreeBSD one could #define _WANT_RTENTRY but the struct does not
  * contain rt_dst for instance. The entries for mask and destination
  * are maintained in a separate radix_tree structure by the routing
