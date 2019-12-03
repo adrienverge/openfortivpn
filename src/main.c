@@ -512,8 +512,8 @@ int main(int argc, char **argv)
 		goto user_error;
 	}
 	// Check username
-	if (cfg.username[0] == '\0' && cfg.use_engine != 1) {
-		log_error("Specify an username.\n");
+	if (cfg.username[0] == '\0' && cfg.user_cert == NULL) {
+		log_error("Specify a username.\n");
 		goto user_error;
 	}
 	// If username but no password given, interactively ask user

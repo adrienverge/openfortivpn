@@ -573,12 +573,13 @@ int auth_log_in(struct tunnel *tunnel)
 
 	tunnel->cookie[0] = '\0';
 
-	if (tunnel->config->use_engine) {
+	if (tunnel->config->use_engine
+	    || (username[0] == '\0' && tunnel->config->password[0] == '\0')) {
 		snprintf(data, sizeof(data), "cert=&nup=1");
 		ret = http_request(tunnel, "GET", "/remote/login",
 		                   data, &res, &response_size);
 	} else {
-		if (tunnel->config->password == '\0') {
+		if (tunnel->config->password[0] == '\0') {
 			snprintf(data, sizeof(data), "username=%s&realm=%s&ajax=1"
 			         "&redir=%%2Fremote%%2Findex&just_logged_in=1",
 			         username, realm);
