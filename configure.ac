@@ -226,20 +226,19 @@ AC_ARG_WITH([rt_dst],
 	])
 )
 AS_IF([test "x$with_rt_dst" = "x" ], [
-AC_MSG_CHECKING(whether rtentry is available and has rt_dst )
-AC_TRY_RUN([
+AC_MSG_CHECKING(whether rtentry is available and has rt_dst)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <net/route.h>
 static inline struct sockaddr_in *cast_addr(struct sockaddr *addr)
 {
-       return (struct sockaddr_in *) addr;
+  return (struct sockaddr_in *) addr;
 }
+],[
 struct rtentry route;
-int main() {
-  cast_addr(&(&route)->rt_dst)->sin_family = AF_INET;
-  return (cast_addr(&(&route)->rt_dst)->sin_family == AF_INET) ? 0 : 1; }
-], [
+cast_addr(&(&route)->rt_dst)->sin_family = AF_INET;
+])],[
   AC_DEFINE(HAVE_RT_ENTRY_WITH_RT_DST)
   AC_MSG_RESULT(yes)
 ], AC_MSG_RESULT(no) )
