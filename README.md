@@ -89,7 +89,7 @@ Some Linux distibutions provide `openfortivpn` packages:
 * [Arch Linux](https://www.archlinux.org/packages/community/x86_64/openfortivpn)
 * [Debian (testing)](https://packages.debian.org/buster/openfortivpn)
 * [Ubuntu (bionic and later)](https://packages.ubuntu.com/search?keywords=openfortivpn) and [pre-bionic (ppa)](https://launchpad.net/~ar-lex/+archive/ubuntu/fortisslvpn)
-* [Solus](https://packages.solus-project.com/unstable/o/openfortivpn/)
+* [Solus](https://dev.getsol.us/source/openfortivpn/)
 
 On macOS both [Homebrew](http://brewformulas.org/Openfortivpn) and
 [MacPorts](https://www.macports.org/ports.php?by=name&substr=openfortivpn)
