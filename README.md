@@ -86,7 +86,7 @@ Some Linux distibutions provide `openfortivpn` packages:
 * [openSUSE / SLE](https://software.opensuse.org/package/openfortivpn)
 * [Gentoo](https://packages.gentoo.org/packages/net-vpn/openfortivpn)
 * [NixOS](https://github.com/NixOS/nixpkgs/tree/master/pkgs/tools/networking/openfortivpn)
-* [Arch Linux](https://aur.archlinux.org/packages/openfortivpn)
+* [Arch Linux](https://www.archlinux.org/packages/community/x86_64/openfortivpn)
 * [Debian (testing)](https://packages.debian.org/buster/openfortivpn)
 * [Ubuntu (bionic and later)](https://packages.ubuntu.com/search?keywords=openfortivpn) and [pre-bionic (ppa)](https://launchpad.net/~ar-lex/+archive/ubuntu/fortisslvpn)
 * [Solus](https://packages.solus-project.com/unstable/o/openfortivpn/)
