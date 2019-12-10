@@ -1006,6 +1006,16 @@ int ipv4_restore_routes(struct tunnel *tunnel)
 	return 0;
 }
 
+static inline char* replace_char(char* str, char find, char replace)
+{
+	char *current_pos = strchr(str,find);
+	while (current_pos) {
+		*current_pos = replace;
+		current_pos = strchr(current_pos,find);
+	}
+	return str;
+}
+
 int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 {
 	int ret = -1;
@@ -1076,6 +1086,7 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 	if (tunnel->ipv4.dns_suffix != NULL) {
 		strcpy(dns_suffix, "search ");
 		strncat(dns_suffix, tunnel->ipv4.dns_suffix, MAX_DOMAIN_LENGTH);
+		replace_char(dns_suffix, ';', ' ');
 	} else {
 		dns_suffix[0] = '\0';
 	}
