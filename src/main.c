@@ -99,17 +99,17 @@ PPPD_USAGE \
 "  -p <pass>, --password=<pass>  VPN account password.\n" \
 "  -o <otp>, --otp=<otp>         One-Time-Password.\n" \
 "  --otp-prompt=<prompt>         Search for the OTP prompt starting with this string\n" \
-"  --otp-delay=<delay>	         Wait <delay> seconds before sending the OTP.\n" \
+"  --otp-delay=<delay>           Wait <delay> seconds before sending the OTP.\n" \
 "  --pinentry=<program>          Use the program to supply a secret instead of asking for it\n" \
-"  --realm=<realm>               Use specified authentication realm on VPN gateway\n" \
+"  --realm=<realm>               Use specified authentication realm.\n" \
+"  --set-routes=[01]             Set if openfortivpn should configure routes\n" \
 "                                when tunnel is up.\n" \
-"  --set-routes=[01]             Set if openfortivpn should configure output routes through\n" \
-"                                the VPN when tunnel is up.\n" \
 "  --no-routes                   Do not configure routes, same as --set-routes=0.\n" \
 "  --half-internet-routes=[01]   Add two 0.0.0.0/1 and 128.0.0.0/1 routes with higher\n" \
 "                                priority instead of replacing the default route.\n" \
 "  --set-dns=[01]                Set if openfortivpn should add DNS name servers \n" \
-"                                and domain seach list in /etc/resolv.conf.\n" \
+"                                and domain search list in /etc/resolv.conf.\n" \
+"                                If installed resolvconf is used for the update.\n" \
 "  --no-dns                      Do not reconfigure DNS, same as --set-dns=0\n" \
 "  --ca-file=<file>              Use specified PEM-encoded certificate bundle\n" \
 "                                instead of system-wide store to verify the gateway\n" \

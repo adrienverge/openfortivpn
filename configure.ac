@@ -246,6 +246,7 @@ cast_addr(&(&route)->rt_dst)->sin_family = AF_INET;
 
 NETSTAT_PATH=""
 PPP_PATH=""
+RESOLVCONF_PATH=""
 
 # prepare possibility to override default locations
 AC_ARG_WITH([netstat],
@@ -272,6 +273,12 @@ AC_ARG_WITH([ppp],
 		with_ppp="yes"
 		with_pppd="no"
 	])
+)
+# resolvconf if present
+AC_ARG_WITH([resolvconf],
+        AS_HELP_STRING([--with-resolvconf],
+                       [Set the path to the resolvconf executable]),
+        RESOLVCONF_PATH="$withval"
 )
 
 # override for /proc/net/route detection
@@ -349,6 +356,8 @@ AS_IF([test "x$with_ppp" = "xyes" -a "x$with_pppd" = "xyes"], [
    with_ppp="no"
 ])
 
+AC_PATH_PROG(RESOLVCONF_PATH, [resolvconf], [/sbin/resolvconf], "$PATH:/sbin:/usr/sbin")
+
 AS_IF([test "x$with_ppp" = "xyes"], [
 	AC_DEFINE(HAVE_USR_SBIN_PPP, 1)
 	AC_MSG_NOTICE([HAVE_USR_SBIN_PPP... 1])
@@ -377,6 +386,11 @@ AC_MSG_NOTICE([PPP_PATH...] $PPP_PATH)
 AC_SUBST(NETSTAT_PATH)
 AS_IF([test "x$NETSTAT_PATH" != "x" ], [
     AC_MSG_NOTICE([NETSTAT_PATH...] $NETSTAT_PATH)
+])
+
+AC_SUBST(RESOLVCONF_PATH)
+AS_IF([test "x$RESOLVCONF_PATH" != "x" ], [
+    AC_MSG_NOTICE([RESOLVCONF_PATH...] $RESOLVCONF_PATH)
 ])
 
 AC_CONFIG_COMMANDS([timestamp], [touch src/.dirstamp])

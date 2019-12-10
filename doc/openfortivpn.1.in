@@ -1,4 +1,4 @@
-.TH OPENFORTIVPN 1 "November 27, 2019" ""
+.TH OPENFORTIVPN 1 "December 11, 2019" ""
 
 .SH NAME
 openfortivpn \- Client for PPP+SSL VPN tunnel services
@@ -92,13 +92,14 @@ higher priority instead of replacing the default route.
 .TP
 \fB\-\-set\-dns=\fI<bool>\fR, \fB\-\-no\-dns\fR
 Set if openfortivpn should add DNS name servers in /etc/resolv.conf when
-tunnel is up. If used multiple times, the last one takes priority.
+tunnel is up. Also a dns\-suffix may be received from the peer and added
+to /etc/resolv.conf in the turn of adding the name servers.
+resolvconf is instructed to do the update of the resolv.conf file
+if it is installed, otherwise openfortivpn prepends its changes
+to the existing content of the resolv.conf file.
 Note that there may be other mechanisms to update /etc/resolv.conf,
 e.g., \fB\-\-pppd\-use\-peerdns\fR in conjunction with an ip-up-script,
 which may require that openfortivpn is called with \fB\-\-no\-dns\fR.
-Also a dns\-suffix may be received from the peer and added to
-/etc/resolv.conf in the turn of adding the name servers.
-
 \fB\-\-no\-dns\fR is the same as \fB\-\-set\-dns=\fI0\fR.
 .TP
 \fB\-\-ca\-file=\fI<file>\fR
@@ -150,7 +151,8 @@ $ openssl s_client -connect \fI<host:port>\fR
 .TP
 \fB\-\-use\-peer\-dns=\fI<bool>\fR, \fB\-\-pppd\-no\-peerdns\fR
 Whether to ask peer ppp server for DNS server addresses and let pppd
-rewrite /etc/resolv.conf. If the DNS server addresses are requested,
+rewrite /etc/resolv.conf. There is no mechanism to tell the dns\-suffix
+to pppd. If the DNS server addresses are requested,
 also \fB\-\-set\-dns=\fI1\fR may race with the mechanisms in pppd.
 
 \fB\-\-pppd\-no\-peerdns\fR is the same as \fB\-\-pppd\-use\-peerdns=\fI0\fR.
@@ -264,7 +266,11 @@ password = bar
 .br
 # otp\-prompt = Please
 .br
+# pinentry = pinentry program
+.br
 user\-cert = @SYSCONFDIR@/openfortivpn/user\-cert.pem
+.br
+# user\-cert = pkcs1: # use smartcard as client certificate
 .br
 user\-key = @SYSCONFDIR@/openfortivpn/user\-key.pem
 .br
@@ -315,3 +321,5 @@ insecure\-ssl = 0
 cipher\-list = HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4
 .br
 persistent = 0
+.br
+seclevel-1 = 0
