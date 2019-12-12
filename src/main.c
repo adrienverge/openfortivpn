@@ -497,7 +497,7 @@ int main(int argc, char **argv)
 			port_str[0] = '\0';
 			port_str++;
 			cfg.gateway_port = strtol(port_str, NULL, 0);
-			if (cfg.gateway_port <= 0 || cfg.gateway_port > 65535) {
+			if (cfg.gateway_port == 0 || cfg.gateway_port > 65535) {
 				log_error("Specify a valid port.\n");
 				goto user_error;
 			}
