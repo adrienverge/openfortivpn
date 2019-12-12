@@ -27,7 +27,8 @@ install-data-hook:
 		mkdir -p $(DESTDIR)$(sysconfdir)/openfortivpn ; \
 		cp -a $(DESTDIR)$(datadir)/config.template \
 			 $(DESTDIR)$(sysconfdir)/openfortivpn/config ; \
-	fi
+	sed -i 's/^/# /' $(DESTDIR)$(sysconfdir)/openfortivpn/config ; \
+	fi 
 
 dist_man_MANS = doc/openfortivpn.1
 
