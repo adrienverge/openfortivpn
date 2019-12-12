@@ -231,7 +231,7 @@ int load_config(struct vpn_config *cfg, const char *filename)
 			cfg->gateway_host[FIELD_SIZE] = '\0';
 		} else if (strcmp(key, "port") == 0) {
 			unsigned long int port = strtoul(val, NULL, 0);
-			if (port <= 0 || port > 65535) {
+			if (port == 0 || port > 65535) {
 				log_warn("Bad port in config file: \"%lu\".\n",
 				         port);
 				continue;
