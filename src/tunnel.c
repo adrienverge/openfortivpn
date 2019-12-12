@@ -924,7 +924,7 @@ int ssl_connect(struct tunnel *tunnel)
 	}
 
 	if (tunnel->config->cipher_list) {
-		log_debug("Setting cipher list to: %s", tunnel->config->cipher_list);
+		log_debug("Setting cipher list to: %s\n", tunnel->config->cipher_list);
 		if (!SSL_set_cipher_list(tunnel->ssl_handle,
 		                         tunnel->config->cipher_list)) {
 			log_error("SSL_set_cipher_list failed: %s\n",
