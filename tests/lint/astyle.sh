@@ -17,15 +17,15 @@ for file in "$@"; do
     --indent=tab=8 \
     --pad-header \
     --align-reference=type \
-    <"$file" >$tmp
+    <"$file" >"$tmp"
 
-  if ! cmp -s "$file" $tmp; then
+  if ! cmp -s "$file" "$tmp"; then
     echo "error: $file does not comply with coding style"
-    git --no-pager diff --no-index -U0 "$file" $tmp
+    git --no-pager diff --no-index -U0 "$file" "$tmp"
     rc=1
   fi
 
-  rm $tmp
+  rm "$tmp"
 done
 
 exit $rc
