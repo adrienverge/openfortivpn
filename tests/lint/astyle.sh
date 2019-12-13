@@ -2,7 +2,7 @@
 # Copyright (C) 2015 Adrien Vergé
 
 # Check that astyle is installed
-if ! which astyle &>/dev/null; then
+if ! command -v astyle &>/dev/null; then
   echo "error: astyle is not installed" >&2
   exit -1
 fi
@@ -20,7 +20,7 @@ for file in "$@"; do
     <"$file" >"$tmp"
 
   if ! cmp -s "$file" "$tmp"; then
-    echo "error: $file does not comply with coding style"
+    echo "error: $file does not comply with coding style" >&2
     git --no-pager diff --no-index -U0 "$file" "$tmp"
     rc=1
   fi
