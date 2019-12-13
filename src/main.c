@@ -531,6 +531,8 @@ int main(int argc, char **argv)
 		log_debug("Config username = \"%s\"\n", cfg.username);
 	if (cfg.password != NULL)
 		log_debug_all("Config password = \"%s\"\n", cfg.password);
+	else
+		cfg.password = strdup("");
 	if (cfg.otp[0] != '\0')
 		log_debug("One-time password = \"%s\"\n", cfg.otp);
 
