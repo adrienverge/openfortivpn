@@ -517,7 +517,7 @@ int main(int argc, char **argv)
 		goto user_error;
 	}
 	// If username but no password given, interactively ask user
-	if (cfg.password == NULL && cfg.username[0] != '\0' ) {
+	if (cfg.password == NULL && cfg.username[0] != '\0') {
 		char *tmp_password = malloc(PWD_BUFSIZ); // allocate large buffer
 		read_password(cfg.pinentry, "password",
 		              "VPN account password: ", tmp_password, PWD_BUFSIZ);

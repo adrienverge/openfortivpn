@@ -360,16 +360,16 @@ err_free_buf:
 	 && pkt_data(packet)[6] == 0x03)
 
 #define packet_is_end_negociation(packet) \
-	((packet)->len == 6 \
-	 && pkt_data(packet)[0] == 0x80 \
-	 && pkt_data(packet)[1] == 0x21 \
-	 && pkt_data(packet)[2] == 0x01 \
-	 && pkt_data(packet)[4] == 0x00 \
-	 && pkt_data(packet)[5] == 0x04) || \
-	((packet)-> len >= 12 \
-	 && pkt_data(packet)[0] == 0x80 \
-	 && pkt_data(packet)[1] == 0x21 \
-	 && pkt_data(packet)[2] == 0x02)
+	(((packet)->len == 6 \
+	  && pkt_data(packet)[0] == 0x80 \
+	  && pkt_data(packet)[1] == 0x21 \
+	  && pkt_data(packet)[2] == 0x01 \
+	  && pkt_data(packet)[4] == 0x00 \
+	  && pkt_data(packet)[5] == 0x04) || \
+	 ((packet)->len >= 12 \
+	  && pkt_data(packet)[0] == 0x80 \
+	  && pkt_data(packet)[1] == 0x21 \
+	  && pkt_data(packet)[2] == 0x02))
 
 static inline void set_tunnel_ips(struct tunnel *tunnel,
                                   struct ppp_packet *packet)

@@ -61,8 +61,8 @@
 #endif
 
 struct ofv_varr {
-	unsigned cap;		// current capacity
-	unsigned off;		// next slot to write, always < max(cap - 1, 1)
+	unsigned int cap;	// current capacity
+	unsigned int off;	// next slot to write, always < max(cap - 1, 1)
 	const char **data;	// NULL terminated
 };
 
@@ -70,9 +70,9 @@ static int ofv_append_varr(struct ofv_varr *p, const char *x)
 {
 	if (p->off + 1 >= p->cap) {
 		const char **ndata;
-		unsigned ncap = (p->off + 1) * 2;
+		unsigned int ncap = (p->off + 1) * 2;
 		if (p->off + 1 >= ncap) {
-			log_error("ofv_append_varr: ncap exceeded\n");
+			log_error("%s: ncap exceeded\n", __func__);
 			return 1;
 		};
 		ndata = realloc(p->data, ncap * sizeof(const char *));
@@ -85,17 +85,16 @@ static int ofv_append_varr(struct ofv_varr *p, const char *x)
 		}
 	}
 	if (p->data == NULL) {
-		log_error("ofv_append_varr: NULL data\n");
+		log_error("%s: NULL data\n", __func__);
 		return 1;
 	}
-	if (p->off + 1 < p->cap) {
-		p->data[p->off] = x;
-		p->data[++p->off] = NULL;
-		return 0;
-	} else {
-		log_error("ofv_append_varr: cap exceeded in p\n");
+	if (p->off + 1 >= p->cap) {
+		log_error("%s: cap exceeded in p\n", __func__);
 		return 1;
 	}
+	p->data[p->off] = x;
+	p->data[++p->off] = NULL;
+	return 0;
 }
 
 static int on_ppp_if_up(struct tunnel *tunnel)
@@ -109,9 +108,8 @@ static int on_ppp_if_up(struct tunnel *tunnel)
 
 		ret = ipv4_set_tunnel_routes(tunnel);
 
-		if (ret != 0) {
+		if (ret != 0)
 			log_warn("Adding route table is incomplete. Please check route table.\n");
-		}
 	}
 
 	if (tunnel->config->set_dns) {
@@ -197,7 +195,7 @@ static int pppd_run(struct tunnel *tunnel)
 			ppp_path,
 			"-direct"
 		};
-		for (unsigned i = 0; i < ARRAY_SIZE(v); i++)
+		for (unsigned int i = 0; i < ARRAY_SIZE(v); i++)
 			if (ofv_append_varr(&pppd_args, v[i]))
 				return 1;
 #endif
@@ -225,7 +223,7 @@ static int pppd_run(struct tunnel *tunnel)
 				"lcp-max-configure", "40",
 				"mru", "1354"
 			};
-			for (unsigned i = 0; i < ARRAY_SIZE(v); i++)
+			for (unsigned int i = 0; i < ARRAY_SIZE(v); i++)
 				if (ofv_append_varr(&pppd_args, v[i]))
 					return 1;
 		}
@@ -408,12 +406,12 @@ int ppp_interface_is_up(struct tunnel *tunnel)
 		            (tunnel->config->pppd_ifname
 		             && strstr(ifa->ifa_name, tunnel->config->pppd_ifname)
 		             != NULL)
-		            || strstr(ifa->ifa_name, "ppp") != NULL)
+		            || strstr(ifa->ifa_name, "ppp") != NULL
 #endif
 #if HAVE_USR_SBIN_PPP
-		    strstr(ifa->ifa_name, "tun") != NULL)
+		            strstr(ifa->ifa_name, "tun") != NULL
 #endif
-			&& ifa->ifa_flags& IFF_UP) {
+		    ) && ifa->ifa_flags & IFF_UP) {
 			if (&(ifa->ifa_addr->sa_family) != NULL
 			    && ifa->ifa_addr->sa_family == AF_INET) {
 				struct in_addr if_ip_addr =
@@ -913,9 +911,8 @@ int ssl_connect(struct tunnel *tunnel)
 		}
 	} else {
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
-		if (tunnel->config->min_tls <= 0) {
+		if (tunnel->config->min_tls <= 0)
 			tunnel->config->min_tls = TLS1_VERSION;
-		}
 #endif
 		if (!tunnel->config->cipher_list && tunnel->config->seclevel_1) {
 			const char *cipher_list = "DEFAULT@SECLEVEL=1";
