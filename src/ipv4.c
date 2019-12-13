@@ -576,7 +576,7 @@ end:
 	if (err)
 		return err;
 
-	if (rtfound==0) {
+	if (rtfound == 0) {
 		// should not occur anymore unless there is no default route
 		log_debug("Route not found.\n");
 		// at least restore input values
@@ -741,7 +741,7 @@ int ipv4_protect_tunnel_route(struct tunnel *tunnel)
 		log_debug("ip route show %s\n", ipv4_show_route(gtw_rt));
 		ipv4_del_route(gtw_rt);
 	}
-	sprintf(route_iface(gtw_rt),"!%s",tunnel->ppp_iface);
+	sprintf(route_iface(gtw_rt), "!%s", tunnel->ppp_iface);
 	ret = ipv4_get_route(gtw_rt);
 	if (ret != 0) {
 		log_warn("Could not get route to gateway (%s).\n",
@@ -791,7 +791,8 @@ static void add_text_route(struct tunnel *tunnel, const char *dest,
 	log_info("Registering route %s/%s via %s\n", dest, mask, gw);
 	l0 = strlen(*target);
 	l1 = strlen(fmt) + strlen(dest) + strlen(mask) + strlen(gw) + 1;
-	if ((ptr = realloc(*target, l0 + l1))) {
+	ptr = realloc(*target, l0 + l1);
+	if (ptr) {
 		*target = ptr;
 		snprintf(*target + l0, l1, fmt, dest, mask, gw);
 	} else {
@@ -1006,7 +1007,7 @@ int ipv4_restore_routes(struct tunnel *tunnel)
 	return 0;
 }
 
-static inline char* replace_char(char* str, char find, char replace)
+static inline char *replace_char(char *str, char find, char replace)
 {
 	int i;
 
@@ -1253,18 +1254,18 @@ int ipv4_del_nameservers_from_resolv_conf(struct tunnel *tunnel)
 
 	buffer[stat.st_size] = '\0';
 
-	ns1[0]='\0';
+	ns1[0] = '\0';
 	if (tunnel->ipv4.ns1_addr.s_addr != 0) {
 		strcpy(ns1, "nameserver ");
 		strncat(ns1, inet_ntoa(tunnel->ipv4.ns1_addr), 15);
 	}
-	ns2[0]='\0';
+	ns2[0] = '\0';
 	if (tunnel->ipv4.ns2_addr.s_addr != 0) {
 		strcpy(ns2, "nameserver ");
 		strncat(ns2, inet_ntoa(tunnel->ipv4.ns2_addr), 15);
 	}
-	dns_suffix[0]='\0';
-	if (tunnel->ipv4.dns_suffix != NULL && tunnel->ipv4.dns_suffix[0]!='\0') {
+	dns_suffix[0] = '\0';
+	if (tunnel->ipv4.dns_suffix != NULL && tunnel->ipv4.dns_suffix[0] != '\0') {
 		strcpy(dns_suffix, "search ");
 		strncat(dns_suffix, tunnel->ipv4.dns_suffix, MAX_DOMAIN_LENGTH);
 	}
@@ -1279,13 +1280,13 @@ int ipv4_del_nameservers_from_resolv_conf(struct tunnel *tunnel)
 	for (const char *line = strtok(buffer, "\n");
 	     line != NULL;
 	     line = strtok(NULL, "\n")) {
-		if (ns1[0]!='\0' && strcmp(line, ns1) == 0
+		if (ns1[0] != '\0' && strcmp(line, ns1) == 0
 		    && (tunnel->ipv4.ns1_was_there == 0)) {
 			log_debug("Deleting \"%s\" from /etc/resolv.conf.\n", ns1);
-		} else if (ns2[0]!='\0' && strcmp(line, ns2) == 0
+		} else if (ns2[0] != '\0' && strcmp(line, ns2) == 0
 		           && (tunnel->ipv4.ns2_was_there == 0)) {
 			log_debug("Deleting \"%s\" from /etc/resolv.conf.\n", ns2);
-		} else if (dns_suffix[0]!='\0' && strcmp(line, dns_suffix) == 0
+		} else if (dns_suffix[0] != '\0' && strcmp(line, dns_suffix) == 0
 		           && (tunnel->ipv4.dns_suffix_was_there == 0)) {
 			log_debug("Deleting \"%s\" from /etc/resolv.conf.\n", dns_suffix);
 		} else {

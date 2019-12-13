@@ -75,8 +75,8 @@ struct tunnel {
 
 	struct ipv4_config ipv4;
 
-	int (*on_ppp_if_up)(struct tunnel *);
-	int (*on_ppp_if_down)(struct tunnel *);
+	int (*on_ppp_if_up)(struct tunnel *tunnel);
+	int (*on_ppp_if_down)(struct tunnel *tunnel);
 };
 
 struct token {

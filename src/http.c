@@ -76,16 +76,16 @@ int http_send(struct tunnel *tunnel, const char *request, ...)
 	va_start(args, request);
 	length = vsnprintf(buffer, BUFSZ, request, args);
 	va_end(args);
-	strcpy(logbuffer,buffer);
-	if (loglevel <= OFV_LOG_DEBUG_DETAILS && tunnel->config->password[0]!='\0') {
-		char* pwstart;
+	strcpy(logbuffer, buffer);
+	if (loglevel <= OFV_LOG_DEBUG_DETAILS && tunnel->config->password[0] != '\0') {
+		char *pwstart;
 		pwstart = strstr(logbuffer, tunnel->config->password);
 		if (pwstart != NULL) {
 			int pos, pwlen, i;
 			pos = pwstart - logbuffer;
 			pwlen = strlen(tunnel->config->password);
-			for (i=pos; i<pos+pwlen; i++)
-				logbuffer[i]='*';
+			for (i = pos; i < pos + pwlen; i++)
+				logbuffer[i] = '*';
 		}
 	}
 
@@ -94,7 +94,7 @@ int http_send(struct tunnel *tunnel, const char *request, ...)
 	else if (length >= BUFSZ)
 		return ERR_HTTP_TOO_LONG;
 
-	log_debug_details("%s: \n%s\n", __func__, logbuffer);
+	log_debug_details("%s:\n%s\n", __func__, logbuffer);
 
 	while (n == 0)
 		n = safe_ssl_write(tunnel->ssl_handle, (uint8_t *) buffer,
@@ -162,7 +162,7 @@ int http_receive(
 		                  (uint8_t *) buffer + bytes_read,
 		                  BUFSZ - 1 - bytes_read);
 		if (n > 0) {
-			log_debug_details("%s: \n%s\n", __func__, buffer);
+			log_debug_details("%s:\n%s\n", __func__, buffer);
 			const char *eoh;
 
 			bytes_read += n;
@@ -580,13 +580,13 @@ int auth_log_in(struct tunnel *tunnel)
 		                   data, &res, &response_size);
 	} else {
 		if (tunnel->config->password[0] == '\0') {
-			snprintf(data, sizeof(data), "username=%s&realm=%s&ajax=1"
-			         "&redir=%%2Fremote%%2Findex&just_logged_in=1",
+			snprintf(data, sizeof(data),
+			         "username=%s&realm=%s&ajax=1&redir=%%2Fremote%%2Findex&just_logged_in=1",
 			         username, realm);
 		} else {
 			url_encode(password, tunnel->config->password);
-			snprintf(data, sizeof(data), "username=%s&credential=%s&realm=%s&ajax=1"
-			         "&redir=%%2Fremote%%2Findex&just_logged_in=1",
+			snprintf(data, sizeof(data),
+			         "username=%s&credential=%s&realm=%s&ajax=1&redir=%%2Fremote%%2Findex&just_logged_in=1",
 			         username, password, realm);
 		}
 		ret = http_request(tunnel, "POST", "/remote/logincheck",
@@ -651,9 +651,8 @@ int auth_log_in(struct tunnel *tunnel)
 		}
 
 		url_encode(tokenresponse, cfg->otp);
-		snprintf(data, sizeof(data), "username=%s&realm=%s&reqid=%s"
-		         "&polid=%s&grp=%s&code=%s&code2="
-		         "&redir=%%2Fremote%%2Findex&just_logged_in=1",
+		snprintf(data, sizeof(data),
+		         "username=%s&realm=%s&reqid=%s&polid=%s&grp=%s&code=%s&code2=&redir=%%2Fremote%%2Findex&just_logged_in=1",
 		         username, realm, reqid, polid, group, tokenresponse);
 
 		delay_otp(tunnel);

@@ -122,9 +122,8 @@ int strtob(const char *str)
  */
 int parse_min_tls(const char *str)
 {
-	if (str[0] != '1' || str[1] != '.' || str[2] == 0 || str[3] != 0) {
+	if (str[0] != '1' || str[1] != '.' || str[2] == 0 || str[3] != 0)
 		return -1;
-	}
 	switch (str[2]) {
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
 	case '0':
@@ -508,9 +507,8 @@ void merge_config(struct vpn_config *dst, struct vpn_config *src)
 		free(dst->cipher_list);
 		dst->cipher_list = src->cipher_list;
 	}
-	if (src->min_tls > 0) {
+	if (src->min_tls > 0)
 		dst->min_tls = src->min_tls;
-	}
 	if (src->seclevel_1 != invalid_cfg.seclevel_1)
 		dst->seclevel_1 = src->seclevel_1;
 	if (src->cert_whitelist) {
