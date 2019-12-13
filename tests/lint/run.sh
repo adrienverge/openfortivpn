@@ -3,13 +3,10 @@
 
 rc=0
 
-bash tests/lint/eol-at-eof.sh $(git ls-files)
-[ $? -ne 0 ] && rc=1
+./tests/lint/eol-at-eof.sh $(git ls-files) || rc=1
 
-python3 tests/lint/line_length.py $(git ls-files '*.[ch]')
-[ $? -ne 0 ] && rc=1
+./tests/lint/line_length.py $(git ls-files '*.[ch]') || rc=1
 
-bash tests/lint/astyle.sh $(git ls-files '*.[ch]')
-[ $? -ne 0 ] && rc=1
+./tests/lint/astyle.sh $(git ls-files '*.[ch]') || rc=1
 
 exit $rc
