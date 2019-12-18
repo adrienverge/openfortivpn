@@ -485,6 +485,8 @@ int main(int argc, char **argv)
 			log_warn("Could not load config file \"%s\" (%s).\n",
 			         config_file, err_cfg_str(ret));
 	}
+	if (cfg.password != NULL && cli_cfg.password == NULL)
+		log_debug("Loaded password from config file \"%s\"\n", config_file);
 	// Then apply CLI config
 	merge_config(&cfg, &cli_cfg);
 	set_syslog(cfg.use_syslog);
