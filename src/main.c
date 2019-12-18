@@ -472,7 +472,8 @@ int main(int argc, char **argv)
 		goto user_error;
 
 	if (cli_cfg.password != NULL && cli_cfg.password[0] != '\0')
-		log_warn("You should not pass the password on the command line. Type it interactively or use a config file instead.\n");
+		log_warn("You should not pass the password on the command line. "
+		         "Type it interactively or use a config file instead.\n");
 
 	log_debug("openfortivpn " VERSION "\n");
 
@@ -485,8 +486,14 @@ int main(int argc, char **argv)
 			log_warn("Could not load config file \"%s\" (%s).\n",
 			         config_file, err_cfg_str(ret));
 	}
-	if (cfg.password != NULL && cli_cfg.password == NULL)
-		log_debug("Loaded password from config file \"%s\"\n", config_file);
+	if (cfg.password != NULL && cli_cfg.password == NULL) {
+		if (cfg.password[0] == '\0')
+			log_debug("Disabled password due to empty entry "
+			          "in config file \"%s\"\n", config_file);
+		else
+			log_debug("Loaded password from config file \"%s\"\n",
+			          config_file);
+	}
 	// Then apply CLI config
 	merge_config(&cfg, &cli_cfg);
 	set_syslog(cfg.use_syslog);
