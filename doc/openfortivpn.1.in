@@ -132,8 +132,8 @@ Log to syslog instead of terminal.
 \fB\-\-trusted\-cert=\fI<digest>\fR
 Trust a given gateway. If classical SSL certificate validation fails, the
 gateway certificate will be matched against this value. \fI<digest>\fR is the
-X509 certificate's sha256 sum. This option can be used multiple times to trust
-several certificates.
+X509 certificate's sha256 sum. The certificate has to be encoded in DER form.
+This option can be used multiple times to trust several certificates.
 .TP
 \fB\-\-insecure\-ssl\fR
 Do not disable insecure SSL protocols/ciphers.
@@ -276,7 +276,7 @@ user\-key = @SYSCONFDIR@/openfortivpn/user\-key.pem
 .br
 # the sha256 digest of the trusted host certs obtained by
 .br
-# openssl dgst -sha256 server\-cert.pem:
+# openssl dgst -sha256 server\-cert.crt:
 .br
 trusted\-cert = certificatedigest4daa8c5fe6c...
 .br
