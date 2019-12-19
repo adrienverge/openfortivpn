@@ -287,15 +287,13 @@ static int http_request(struct tunnel *tunnel, const char *method,
                         uint32_t *response_size
                        )
 {
-	int ret = do_http_request(
-	                  tunnel, method, uri, data, response, response_size);
+	int ret = do_http_request(tunnel, method, uri, data,
+	                          response, response_size);
 
 	if (ret == ERR_HTTP_SSL) {
 		ssl_connect(tunnel);
-		ret = do_http_request(
-		              tunnel, method, uri, data, response,
-		              response_size
-		      );
+		ret = do_http_request(tunnel, method, uri, data,
+		                      response, response_size);
 	}
 
 	if (ret != 1)
