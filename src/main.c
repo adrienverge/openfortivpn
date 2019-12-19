@@ -407,7 +407,7 @@ int main(int argc, char **argv)
 			}
 			if (strcmp(long_options[option_index].name,
 			           "otp-delay") == 0) {
-				long int otp_delay = strtol(optarg, NULL, 0);
+				long otp_delay = strtol(optarg, NULL, 0);
 				if (otp_delay < 0 || otp_delay > UINT_MAX) {
 					log_warn("Bad otp-delay option: \"%s\"\n",
 					         optarg);
@@ -418,7 +418,7 @@ int main(int argc, char **argv)
 			}
 			if (strcmp(long_options[option_index].name,
 			           "persistent") == 0) {
-				long int persistent = strtol(optarg, NULL, 0);
+				long persistent = strtol(optarg, NULL, 0);
 				if (persistent < 0 || persistent > UINT_MAX) {
 					log_warn("Bad persistent option: \"%s\"\n",
 					         optarg);

@@ -587,7 +587,7 @@ static int tcp_connect(struct tunnel *tunnel)
 			}
 
 			// detect "200"
-			const char HTTP_STATUS_200[] = "200";
+			static const char HTTP_STATUS_200[] = "200";
 			response = strstr(request, HTTP_STATUS_200);
 
 			// detect end-of-line after "200"

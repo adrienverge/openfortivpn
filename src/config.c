@@ -108,7 +108,7 @@ int strtob(const char *str)
 	else if (isdigit(str[0]) == 0)
 		return -1;
 
-	long int i = strtol(str, NULL, 0);
+	long i = strtol(str, NULL, 0);
 	if (i < 0 || i > 1)
 		return -1;
 	return i;
@@ -229,7 +229,7 @@ int load_config(struct vpn_config *cfg, const char *filename)
 			strncpy(cfg->gateway_host, val, FIELD_SIZE);
 			cfg->gateway_host[FIELD_SIZE] = '\0';
 		} else if (strcmp(key, "port") == 0) {
-			unsigned long int port = strtoul(val, NULL, 0);
+			unsigned long port = strtoul(val, NULL, 0);
 			if (port == 0 || port > 65535) {
 				log_warn("Bad port in config file: \"%lu\".\n",
 				         port);
@@ -248,7 +248,7 @@ int load_config(struct vpn_config *cfg, const char *filename)
 			free(cfg->otp_prompt);
 			cfg->otp_prompt = strdup(val);
 		} else if (strcmp(key, "otp-delay") == 0) {
-			long int otp_delay = strtol(val, NULL, 0);
+			long otp_delay = strtol(val, NULL, 0);
 			if (otp_delay < 0 || otp_delay > UINT_MAX) {
 				log_warn("Bad value for otp-delay in config file: \"%s\".\n",
 				         val);
@@ -286,7 +286,7 @@ int load_config(struct vpn_config *cfg, const char *filename)
 			}
 			cfg->half_internet_routes = half_internet_routes;
 		} else if (strcmp(key, "persistent") == 0) {
-			unsigned long int persistent = strtoul(val, NULL, 0);
+			unsigned long persistent = strtoul(val, NULL, 0);
 			if (persistent > UINT_MAX) {
 				log_warn("Bad value for persistent in config file: \"%s\".\n",
 				         val);
