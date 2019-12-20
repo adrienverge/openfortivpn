@@ -107,7 +107,7 @@ PPPD_USAGE \
 "  --no-routes                   Do not configure routes, same as --set-routes=0.\n" \
 "  --half-internet-routes=[01]   Add two 0.0.0.0/1 and 128.0.0.0/1 routes with higher\n" \
 "                                priority instead of replacing the default route.\n" \
-"  --set-dns=[01]                Set if openfortivpn should add DNS name servers \n" \
+"  --set-dns=[01]                Set if openfortivpn should add DNS name servers\n" \
 "                                and domain search list in /etc/resolv.conf.\n" \
 "                                If installed resolvconf is used for the update.\n" \
 "  --no-dns                      Do not reconfigure DNS, same as --set-dns=0\n" \
