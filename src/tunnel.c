@@ -842,7 +842,7 @@ int ssl_connect(struct tunnel *tunnel)
 			return 1;
 		}
 
-		EVP_PKEY *privkey = ENGINE_load_private_key(
+		EVP_PKEY * privkey = ENGINE_load_private_key(
 					    e, parms.uri, UI_OpenSSL(), NULL);
 		if (!privkey) {
 			log_error("PKCS11 ENGINE_load_private_key: %s\n",
