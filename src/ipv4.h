@@ -95,7 +95,7 @@ static inline struct sockaddr_in *cast_addr(struct sockaddr *addr)
 struct tunnel;
 
 int ipv4_add_split_vpn_route(struct tunnel *tunnel, char *dest, char *mask,
-                             char *gateway);
+			     char *gateway);
 int ipv4_set_tunnel_routes(struct tunnel *tunnel);
 int ipv4_restore_routes(struct tunnel *tunnel);
 

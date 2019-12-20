@@ -150,7 +150,7 @@ static int pinentry_read(int from, char **retstr)
 }
 
 static int pinentry_exchange(int to, int from, char **retstr,
-                             const char *format, ...)
+			     const char *format, ...)
 {
 	va_list ap;
 
@@ -167,7 +167,7 @@ static int pinentry_exchange(int to, int from, char **retstr,
 }
 
 static void pinentry_read_password(const char *pinentry, const char *hint,
-                                   const char *prompt, char *pass, size_t len)
+				   const char *prompt, char *pass, size_t len)
 {
 	int from_pinentry[2];
 	int to_pinentry[2];
@@ -286,7 +286,7 @@ out:
 }
 
 void read_password(const char *pinentry, const char *hint,
-                   const char *prompt, char *pass, size_t len)
+		   const char *prompt, char *pass, size_t len)
 {
 	int masked = 0;
 	struct termios oldt, newt;

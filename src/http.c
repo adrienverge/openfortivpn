@@ -111,9 +111,9 @@ int http_send(struct tunnel *tunnel, const char *request, ...)
 }
 
 static const char *find_header(
-        const char *res,
-        const char *header,
-        uint32_t response_size
+	const char *res,
+	const char *header,
+	uint32_t response_size
 )
 {
 	const char *line = res;
@@ -142,9 +142,9 @@ static const char *find_header(
  *             < 0       in case of error
  */
 int http_receive(
-        struct tunnel *tunnel,
-        char **response,
-        uint32_t *response_size
+	struct tunnel *tunnel,
+	char **response,
+	uint32_t *response_size
 )
 {
 	uint32_t res_size = BUFSZ;
@@ -246,12 +246,12 @@ int http_receive(
 }
 
 static int do_http_request(struct tunnel *tunnel,
-                           const char *method,
-                           const char *uri,
-                           const char *data,
-                           char **response,
-                           uint32_t *response_size
-                          )
+			   const char *method,
+			   const char *uri,
+			   const char *data,
+			   char **response,
+			   uint32_t *response_size
+			  )
 {
 	int ret;
 	const char *template = ("%s %s HTTP/1.1\r\n"
@@ -283,11 +283,11 @@ static int do_http_request(struct tunnel *tunnel,
  *             < 0       in case of error
  */
 static int http_request(struct tunnel *tunnel, const char *method,
-                        const char *uri,
-                        const char *data,
-                        char **response,
-                        uint32_t *response_size
-                       )
+			const char *uri,
+			const char *data,
+			char **response,
+			uint32_t *response_size
+		       )
 {
 	int ret = do_http_request(tunnel, method, uri, data,
 				  response, response_size);
@@ -314,7 +314,7 @@ static int http_request(struct tunnel *tunnel, const char *method,
  *          -3  if no memory
  */
 static int get_value_from_response(const char *buf, const char *key,
-                                   char *retbuf, size_t retbuflen)
+				   char *retbuf, size_t retbuflen)
 {
 	int ret = -1;
 	char *tokens;
@@ -348,9 +348,9 @@ end:
 }
 
 static int get_auth_cookie(
-        struct tunnel *tunnel,
-        char *buf,
-        uint32_t buffer_size
+	struct tunnel *tunnel,
+	char *buf,
+	uint32_t buffer_size
 )
 {
 	int ret = 0;
@@ -396,10 +396,10 @@ static void delay_otp(struct tunnel *tunnel)
 
 static
 int try_otp_auth(
-        struct tunnel *tunnel,
-        const char *buffer,
-        char **res,
-        uint32_t *response_size
+	struct tunnel *tunnel,
+	const char *buffer,
+	char **res,
+	uint32_t *response_size
 )
 {
 	char data[256];

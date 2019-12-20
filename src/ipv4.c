@@ -781,7 +781,7 @@ err_destroy:
 
 #if HAVE_USR_SBIN_PPPD
 static void add_text_route(struct tunnel *tunnel, const char *dest,
-                           const char *mask, const char *gw)
+			   const char *mask, const char *gw)
 {
 	size_t l0, l1;
 	static const char fmt[] = ",%s/%s/%s";
@@ -807,7 +807,7 @@ static void add_text_route(struct tunnel *tunnel, const char *dest,
 #endif
 
 int ipv4_add_split_vpn_route(struct tunnel *tunnel, char *dest, char *mask,
-                             char *gateway)
+			     char *gateway)
 {
 	struct rtentry *route;
 	char env_var[24];

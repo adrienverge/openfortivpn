@@ -374,7 +374,7 @@ err_free_buf:
 	  && pkt_data(packet)[2] == 0x02))
 
 static inline void set_tunnel_ips(struct tunnel *tunnel,
-                                  struct ppp_packet *packet)
+				  struct ppp_packet *packet)
 {
 	memcpy(&tunnel->ipv4.ip_addr.s_addr, &pkt_data(packet)[8],
 	       sizeof(uint32_t));

@@ -21,6 +21,6 @@
 #include <sys/types.h>
 
 void read_password(const char *pinentry, const char *hint,
-                   const char *prompt, char *pass, size_t len);
+		   const char *prompt, char *pass, size_t len);
 
 #endif
