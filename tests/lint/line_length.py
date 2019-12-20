@@ -22,7 +22,7 @@ def endswithstring(line):
         True if line ends with string, False otherwise.
 
     """
-    for end in ('"', '",', '");', '" \\'):
+    for end in ('"', '",', '");', '";', '" \\'):
         if line.endswith(end):
             return True
     return False

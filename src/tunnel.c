@@ -191,7 +191,7 @@ static int pppd_run(struct tunnel *tunnel)
 		 * e.g. the name of the configuration or options
 		 * to send interactively to ppp will be added later
 		 */
-		const char *v[] = {
+		static const char *const v[] = {
 			ppp_path,
 			"-direct"
 		};
@@ -208,7 +208,7 @@ static int pppd_run(struct tunnel *tunnel)
 			if (ofv_append_varr(&pppd_args, tunnel->config->pppd_call))
 				return 1;
 		} else {
-			const char *v[] = {
+			static const char *const v[] = {
 				ppp_path,
 				"115200", // speed
 				":192.0.2.1", // <local_IP_address>:<remote_IP_address>
@@ -609,7 +609,7 @@ static int tcp_connect(struct tunnel *tunnel)
 				 * 	recognize a single LF as a line terminator
 				 * 	and ignore the leading CR.
 				 */
-				static const char *HTTP_EOL[] = {
+				static const char *const HTTP_EOL[] = {
 					"\r\n\r\n",
 					"\n\n"
 				};
@@ -829,8 +829,8 @@ int ssl_connect(struct tunnel *tunnel)
 			return 1;
 		}
 
-		EVP_PKEY *privkey = ENGINE_load_private_key(
-		                            e, parms.uri, UI_OpenSSL(), NULL);
+		EVP_PKEY * privkey = ENGINE_load_private_key(
+		                             e, parms.uri, UI_OpenSSL(), NULL);
 		if (!privkey) {
 			log_error("PKCS11 ENGINE_load_private_key: %s\n",
 			          ERR_error_string(ERR_peek_last_error(), NULL));
@@ -903,8 +903,7 @@ int ssl_connect(struct tunnel *tunnel)
 		if (!tunnel->config->cipher_list) {
 			const char *cipher_list;
 			if (tunnel->config->seclevel_1)
-				cipher_list = "HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4"
-				              "@SECLEVEL=1";
+				cipher_list = "HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4@SECLEVEL=1";
 			else
 				cipher_list = "HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4";
 			tunnel->config->cipher_list = strdup(cipher_list);
