@@ -594,20 +594,20 @@ static int tcp_connect(struct tunnel *tunnel)
 			if (response != NULL) {
 				/*
 				 * RFC2616 states in section 2.2 Basic Rules:
-				 * 	CR     = <US-ASCII CR, carriage return (13)>
-				 * 	LF     = <US-ASCII LF, linefeed (10)>
-				 * 	HTTP/1.1 defines the sequence CR LF as the
-				 * 	end-of-line marker for all protocol elements
-				 * 	except the entity-body (see appendix 19.3
-				 * 	for tolerant applications).
-				 * 		CRLF   = CR LF
+				 *      CR     = <US-ASCII CR, carriage return (13)>
+				 *      LF     = <US-ASCII LF, linefeed (10)>
+				 *      HTTP/1.1 defines the sequence CR LF as the
+				 *      end-of-line marker for all protocol elements
+				 *      except the entity-body (see appendix 19.3
+				 *      for tolerant applications).
+				 *              CRLF   = CR LF
 				 *
 				 * RFC2616 states in section 19.3 Tolerant Applications:
-				 * 	The line terminator for message-header fields
-				 * 	is the sequence CRLF. However, we recommend
-				 * 	that applications, when parsing such headers,
-				 * 	recognize a single LF as a line terminator
-				 * 	and ignore the leading CR.
+				 *      The line terminator for message-header fields
+				 *      is the sequence CRLF. However, we recommend
+				 *      that applications, when parsing such headers,
+				 *      recognize a single LF as a line terminator
+				 *      and ignore the leading CR.
 				 */
 				static const char *const HTTP_EOL[] = {
 					"\r\n\r\n",
