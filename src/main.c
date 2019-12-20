@@ -474,6 +474,8 @@ int main(int argc, char **argv)
 	if (cli_cfg.password != NULL && cli_cfg.password[0] != '\0')
 		log_warn("You should not pass the password on the command line. Type it interactively or use a config file instead.\n");
 
+	log_debug_all("ATTENTION: the output contains sensitive information such as the THE CLEAR TEXT PASSWORD.\n");
+
 	log_debug("openfortivpn " VERSION "\n");
 
 	// Load config file
