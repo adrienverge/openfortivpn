@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /*
  *  Copyright (C) 2015 Davíð Steinn Geirsson
  *  Copyright (C) 2019 Lubomir Rintel <lkundrak@v3.sk>
