@@ -977,12 +977,18 @@ int run_tunnel(struct vpn_config *config)
 		.state = STATE_DOWN,
 		.ssl_context = NULL,
 		.ssl_handle = NULL,
+		.ipv4.ns0_addr.s_addr = 0,
 		.ipv4.ns1_addr.s_addr = 0,
 		.ipv4.ns2_addr.s_addr = 0,
 		.ipv4.dns_suffix = NULL,
 		.on_ppp_if_up = on_ppp_if_up,
 		.on_ppp_if_down = on_ppp_if_down
 	};
+
+	if(config->use_dnsServer[0] != '\0') {
+		log_info("Setting dns %s server from commandline\n", config->use_dnsServer);
+		tunnel.ipv4.ns0_addr.s_addr =  inet_addr(config->use_dnsServer);
+	}
 
 	// Step 0: get gateway host IP
 	log_debug("Resolving gateway host ip\n");

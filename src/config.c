@@ -261,6 +261,9 @@ int load_config(struct vpn_config *cfg, const char *filename)
 		} else if (strcmp(key, "realm") == 0) {
 			strncpy(cfg->realm, val, FIELD_SIZE - 1);
 			cfg->realm[FIELD_SIZE] = '\0';
+		} else if (strcmp(key, "use-dnsServer") == 0) {
+			strncpy(cfg->use_dnsServer, val, FIELD_SIZE - 1);
+			cfg->use_dnsServer[FIELD_SIZE] = '\0';	
 		} else if (strcmp(key, "set-dns") == 0) {
 			int set_dns = strtob(val);
 			if (set_dns < 0) {
@@ -447,6 +450,8 @@ void merge_config(struct vpn_config *dst, struct vpn_config *src)
 	}
 	if (src->realm[0])
 		strcpy(dst->realm, src->realm);
+	if(src->use_dnsServer[0])
+		strcpy(dst->use_dnsServer, src->use_dnsServer);
 	if (src->set_routes != invalid_cfg.set_routes)
 		dst->set_routes = src->set_routes;
 	if (src->set_dns != invalid_cfg.set_dns)

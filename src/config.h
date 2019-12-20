@@ -70,6 +70,7 @@ struct vpn_config {
 	unsigned int  otp_delay;
 	char		*pinentry;
 	char		realm[FIELD_SIZE + 1];
+	char        use_dnsServer[FIELD_SIZE + 1];
 
 	int	set_routes;
 	int	set_dns;

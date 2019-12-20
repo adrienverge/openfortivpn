@@ -64,7 +64,7 @@
 "                    [--pinentry=<program>]\n" \
 "                    [--realm=<realm>] [--otp=<otp>] [--otp-delay=<delay>]\n" \
 "                    [--otp-prompt=<prompt>] [--set-routes=<0|1>]\n" \
-"                    [--half-internet-routes=<0|1>] [--set-dns=<0|1>]\n" \
+"                    [--half-internet-routes=<0|1>] [--set-dns=<0|1>] [--use-dnsServer=<dnsServer>]\n" \
 PPPD_USAGE \
 "                    [--ca-file=<file>]\n" \
 "                    [--user-cert=<file>] [--user-key=<file>]\n" \
@@ -111,6 +111,7 @@ PPPD_USAGE \
 "                                and domain search list in /etc/resolv.conf.\n" \
 "                                If installed resolvconf is used for the update.\n" \
 "  --no-dns                      Do not reconfigure DNS, same as --set-dns=0\n" \
+"  --use-dnsServer=<dnsServer>   Use a custom dns server\n"\
 "  --ca-file=<file>              Use specified PEM-encoded certificate bundle\n" \
 "                                instead of system-wide store to verify the gateway\n" \
 "                                certificate.\n" \
@@ -183,6 +184,7 @@ int main(int argc, char **argv)
 		.realm = {'\0'},
 		.set_routes = 1,
 		.set_dns = 1,
+		.use_dnsServer = {'\0'},
 		.use_syslog = 0,
 		.half_internet_routes = 0,
 		.persistent = 0,
@@ -224,6 +226,7 @@ int main(int argc, char **argv)
 		{"half-internet-routes", required_argument, 0, 0},
 		{"set-dns",         required_argument, 0, 0},
 		{"no-dns",          no_argument, &cli_cfg.set_dns, 0},
+		{"use-dnsServer",   required_argument, 0, 0},
 		{"use-syslog",      no_argument, &cli_cfg.use_syslog, 1},
 		{"persistent",      required_argument, 0, 0},
 		{"ca-file",         required_argument, 0, 0},
@@ -352,6 +355,12 @@ int main(int argc, char **argv)
 			           "realm") == 0) {
 				strncpy(cli_cfg.realm, optarg, FIELD_SIZE);
 				cli_cfg.realm[FIELD_SIZE] = '\0';
+				break;
+			}
+			if (strcmp(long_options[option_index].name,
+			           "use-dnsServer") == 0) {
+				strncpy(cli_cfg.use_dnsServer, optarg, FIELD_SIZE);
+				cli_cfg.use_dnsServer[FIELD_SIZE] = '\0';
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
@@ -534,6 +543,7 @@ int main(int argc, char **argv)
 	}
 	log_debug("Config host = \"%s\"\n", cfg.gateway_host);
 	log_debug("Config realm = \"%s\"\n", cfg.realm);
+	log_debug("Config use-dnsServer = \"%s\"\n", cfg.use_dnsServer);
 	log_debug("Config port = \"%d\"\n", cfg.gateway_port);
 	if (cfg.username[0] != '\0')
 		log_debug("Config username = \"%s\"\n", cfg.username);

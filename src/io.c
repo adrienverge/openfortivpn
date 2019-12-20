@@ -476,6 +476,8 @@ static void *ssl_read(void *arg)
 				strcpy(line, "[");
 				strncat(line, inet_ntoa(tunnel->ipv4.ip_addr), 15);
 				strcat(line, "], ns [");
+				strncat(line, inet_ntoa(tunnel->ipv4.ns0_addr), 15);
+				strcat(line, ", ");
 				strncat(line, inet_ntoa(tunnel->ipv4.ns1_addr), 15);
 				strcat(line, ", ");
 				strncat(line, inet_ntoa(tunnel->ipv4.ns2_addr), 15);

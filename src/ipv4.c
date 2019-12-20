@@ -1022,14 +1022,18 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 	int ret = -1;
 	FILE *file;
 	struct stat stat;
-	char ns1[28], ns2[28]; // 11 + 15 + 1 + 1
+	char ns0[28], ns1[28], ns2[28]; // 11 + 15 + 1 + 1
 	char dns_suffix[MAX_DOMAIN_LENGTH+8];  // 7 + MAX_DOMAIN_LENGTH + 1
 	char *buffer = NULL;
 	int use_resolvconf = 0;
 
+    tunnel->ipv4.ns0_was_there = 0;
 	tunnel->ipv4.ns1_was_there = 0;
 	tunnel->ipv4.ns2_was_there = 0;
 	tunnel->ipv4.dns_suffix_was_there = 0;
+
+    if (tunnel->ipv4.ns0_addr.s_addr == 0)
+		tunnel->ipv4.ns0_was_there = -1;
 
 	if (tunnel->ipv4.ns1_addr.s_addr == 0)
 		tunnel->ipv4.ns1_was_there = -1;
@@ -1093,6 +1097,14 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 
 		buffer[stat.st_size] = '\0';
 	}
+
+    if (tunnel->ipv4.ns0_addr.s_addr != 0) {
+		strcpy(ns0, "nameserver ");
+		strncat(ns0, inet_ntoa(tunnel->ipv4.ns0_addr), 15);
+	} else {
+		ns0[0] = '\0';
+	}
+
 	if (tunnel->ipv4.ns1_addr.s_addr != 0) {
 		strcpy(ns1, "nameserver ");
 		strncat(ns1, inet_ntoa(tunnel->ipv4.ns1_addr), 15);
@@ -1116,6 +1128,19 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 	}
 
 	if (use_resolvconf == 0) {
+
+        for (const char *line = strtok(buffer, "\n");
+		     line != NULL;
+		     line = strtok(NULL, "\n")) {
+			if (strcmp(line, ns0) == 0) {
+				tunnel->ipv4.ns0_was_there = 1;
+				log_debug("ns0 already present in /etc/resolv.conf.\n");
+			}
+		}
+
+		if (tunnel->ipv4.ns0_was_there == 0)
+			log_debug("Adding \"%s\", to /etc/resolv.conf.\n", ns0);
+
 		for (const char *line = strtok(buffer, "\n");
 		     line != NULL;
 		     line = strtok(NULL, "\n")) {
@@ -1167,6 +1192,10 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 
 		rewind(file);
 	}
+	if (tunnel->ipv4.ns0_was_there == 0) {
+		strcat(ns0, "\n");
+		fputs(ns0, file);
+	}
 	if (tunnel->ipv4.ns1_was_there == 0) {
 		strcat(ns1, "\n");
 		fputs(ns1, file);
@@ -1200,7 +1229,7 @@ int ipv4_del_nameservers_from_resolv_conf(struct tunnel *tunnel)
 	int ret = -1;
 	FILE *file;
 	struct stat stat;
-	char ns1[27], ns2[27]; // 11 + 15 + 1
+	char ns0[27], ns1[27], ns2[27]; // 11 + 15 + 1
 	char dns_suffix[MAX_DOMAIN_LENGTH+8];  // 7 + MAX_DOMAIN_LENGTH + 1
 	char *buffer = NULL;
 
@@ -1254,6 +1283,11 @@ int ipv4_del_nameservers_from_resolv_conf(struct tunnel *tunnel)
 
 	buffer[stat.st_size] = '\0';
 
+    ns0[0] = '\0';
+	if (tunnel->ipv4.ns0_addr.s_addr != 0) {
+		strcpy(ns0, "nameserver ");
+		strncat(ns0, inet_ntoa(tunnel->ipv4.ns0_addr), 15);
+	}
 	ns1[0] = '\0';
 	if (tunnel->ipv4.ns1_addr.s_addr != 0) {
 		strcpy(ns1, "nameserver ");
@@ -1280,7 +1314,10 @@ int ipv4_del_nameservers_from_resolv_conf(struct tunnel *tunnel)
 	for (const char *line = strtok(buffer, "\n");
 	     line != NULL;
 	     line = strtok(NULL, "\n")) {
-		if (ns1[0] != '\0' && strcmp(line, ns1) == 0
+   	    if (ns0[0] != '\0' && strcmp(line, ns0) == 0
+		    && (tunnel->ipv4.ns0_was_there == 0)) {
+			log_debug("Deleting \"%s\" from /etc/resolv.conf.\n", ns0);
+		} else if (ns1[0] != '\0' && strcmp(line, ns1) == 0
 		    && (tunnel->ipv4.ns1_was_there == 0)) {
 			log_debug("Deleting \"%s\" from /etc/resolv.conf.\n", ns1);
 		} else if (ns2[0] != '\0' && strcmp(line, ns2) == 0

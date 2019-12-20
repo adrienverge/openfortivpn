@@ -67,9 +67,11 @@ struct rtentry {
 struct ipv4_config {
 	struct in_addr	ip_addr;
 
+    struct in_addr	ns0_addr;	
 	struct in_addr	ns1_addr;
-	struct in_addr	ns2_addr;
+	struct in_addr	ns2_addr;	
 	char		*dns_suffix;
+	int		ns0_was_there;  // were ns0 already in /etc/resolv.conf?
 	int		ns1_was_there;  // were ns1 already in /etc/resolv.conf?
 	int		ns2_was_there;  // were ns2 already in /etc/resolv.conf?
 	int		dns_suffix_was_there; // was the dns suffix already there?
