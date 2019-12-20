@@ -9,4 +9,6 @@ rc=0
 
 ./tests/lint/astyle.sh $(git ls-files '*.[ch]' | grep -v openssl_hostname_validation) || rc=1
 
+./tests/lint/checkpatch.sh $(git ls-files '*.[ch]' | grep -v openssl_hostname_validation) || rc=1
+
 exit $rc
