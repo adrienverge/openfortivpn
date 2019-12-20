@@ -167,6 +167,7 @@ static int ipv4_get_route(struct rtentry *route)
 	}
 
 	int bytes_read;
+
 	while ((bytes_read = read(fd, buffer + total_bytes_read,
 	                          buffer_size - total_bytes_read - 1)) > 0) {
 		total_bytes_read += bytes_read;
@@ -204,6 +205,7 @@ cleanup:
 	int have_use = 0;
 
 	static const char netstat_path[] = NETSTAT_PATH;
+
 	if (access(netstat_path, F_OK) != 0) {
 		log_error("%s: %s.\n", netstat_path, strerror(errno));
 		return 1;
@@ -221,6 +223,7 @@ cleanup:
 	// Read the output a line at a time
 	while (fgets(line, buffer_size - total_bytes_read - 1, fp) != NULL) {
 		uint32_t bytes_read = strlen(line);
+
 		total_bytes_read += bytes_read;
 
 		if (bytes_read > 0 && line[bytes_read - 1] != '\n') {
@@ -637,6 +640,7 @@ static int ipv4_set_route(struct rtentry *route)
 	log_debug("%s\n", cmd);
 
 	int res = system(cmd);
+
 	if (res == -1)
 		return ERR_IPV4_SEE_ERRNO;
 #endif
@@ -699,6 +703,7 @@ static int ipv4_del_route(struct rtentry *route)
 	log_debug("%s\n", cmd);
 
 	int res = system(cmd);
+
 	if (res == -1)
 		return ERR_IPV4_SEE_ERRNO;
 #endif
@@ -860,6 +865,7 @@ static int ipv4_set_split_routes(struct tunnel *tunnel)
 	for (i = 0; i < tunnel->ipv4.split_routes; i++) {
 		struct rtentry *route;
 		int ret;
+
 		route = &tunnel->ipv4.split_rt[i];
 		free(route_iface(route));
 		route_iface(route) = strdup(tunnel->ppp_iface);
@@ -977,6 +983,7 @@ int ipv4_restore_routes(struct tunnel *tunnel)
 
 	if (tunnel->ipv4.route_to_vpn_is_added) {
 		int ret;
+
 		ret = ipv4_del_route(gtw_rt);
 		if (ret != 0)
 			log_warn("Could not delete route to vpn server (%s).\n",

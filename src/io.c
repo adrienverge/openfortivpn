@@ -84,6 +84,7 @@ static unsigned long thread_id(void)
 static void init_ssl_locks(void)
 {
 	int i;
+
 	lockarray = (pthread_mutex_t *) OPENSSL_malloc(CRYPTO_num_locks() *
 	                sizeof(pthread_mutex_t));
 	for (i = 0; i < CRYPTO_num_locks(); i++)
@@ -94,6 +95,7 @@ static void init_ssl_locks(void)
 static void destroy_ssl_locks(void)
 {
 	int i;
+
 	CRYPTO_set_locking_callback(NULL);
 	for (i = 0; i < CRYPTO_num_locks(); i++)
 		pthread_mutex_destroy(&(lockarray[i]));
@@ -472,6 +474,7 @@ static void *ssl_read(void *arg)
 		if (tunnel->state == STATE_CONNECTING) {
 			if (packet_is_ip_plus_dns(packet)) {
 				char line[57]; // 1 + 15 + 7 + 15 + 2 + 15 + 1 + 1
+
 				set_tunnel_ips(tunnel, packet);
 				strcpy(line, "[");
 				strncat(line, inet_ntoa(tunnel->ipv4.ip_addr), 15);
@@ -623,6 +626,7 @@ int io_loop(struct tunnel *tunnel)
 #if !HAVE_MACH_MACH_H
 	// Disable SIGINT and SIGTERM for the future spawned threads
 	sigset_t sigset, oldset;
+
 	sigemptyset(&sigset);
 	sigaddset(&sigset, SIGINT);
 	sigaddset(&sigset, SIGTERM);

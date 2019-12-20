@@ -52,6 +52,7 @@ static const struct log_param_s log_params[OFV_LOG_DEBUG_ALL + 1] = {
 void init_logging(void)
 {
 	pthread_mutexattr_t mutexattr;
+
 	loglevel = OFV_LOG_INFO;
 	is_a_tty = isatty(STDOUT_FILENO);
 

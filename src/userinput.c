@@ -310,6 +310,7 @@ void read_password(const char *pinentry, const char *hint,
 
 	for (i = 0; i < len; i++) {
 		int c = getchar();
+
 		if (c == '\n' || c == EOF)
 			break;
 		pass[i] = (char) c;

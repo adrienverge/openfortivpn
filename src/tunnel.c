@@ -71,6 +71,7 @@ static int ofv_append_varr(struct ofv_varr *p, const char *x)
 	if (p->off + 1 >= p->cap) {
 		const char **ndata;
 		unsigned int ncap = (p->off + 1) * 2;
+
 		if (p->off + 1 >= ncap) {
 			log_error("%s: ncap exceeded\n", __func__);
 			return 1;
@@ -158,6 +159,7 @@ static int pppd_run(struct tunnel *tunnel)
 #endif
 
 	static const char ppp_path[] = PPP_PATH;
+
 	if (access(ppp_path, F_OK) != 0) {
 		log_error("%s: %s.\n", ppp_path, strerror(errno));
 		return 1;
@@ -289,6 +291,7 @@ static int pppd_run(struct tunnel *tunnel)
 
 	// Set non-blocking
 	int flags = fcntl(amaster, F_GETFL, 0);
+
 	if (flags == -1)
 		flags = 0;
 	if (fcntl(amaster, F_SETFL, flags | O_NONBLOCK) == -1) {
@@ -332,12 +335,14 @@ static int pppd_terminate(struct tunnel *tunnel)
 	log_debug("Waiting for %s to exit...\n", PPP_DAEMON);
 
 	int status;
+
 	if (waitpid(tunnel->pppd_pid, &status, 0) == -1) {
 		log_error("waitpid: %s\n", strerror(errno));
 		return 1;
 	}
 	if (WIFEXITED(status)) {
 		int exit_status = WEXITSTATUS(status);
+
 		log_debug("waitpid: %s exit status code %d\n",
 		          PPP_DAEMON, exit_status);
 #if HAVE_USR_SBIN_PPPD
@@ -380,6 +385,7 @@ static int pppd_terminate(struct tunnel *tunnel)
 #endif
 	} else if (WIFSIGNALED(status)) {
 		int signal_number = WTERMSIG(status);
+
 		log_debug("waitpid: %s terminated by signal %d\n",
 		          PPP_DAEMON, signal_number);
 		log_error("%s: terminated by signal: %s\n",
@@ -557,6 +563,7 @@ static int tcp_connect(struct tunnel *tunnel)
 		        inet_ntoa(tunnel->config->gateway_ip),
 		        tunnel->config->gateway_port);
 		ssize_t bytes_written = write(handle, request, strlen(request));
+
 		if (bytes_written != strlen(request)) {
 			log_error("write error while talking to proxy: %s\n",
 			          strerror(errno));
@@ -580,6 +587,7 @@ static int tcp_connect(struct tunnel *tunnel)
 			 *   	j < ARRAY_SIZE(request) - 1
 			 */
 			ssize_t bytes_read = read(handle, &(request[j]), 1);
+
 			if (bytes_read < 1) {
 				log_error("Proxy response is unexpectedly large and cannot fit in the %lu-bytes buffer.\n",
 				          ARRAY_SIZE(request));
@@ -588,6 +596,7 @@ static int tcp_connect(struct tunnel *tunnel)
 
 			// detect "200"
 			static const char HTTP_STATUS_200[] = "200";
+
 			response = strstr(request, HTTP_STATUS_200);
 
 			// detect end-of-line after "200"
@@ -614,6 +623,7 @@ static int tcp_connect(struct tunnel *tunnel)
 					"\n\n"
 				};
 				const char *eol = NULL;
+
 				for (int i = 0; (i < ARRAY_SIZE(HTTP_EOL)) &&
 				     (eol == NULL); i++)
 					eol = strstr(response, HTTP_EOL[i]);
@@ -657,6 +667,7 @@ static int ssl_verify_cert(struct tunnel *tunnel)
 	SSL_set_verify(tunnel->ssl_handle, SSL_VERIFY_PEER, NULL);
 
 	X509 *cert = SSL_get_peer_certificate(tunnel->ssl_handle);
+
 	if (cert == NULL) {
 		log_error("Unable to get gateway certificate.\n");
 		return 1;
@@ -794,6 +805,7 @@ int ssl_connect(struct tunnel *tunnel)
 	if (tunnel->config->use_engine > 0) {
 
 		ENGINE *e;
+
 		ENGINE_load_builtin_engines();
 		e = ENGINE_by_id("pkcs11");
 		if (!e) {
@@ -814,6 +826,7 @@ int ssl_connect(struct tunnel *tunnel)
 		ENGINE_free(e);
 
 		struct token parms;
+
 		parms.uri = tunnel->config->user_cert;
 		parms.cert = NULL;
 
@@ -902,6 +915,7 @@ int ssl_connect(struct tunnel *tunnel)
 	if (!tunnel->config->insecure_ssl) {
 		if (!tunnel->config->cipher_list) {
 			const char *cipher_list;
+
 			if (tunnel->config->seclevel_1)
 				cipher_list = "HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4@SECLEVEL=1";
 			else
@@ -915,6 +929,7 @@ int ssl_connect(struct tunnel *tunnel)
 #endif
 		if (!tunnel->config->cipher_list && tunnel->config->seclevel_1) {
 			const char *cipher_list = "DEFAULT@SECLEVEL=1";
+
 			tunnel->config->cipher_list = strdup(cipher_list);
 		}
 	}

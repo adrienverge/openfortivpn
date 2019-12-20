@@ -138,8 +138,10 @@ static inline int safe_ssl_read(SSL *ssl, uint8_t *buf, int bufsize)
 static inline int safe_ssl_read_all(SSL *ssl, uint8_t *buf, int bufsize)
 {
 	int n = 0;
+
 	while (n < bufsize) {
 		int ret;
+
 		ret = safe_ssl_read(ssl, &buf[n], bufsize - n);
 		if (ret == ERR_SSL_AGAIN)
 			continue;

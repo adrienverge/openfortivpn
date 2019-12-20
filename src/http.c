@@ -79,9 +79,11 @@ int http_send(struct tunnel *tunnel, const char *request, ...)
 	strcpy(logbuffer, buffer);
 	if (loglevel <= OFV_LOG_DEBUG_DETAILS && tunnel->config->password[0] != '\0') {
 		char *pwstart;
+
 		pwstart = strstr(logbuffer, tunnel->config->password);
 		if (pwstart != NULL) {
 			int pos, pwlen, i;
+
 			pos = pwstart - logbuffer;
 			pwlen = strlen(tunnel->config->password);
 			for (i = pos; i < pos + pwlen; i++)
@@ -363,6 +365,7 @@ static int get_auth_cookie(
 				log_debug("Empty cookie.\n");
 			} else {
 				char *end;
+
 				end = strstr(line, "\r");
 				end[0] = '\0';
 				end = strstr(line, ";");
@@ -511,6 +514,7 @@ int try_otp_auth(
 		} else if (strncmp(t, "password", 8) == 0) {
 			struct vpn_config *cfg = tunnel->config;
 			size_t l;
+
 			v = NULL;
 			if (cfg->otp[0] == '\0') {
 				read_password(cfg->pinentry, "otp",
@@ -684,6 +688,7 @@ int auth_log_out(struct tunnel *tunnel)
 int auth_request_vpn_allocation(struct tunnel *tunnel)
 {
 	int ret = http_request(tunnel, "GET", "/remote/index", "", NULL, NULL);
+
 	if (ret != 1)
 		return ret;
 
@@ -744,6 +749,7 @@ static int parse_xml_config(struct tunnel *tunnel, const char *buffer)
 	val = xml_find('<', "split-tunnel-info", buffer, 1);
 	while ((val = xml_find('<', "addr", val, 2))) {
 		char *dest, *mask;
+
 		dest = xml_get(xml_find(' ', "ip=", val, 1));
 		if (!dest) {
 			log_warn("No ip address for a route\n");
