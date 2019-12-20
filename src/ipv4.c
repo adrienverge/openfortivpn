@@ -1027,12 +1027,12 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 	char *buffer = NULL;
 	int use_resolvconf = 0;
 
-    tunnel->ipv4.ns0_was_there = 0;
+	tunnel->ipv4.ns0_was_there = 0;
 	tunnel->ipv4.ns1_was_there = 0;
 	tunnel->ipv4.ns2_was_there = 0;
 	tunnel->ipv4.dns_suffix_was_there = 0;
 
-    if (tunnel->ipv4.ns0_addr.s_addr == 0)
+	if (tunnel->ipv4.ns0_addr.s_addr == 0)
 		tunnel->ipv4.ns0_was_there = -1;
 
 	if (tunnel->ipv4.ns1_addr.s_addr == 0)
@@ -1098,7 +1098,7 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 		buffer[stat.st_size] = '\0';
 	}
 
-    if (tunnel->ipv4.ns0_addr.s_addr != 0) {
+	if (tunnel->ipv4.ns0_addr.s_addr != 0) {
 		strcpy(ns0, "nameserver ");
 		strncat(ns0, inet_ntoa(tunnel->ipv4.ns0_addr), 15);
 	} else {
@@ -1129,7 +1129,7 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 
 	if (use_resolvconf == 0) {
 
-        for (const char *line = strtok(buffer, "\n");
+		for (const char *line = strtok(buffer, "\n");
 		     line != NULL;
 		     line = strtok(NULL, "\n")) {
 			if (strcmp(line, ns0) == 0) {
@@ -1283,7 +1283,7 @@ int ipv4_del_nameservers_from_resolv_conf(struct tunnel *tunnel)
 
 	buffer[stat.st_size] = '\0';
 
-    ns0[0] = '\0';
+	ns0[0] = '\0';
 	if (tunnel->ipv4.ns0_addr.s_addr != 0) {
 		strcpy(ns0, "nameserver ");
 		strncat(ns0, inet_ntoa(tunnel->ipv4.ns0_addr), 15);
@@ -1314,11 +1314,11 @@ int ipv4_del_nameservers_from_resolv_conf(struct tunnel *tunnel)
 	for (const char *line = strtok(buffer, "\n");
 	     line != NULL;
 	     line = strtok(NULL, "\n")) {
-   	    if (ns0[0] != '\0' && strcmp(line, ns0) == 0
+		if (ns0[0] != '\0' && strcmp(line, ns0) == 0
 		    && (tunnel->ipv4.ns0_was_there == 0)) {
 			log_debug("Deleting \"%s\" from /etc/resolv.conf.\n", ns0);
 		} else if (ns1[0] != '\0' && strcmp(line, ns1) == 0
-		    && (tunnel->ipv4.ns1_was_there == 0)) {
+		           && (tunnel->ipv4.ns1_was_there == 0)) {
 			log_debug("Deleting \"%s\" from /etc/resolv.conf.\n", ns1);
 		} else if (ns2[0] != '\0' && strcmp(line, ns2) == 0
 		           && (tunnel->ipv4.ns2_was_there == 0)) {

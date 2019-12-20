@@ -985,7 +985,7 @@ int run_tunnel(struct vpn_config *config)
 		.on_ppp_if_down = on_ppp_if_down
 	};
 
-	if(config->use_dnsServer[0] != '\0') {
+	if (config->use_dnsServer[0] != '\0') {
 		log_info("Setting dns %s server from commandline\n", config->use_dnsServer);
 		tunnel.ipv4.ns0_addr.s_addr =  inet_addr(config->use_dnsServer);
 	}
