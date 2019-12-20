@@ -196,7 +196,7 @@ cleanup:
 	}
 
 #else
-	FILE *fp;
+	FILE * fp;
 	uint32_t total_bytes_read = 0;
 
 	char *saveptr3 = NULL;
@@ -779,8 +779,8 @@ static void add_text_route(struct tunnel *tunnel, const char *dest,
                            const char *mask, const char *gw)
 {
 	size_t l0, l1;
-	const char fmt[] = ",%s/%s/%s";
-	const char trigger[] = "openfortivpn";
+	static const char fmt[] = ",%s/%s/%s";
+	static const char trigger[] = "openfortivpn";
 	char **target = &tunnel->config->pppd_ipparam;
 	char *ptr;
 
