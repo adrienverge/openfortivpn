@@ -344,24 +344,24 @@ static int pppd_terminate(struct tunnel *tunnel)
 		int exit_status = WEXITSTATUS(status);
 
 		log_debug("waitpid: %s exit status code %d\n",
-		          PPP_DAEMON, exit_status);
+			  PPP_DAEMON, exit_status);
 #if HAVE_USR_SBIN_PPPD
 		if (exit_status >= ARRAY_SIZE(pppd_message) || exit_status < 0) {
 			log_error("%s: Returned an unknown exit status: %d\n",
-			          PPP_DAEMON, exit_status);
+				  PPP_DAEMON, exit_status);
 		} else {
 			switch (exit_status) {
 			case 0: // success
 				log_debug("%s: %s\n",
-				          PPP_DAEMON, pppd_message[exit_status]);
+					  PPP_DAEMON, pppd_message[exit_status]);
 				break;
 			case 16: // emitted when exiting normally
 				log_info("%s: %s\n",
-				         PPP_DAEMON, pppd_message[exit_status]);
+					 PPP_DAEMON, pppd_message[exit_status]);
 				break;
 			default:
 				log_error("%s: %s\n",
-				          PPP_DAEMON, pppd_message[exit_status]);
+					  PPP_DAEMON, pppd_message[exit_status]);
 				break;
 			}
 		}
@@ -375,11 +375,11 @@ static int pppd_terminate(struct tunnel *tunnel)
 		case 127:
 		case 255: // abnormal exit with hard-coded error codes in ppp
 			log_error("%s: exited with return value of %d\n",
-			          PPP_DAEMON, exit_status);
+				  PPP_DAEMON, exit_status);
 			break;
 		default:
 			log_error("%s: %s (%d)\n", PPP_DAEMON, strerror(exit_status),
-			          exit_status);
+				  exit_status);
 			break;
 		}
 #endif
@@ -387,9 +387,9 @@ static int pppd_terminate(struct tunnel *tunnel)
 		int signal_number = WTERMSIG(status);
 
 		log_debug("waitpid: %s terminated by signal %d\n",
-		          PPP_DAEMON, signal_number);
+			  PPP_DAEMON, signal_number);
 		log_error("%s: terminated by signal: %s\n",
-		          PPP_DAEMON, strsignal(signal_number));
+			  PPP_DAEMON, strsignal(signal_number));
 	}
 
 	return 0;
@@ -409,26 +409,26 @@ int ppp_interface_is_up(struct tunnel *tunnel)
 	for (ifa = ifap; ifa != NULL; ifa = ifa->ifa_next) {
 		if ((
 #if HAVE_USR_SBIN_PPPD
-		            (tunnel->config->pppd_ifname
-		             && strstr(ifa->ifa_name, tunnel->config->pppd_ifname)
-		             != NULL)
-		            || strstr(ifa->ifa_name, "ppp") != NULL
+			    (tunnel->config->pppd_ifname
+			     && strstr(ifa->ifa_name, tunnel->config->pppd_ifname)
+			     != NULL)
+			    || strstr(ifa->ifa_name, "ppp") != NULL
 #endif
 #if HAVE_USR_SBIN_PPP
-		            strstr(ifa->ifa_name, "tun") != NULL
+			    strstr(ifa->ifa_name, "tun") != NULL
 #endif
 		    ) && ifa->ifa_flags & IFF_UP) {
 			if (&(ifa->ifa_addr->sa_family) != NULL
 			    && ifa->ifa_addr->sa_family == AF_INET) {
 				struct in_addr if_ip_addr =
-				        cast_addr(ifa->ifa_addr)->sin_addr;
+					cast_addr(ifa->ifa_addr)->sin_addr;
 
 				log_debug("Interface Name: %s\n", ifa->ifa_name);
 				log_debug("Interface Addr: %s\n", inet_ntoa(if_ip_addr));
 
 				if (tunnel->ipv4.ip_addr.s_addr == if_ip_addr.s_addr) {
 					strncpy(tunnel->ppp_iface, ifa->ifa_name,
-					        ROUTE_IFACE_LEN - 1);
+						ROUTE_IFACE_LEN - 1);
 					freeifaddrs(ifap);
 					return 1;
 				}
@@ -456,7 +456,7 @@ static int get_gateway_host_ip(struct tunnel *tunnel)
 	}
 
 	tunnel->config->gateway_ip = ((struct sockaddr_in *)
-	                              result->ai_addr)->sin_addr;
+				      result->ai_addr)->sin_addr;
 	freeaddrinfo(result);
 
 	setenv("VPN_GATEWAY", inet_ntoa(tunnel->config->gateway_ip), 0);
@@ -532,7 +532,7 @@ static int tcp_connect(struct tunnel *tunnel)
 			}
 
 			server.sin_addr = ((struct sockaddr_in *)
-			                   result->ai_addr)->sin_addr;
+					   result->ai_addr)->sin_addr;
 			freeaddrinfo(result);
 		}
 	} else {
@@ -558,15 +558,15 @@ static int tcp_connect(struct tunnel *tunnel)
 
 		// https://tools.ietf.org/html/rfc7231#section-4.3.6
 		sprintf(request, "CONNECT %s:%u HTTP/1.1\r\nHost: %s:%u\r\n\r\n",
-		        inet_ntoa(tunnel->config->gateway_ip),
-		        tunnel->config->gateway_port,
-		        inet_ntoa(tunnel->config->gateway_ip),
-		        tunnel->config->gateway_port);
+			inet_ntoa(tunnel->config->gateway_ip),
+			tunnel->config->gateway_port,
+			inet_ntoa(tunnel->config->gateway_ip),
+			tunnel->config->gateway_port);
 		ssize_t bytes_written = write(handle, request, strlen(request));
 
 		if (bytes_written != strlen(request)) {
 			log_error("write error while talking to proxy: %s\n",
-			          strerror(errno));
+				  strerror(errno));
 			goto err_connect;
 		}
 
@@ -590,7 +590,7 @@ static int tcp_connect(struct tunnel *tunnel)
 
 			if (bytes_read < 1) {
 				log_error("Proxy response is unexpectedly large and cannot fit in the %lu-bytes buffer.\n",
-				          ARRAY_SIZE(request));
+					  ARRAY_SIZE(request));
 				goto err_proxy_response;
 			}
 
@@ -632,7 +632,7 @@ static int tcp_connect(struct tunnel *tunnel)
 
 			if (j > ARRAY_SIZE(request) - 2) {
 				log_error("Proxy response does not contain \"%s\" as expected.\n",
-				          HTTP_STATUS_200);
+					  HTTP_STATUS_200);
 				goto err_proxy_response;
 			}
 		}
@@ -684,9 +684,9 @@ static int ssl_verify_cert(struct tunnel *tunnel)
 	// Note: this will ignore Subject Alternative Name fields.
 	if (subj
 	    && X509_NAME_get_text_by_NID(subj, NID_commonName, common_name,
-	                                 FIELD_SIZE) > 0
+					 FIELD_SIZE) > 0
 	    && strncasecmp(common_name, tunnel->config->gateway_host,
-	                   FIELD_SIZE) == 0)
+			   FIELD_SIZE) == 0)
 		cert_valid = 1;
 #endif
 
@@ -783,7 +783,7 @@ int ssl_connect(struct tunnel *tunnel)
 	tunnel->ssl_context = SSL_CTX_new(SSLv23_client_method());
 	if (tunnel->ssl_context == NULL) {
 		log_error("SSL_CTX_new: %s\n",
-		          ERR_error_string(ERR_peek_last_error(), NULL));
+			  ERR_error_string(ERR_peek_last_error(), NULL));
 		return 1;
 	}
 
@@ -793,10 +793,10 @@ int ssl_connect(struct tunnel *tunnel)
 
 	if (tunnel->config->ca_file) {
 		if (!SSL_CTX_load_verify_locations(
-		            tunnel->ssl_context,
-		            tunnel->config->ca_file, NULL)) {
+			    tunnel->ssl_context,
+			    tunnel->config->ca_file, NULL)) {
 			log_error("SSL_CTX_load_verify_locations: %s\n",
-			          ERR_error_string(ERR_peek_last_error(), NULL));
+				  ERR_error_string(ERR_peek_last_error(), NULL));
 			return 1;
 		}
 	}
@@ -810,12 +810,12 @@ int ssl_connect(struct tunnel *tunnel)
 		e = ENGINE_by_id("pkcs11");
 		if (!e) {
 			log_error("Could not load pkcs11 Engine: %s\n",
-			          ERR_error_string(ERR_peek_last_error(), NULL));
+				  ERR_error_string(ERR_peek_last_error(), NULL));
 			return 1;
 		}
 		if (!ENGINE_init(e)) {
 			log_error("Could not init pkcs11 Engine: %s\n",
-			          ERR_error_string(ERR_peek_last_error(), NULL));
+				  ERR_error_string(ERR_peek_last_error(), NULL));
 			ENGINE_free(e);
 			return 1;
 		}
@@ -832,33 +832,33 @@ int ssl_connect(struct tunnel *tunnel)
 
 		if (!ENGINE_ctrl_cmd(e, "LOAD_CERT_CTRL", 0, &parms, NULL, 1)) {
 			log_error("PKCS11 ENGINE_ctrl_cmd: %s\n",
-			          ERR_error_string(ERR_peek_last_error(), NULL));
+				  ERR_error_string(ERR_peek_last_error(), NULL));
 			return 1;
 		}
 
 		if (!SSL_CTX_use_certificate(tunnel->ssl_context, parms.cert)) {
 			log_error("PKCS11 SSL_CTX_use_certificate: %s\n",
-			          ERR_error_string(ERR_peek_last_error(), NULL));
+				  ERR_error_string(ERR_peek_last_error(), NULL));
 			return 1;
 		}
 
-		EVP_PKEY * privkey = ENGINE_load_private_key(
-		                             e, parms.uri, UI_OpenSSL(), NULL);
+		EVP_PKEY *privkey = ENGINE_load_private_key(
+					    e, parms.uri, UI_OpenSSL(), NULL);
 		if (!privkey) {
 			log_error("PKCS11 ENGINE_load_private_key: %s\n",
-			          ERR_error_string(ERR_peek_last_error(), NULL));
+				  ERR_error_string(ERR_peek_last_error(), NULL));
 			return 1;
 		}
 
 		if (!SSL_CTX_use_PrivateKey(tunnel->ssl_context, privkey)) {
 			log_error("PKCS11 SSL_CTX_use_PrivateKey_file: %s\n",
-			          ERR_error_string(ERR_peek_last_error(), NULL));
+				  ERR_error_string(ERR_peek_last_error(), NULL));
 			return 1;
 		}
 
 		if (!SSL_CTX_check_private_key(tunnel->ssl_context)) {
 			log_error("PKCS11 SSL_CTX_check_private_key: %s\n",
-			          ERR_error_string(ERR_peek_last_error(), NULL));
+				  ERR_error_string(ERR_peek_last_error(), NULL));
 			return 1;
 		}
 
@@ -866,20 +866,20 @@ int ssl_connect(struct tunnel *tunnel)
 
 		if (tunnel->config->user_cert) {
 			if (!SSL_CTX_use_certificate_file(
-			            tunnel->ssl_context, tunnel->config->user_cert,
-			            SSL_FILETYPE_PEM)) {
+				    tunnel->ssl_context, tunnel->config->user_cert,
+				    SSL_FILETYPE_PEM)) {
 				log_error("SSL_CTX_use_certificate_file: %s\n",
-				          ERR_error_string(ERR_peek_last_error(), NULL));
+					  ERR_error_string(ERR_peek_last_error(), NULL));
 				return 1;
 			}
 		}
 
 		if (tunnel->config->user_key) {
 			if (!SSL_CTX_use_PrivateKey_file(
-			            tunnel->ssl_context, tunnel->config->user_key,
-			            SSL_FILETYPE_PEM)) {
+				    tunnel->ssl_context, tunnel->config->user_key,
+				    SSL_FILETYPE_PEM)) {
 				log_error("SSL_CTX_use_PrivateKey_file: %s\n",
-				          ERR_error_string(ERR_peek_last_error(), NULL));
+					  ERR_error_string(ERR_peek_last_error(), NULL));
 				return 1;
 			}
 		}
@@ -887,7 +887,7 @@ int ssl_connect(struct tunnel *tunnel)
 		if (tunnel->config->user_cert && tunnel->config->user_key) {
 			if (!SSL_CTX_check_private_key(tunnel->ssl_context)) {
 				log_error("SSL_CTX_check_private_key: %s\n",
-				          ERR_error_string(ERR_peek_last_error(), NULL));
+					  ERR_error_string(ERR_peek_last_error(), NULL));
 				return 1;
 			}
 		}
@@ -900,7 +900,7 @@ int ssl_connect(struct tunnel *tunnel)
 		checkopt = SSL_CTX_set_options(tunnel->ssl_context, sslctxopt);
 		if ((checkopt & sslctxopt) != sslctxopt) {
 			log_error("SSL_CTX_set_options didn't set opt: %s\n",
-			          ERR_error_string(ERR_peek_last_error(), NULL));
+				  ERR_error_string(ERR_peek_last_error(), NULL));
 			return 1;
 		}
 	}
@@ -908,7 +908,7 @@ int ssl_connect(struct tunnel *tunnel)
 	tunnel->ssl_handle = SSL_new(tunnel->ssl_context);
 	if (tunnel->ssl_handle == NULL) {
 		log_error("SSL_new: %s\n",
-		          ERR_error_string(ERR_peek_last_error(), NULL));
+			  ERR_error_string(ERR_peek_last_error(), NULL));
 		return 1;
 	}
 
@@ -937,9 +937,9 @@ int ssl_connect(struct tunnel *tunnel)
 	if (tunnel->config->cipher_list) {
 		log_debug("Setting cipher list to: %s\n", tunnel->config->cipher_list);
 		if (!SSL_set_cipher_list(tunnel->ssl_handle,
-		                         tunnel->config->cipher_list)) {
+					 tunnel->config->cipher_list)) {
 			log_error("SSL_set_cipher_list failed: %s\n",
-			          ERR_error_string(ERR_peek_last_error(), NULL));
+				  ERR_error_string(ERR_peek_last_error(), NULL));
 			return 1;
 		}
 	}
@@ -947,11 +947,11 @@ int ssl_connect(struct tunnel *tunnel)
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
 	if (tunnel->config->min_tls > 0) {
 		log_debug("Setting min proto version to: 0x%x\n",
-		          tunnel->config->min_tls);
+			  tunnel->config->min_tls);
 		if (!SSL_set_min_proto_version(tunnel->ssl_handle,
-		                               tunnel->config->min_tls)) {
+					       tunnel->config->min_tls)) {
 			log_error("SSL_set_min_proto_version failed: %s\n",
-			          ERR_error_string(ERR_peek_last_error(), NULL));
+				  ERR_error_string(ERR_peek_last_error(), NULL));
 			return 1;
 		}
 	}
@@ -959,7 +959,7 @@ int ssl_connect(struct tunnel *tunnel)
 
 	if (!SSL_set_fd(tunnel->ssl_handle, tunnel->ssl_socket)) {
 		log_error("SSL_set_fd: %s\n",
-		          ERR_error_string(ERR_peek_last_error(), NULL));
+			  ERR_error_string(ERR_peek_last_error(), NULL));
 		return 1;
 	}
 	SSL_set_mode(tunnel->ssl_handle, SSL_MODE_AUTO_RETRY);
@@ -967,8 +967,8 @@ int ssl_connect(struct tunnel *tunnel)
 	// Initiate SSL handshake
 	if (SSL_connect(tunnel->ssl_handle) != 1) {
 		log_error("SSL_connect: %s\n"
-		          "You might want to try --insecure-ssl or specify a different --cipher-list\n",
-		          ERR_error_string(ERR_peek_last_error(), NULL));
+			  "You might want to try --insecure-ssl or specify a different --cipher-list\n",
+			  ERR_error_string(ERR_peek_last_error(), NULL));
 		return 1;
 	}
 	SSL_set_mode(tunnel->ssl_handle, SSL_MODE_AUTO_RETRY);
@@ -1026,7 +1026,7 @@ int run_tunnel(struct vpn_config *config)
 	ret = auth_request_vpn_allocation(&tunnel);
 	if (ret != 1) {
 		log_error("VPN allocation request failed (%s).\n",
-		          err_http_str(ret));
+			  err_http_str(ret));
 		ret = 1;
 		goto err_tunnel;
 	}
@@ -1041,7 +1041,7 @@ int run_tunnel(struct vpn_config *config)
 	ret = auth_get_config(&tunnel);
 	if (ret != 1) {
 		log_error("Could not get VPN configuration (%s).\n",
-		          err_http_str(ret));
+			  err_http_str(ret));
 		ret = 1;
 		goto err_tunnel;
 	}
@@ -1055,10 +1055,10 @@ int run_tunnel(struct vpn_config *config)
 	// Step 5: ask gateway to start tunneling
 	log_debug("Switch to tunneling mode\n");
 	ret = http_send(&tunnel,
-	                "GET /remote/sslvpn-tunnel HTTP/1.1\r\n"
-	                "Host: sslvpn\r\n"
-	                "Cookie: %s\r\n\r\n",
-	                tunnel.cookie);
+			"GET /remote/sslvpn-tunnel HTTP/1.1\r\n"
+			"Host: sslvpn\r\n"
+			"Cookie: %s\r\n\r\n",
+			tunnel.cookie);
 	if (ret != 1) {
 		log_error("Could not start tunnel (%s).\n", err_http_str(ret));
 		ret = 1;

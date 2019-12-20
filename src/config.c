@@ -234,7 +234,7 @@ int load_config(struct vpn_config *cfg, const char *filename)
 
 			if (port == 0 || port > 65535) {
 				log_warn("Bad port in config file: \"%lu\".\n",
-				         port);
+					 port);
 				continue;
 			}
 			cfg->gateway_port = port;
@@ -254,7 +254,7 @@ int load_config(struct vpn_config *cfg, const char *filename)
 
 			if (otp_delay < 0 || otp_delay > UINT_MAX) {
 				log_warn("Bad value for otp-delay in config file: \"%s\".\n",
-				         val);
+					 val);
 				continue;
 			}
 			cfg->otp_delay = otp_delay;
@@ -269,7 +269,7 @@ int load_config(struct vpn_config *cfg, const char *filename)
 
 			if (set_dns < 0) {
 				log_warn("Bad set-dns in config file: \"%s\".\n",
-				         val);
+					 val);
 				continue;
 			}
 			cfg->set_dns = set_dns;
@@ -278,7 +278,7 @@ int load_config(struct vpn_config *cfg, const char *filename)
 
 			if (set_routes < 0) {
 				log_warn("Bad set-routes in config file: \"%s\".\n",
-				         val);
+					 val);
 				continue;
 			}
 			cfg->set_routes = set_routes;
@@ -287,7 +287,7 @@ int load_config(struct vpn_config *cfg, const char *filename)
 
 			if (half_internet_routes < 0) {
 				log_warn("Bad half-internet-routes in config file: \"%s\".\n",
-				         val);
+					 val);
 				continue;
 			}
 			cfg->half_internet_routes = half_internet_routes;
@@ -296,7 +296,7 @@ int load_config(struct vpn_config *cfg, const char *filename)
 
 			if (persistent > UINT_MAX) {
 				log_warn("Bad value for persistent in config file: \"%s\".\n",
-				         val);
+					 val);
 				continue;
 			}
 			cfg->persistent = persistent;
@@ -306,7 +306,7 @@ int load_config(struct vpn_config *cfg, const char *filename)
 
 			if (pppd_use_peerdns < 0) {
 				log_warn("Bad pppd-use-peerdns in config file: \"%s\".\n",
-				         val);
+					 val);
 				continue;
 			}
 			cfg->pppd_use_peerdns = pppd_use_peerdns;
@@ -340,14 +340,14 @@ int load_config(struct vpn_config *cfg, const char *filename)
 
 			if (use_syslog < 0) {
 				log_warn("Bad use-syslog in config file: \"%s\".\n",
-				         val);
+					 val);
 				continue;
 			}
 			cfg->use_syslog = use_syslog;
 		} else if (strcmp(key, "trusted-cert") == 0) {
 			if (strlen(val) != SHA256STRLEN - 1) {
 				log_warn("Bad certificate sha256 digest in config file: \"%s\".\n",
-				         val);
+					 val);
 				continue;
 			}
 			if (add_trusted_cert(cfg, val))
@@ -369,7 +369,7 @@ int load_config(struct vpn_config *cfg, const char *filename)
 
 			if (insecure_ssl < 0) {
 				log_warn("Bad insecure-ssl in config file: \"%s\".\n",
-				         val);
+					 val);
 				continue;
 			}
 			cfg->insecure_ssl = insecure_ssl;
@@ -382,7 +382,7 @@ int load_config(struct vpn_config *cfg, const char *filename)
 
 			if (min_tls == -1) {
 				log_warn("Bad min-tls in config file: \"%s\".\n",
-				         val);
+					 val);
 				continue;
 			} else {
 				cfg->min_tls = min_tls;
@@ -393,7 +393,7 @@ int load_config(struct vpn_config *cfg, const char *filename)
 
 			if (seclevel_1 < 0) {
 				log_warn("Bad seclevel-1 in config file: \"%s\".\n",
-				         val);
+					 val);
 				continue;
 			}
 			cfg->seclevel_1 = seclevel_1;

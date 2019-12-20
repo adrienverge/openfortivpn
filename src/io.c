@@ -86,7 +86,7 @@ static void init_ssl_locks(void)
 	int i;
 
 	lockarray = (pthread_mutex_t *) OPENSSL_malloc(CRYPTO_num_locks() *
-	                sizeof(pthread_mutex_t));
+			sizeof(pthread_mutex_t));
 	for (i = 0; i < CRYPTO_num_locks(); i++)
 		pthread_mutex_init(&(lockarray[i]), NULL);
 	CRYPTO_set_id_callback((unsigned long (*)()) thread_id);
@@ -235,19 +235,19 @@ static void *pppd_read(void *arg)
 			}
 
 			pktsize = hdlc_decode(&buf[off_r], frm_len,
-			                      pkt_data(packet), pktsize);
+					      pkt_data(packet), pktsize);
 			if (pktsize < 0) {
 				log_error("Failed to decode PPP packet from HDLC frame (%s).\n",
-				          (pktsize == ERR_HDLC_BAD_CHECKSUM ?
-				           "bad checksum" :
-				           (pktsize == ERR_HDLC_INVALID_FRAME ?
-				            "invalid frame" : "unknown")));
+					  (pktsize == ERR_HDLC_BAD_CHECKSUM ?
+					   "bad checksum" :
+					   (pktsize == ERR_HDLC_INVALID_FRAME ?
+					    "invalid frame" : "unknown")));
 				goto exit;
 			}
 			// Reduce the malloc'ed area now that we know the
 			// actual packet length
 			repacket = realloc(packet,
-			                   sizeof(*packet) + 6 + pktsize);
+					   sizeof(*packet) + 6 + pktsize);
 			if (repacket == NULL) {
 				free(packet);
 				goto exit;
@@ -256,7 +256,7 @@ static void *pppd_read(void *arg)
 			packet->len = pktsize;
 
 			log_debug("%s ---> gateway (%lu bytes)\n", PPP_DAEMON,
-			          packet->len);
+				  packet->len);
 #if HAVE_USR_SBIN_PPPD
 			log_packet("pppd:   ", packet->len, pkt_data(packet));
 #else
@@ -311,7 +311,7 @@ static void *pppd_write(void *arg)
 			break;
 		}
 		len = hdlc_encode(hdlc_buffer, hdlc_bufsize,
-		                  pkt_data(packet), packet->len);
+				  pkt_data(packet), packet->len);
 		if (len < 0) {
 			log_error("Failed to encode PPP packet into HDLC frame.\n");
 			goto err_free_buf;
@@ -322,7 +322,7 @@ static void *pppd_write(void *arg)
 			int sel;
 
 			sel = select(tunnel->pppd_pty + 1, NULL, &write_fd,
-			             NULL, NULL);
+				     NULL, NULL);
 			if (sel == -1) {
 				log_error("select: %s\n", strerror(errno));
 				break;
@@ -331,7 +331,7 @@ static void *pppd_write(void *arg)
 				continue;
 			}
 			n = write(tunnel->pppd_pty, &hdlc_buffer[written],
-			          len - written);
+				  len - written);
 			// retry on repeatable failure
 			if ((n == -1) && (errno != EAGAIN)) {
 				log_error("write: %s\n", strerror(errno));
@@ -437,7 +437,7 @@ static void *ssl_read(void *arg)
 		ret = safe_ssl_read_all(tunnel->ssl_handle, header, 6);
 		if (ret < 0) {
 			log_debug("Error reading from SSL connection (%s).\n",
-			          err_ssl_str(ret));
+				  err_ssl_str(ret));
 			goto exit;
 		}
 
@@ -459,10 +459,10 @@ static void *ssl_read(void *arg)
 		packet->len = size;
 
 		ret = safe_ssl_read_all(tunnel->ssl_handle, pkt_data(packet),
-		                        size);
+					size);
 		if (ret < 0) {
 			log_debug("Error reading from SSL connection (%s).\n",
-			          err_ssl_str(ret));
+				  err_ssl_str(ret));
 			free(packet);
 			goto exit;
 		}
@@ -524,11 +524,11 @@ static void *ssl_write(void *arg)
 
 		do {
 			ret = safe_ssl_write(tunnel->ssl_handle,
-			                     packet->content, 6 + packet->len);
+					     packet->content, 6 + packet->len);
 		} while (ret == 0);
 		if (ret < 0) {
 			log_debug("Error writing to SSL connection (%s).\n",
-			          err_ssl_str(ret));
+				  err_ssl_str(ret));
 			free(packet);
 			break;
 		}
@@ -617,7 +617,7 @@ int io_loop(struct tunnel *tunnel)
 	 *     (with or without TCP_NODELAY)
 	 */
 	if (setsockopt(tunnel->ssl_socket, IPPROTO_TCP, TCP_NODELAY,
-	               (const char *) &tcp_nodelay_flag, sizeof(int))) {
+		       (const char *) &tcp_nodelay_flag, sizeof(int))) {
 		log_error("setsockopt: %s\n", strerror(errno));
 		goto err_sockopt;
 	}
