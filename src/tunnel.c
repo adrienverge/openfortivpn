@@ -986,7 +986,7 @@ int run_tunnel(struct vpn_config *config)
 	};
 
 	if (config->use_dnsServer[0] != '\0') {
-		log_info("Setting dns %s server from commandline\n", config->use_dnsServer);
+		log_info("Using dns server from commandline\n");
 		tunnel.ipv4.ns0_addr.s_addr =  inet_addr(config->use_dnsServer);
 	}
 
