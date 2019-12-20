@@ -584,7 +584,7 @@ static int tcp_connect(struct tunnel *tunnel)
 			 * • Function memset() initializes 'request' with '\0'
 			 * • Function read() gets a single char into: request[j]
 			 * • The final '\0' cannot be overwritten because:
-			 *   	j < ARRAY_SIZE(request) - 1
+			 *      j < ARRAY_SIZE(request) - 1
 			 */
 			ssize_t bytes_read = read(handle, &(request[j]), 1);
 

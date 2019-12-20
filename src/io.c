@@ -391,7 +391,7 @@ static inline void set_tunnel_ips(struct tunnel *tunnel,
 }
 
 #define printable_char(c) \
-    (c == '\t' || c == '\n' || (c >= ' ' && c <= '~'))
+	(c == '\t' || c == '\n' || (c >= ' ' && c <= '~'))
 
 static void debug_bad_packet(struct tunnel *tunnel, uint8_t *header)
 {
