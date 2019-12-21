@@ -27,11 +27,11 @@
 #include <errno.h>
 
 static pthread_mutex_t mutex;
-static int do_syslog;
+static int do_syslog; // static variables of arithmetic type are initialized to zero in C99
 
 enum log_verbosity loglevel;
 
-static int is_a_tty;
+static int is_a_tty; // static variables of arithmetic type are initialized to zero in C99
 
 struct log_param_s {
 	const char *prefix;
@@ -52,9 +52,6 @@ static const struct log_param_s log_params[OFV_LOG_DEBUG_ALL + 1] = {
 void init_logging(void)
 {
 	pthread_mutexattr_t mutexattr;
-
-	do_syslog = 0;
-	is_a_tty = 0;
 
 	loglevel = OFV_LOG_INFO;
 	is_a_tty = isatty(STDOUT_FILENO);
