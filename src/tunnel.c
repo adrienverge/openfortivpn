@@ -193,7 +193,11 @@ static int pppd_run(struct tunnel *tunnel)
 		 * e.g. the name of the configuration or options
 		 * to send interactively to ppp will be added later
 		 */
+<<<<<<< fa4db79eead7de181b97e9344a300a1bae0424fb
 		static const char *const v[] = {
+=======
+		static const char *v[] = {
+>>>>>>> coding style: use static const arrays
 			ppp_path,
 			"-direct"
 		};
@@ -210,7 +214,11 @@ static int pppd_run(struct tunnel *tunnel)
 			if (ofv_append_varr(&pppd_args, tunnel->config->pppd_call))
 				return 1;
 		} else {
+<<<<<<< fa4db79eead7de181b97e9344a300a1bae0424fb
 			static const char *const v[] = {
+=======
+			static const char *v[] = {
+>>>>>>> coding style: use static const arrays
 				ppp_path,
 				"115200", // speed
 				":192.0.2.1", // <local_IP_address>:<remote_IP_address>
@@ -618,7 +626,11 @@ static int tcp_connect(struct tunnel *tunnel)
 				 *      recognize a single LF as a line terminator
 				 *      and ignore the leading CR.
 				 */
+<<<<<<< fa4db79eead7de181b97e9344a300a1bae0424fb
 				static const char *const HTTP_EOL[] = {
+=======
+				static const char * const HTTP_EOL[] = {
+>>>>>>> coding style: use static const arrays
 					"\r\n\r\n",
 					"\n\n"
 				};
