@@ -150,7 +150,7 @@ static int pinentry_read(int from, char **retstr)
 }
 
 static int pinentry_exchange(int to, int from, char **retstr,
-			     const char *format, ...)
+                             const char *format, ...)
 {
 	va_list ap;
 
@@ -167,7 +167,7 @@ static int pinentry_exchange(int to, int from, char **retstr,
 }
 
 static void pinentry_read_password(const char *pinentry, const char *hint,
-				   const char *prompt, char *pass, size_t len)
+                                   const char *prompt, char *pass, size_t len)
 {
 	int from_pinentry[2];
 	int to_pinentry[2];
@@ -228,7 +228,7 @@ static void pinentry_read_password(const char *pinentry, const char *hint,
 		goto out;
 
 	ret = pinentry_exchange(to_pinentry[1], from_pinentry[0], &retstr,
-				"SETTITLE %s\n", "VPN Password");
+	                        "SETTITLE %s\n", "VPN Password");
 	if (ret)
 		log_error("Failed to set title: %s\n", retstr);
 	free(retstr);
@@ -236,7 +236,7 @@ static void pinentry_read_password(const char *pinentry, const char *hint,
 		goto out;
 
 	ret = pinentry_exchange(to_pinentry[1], from_pinentry[0], &retstr,
-				"SETDESC %s\n", "VPN Requires a Password");
+	                        "SETDESC %s\n", "VPN Requires a Password");
 	if (ret)
 		log_error("Failed to set description: %s\n", retstr);
 	free(retstr);
@@ -245,7 +245,7 @@ static void pinentry_read_password(const char *pinentry, const char *hint,
 
 	escaped = uri_escape(hint);
 	ret = pinentry_exchange(to_pinentry[1], from_pinentry[0], NULL,
-				"SETKEYINFO %s\n", escaped);
+	                        "SETKEYINFO %s\n", escaped);
 	if (ret)
 		log_error("Failed to set keyinfo\n");
 	free(escaped);
@@ -254,7 +254,7 @@ static void pinentry_read_password(const char *pinentry, const char *hint,
 
 	escaped = uri_escape(prompt);
 	ret = pinentry_exchange(to_pinentry[1], from_pinentry[0], &retstr,
-				"SETPROMPT %s\n", escaped);
+	                        "SETPROMPT %s\n", escaped);
 	free(escaped);
 	if (ret)
 		log_error("Failed to set prompt: %s\n", retstr);
@@ -263,7 +263,7 @@ static void pinentry_read_password(const char *pinentry, const char *hint,
 		goto out;
 
 	ret = pinentry_exchange(to_pinentry[1], from_pinentry[0], &retstr,
-				"GETPIN\n");
+	                        "GETPIN\n");
 	if (ret) {
 		log_error("Failed to get PIN: %s\n", retstr);
 		free(retstr);
@@ -286,7 +286,7 @@ out:
 }
 
 void read_password(const char *pinentry, const char *hint,
-		   const char *prompt, char *pass, size_t len)
+                   const char *prompt, char *pass, size_t len)
 {
 	int masked = 0;
 	struct termios oldt, newt;

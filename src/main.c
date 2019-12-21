@@ -259,7 +259,7 @@ int main(int argc, char **argv)
 		int c, option_index = 0;
 
 		c = getopt_long(argc, argv, "hvqc:u:p:o:",
-				long_options, &option_index);
+		                long_options, &option_index);
 
 		/* Detect the end of the options. */
 		if (c == -1)
@@ -271,109 +271,109 @@ int main(int argc, char **argv)
 			if (long_options[option_index].flag != 0)
 				break;
 			if (strcmp(long_options[option_index].name,
-				   "version") == 0) {
+			           "version") == 0) {
 				printf(VERSION "\n");
 				ret = EXIT_SUCCESS;
 				goto exit;
 			}
 #if HAVE_USR_SBIN_PPPD
 			if (strcmp(long_options[option_index].name,
-				   "pppd-use-peerdns") == 0) {
+			           "pppd-use-peerdns") == 0) {
 				int pppd_use_peerdns = strtob(optarg);
 
 				if (pppd_use_peerdns < 0) {
 					log_warn("Bad pppd-use-peerdns option: \"%s\"\n",
-						 optarg);
+					         optarg);
 					break;
 				}
 				cli_cfg.pppd_use_peerdns = pppd_use_peerdns;
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
-				   "pppd-log") == 0) {
+			           "pppd-log") == 0) {
 				cli_cfg.pppd_log = strdup(optarg);
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
-				   "pppd-plugin") == 0) {
+			           "pppd-plugin") == 0) {
 				cli_cfg.pppd_plugin = strdup(optarg);
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
-				   "pppd-ifname") == 0) {
+			           "pppd-ifname") == 0) {
 				cli_cfg.pppd_ifname = strdup(optarg);
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
-				   "pppd-ipparam") == 0) {
+			           "pppd-ipparam") == 0) {
 				cli_cfg.pppd_ipparam = strdup(optarg);
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
-				   "pppd-call") == 0) {
+			           "pppd-call") == 0) {
 				cli_cfg.pppd_call = strdup(optarg);
 				break;
 			}
 			// --plugin is deprecated, --pppd-plugin should be used
 			if (cli_cfg.pppd_plugin == NULL &&
 			    strcmp(long_options[option_index].name,
-				   "plugin") == 0) {
+			           "plugin") == 0) {
 				cli_cfg.pppd_plugin = strdup(optarg);
 				break;
 			}
 #endif
 #if HAVE_USR_SBIN_PPP
 			if (strcmp(long_options[option_index].name,
-				   "ppp-system") == 0) {
+			           "ppp-system") == 0) {
 				cfg.ppp_system = strdup(optarg);
 				break;
 			}
 #endif
 			if (strcmp(long_options[option_index].name,
-				   "ca-file") == 0) {
+			           "ca-file") == 0) {
 				cli_cfg.ca_file = strdup(optarg);
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
-				   "user-cert") == 0) {
+			           "user-cert") == 0) {
 				cli_cfg.user_cert = strdup(optarg);
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
-				   "user-key") == 0) {
+			           "user-key") == 0) {
 				cli_cfg.user_key = strdup(optarg);
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
-				   "pinentry") == 0) {
+			           "pinentry") == 0) {
 				cli_cfg.pinentry = strdup(optarg);
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
-				   "realm") == 0) {
+			           "realm") == 0) {
 				strncpy(cli_cfg.realm, optarg, FIELD_SIZE);
 				cli_cfg.realm[FIELD_SIZE] = '\0';
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
-				   "trusted-cert") == 0) {
+			           "trusted-cert") == 0) {
 				if (add_trusted_cert(&cli_cfg, optarg))
 					log_warn("Could not add certificate digest to whitelist.\n");
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
-				   "cipher-list") == 0) {
+			           "cipher-list") == 0) {
 				cli_cfg.cipher_list = strdup(optarg);
 				break;
 			}
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
 			if (strcmp(long_options[option_index].name,
-				   "min-tls") == 0) {
+			           "min-tls") == 0) {
 				int min_tls = parse_min_tls(optarg);
 
 				if (min_tls == -1) {
 					log_warn("Bad min-tls option: \"%s\"\n",
-						 optarg);
+					         optarg);
 				} else {
 					cli_cfg.min_tls = min_tls;
 				}
@@ -381,60 +381,60 @@ int main(int argc, char **argv)
 			}
 #endif
 			if (strcmp(long_options[option_index].name,
-				   "otp-prompt") == 0) {
+			           "otp-prompt") == 0) {
 				cli_cfg.otp_prompt = strdup(optarg);
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
-				   "set-routes") == 0) {
+			           "set-routes") == 0) {
 				int set_routes = strtob(optarg);
 
 				if (set_routes < 0) {
 					log_warn("Bad set-routes option: \"%s\"\n",
-						 optarg);
+					         optarg);
 					break;
 				}
 				cli_cfg.set_routes = set_routes;
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
-				   "half-internet-routes") == 0) {
+			           "half-internet-routes") == 0) {
 				int half_internet_routes = strtob(optarg);
 
 				if (half_internet_routes < 0) {
 					log_warn("Bad half-internet-routes option: \"%s\"\n",
-						 optarg);
+					         optarg);
 					break;
 				}
 				cli_cfg.half_internet_routes = half_internet_routes;
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
-				   "otp-delay") == 0) {
+			           "otp-delay") == 0) {
 				long otp_delay = strtol(optarg, NULL, 0);
 
 				if (otp_delay < 0 || otp_delay > UINT_MAX) {
 					log_warn("Bad otp-delay option: \"%s\"\n",
-						 optarg);
+					         optarg);
 					break;
 				}
 				cli_cfg.otp_delay = otp_delay;
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
-				   "persistent") == 0) {
+			           "persistent") == 0) {
 				long persistent = strtol(optarg, NULL, 0);
 
 				if (persistent < 0 || persistent > UINT_MAX) {
 					log_warn("Bad persistent option: \"%s\"\n",
-						 optarg);
+					         optarg);
 					break;
 				}
 				cli_cfg.persistent = persistent;
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
-				   "set-dns") == 0) {
+			           "set-dns") == 0) {
 				int set_dns = strtob(optarg);
 
 				if (set_dns < 0) {
@@ -492,15 +492,15 @@ int main(int argc, char **argv)
 			log_debug("Loaded config file \"%s\".\n", config_file);
 		else
 			log_warn("Could not load config file \"%s\" (%s).\n",
-				 config_file, err_cfg_str(ret));
+			         config_file, err_cfg_str(ret));
 	}
 	if (cfg.password != NULL && cli_cfg.password == NULL) {
 		if (cfg.password[0] == '\0')
 			log_debug("Disabled password due to empty entry in config file \"%s\"\n",
-				  config_file);
+			          config_file);
 		else
 			log_debug("Loaded password from config file \"%s\"\n",
-				  config_file);
+			          config_file);
 	}
 	// Then apply CLI config
 	merge_config(&cfg, &cli_cfg);
@@ -538,7 +538,7 @@ int main(int argc, char **argv)
 		char *tmp_password = malloc(PWD_BUFSIZ); // allocate large buffer
 
 		read_password(cfg.pinentry, "password",
-			      "VPN account password: ", tmp_password, PWD_BUFSIZ);
+		              "VPN account password: ", tmp_password, PWD_BUFSIZ);
 		cfg.password = strdup(tmp_password); // copy string of correct size
 		free(tmp_password);
 	}
