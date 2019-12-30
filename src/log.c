@@ -27,7 +27,7 @@
 #include <errno.h>
 
 static pthread_mutex_t mutex;
-static int do_syslog; // static variables of arithmetic type are initialized to zero in C99
+static int do_syslog; //static variables of arithmetic type are initialized to zero in C99
 
 enum log_verbosity loglevel;
 
