@@ -79,7 +79,11 @@ int http_send(struct tunnel *tunnel, const char *request, ...)
 	strcpy(logbuffer, buffer);
 	if (loglevel <= OFV_LOG_DEBUG_DETAILS && tunnel->config->password[0] != '\0') {
 		char *pwstart;
-		pwstart = strstr(logbuffer, tunnel->config->password);
+		char password[3 * FIELD_SIZE + 1];
+
+		url_encode(password, tunnel->config->password);
+		pwstart = strstr(logbuffer, password);
+
 		if (pwstart != NULL) {
 			int pos, pwlen, i;
 			pos = pwstart - logbuffer;
