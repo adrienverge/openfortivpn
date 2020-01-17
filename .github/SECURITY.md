@@ -11,4 +11,4 @@ currently being supported with security updates.
 
 ## Reporting a Vulnerability
 
-For now open an issue in [GitHub](https://github.com/adrienverge/openfortivpn/issues). We will get back to you.
+Send an email to security@openfortivpn.org.
