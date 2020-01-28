@@ -196,7 +196,7 @@ cleanup:
 	}
 
 #else
-	FILE *fp;
+	FILE * fp;
 	uint32_t total_bytes_read = 0;
 
 	char *saveptr3 = NULL;
@@ -779,8 +779,8 @@ static void add_text_route(struct tunnel *tunnel, const char *dest,
                            const char *mask, const char *gw)
 {
 	size_t l0, l1;
-	const char fmt[] = ",%s/%s/%s";
-	const char trigger[] = "openfortivpn";
+	static const char fmt[] = ",%s/%s/%s";
+	static const char trigger[] = "openfortivpn";
 	char **target = &tunnel->config->pppd_ipparam;
 	char *ptr;
 
@@ -1047,6 +1047,11 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 		          + 20
 		          + strlen(tunnel->ppp_iface);
 		char *resolvconf_call = malloc(resolvconf_call_len);
+		if (resolvconf_call == NULL) {
+			log_warn("Could not create command to run resolvconf (%s).\n",
+			         strerror(errno));
+			return 1;
+		}
 
 		snprintf(resolvconf_call, resolvconf_call_len,
 		         "%s -a \"%s.openfortivpn\"",
@@ -1056,6 +1061,7 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 		use_resolvconf = 1;
 		log_debug("resolvconf_call: %s\n", resolvconf_call);
 		file = popen(resolvconf_call, "w");
+		free(resolvconf_call);
 		if (file == NULL) {
 			log_warn("Could not open pipe %s (%s).\n",
 			         resolvconf_call,
@@ -1240,6 +1246,11 @@ int ipv4_del_nameservers_from_resolv_conf(struct tunnel *tunnel)
 		          + 20
 		          + strlen(tunnel->ppp_iface);
 		char *resolvconf_call = malloc(resolvconf_call_len);
+		if (resolvconf_call == NULL) {
+			log_warn("Could not create command to run resolvconf (%s).\n",
+			         strerror(errno));
+			return ERR_IPV4_SEE_ERRNO;
+		}
 
 		snprintf(resolvconf_call,
 		         resolvconf_call_len,
@@ -1250,6 +1261,7 @@ int ipv4_del_nameservers_from_resolv_conf(struct tunnel *tunnel)
 
 		log_debug("resolvconf_call: %s\n", resolvconf_call);
 		ret = system(resolvconf_call);
+		free(resolvconf_call);
 		if (ret == -1)
 			return ERR_IPV4_SEE_ERRNO;
 		return 0;
