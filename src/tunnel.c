@@ -652,7 +652,6 @@ static int ssl_verify_cert(struct tunnel *tunnel)
 	char *line;
 	int i;
 	X509_NAME *subj;
-	char common_name[FIELD_SIZE + 1];
 
 	SSL_set_verify(tunnel->ssl_handle, SSL_VERIFY_PEER, NULL);
 
@@ -666,10 +665,13 @@ static int ssl_verify_cert(struct tunnel *tunnel)
 
 #ifdef HAVE_X509_CHECK_HOST
 	// Use OpenSSL native host validation if v >= 1.0.2.
-	// correctly check return value of X509_check_host
-	if (X509_check_host(cert, common_name, FIELD_SIZE, 0, NULL) == 1)
+	// compare against gateway_host and correctly check return value
+	// to fix piror Incorrect use of X509_check_host
+	if (X509_check_host(cert, tunnel->config->gateway_host,
+	                    0, 0, NULL) == 1)
 		cert_valid = 1;
 #else
+	char common_name[FIELD_SIZE + 1];
 	// Use explicit Common Name check if native validation not available.
 	// Note: this will ignore Subject Alternative Name fields.
 	if (subj
