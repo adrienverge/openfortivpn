@@ -666,7 +666,8 @@ static int ssl_verify_cert(struct tunnel *tunnel)
 
 #ifdef HAVE_X509_CHECK_HOST
 	// Use OpenSSL native host validation if v >= 1.0.2.
-	if (X509_check_host(cert, common_name, FIELD_SIZE, 0, NULL))
+	// correctly check return value of X509_check_host
+	if (X509_check_host(cert, common_name, FIELD_SIZE, 0, NULL) == 1)
 		cert_valid = 1;
 #else
 	// Use explicit Common Name check if native validation not available.
