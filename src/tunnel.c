@@ -29,6 +29,9 @@
 #include "tunnel.h"
 #include "http.h"
 #include "log.h"
+#ifndef HAVE_X509_CHECK_HOST
+#include "openssl_hostname_validation.h"
+#endif
 
 #include <unistd.h>
 #include <fcntl.h>
@@ -671,15 +674,10 @@ static int ssl_verify_cert(struct tunnel *tunnel)
 	                    0, 0, NULL) == 1)
 		cert_valid = 1;
 #else
-	char common_name[FIELD_SIZE + 1];
-	// Use explicit Common Name check if native validation not available.
-	// Note: this will ignore Subject Alternative Name fields.
-	if (subj
-	    && X509_NAME_get_text_by_NID(subj, NID_commonName, common_name,
-	                                 FIELD_SIZE) > 0
-	    && strncasecmp(common_name, tunnel->config->gateway_host,
-	                   FIELD_SIZE) == 0)
-		cert_valid = 1;
+	// Use validate_hostname form iSECPartners if native validation not available
+	// in order to avoid TLS Certificate CommonName NULL Byte Vulnerability
+	if (validate_hostname(tunnel->config->gateway_host, cert) == MatchFound)
+ 		cert_valid = 1;
 #endif
 
 	// Try to validate certificate using local PKI
