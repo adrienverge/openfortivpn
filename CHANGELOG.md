@@ -14,6 +14,18 @@ Releases
 This high level changelog is usually updated when a release is tagged.
 On the master branch there may be changes that are not (yet) described here.
 
+### 1.12.0
+
+* [-] fix CVE-2020-7043: TLS Certificate CommonName NULL Byte Vulnerability
+* [-] fix CVE-2020-7042: use of uninitialized memory in X509_check_host
+* [-] fix CVE-2020-7041: incorrect use of X509_check_host (regarding return value).
+* [-] always hide cleartest password in -vv output
+* [+] add a clear warning about sensitive information in the debug output
+* [+] add a hint in debug output when password is read from config file
+* [-] fix segfault when connecting with empty password
+* [+] use resolvconf if available to update resolv.conf file
+* [~] replace semicolon by space in dns-suffix string
+
 ### 1.11.0
 
 * [+] allow to connect with empty password (and with smartcard instead of username)
