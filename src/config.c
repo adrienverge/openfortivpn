@@ -408,7 +408,8 @@ int load_config(struct vpn_config *cfg, const char *filename)
 err_free:
 	free(buffer);
 err_close:
-	fclose(file);
+	if (fclose(file))
+		log_warn("Could not close %s (%s).\n", filename, strerror(errno));
 
 	return ret;
 }

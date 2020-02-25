@@ -187,7 +187,8 @@ static int ipv4_get_route(struct rtentry *route)
 	}
 
 cleanup:
-	close(fd);
+	if (close(fd))
+		log_warn("Could not close /proc/net/route (%s).\n", strerror(errno));
 	if (err)
 		goto end;
 
@@ -242,7 +243,8 @@ cleanup:
 	}
 
 cleanup:
-	pclose(fp);
+	if (pclose(fp))
+		log_warn("Could not close netstat pipe (%s).\n", strerror(errno));
 	if (err)
 		goto end;
 
@@ -604,10 +606,14 @@ static int ipv4_set_route(struct rtentry *route)
 	if (sockfd < 0)
 		return ERR_IPV4_SEE_ERRNO;
 	if (ioctl(sockfd, SIOCADDRT, route) == -1) {
-		close(sockfd);
+		if (close(sockfd))
+			log_warn("Could not close socket for setting route (%s).\n",
+			         strerror(errno));
 		return ERR_IPV4_SEE_ERRNO;
 	}
-	close(sockfd);
+	if (close(sockfd))
+		log_warn("Could not close socket for setting route: %s\n",
+		         strerror(errno));
 #else
 	/* we have to use the route command as tool for route manipulation */
 	char cmd[SHOW_ROUTE_BUFFER_SIZE];
@@ -668,10 +674,14 @@ static int ipv4_del_route(struct rtentry *route)
 	if (sockfd < 0)
 		return ERR_IPV4_SEE_ERRNO;
 	if (ioctl(sockfd, SIOCDELRT, &tmp) == -1) {
-		close(sockfd);
+		if (close(sockfd))
+			log_warn("Could not close socket for deleting route (%s).\n",
+			         strerror(errno));
 		return ERR_IPV4_SEE_ERRNO;
 	}
-	close(sockfd);
+	if (close(sockfd))
+		log_warn("Could not close socket for deleting route (%s).\n",
+		         strerror(errno));
 #else
 	char cmd[SHOW_ROUTE_BUFFER_SIZE];
 
@@ -1201,10 +1211,15 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 err_free:
 	free(buffer);
 err_close:
-	if (use_resolvconf == 0)
-		fclose(file);
-	else
-		pclose(file);
+	if (use_resolvconf == 0) {
+		if (fclose(file))
+			log_warn("Could not close /etc/resolv.conf: %s\n",
+			         strerror(errno));
+	} else {
+		if (pclose(file) == -1)
+			log_warn("Could not close resolvconf pipe: %s\n",
+			         strerror(errno));
+	}
 
 	return ret;
 }
@@ -1320,8 +1335,8 @@ int ipv4_del_nameservers_from_resolv_conf(struct tunnel *tunnel)
 err_free:
 	free(buffer);
 err_close:
-	if (file)
-		fclose(file);
-
+	if (file && fclose(file))
+		log_warn("Could not close /etc/resolv.conf (%s).\n",
+		         strerror(errno));
 	return ret;
 }

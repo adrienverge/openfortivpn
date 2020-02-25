@@ -172,7 +172,7 @@ static int pppd_run(struct tunnel *tunnel)
 	slave_stderr = dup(STDERR_FILENO);
 
 	if (slave_stderr < 0) {
-		log_error("slave stderr %s\n", strerror(errno));
+		log_error("slave stderr: %s\n", strerror(errno));
 		return 1;
 	}
 
@@ -187,7 +187,8 @@ static int pppd_run(struct tunnel *tunnel)
 		struct ofv_varr pppd_args = { 0, 0, NULL };
 
 		dup2(slave_stderr, STDERR_FILENO);
-		close(slave_stderr);
+		if (close(slave_stderr))
+			log_warn("Could not close slave stderr (%s).\n", strerror(errno));
 
 #if HAVE_USR_SBIN_PPP
 		/*
@@ -278,14 +279,17 @@ static int pppd_run(struct tunnel *tunnel)
 		}
 #endif
 
-		close(tunnel->ssl_socket);
+		if (close(tunnel->ssl_socket))
+			log_warn("Could not close ssl socket (%s).\n", strerror(errno));
 		execv(pppd_args.data[0], (char *const *)pppd_args.data);
 		free(pppd_args.data);
 
 		fprintf(stderr, "execvp: %s\n", strerror(errno));
 		_exit(EXIT_FAILURE);
 	} else {
-		close(slave_stderr);
+		if (close(slave_stderr))
+			log_error("Could not close slave stderr (%s).\n",
+			          strerror(errno));
 		if (pid == -1) {
 			log_error("forkpty: %s\n", strerror(errno));
 			return 1;
@@ -333,7 +337,8 @@ static const char * const pppd_message[] = {
 
 static int pppd_terminate(struct tunnel *tunnel)
 {
-	close(tunnel->pppd_pty);
+	if (close(tunnel->pppd_pty))
+		log_warn("Could not close pppd pty (%s).\n", strerror(errno));
 
 	log_debug("Waiting for %s to exit...\n", PPP_DAEMON);
 
@@ -649,7 +654,8 @@ err_proxy_response:
 err_connect:
 	free(env_proxy); // release memory allocated by strdup()
 err_strdup:
-	close(handle);
+	if (close(handle))
+		log_warn("Could not close socket (%s).\n", strerror(errno));
 err_socket:
 	return -1;
 }
@@ -756,7 +762,8 @@ static void ssl_disconnect(struct tunnel *tunnel)
 	SSL_shutdown(tunnel->ssl_handle);
 	SSL_free(tunnel->ssl_handle);
 	SSL_CTX_free(tunnel->ssl_context);
-	close(tunnel->ssl_socket);
+	if (close(tunnel->ssl_socket))
+		log_warn("Could not close ssl socket (%s).\n", strerror(errno));
 
 	tunnel->ssl_handle = NULL;
 	tunnel->ssl_context = NULL;
