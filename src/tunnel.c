@@ -677,7 +677,7 @@ static int ssl_verify_cert(struct tunnel *tunnel)
 	// Use validate_hostname form iSECPartners if native validation not available
 	// in order to avoid TLS Certificate CommonName NULL Byte Vulnerability
 	if (validate_hostname(tunnel->config->gateway_host, cert) == MatchFound)
- 		cert_valid = 1;
+		cert_valid = 1;
 #endif
 
 	// Try to validate certificate using local PKI
