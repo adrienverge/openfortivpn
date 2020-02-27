@@ -109,6 +109,7 @@ int strtob(const char *str)
 		return -1;
 
 	long i = strtol(str, NULL, 0);
+
 	if (i < 0 || i > 1)
 		return -1;
 	return i;
@@ -230,6 +231,7 @@ int load_config(struct vpn_config *cfg, const char *filename)
 			cfg->gateway_host[FIELD_SIZE] = '\0';
 		} else if (strcmp(key, "port") == 0) {
 			unsigned long port = strtoul(val, NULL, 0);
+
 			if (port == 0 || port > 65535) {
 				log_warn("Bad port in config file: \"%lu\".\n",
 				         port);
@@ -249,6 +251,7 @@ int load_config(struct vpn_config *cfg, const char *filename)
 			cfg->otp_prompt = strdup(val);
 		} else if (strcmp(key, "otp-delay") == 0) {
 			long otp_delay = strtol(val, NULL, 0);
+
 			if (otp_delay < 0 || otp_delay > UINT_MAX) {
 				log_warn("Bad value for otp-delay in config file: \"%s\".\n",
 				         val);
@@ -263,6 +266,7 @@ int load_config(struct vpn_config *cfg, const char *filename)
 			cfg->realm[FIELD_SIZE] = '\0';
 		} else if (strcmp(key, "set-dns") == 0) {
 			int set_dns = strtob(val);
+
 			if (set_dns < 0) {
 				log_warn("Bad set-dns in config file: \"%s\".\n",
 				         val);
@@ -271,6 +275,7 @@ int load_config(struct vpn_config *cfg, const char *filename)
 			cfg->set_dns = set_dns;
 		} else if (strcmp(key, "set-routes") == 0) {
 			int set_routes = strtob(val);
+
 			if (set_routes < 0) {
 				log_warn("Bad set-routes in config file: \"%s\".\n",
 				         val);
@@ -279,6 +284,7 @@ int load_config(struct vpn_config *cfg, const char *filename)
 			cfg->set_routes = set_routes;
 		} else if (strcmp(key, "half-internet-routes") == 0) {
 			int half_internet_routes = strtob(val);
+
 			if (half_internet_routes < 0) {
 				log_warn("Bad half-internet-routes in config file: \"%s\".\n",
 				         val);
@@ -287,6 +293,7 @@ int load_config(struct vpn_config *cfg, const char *filename)
 			cfg->half_internet_routes = half_internet_routes;
 		} else if (strcmp(key, "persistent") == 0) {
 			unsigned long persistent = strtoul(val, NULL, 0);
+
 			if (persistent > UINT_MAX) {
 				log_warn("Bad value for persistent in config file: \"%s\".\n",
 				         val);
@@ -296,6 +303,7 @@ int load_config(struct vpn_config *cfg, const char *filename)
 #if HAVE_USR_SBIN_PPPD
 		} else if (strcmp(key, "pppd-use-peerdns") == 0) {
 			int pppd_use_peerdns = strtob(val);
+
 			if (pppd_use_peerdns < 0) {
 				log_warn("Bad pppd-use-peerdns in config file: \"%s\".\n",
 				         val);
@@ -329,6 +337,7 @@ int load_config(struct vpn_config *cfg, const char *filename)
 #endif
 		} else if (strcmp(key, "use-syslog") == 0) {
 			int use_syslog = strtob(val);
+
 			if (use_syslog < 0) {
 				log_warn("Bad use-syslog in config file: \"%s\".\n",
 				         val);
@@ -357,6 +366,7 @@ int load_config(struct vpn_config *cfg, const char *filename)
 			cfg->user_key = strdup(val);
 		} else if (strcmp(key, "insecure-ssl") == 0) {
 			int insecure_ssl = strtob(val);
+
 			if (insecure_ssl < 0) {
 				log_warn("Bad insecure-ssl in config file: \"%s\".\n",
 				         val);
@@ -369,6 +379,7 @@ int load_config(struct vpn_config *cfg, const char *filename)
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
 		} else if (strcmp(key, "min-tls") == 0) {
 			int min_tls = parse_min_tls(val);
+
 			if (min_tls == -1) {
 				log_warn("Bad min-tls in config file: \"%s\".\n",
 				         val);
@@ -379,6 +390,7 @@ int load_config(struct vpn_config *cfg, const char *filename)
 #endif
 		} else if (strcmp(key, "seclevel-1") == 0) {
 			int seclevel_1 = strtob(val);
+
 			if (seclevel_1 < 0) {
 				log_warn("Bad seclevel-1 in config file: \"%s\".\n",
 				         val);
@@ -422,6 +434,7 @@ void destroy_vpn_config(struct vpn_config *cfg)
 	free(cfg->cipher_list);
 	while (cfg->cert_whitelist != NULL) {
 		struct x509_digest *tmp = cfg->cert_whitelist->next;
+
 		free(cfg->cert_whitelist);
 		cfg->cert_whitelist = tmp;
 	}
@@ -514,6 +527,7 @@ void merge_config(struct vpn_config *dst, struct vpn_config *src)
 	if (src->cert_whitelist) {
 		while (dst->cert_whitelist != NULL) {
 			struct x509_digest *tmp = dst->cert_whitelist->next;
+
 			free(dst->cert_whitelist);
 			dst->cert_whitelist = tmp;
 		}

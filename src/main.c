@@ -280,6 +280,7 @@ int main(int argc, char **argv)
 			if (strcmp(long_options[option_index].name,
 			           "pppd-use-peerdns") == 0) {
 				int pppd_use_peerdns = strtob(optarg);
+
 				if (pppd_use_peerdns < 0) {
 					log_warn("Bad pppd-use-peerdns option: \"%s\"\n",
 					         optarg);
@@ -369,6 +370,7 @@ int main(int argc, char **argv)
 			if (strcmp(long_options[option_index].name,
 			           "min-tls") == 0) {
 				int min_tls = parse_min_tls(optarg);
+
 				if (min_tls == -1) {
 					log_warn("Bad min-tls option: \"%s\"\n",
 					         optarg);
@@ -386,6 +388,7 @@ int main(int argc, char **argv)
 			if (strcmp(long_options[option_index].name,
 			           "set-routes") == 0) {
 				int set_routes = strtob(optarg);
+
 				if (set_routes < 0) {
 					log_warn("Bad set-routes option: \"%s\"\n",
 					         optarg);
@@ -397,6 +400,7 @@ int main(int argc, char **argv)
 			if (strcmp(long_options[option_index].name,
 			           "half-internet-routes") == 0) {
 				int half_internet_routes = strtob(optarg);
+
 				if (half_internet_routes < 0) {
 					log_warn("Bad half-internet-routes option: \"%s\"\n",
 					         optarg);
@@ -408,6 +412,7 @@ int main(int argc, char **argv)
 			if (strcmp(long_options[option_index].name,
 			           "otp-delay") == 0) {
 				long otp_delay = strtol(optarg, NULL, 0);
+
 				if (otp_delay < 0 || otp_delay > UINT_MAX) {
 					log_warn("Bad otp-delay option: \"%s\"\n",
 					         optarg);
@@ -419,6 +424,7 @@ int main(int argc, char **argv)
 			if (strcmp(long_options[option_index].name,
 			           "persistent") == 0) {
 				long persistent = strtol(optarg, NULL, 0);
+
 				if (persistent < 0 || persistent > UINT_MAX) {
 					log_warn("Bad persistent option: \"%s\"\n",
 					         optarg);
@@ -430,6 +436,7 @@ int main(int argc, char **argv)
 			if (strcmp(long_options[option_index].name,
 			           "set-dns") == 0) {
 				int set_dns = strtob(optarg);
+
 				if (set_dns < 0) {
 					log_warn("Bad set-dns option: \"%s\"\n", optarg);
 					break;
@@ -529,6 +536,7 @@ int main(int argc, char **argv)
 	// If username but no password given, interactively ask user
 	if (cfg.password == NULL && cfg.username[0] != '\0') {
 		char *tmp_password = malloc(PWD_BUFSIZ); // allocate large buffer
+
 		read_password(cfg.pinentry, "password",
 		              "VPN account password: ", tmp_password, PWD_BUFSIZ);
 		cfg.password = strdup(tmp_password); // copy string of correct size
