@@ -204,7 +204,8 @@ int main(int argc, char **argv)
 		.min_tls = 0,
 		.seclevel_1 = 0,
 		.cipher_list = NULL,
-		.cert_whitelist = NULL
+		.cert_whitelist = NULL,
+		.use_engine = 0
 	};
 	struct vpn_config cli_cfg = invalid_cfg;
 
