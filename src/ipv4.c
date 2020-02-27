@@ -1057,13 +1057,14 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 		use_resolvconf = 1;
 		log_debug("resolvconf_call: %s\n", resolvconf_call);
 		file = popen(resolvconf_call, "w");
-		free(resolvconf_call);
 		if (file == NULL) {
 			log_warn("Could not open pipe %s (%s).\n",
 			         resolvconf_call,
 			         strerror(errno));
+			free(resolvconf_call);
 			return 1;
 		}
+		free(resolvconf_call);
 	} else {
 		file = fopen("/etc/resolv.conf", "r+");
 		if (file == NULL) {
