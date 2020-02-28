@@ -26,14 +26,14 @@
  * it would mess up the parsing if they contain '<' or '/'.
  *
  * @t		'<' if we're looking for a tag, ' ' if we're looking
- * 		for an attribute.
+ *              for an attribute.
  * @needle	name of a tag or attribute (end and attribute with a
- * 		'=' to swallow	it).
+ *              '=' to swallow	it).
  * @buf		a NUL terminated buffer to look in.
  * @nest	do not escape more than @nest levels of nesting
- * 		(1 == look for kids, 2 == look for siblings).
+ *              (1 == look for kids, 2 == look for siblings).
  * @return	a string immediately following the needle if found,
- * 		%NULL otherwise.
+ *              %NULL otherwise.
  */
 const char *xml_find(char t, const char *needle, const char *buf, int nest)
 {
@@ -64,7 +64,7 @@ const char *xml_find(char t, const char *needle, const char *buf, int nest)
  *
  * @buf		a NUL terminated buffer to look in.
  * @return	%NULL in case of an error, a character string with
- * 		ownership passed upon success
+ *              ownership passed upon success
  */
 char *xml_get(const char *buf)
 {
