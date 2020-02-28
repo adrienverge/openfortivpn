@@ -92,7 +92,7 @@ Some Linux distibutions provide `openfortivpn` packages:
 * [Solus](https://dev.getsol.us/source/openfortivpn/)
 
 On macOS both [Homebrew](https://formulae.brew.sh/formula/openfortivpn) and
-[MacPorts](https://www.macports.org/ports.php?by=name&substr=openfortivpn)
+[MacPorts](https://ports.macports.org/port/openfortivpn)
 provide an `openfortivpn` package.
 Either [install Homebrew](https://brew.sh/) then install openfortivpn:
 ```shell
