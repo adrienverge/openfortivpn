@@ -167,6 +167,7 @@ static int ipv4_get_route(struct rtentry *route)
 	}
 
 	int bytes_read;
+
 	while ((bytes_read = read(fd, buffer + total_bytes_read,
 	                          buffer_size - total_bytes_read - 1)) > 0) {
 		total_bytes_read += bytes_read;
@@ -186,7 +187,8 @@ static int ipv4_get_route(struct rtentry *route)
 	}
 
 cleanup:
-	close(fd);
+	if (close(fd))
+		log_warn("Could not close /proc/net/route (%s).\n", strerror(errno));
 	if (err)
 		goto end;
 
@@ -204,6 +206,7 @@ cleanup:
 	int have_use = 0;
 
 	static const char netstat_path[] = NETSTAT_PATH;
+
 	if (access(netstat_path, F_OK) != 0) {
 		log_error("%s: %s.\n", netstat_path, strerror(errno));
 		return 1;
@@ -221,6 +224,7 @@ cleanup:
 	// Read the output a line at a time
 	while (fgets(line, buffer_size - total_bytes_read - 1, fp) != NULL) {
 		uint32_t bytes_read = strlen(line);
+
 		total_bytes_read += bytes_read;
 
 		if (bytes_read > 0 && line[bytes_read - 1] != '\n') {
@@ -239,7 +243,8 @@ cleanup:
 	}
 
 cleanup:
-	pclose(fp);
+	if (pclose(fp))
+		log_warn("Could not close netstat pipe (%s).\n", strerror(errno));
 	if (err)
 		goto end;
 
@@ -601,10 +606,14 @@ static int ipv4_set_route(struct rtentry *route)
 	if (sockfd < 0)
 		return ERR_IPV4_SEE_ERRNO;
 	if (ioctl(sockfd, SIOCADDRT, route) == -1) {
-		close(sockfd);
+		if (close(sockfd))
+			log_warn("Could not close socket for setting route (%s).\n",
+			         strerror(errno));
 		return ERR_IPV4_SEE_ERRNO;
 	}
-	close(sockfd);
+	if (close(sockfd))
+		log_warn("Could not close socket for setting route: %s\n",
+		         strerror(errno));
 #else
 	/* we have to use the route command as tool for route manipulation */
 	char cmd[SHOW_ROUTE_BUFFER_SIZE];
@@ -637,6 +646,7 @@ static int ipv4_set_route(struct rtentry *route)
 	log_debug("%s\n", cmd);
 
 	int res = system(cmd);
+
 	if (res == -1)
 		return ERR_IPV4_SEE_ERRNO;
 #endif
@@ -664,10 +674,14 @@ static int ipv4_del_route(struct rtentry *route)
 	if (sockfd < 0)
 		return ERR_IPV4_SEE_ERRNO;
 	if (ioctl(sockfd, SIOCDELRT, &tmp) == -1) {
-		close(sockfd);
+		if (close(sockfd))
+			log_warn("Could not close socket for deleting route (%s).\n",
+			         strerror(errno));
 		return ERR_IPV4_SEE_ERRNO;
 	}
-	close(sockfd);
+	if (close(sockfd))
+		log_warn("Could not close socket for deleting route (%s).\n",
+		         strerror(errno));
 #else
 	char cmd[SHOW_ROUTE_BUFFER_SIZE];
 
@@ -699,6 +713,7 @@ static int ipv4_del_route(struct rtentry *route)
 	log_debug("%s\n", cmd);
 
 	int res = system(cmd);
+
 	if (res == -1)
 		return ERR_IPV4_SEE_ERRNO;
 #endif
@@ -860,6 +875,7 @@ static int ipv4_set_split_routes(struct tunnel *tunnel)
 	for (i = 0; i < tunnel->ipv4.split_routes; i++) {
 		struct rtentry *route;
 		int ret;
+
 		route = &tunnel->ipv4.split_rt[i];
 		free(route_iface(route));
 		route_iface(route) = strdup(tunnel->ppp_iface);
@@ -977,6 +993,7 @@ int ipv4_restore_routes(struct tunnel *tunnel)
 
 	if (tunnel->ipv4.route_to_vpn_is_added) {
 		int ret;
+
 		ret = ipv4_del_route(gtw_rt);
 		if (ret != 0)
 			log_warn("Could not delete route to vpn server (%s).\n",
@@ -1057,13 +1074,14 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 		use_resolvconf = 1;
 		log_debug("resolvconf_call: %s\n", resolvconf_call);
 		file = popen(resolvconf_call, "w");
-		free(resolvconf_call);
 		if (file == NULL) {
 			log_warn("Could not open pipe %s (%s).\n",
 			         resolvconf_call,
 			         strerror(errno));
+			free(resolvconf_call);
 			return 1;
 		}
+		free(resolvconf_call);
 	} else {
 		file = fopen("/etc/resolv.conf", "r+");
 		if (file == NULL) {
@@ -1193,10 +1211,15 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 err_free:
 	free(buffer);
 err_close:
-	if (use_resolvconf == 0)
-		fclose(file);
-	else
-		pclose(file);
+	if (use_resolvconf == 0) {
+		if (fclose(file))
+			log_warn("Could not close /etc/resolv.conf: %s\n",
+			         strerror(errno));
+	} else {
+		if (pclose(file) == -1)
+			log_warn("Could not close resolvconf pipe: %s\n",
+			         strerror(errno));
+	}
 
 	return ret;
 }
@@ -1312,8 +1335,8 @@ int ipv4_del_nameservers_from_resolv_conf(struct tunnel *tunnel)
 err_free:
 	free(buffer);
 err_close:
-	if (file)
-		fclose(file);
-
+	if (file && fclose(file))
+		log_warn("Could not close /etc/resolv.conf (%s).\n",
+		         strerror(errno));
 	return ret;
 }

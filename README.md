@@ -91,8 +91,8 @@ Some Linux distibutions provide `openfortivpn` packages:
 * [Ubuntu (bionic and later)](https://packages.ubuntu.com/search?keywords=openfortivpn) and [pre-bionic (ppa)](https://launchpad.net/~ar-lex/+archive/ubuntu/fortisslvpn)
 * [Solus](https://dev.getsol.us/source/openfortivpn/)
 
-On macOS both [Homebrew](http://brewformulas.org/Openfortivpn) and
-[MacPorts](https://www.macports.org/ports.php?by=name&substr=openfortivpn)
+On macOS both [Homebrew](https://formulae.brew.sh/formula/openfortivpn) and
+[MacPorts](https://ports.macports.org/port/openfortivpn)
 provide an `openfortivpn` package.
 Either [install Homebrew](https://brew.sh/) then install openfortivpn:
 ```shell
@@ -120,7 +120,7 @@ For other distros, you'll need to build and install from source:
     * Arch Linux: `gcc` `automake` `autoconf` `openssl` `pkg-config`
     * Gentoo Linux: `net-dialup/ppp` `pkg-config`
     * openSUSE: `gcc` `automake` `autoconf` `libopenssl-devel` `pkg-config`
-    * macOS(Homebrew): `automake` `autoconf` `openssl@1.0` `pkg-config`
+    * macOS (Homebrew): `automake` `autoconf` `openssl@1.0` `pkg-config`
     * FreeBSD: `automake` `autoconf` `libressl` `pkgconf`
 
     On Linux, if you manage your kernel yourself, ensure to compile those modules:
