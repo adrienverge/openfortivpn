@@ -36,12 +36,14 @@
 #define estimated_encoded_size(ppp_pkt_len)	(9 + 2 * (ppp_pkt_len))
 #define estimated_decoded_size(hdlc_frm_len)	(hdlc_frm_len)
 
+void hdlc_reset(void);
+
 ssize_t hdlc_encode(uint8_t *frame, size_t frmsize,
-                    uint8_t *packet, size_t pktsize);
+                    const uint8_t *packet, size_t pktsize);
 
-ssize_t hdlc_find_frame(uint8_t *buffer, size_t bufsize, off_t *start);
+ssize_t hdlc_find_frame(const uint8_t *buffer, size_t bufsize, off_t *start);
 
-ssize_t hdlc_decode(uint8_t *frame, size_t frmsize,
+ssize_t hdlc_decode(const uint8_t *frame, size_t frmsize,
                     uint8_t *packet, size_t pktsize);
 
 #endif
