@@ -2,6 +2,21 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) 2015 Adrien Vergé
 
+"""Enforce maximum line length in openfortivpn C source code.
+
+Example
+-------
+   Pass the list of files to check as arguments to the script::
+
+    $ line_length.py file1.c file2.c file3.c
+
+Notes
+-----
+This script has been working so far for openfortivpn.
+It has not been widely tested. It may not work on any C source file.
+
+"""
+
 import sys
 
 # Guidelines say 80, let's tolerate a bit more
@@ -10,6 +25,8 @@ MAX = 90
 
 def endswithstring(line):
     """Detect lines from C source code ending with a string.
+
+    This function has not been widely tested.
 
     Parameters
     ----------
@@ -29,6 +46,14 @@ def endswithstring(line):
 
 
 def main():
+    """Check each file provided as a command line parameter
+
+    Returns
+    -------
+    int
+        1 if a line in one of the files exceeds the expected length, else 0.
+
+    """
     exit_status = 0
 
     for arg in sys.argv[1:]:
