@@ -1054,8 +1054,8 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 	if (tunnel->ipv4.ns2_addr.s_addr == 0)
 		tunnel->ipv4.ns2_was_there = -1;
 
-	if ((strcmp(RESOLVCONF_PATH, "DISABLED") != 0)
-	    && (access(RESOLVCONF_PATH, F_OK) == 0)) {
+#if !DISABLE_RESOLVCONF
+	if (access(RESOLVCONF_PATH, F_OK) == 0) {
 		int resolvconf_call_len
 		        = strlen(RESOLVCONF_PATH)
 		          + 20
@@ -1084,6 +1084,7 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 		}
 		free(resolvconf_call);
 	} else {
+#endif
 		file = fopen("/etc/resolv.conf", "r+");
 		if (file == NULL) {
 			log_warn("Could not open /etc/resolv.conf (%s).\n",
@@ -1117,7 +1118,9 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 		}
 
 		buffer[stat.st_size] = '\0';
+#if !DISABLE_RESOLVCONF
 	}
+#endif
 	if (tunnel->ipv4.ns1_addr.s_addr != 0) {
 		strcpy(ns1, "nameserver ");
 		strncat(ns1, inet_ntoa(tunnel->ipv4.ns1_addr), 15);
