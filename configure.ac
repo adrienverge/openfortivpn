@@ -350,16 +350,6 @@ AS_IF([test "x$with_ppp" = "xyes" -a "x$with_pppd" = "xyes"], [
    with_ppp="no"
 ])
 
-AC_PATH_PROG(RESOLVCONF_PATH, [resolvconf], [/sbin/resolvconf], "$PATH:/sbin:/usr/sbin")
-
-# resolvconf if present
-AC_ARG_WITH([resolvconf],
-        AS_HELP_STRING([--with-resolvconf],
-                       [Set the path to the resolvconf executable]),
-        RESOLVCONF_PATH="$withval"
-)
-
-
 AS_IF([test "x$with_ppp" = "xyes"], [
 	AC_DEFINE(HAVE_USR_SBIN_PPP, 1)
 	AC_MSG_NOTICE([HAVE_USR_SBIN_PPP... 1])
@@ -390,6 +380,16 @@ AS_IF([test "x$NETSTAT_PATH" != "x" ], [
     AC_MSG_NOTICE([NETSTAT_PATH...] $NETSTAT_PATH)
 ])
 
+# use resolvconf if present
+AC_PATH_PROG(RESOLVCONF_PATH, [resolvconf], [/sbin/resolvconf], "$PATH:/sbin:/usr/sbin")
+
+# allow override at configure time
+AC_ARG_WITH([resolvconf],
+        AS_HELP_STRING([--with-resolvconf],
+                       [Set the path to the resolvconf executable]),
+        RESOLVCONF_PATH="$withval"
+)
+
 AC_SUBST(RESOLVCONF_PATH)
 AS_IF([test "x$RESOLVCONF_PATH" != "x" ], [
     AC_MSG_NOTICE([RESOLVCONF_PATH...] $RESOLVCONF_PATH)
@@ -401,6 +401,7 @@ AS_IF([test "x$RESOLVCONF_PATH" = "xDISABLED"], [
 	AC_DEFINE(DISABLE_RESOLVCONF, 0)
 	AC_MSG_NOTICE([DISABLE_RESOLVCONF... 0])
 ])
+
 
 AC_CONFIG_COMMANDS([timestamp], [touch src/.dirstamp])
 AC_OUTPUT(Makefile)
