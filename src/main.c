@@ -62,7 +62,7 @@
 
 #if !DISABLE_RESOLVCONF
 #define RESOLVCONF_USAGE \
-"                    [--use-resolvconf=<0|1>] "
+"[--use-resolvconf=<0|1>] "
 #define RESOLVCONF_HELP \
 "  --use-resolvconf=[01]         if possible use resolvconf to update /etc/resolv.conf\n"
 #endif
@@ -74,8 +74,7 @@
 "                    [--otp-prompt=<prompt>] [--set-routes=<0|1>]\n" \
 "                    [--half-internet-routes=<0|1>] [--set-dns=<0|1>]\n" \
 PPPD_USAGE \
-RESOLVCONF_USAGE \
-"                    [--ca-file=<file>]\n" \
+"                    " RESOLVCONF_USAGE "[--ca-file=<file>]\n" \
 "                    [--user-cert=<file>] [--user-key=<file>]\n" \
 "                    [--trusted-cert=<digest>] [--use-syslog]\n" \
 "                    [--persistent=<interval>] [-c <file>] [-v|-q]\n" \
