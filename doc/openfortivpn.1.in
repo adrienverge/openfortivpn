@@ -1,4 +1,4 @@
-.TH OPENFORTIVPN 1 "December 11, 2019" ""
+.TH OPENFORTIVPN 1 "March 13, 2020" ""
 
 .SH NAME
 openfortivpn \- Client for PPP+SSL VPN tunnel services
@@ -33,6 +33,7 @@ openfortivpn \- Client for PPP+SSL VPN tunnel services
 [\fB\-\-pppd\-ifname=\fI<string>\fR]
 [\fB\-\-pppd\-call=\fI<name>\fR]
 [\fB\-\-ppp\-system=\fI<string>\fR]
+[\fB\-\-use\-resolvconf=\fI<bool>\fR]
 [\fB\-\-persistent=\fI<interval>\fR]
 [\fB\-c\fR \fI<file>\fR]
 [\fB\-v|\-q\fR]
@@ -95,12 +96,17 @@ Set if openfortivpn should add DNS name servers in /etc/resolv.conf when
 tunnel is up. Also a dns\-suffix may be received from the peer and added
 to /etc/resolv.conf in the turn of adding the name servers.
 resolvconf is instructed to do the update of the resolv.conf file
-if it is installed, otherwise openfortivpn prepends its changes
-to the existing content of the resolv.conf file.
+if it is installed and \-\-use\-resolvconf is activated, otherwise openfortivpn
+prepends its changes to the existing content of the resolv.conf file.
 Note that there may be other mechanisms to update /etc/resolv.conf,
 e.g., \fB\-\-pppd\-use\-peerdns\fR in conjunction with an ip-up-script,
 which may require that openfortivpn is called with \fB\-\-no\-dns\fR.
 \fB\-\-no\-dns\fR is the same as \fB\-\-set\-dns=\fI0\fR.
+.TP
+\fB\-\-use\-resolvconf=\fI<bool>\fR
+Set if openfortivpn should use resolvconf to add DNS name servers 
+in /etc/resolv.conf. If it is set to false, the builtin fallback 
+mechanism is used even if resolvconf is available.
 .TP
 \fB\-\-ca\-file=\fI<file>\fR
 Use specified PEM-encoded certificate bundle instead of system-wide store to
@@ -287,6 +293,8 @@ trusted\-cert = othercertificatedigest6631bf...
 # ca\-file = @SYSCONFDIR@/openfortivpn/ca\-bundle.pem
 .br
 set\-dns = 0
+.br
+use\-resolvconf = 1
 .br
 set\-routes = 1
 .br
