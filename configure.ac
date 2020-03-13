@@ -402,6 +402,32 @@ AS_IF([test "x$RESOLVCONF_PATH" = "xDISABLED"], [
 	AC_MSG_NOTICE([DISABLE_RESOLVCONF... 0])
 ])
 
+# the default for the --use-resolvconf runtime command line option
+AC_ARG_ENABLE([resolvconf],
+	AS_HELP_STRING([--enable-resolvconf],
+			[Enable usage of resolvconf by default, \
+			use --disable-resolvconf for the opposite]))
+
+# Checks for existence of specific files if not cross-compiling.
+AS_IF([test "x$enable_resolvconf" = "x" ], [
+  AC_CHECK_FILE([$RESOLVCONF_PATH],[
+    AS_IF([$RESOLVCONF_PATH -l &>/dev/null], [
+     enable_resolvconf="yes"
+    ],[
+     enable_resolvconf="no"
+    ])
+  ],[
+     enable_resolvconf="no"
+  ])
+])
+
+AS_IF([test "x$enable_resolvconf" = "xyes"], [
+	AC_DEFINE(USE_RESOLVCONF, 1)
+	AC_MSG_NOTICE([USE_RESOLVCONF... 1])
+],[
+	AC_DEFINE(USE_RESOLVCONF, 0)
+	AC_MSG_NOTICE([USE_RESOLVCONF... 0])
+])
 
 AC_CONFIG_COMMANDS([timestamp], [touch src/.dirstamp])
 AC_OUTPUT(Makefile)
