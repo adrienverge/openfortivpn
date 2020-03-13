@@ -75,6 +75,9 @@ struct vpn_config {
 	int	set_dns;
 	int	pppd_use_peerdns;
 	int	use_syslog;
+#if !DISABLE_RESOLVCONF
+	int	use_resolvconf;
+#endif
 	int	half_internet_routes;
 
 	unsigned int	persistent;
@@ -89,7 +92,6 @@ struct vpn_config {
 #if HAVE_USR_SBIN_PPP
 	char	*ppp_system;
 #endif
-
 	char			*ca_file;
 	char			*user_cert;
 	char			*user_key;

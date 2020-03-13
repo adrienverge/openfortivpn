@@ -1055,7 +1055,8 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 		tunnel->ipv4.ns2_was_there = -1;
 
 #if !DISABLE_RESOLVCONF
-	if (USE_RESOLVCONF && (access(RESOLVCONF_PATH, F_OK) == 0)) {
+	if (tunnel->config->use_resolvconf
+	    && (access(RESOLVCONF_PATH, F_OK) == 0)) {
 		int resolvconf_call_len
 		        = strlen(RESOLVCONF_PATH)
 		          + 20
