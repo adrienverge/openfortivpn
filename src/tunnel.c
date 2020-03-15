@@ -671,6 +671,7 @@ static int ssl_verify_cert(struct tunnel *tunnel)
 	char *line;
 	int i;
 	X509_NAME *subj;
+	char *saveptr;
 
 	SSL_set_verify(tunnel->ssl_handle, SSL_VERIFY_PEER, NULL);
 
@@ -736,12 +737,12 @@ static int ssl_verify_cert(struct tunnel *tunnel)
 	log_error("    trusted-cert = %s\n", digest_str);
 	log_error("Gateway certificate:\n");
 	log_error("    subject:\n");
-	for (line = strtok(subject, "/"); line != NULL;
-	     line = strtok(NULL, "/"))
+	for (line = strtok_r(subject, "/", &saveptr); line != NULL;
+	     line = strtok_r(NULL, "/", &saveptr))
 		log_error("        %s\n", line);
 	log_error("    issuer:\n");
-	for (line = strtok(issuer, "/"); line != NULL;
-	     line = strtok(NULL, "/"))
+	for (line = strtok_r(issuer, "/", &saveptr); line != NULL;
+	     line = strtok_r(NULL, "/", &saveptr))
 		log_error("        %s\n", line);
 	log_error("    sha256 digest:\n");
 	log_error("        %s\n", digest_str);

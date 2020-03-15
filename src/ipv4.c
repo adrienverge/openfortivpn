@@ -1140,9 +1140,11 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 	}
 
 	if (use_resolvconf == 0) {
-		for (const char *line = strtok(buffer, "\n");
+		char *saveptr = NULL;
+
+		for (const char *line = strtok_r(buffer, "\n", &saveptr);
 		     line != NULL;
-		     line = strtok(NULL, "\n")) {
+		     line = strtok_r(NULL, "\n", &saveptr)) {
 			if (strcmp(line, ns1) == 0) {
 				tunnel->ipv4.ns1_was_there = 1;
 				log_debug("ns1 already present in /etc/resolv.conf.\n");
@@ -1152,9 +1154,9 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 		if (tunnel->ipv4.ns1_was_there == 0)
 			log_debug("Adding \"%s\", to /etc/resolv.conf.\n", ns1);
 
-		for (const char *line = strtok(buffer, "\n");
+		for (const char *line = strtok_r(buffer, "\n", &saveptr);
 		     line != NULL;
-		     line = strtok(NULL, "\n")) {
+		     line = strtok_r(NULL, "\n", &saveptr)) {
 			if (strcmp(line, ns2) == 0) {
 				tunnel->ipv4.ns2_was_there = 1;
 				log_debug("ns2 already present in /etc/resolv.conf.\n");
@@ -1167,9 +1169,9 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 		if (dns_suffix[0] == '\0') {
 			tunnel->ipv4.dns_suffix_was_there = -1;
 		} else {
-			for (const char *line = strtok(buffer, "\n");
+			for (const char *line = strtok_r(buffer, "\n", &saveptr);
 			     line != NULL;
-			     line = strtok(NULL, "\n")) {
+			     line = strtok_r(NULL, "\n", &saveptr)) {
 				if (dns_suffix[0] != '\0'
 				    && strcmp(line, dns_suffix) == 0) {
 					tunnel->ipv4.dns_suffix_was_there = 1;
@@ -1232,7 +1234,7 @@ int ipv4_del_nameservers_from_resolv_conf(struct tunnel *tunnel)
 	char ns1[27], ns2[27]; // 11 + 15 + 1
 	char dns_suffix[MAX_DOMAIN_LENGTH+8];  // 7 + MAX_DOMAIN_LENGTH + 1
 	char *buffer = NULL;
-
+	char *saveptr = NULL;
 
 	if (access(RESOLVCONF_PATH, F_OK) == 0) {
 		int resolvconf_call_len
@@ -1312,9 +1314,9 @@ int ipv4_del_nameservers_from_resolv_conf(struct tunnel *tunnel)
 		goto err_free;
 	}
 
-	for (const char *line = strtok(buffer, "\n");
+	for (const char *line = strtok_r(buffer, "\n", &saveptr);
 	     line != NULL;
-	     line = strtok(NULL, "\n")) {
+	     line = strtok_r(NULL, "\n", &saveptr)) {
 		if (ns1[0] != '\0' && strcmp(line, ns1) == 0
 		    && (tunnel->ipv4.ns1_was_there == 0)) {
 			log_debug("Deleting \"%s\" from /etc/resolv.conf.\n", ns1);
