@@ -345,7 +345,7 @@ cleanup:
 	buffer[total_bytes_read] = '\0';
 
 	// Skip first line
-	start = index(buffer, '\n');
+	start = strchr(buffer, '\n');
 	if (start == NULL) {
 		log_debug("routing table is malformed.\n");
 		err = ERR_IPV4_PROC_NET_ROUTE;
@@ -359,9 +359,9 @@ cleanup:
 	if (strstr(buffer, "Use") != NULL)
 		have_use = 1;
 	// Skip 3 more lines from netstat output on Mac OS X and on FreeBSD
-	start = index(start, '\n');
-	start = index(++start, '\n');
-	start = index(++start, '\n');
+	start = strchr(start, '\n');
+	start = strchr(++start, '\n');
+	start = strchr(++start, '\n');
 	if (start == NULL) {
 		log_debug("routing table is malformed.\n");
 		err = ERR_IPV4_PROC_NET_ROUTE;
@@ -369,7 +369,7 @@ cleanup:
 	}
 #endif
 
-	if (index(start, '\n') == NULL) {
+	if (strchr(start, '\n') == NULL) {
 		log_debug("routing table is malformed.\n");
 		err = ERR_IPV4_PROC_NET_ROUTE;
 		goto end;
@@ -426,7 +426,7 @@ cleanup:
 			char *tmp_position;
 			int dot_count = -1;
 
-			if (index(tmpstr, '/') != NULL) {
+			if (strchr(tmpstr, '/') != NULL) {
 				// 123.123.123.123/30 style
 				// 123.123.123/24 style
 				// 123.123/24 style
@@ -451,7 +451,7 @@ cleanup:
 			tmp_position = tmp_ip_string;
 			while (tmp_position != NULL) {
 				++dot_count;
-				tmp_position = index(++tmp_position, '.');
+				tmp_position = strchr(++tmp_position, '.');
 			}
 
 			for (int i = dot_count; i < 3; i++)

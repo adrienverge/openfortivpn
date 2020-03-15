@@ -511,7 +511,7 @@ static int tcp_connect(struct tunnel *tunnel)
 		else
 			proxy_host += 3;
 		// split host and port
-		proxy_port = index(proxy_host, ':');
+		proxy_port = strchr(proxy_host, ':');
 		if (proxy_port != NULL) {
 			proxy_port[0] = '\0';
 			proxy_port++;
