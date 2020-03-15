@@ -322,6 +322,7 @@ static int get_value_from_response(const char *buf, const char *key,
 	int ret = -1;
 	char *tokens;
 	size_t keylen = strlen(key);
+	char *saveptr = NULL;
 
 	tokens = strdup(buf);
 	if (tokens == NULL) {
@@ -329,9 +330,9 @@ static int get_value_from_response(const char *buf, const char *key,
 		goto end;
 	}
 
-	for (const char *kv_pair = strtok(tokens, "&,\r\n");
+	for (const char *kv_pair = strtok_r(tokens, "&,\r\n", &saveptr);
 	     kv_pair != NULL;
-	     kv_pair = strtok(NULL, "&,\r\n")) {
+	     kv_pair = strtok_r(NULL, "&,\r\n", &saveptr)) {
 		if (strncmp(key, kv_pair, keylen) == 0) {
 			const char *val = &kv_pair[keylen];
 

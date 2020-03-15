@@ -159,7 +159,7 @@ int load_config(struct vpn_config *cfg, const char *filename)
 	int ret = ERR_CFG_UNKNOWN;
 	FILE *file;
 	struct stat stat;
-	char *buffer, *line;
+	char *buffer, *line, *saveptr;
 
 	file = fopen(filename, "r");
 	if (file == NULL)
@@ -189,8 +189,8 @@ int load_config(struct vpn_config *cfg, const char *filename)
 	buffer[stat.st_size] = '\0';
 
 	// Read line by line
-	for (line = strtok(buffer, "\n"); line != NULL;
-	     line = strtok(NULL, "\n")) {
+	for (line = strtok_r(buffer, "\n", &saveptr); line != NULL;
+	     line = strtok_r(NULL, "\n", &saveptr)) {
 		char *key, *equals, *val;
 		int i;
 
