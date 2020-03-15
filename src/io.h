@@ -15,8 +15,8 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _OPENFORTIVPN_IO_H
-#define _OPENFORTIVPN_IO_H
+#ifndef OPENFORTIVPN_IO_H
+#define OPENFORTIVPN_IO_H
 
 #include <stdint.h>
 #include <sys/types.h>

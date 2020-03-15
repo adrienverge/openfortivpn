@@ -15,8 +15,8 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _OPENFORTIVPN_HTTP_H
-#define _OPENFORTIVPN_HTTP_H
+#ifndef OPENFORTIVPN_HTTP_H
+#define OPENFORTIVPN_HTTP_H
 
 #include "tunnel.h"
 
