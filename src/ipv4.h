@@ -15,8 +15,8 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _OPENFORTIVPN_IPV4_H
-#define _OPENFORTIVPN_IPV4_H
+#ifndef OPENFORTIVPN_IPV4_H
+#define OPENFORTIVPN_IPV4_H
 
 #include <sys/types.h>
 #include <sys/socket.h>

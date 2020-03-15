@@ -26,8 +26,8 @@
  *  all source files in the program, then also delete it here.
  */
 
-#ifndef _OPENFORTIVPN_SSL_H
-#define _OPENFORTIVPN_SSL_H
+#ifndef OPENFORTIVPN_SSL_H
+#define OPENFORTIVPN_SSL_H
 
 #include <errno.h>
 #include <string.h>

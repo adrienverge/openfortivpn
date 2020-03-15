@@ -15,8 +15,8 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _OPENFORTIVPN_XML_H
-#define _OPENFORTIVPN_XML_H
+#ifndef OPENFORTIVPN_XML_H
+#define OPENFORTIVPN_XML_H
 
 #define MAX_DOMAIN_LENGTH 256
 // see https://unix.stackexchange.com/questions/245849
