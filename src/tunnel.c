@@ -687,7 +687,7 @@ static int ssl_verify_cert(struct tunnel *tunnel)
 #ifdef HAVE_X509_CHECK_HOST
 	// Use OpenSSL native host validation if v >= 1.0.2.
 	// compare against gateway_host and correctly check return value
-	// to fix piror Incorrect use of X509_check_host
+	// to fix prior incorrect use of X509_check_host
 	if (X509_check_host(cert, tunnel->config->gateway_host,
 	                    0, 0, NULL) == 1)
 		cert_valid = 1;
@@ -728,22 +728,27 @@ static int ssl_verify_cert(struct tunnel *tunnel)
 		goto free_cert;
 	}
 
-	subject = X509_NAME_oneline(subj, NULL, 0);
-	issuer = X509_NAME_oneline(X509_get_issuer_name(cert), NULL, 0);
-
 	log_error("Gateway certificate validation failed, and the certificate digest in not in the local whitelist. If you trust it, rerun with:\n");
 	log_error("    --trusted-cert %s\n", digest_str);
 	log_error("or add this line to your config file:\n");
 	log_error("    trusted-cert = %s\n", digest_str);
 	log_error("Gateway certificate:\n");
 	log_error("    subject:\n");
-	for (line = strtok_r(subject, "/", &saveptr); line != NULL;
-	     line = strtok_r(NULL, "/", &saveptr))
-		log_error("        %s\n", line);
+	subject = X509_NAME_oneline(subj, NULL, 0);
+	if (subject) {
+		for (line = strtok_r(subject, "/", &saveptr); line != NULL;
+		     line = strtok_r(NULL, "/", &saveptr))
+			log_error("        %s\n", line);
+		free(subject);
+	}
 	log_error("    issuer:\n");
-	for (line = strtok_r(issuer, "/", &saveptr); line != NULL;
-	     line = strtok_r(NULL, "/", &saveptr))
-		log_error("        %s\n", line);
+	issuer = X509_NAME_oneline(X509_get_issuer_name(cert), NULL, 0);
+	if (issuer) {
+		for (line = strtok_r(issuer, "/", &saveptr); line != NULL;
+		     line = strtok_r(NULL, "/", &saveptr))
+			log_error("        %s\n", line);
+		free(issuer);
+	}
 	log_error("    sha256 digest:\n");
 	log_error("        %s\n", digest_str);
 
