@@ -159,7 +159,7 @@ int load_config(struct vpn_config *cfg, const char *filename)
 	int ret = ERR_CFG_UNKNOWN;
 	FILE *file;
 	struct stat stat;
-	char *buffer, *line, *saveptr;
+	char *buffer, *line, *saveptr = NULL;
 
 	file = fopen(filename, "r");
 	if (file == NULL)
