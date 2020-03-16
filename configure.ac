@@ -33,7 +33,13 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 # Checks for libraries.
 PKG_CHECK_MODULES(OPENSSL, [libssl >= 0.9.8 libcrypto >= 0.9.8], [], [AC_MSG_ERROR([Cannot find OpenSSL 0.9.8 or higher.])])
-AC_CHECK_LIB([pthread], [pthread_create], [], [AC_MSG_ERROR([Cannot find libpthread.])])
+AC_MSG_CHECKING([POSIX threads support])
+AX_PTHREAD([
+	CLIBS="$LIBS $PTHREAD_LIBS"
+	CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+	LDFLAGS="$LDFLAGS $PTHREAD_CFLAGS"
+	CC="$PTHREAD_CC"],
+AC_MSG_ERROR([Cannot configure POSIX threads support.]))
 AC_CHECK_LIB([util], [forkpty], [], [AC_MSG_ERROR([Cannot find libutil.])])
 PKG_CHECK_MODULES(LIBSYSTEMD, [libsystemd], [AC_DEFINE(HAVE_SYSTEMD)], [AC_MSG_RESULT([libsystemd not present])])
 
