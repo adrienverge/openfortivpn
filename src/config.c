@@ -40,7 +40,7 @@ const struct vpn_config invalid_cfg = {
 	.set_routes = -1,
 	.set_dns = -1,
 	.pppd_use_peerdns = -1,
-#if !DISABLE_RESOLVCONF
+#if HAVE_RESOLVCONF
 	.use_resolvconf = -1,
 #endif
 	.use_syslog = -1,
@@ -339,9 +339,7 @@ int load_config(struct vpn_config *cfg, const char *filename)
 			log_warn("Ignoring option \"%s\".\n", key);
 #endif
 		} else if (strcmp(key, "use-resolvconf") == 0) {
-#if DISABLE_RESOLVCONF
-			log_warn("Ignoring option \"%s\".\n", key);
-#else
+#if HAVE_RESOLVCONF
 			int use_resolvconf = strtob(val);
 
 			if (use_resolvconf < 0) {
@@ -350,6 +348,8 @@ int load_config(struct vpn_config *cfg, const char *filename)
 				continue;
 			}
 			cfg->use_resolvconf = use_resolvconf;
+#else
+			log_warn("Ignoring option \"%s\".\n", key);
 #endif
 		} else if (strcmp(key, "use-syslog") == 0) {
 			int use_syslog = strtob(val);
@@ -483,7 +483,7 @@ void merge_config(struct vpn_config *dst, struct vpn_config *src)
 		dst->set_dns = src->set_dns;
 	if (src->pppd_use_peerdns != invalid_cfg.pppd_use_peerdns)
 		dst->pppd_use_peerdns = src->pppd_use_peerdns;
-#if !DISABLE_RESOLVCONF
+#if HAVE_RESOLVCONF
 	if (src->use_resolvconf != invalid_cfg.use_resolvconf)
 		dst->use_resolvconf = src->use_resolvconf;
 #endif

@@ -56,15 +56,15 @@
 #define PPPD_USAGE \
 "                    [--ppp-system=<system>]\n"
 #define PPPD_HELP \
-"  --ppp-system=<system>         connect to the specified system as defined in\n" \
+"  --ppp-system=<system>         Connect to the specified system as defined in\n" \
 "                                /etc/ppp/ppp.conf\n"
 #endif
 
-#if !DISABLE_RESOLVCONF
+#if HAVE_RESOLVCONF
 #define RESOLVCONF_USAGE \
 "[--use-resolvconf=<0|1>] "
 #define RESOLVCONF_HELP \
-"  --use-resolvconf=[01]         if possible use resolvconf to update /etc/resolv.conf\n"
+"  --use-resolvconf=[01]         If possible use resolvconf to update /etc/resolv.conf\n"
 #endif
 
 #define usage \
@@ -194,7 +194,7 @@ int main(int argc, char **argv)
 		.use_syslog = 0,
 		.half_internet_routes = 0,
 		.persistent = 0,
-#if !DISABLE_RESOLVCONF
+#if HAVE_RESOLVCONF
 		.use_resolvconf = USE_RESOLVCONF,
 #endif
 #if HAVE_USR_SBIN_PPPD
@@ -261,7 +261,7 @@ int main(int argc, char **argv)
 #if HAVE_USR_SBIN_PPP
 		{"ppp-system",      required_argument, 0, 0},
 #endif
-#if !DISABLE_RESOLVCONF
+#if HAVE_RESOLVCONF
 		{"use-resolvconf",  required_argument, 0, 0},
 #endif
 		{0, 0, 0, 0}
@@ -344,7 +344,7 @@ int main(int argc, char **argv)
 				break;
 			}
 #endif
-#if !DISABLE_RESOLVCONF
+#if HAVE_RESOLVCONF
 			if (strcmp(long_options[option_index].name,
 			           "use-resolvconf") == 0) {
 				int use_resolvconf = strtob(optarg);

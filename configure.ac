@@ -381,7 +381,7 @@ AS_IF([test "x$NETSTAT_PATH" != "x" ], [
 ])
 
 # use resolvconf if present
-AC_PATH_PROG(RESOLVCONF_PATH, [resolvconf], [/sbin/resolvconf], "$PATH:/sbin:/usr/sbin")
+AC_PATH_PROG(RESOLVCONF_PATH, [resolvconf], [DISABLED], "$PATH:/sbin:/usr/sbin")
 
 # allow override at configure time
 AC_ARG_WITH([resolvconf],
@@ -395,11 +395,11 @@ AS_IF([test "x$RESOLVCONF_PATH" != "x" ], [
     AC_MSG_NOTICE([RESOLVCONF_PATH...] $RESOLVCONF_PATH)
 ])
 AS_IF([test "x$RESOLVCONF_PATH" = "xDISABLED"], [
-	AC_DEFINE(DISABLE_RESOLVCONF, 1)
-	AC_MSG_NOTICE([DISABLE_RESOLVCONF... 1])
+	AC_DEFINE(HAVE_RESOLVCONF, 0)
+	AC_MSG_NOTICE([HAVE_RESOLVCONF... 0])
 ],[
-	AC_DEFINE(DISABLE_RESOLVCONF, 0)
-	AC_MSG_NOTICE([DISABLE_RESOLVCONF... 0])
+	AC_DEFINE(HAVE_RESOLVCONF, 1)
+	AC_MSG_NOTICE([HAVE_RESOLVCONF... 1])
 ])
 
 # the default for the --use-resolvconf runtime command line option

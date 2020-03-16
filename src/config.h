@@ -75,7 +75,7 @@ struct vpn_config {
 	int	set_dns;
 	int	pppd_use_peerdns;
 	int	use_syslog;
-#if !DISABLE_RESOLVCONF
+#if HAVE_RESOLVCONF
 	int	use_resolvconf;
 #endif
 	int	half_internet_routes;
