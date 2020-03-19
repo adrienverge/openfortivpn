@@ -414,7 +414,11 @@ AS_IF([test "x$enable_resolvconf" = "x" ], [
     AS_IF([$RESOLVCONF_PATH -l &>/dev/null], [
      enable_resolvconf="yes"
     ],[
-     enable_resolvconf="no"
+      AS_IF([ $RESOLVCONF_PATH &>/dev/null ; test $? -eq 99 ], [
+       enable_resolvconf="yes"
+      ],[
+       enable_resolvconf="no"
+      ])
     ])
   ],[
      enable_resolvconf="no"
