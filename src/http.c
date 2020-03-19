@@ -30,7 +30,7 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 
-#define BUFSZ 0x8000
+#define BUFSZ 0xF000
 
 /*
  * URL-encodes a string for HTTP requests.
