@@ -411,7 +411,7 @@ AC_ARG_ENABLE([resolvconf],
 # Checks for to determine how resolvconf works is it is installed
 # openresolv supports a -l option that lists the active configurations and returns 0
 # resolvctl supports -a -f which silently exits if no interface is suppplied
-# the resolvconf script in Ubuntu/Debian does not support listing 
+# the resolvconf script in Ubuntu/Debian does not support listing
 # but returns 99 if invoked without parameters
 #
 AS_IF([test "x$enable_resolvconf" = "x" ], [

@@ -104,8 +104,8 @@ which may require that openfortivpn is called with \fB\-\-no\-dns\fR.
 \fB\-\-no\-dns\fR is the same as \fB\-\-set\-dns=\fI0\fR.
 .TP
 \fB\-\-use\-resolvconf=\fI<bool>\fR
-Set if openfortivpn should use resolvconf to add DNS name servers 
-in /etc/resolv.conf. If it is set to false, the builtin fallback 
+Set if openfortivpn should use resolvconf to add DNS name servers
+in /etc/resolv.conf. If it is set to false, the builtin fallback
 mechanism is used even if resolvconf is available.
 .TP
 \fB\-\-ca\-file=\fI<file>\fR
