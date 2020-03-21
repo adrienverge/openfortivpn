@@ -56,15 +56,8 @@
 #define PPPD_USAGE \
 "                    [--ppp-system=<system>]\n"
 #define PPPD_HELP \
-"  --ppp-system=<system>         Connect to the specified system as defined in\n" \
+"  --ppp-system=<system>         connect to the specified system as defined in\n" \
 "                                /etc/ppp/ppp.conf\n"
-#endif
-
-#if HAVE_RESOLVCONF
-#define RESOLVCONF_USAGE \
-"[--use-resolvconf=<0|1>] "
-#define RESOLVCONF_HELP \
-"  --use-resolvconf=[01]         If possible use resolvconf to update /etc/resolv.conf\n"
 #endif
 
 #define usage \
@@ -74,7 +67,7 @@
 "                    [--otp-prompt=<prompt>] [--set-routes=<0|1>]\n" \
 "                    [--half-internet-routes=<0|1>] [--set-dns=<0|1>]\n" \
 PPPD_USAGE \
-"                    " RESOLVCONF_USAGE "[--ca-file=<file>]\n" \
+"                    [--ca-file=<file>]\n" \
 "                    [--user-cert=<file>] [--user-key=<file>]\n" \
 "                    [--trusted-cert=<digest>] [--use-syslog]\n" \
 "                    [--persistent=<interval>] [-c <file>] [-v|-q]\n" \
@@ -194,9 +187,6 @@ int main(int argc, char **argv)
 		.use_syslog = 0,
 		.half_internet_routes = 0,
 		.persistent = 0,
-#if HAVE_RESOLVCONF
-		.use_resolvconf = USE_RESOLVCONF,
-#endif
 #if HAVE_USR_SBIN_PPPD
 		.pppd_use_peerdns = 0,
 		.pppd_log = NULL,
@@ -260,9 +250,6 @@ int main(int argc, char **argv)
 #endif
 #if HAVE_USR_SBIN_PPP
 		{"ppp-system",      required_argument, 0, 0},
-#endif
-#if HAVE_RESOLVCONF
-		{"use-resolvconf",  required_argument, 0, 0},
 #endif
 		{0, 0, 0, 0}
 	};
@@ -341,20 +328,6 @@ int main(int argc, char **argv)
 			if (strcmp(long_options[option_index].name,
 			           "ppp-system") == 0) {
 				cfg.ppp_system = strdup(optarg);
-				break;
-			}
-#endif
-#if HAVE_RESOLVCONF
-			if (strcmp(long_options[option_index].name,
-			           "use-resolvconf") == 0) {
-				int use_resolvconf = strtob(optarg);
-
-				if (use_resolvconf < 0) {
-					log_warn("Bad use-resolvconf option: \"%s\"\n",
-					         optarg);
-					break;
-				}
-				cli_cfg.use_resolvconf = use_resolvconf;
 				break;
 			}
 #endif
@@ -475,8 +448,8 @@ int main(int argc, char **argv)
 			}
 			goto user_error;
 		case 'h':
-			printf("%s%s%s%s%s%s", usage, summary, help_options,
-			       PPPD_HELP, RESOLVCONF_HELP, help_config);
+			printf("%s%s%s%s%s", usage, summary, help_options,
+			       PPPD_HELP, help_config);
 			ret = EXIT_SUCCESS;
 			goto exit;
 		case 'v':
