@@ -1245,11 +1245,12 @@ int ipv4_del_nameservers_from_resolv_conf(struct tunnel *tunnel)
 #if HAVE_RESOLVCONF
 	if (tunnel->config->use_resolvconf
 	    && (access(RESOLVCONF_PATH, F_OK) == 0)) {
-		int resolvconf_call_len
-		        = strlen(RESOLVCONF_PATH)
-		          + 20
-		          + strlen(tunnel->ppp_iface);
-		char *resolvconf_call = malloc(resolvconf_call_len);
+		int resolvconf_call_len;
+		char *resolvconf_call;
+
+		resolvconf_call_len = strlen(RESOLVCONF_PATH) + 20
+		                      + strlen(tunnel->ppp_iface);
+		resolvconf_call = malloc(resolvconf_call_len);
 		if (resolvconf_call == NULL) {
 			log_warn("Could not create command to run resolvconf (%s).\n",
 			         strerror(errno));
