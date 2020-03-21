@@ -644,17 +644,17 @@ int io_loop(struct tunnel *tunnel)
 	if (signal(SIGHUP, SIG_IGN) == SIG_ERR)
 		goto err_signal;
 
- 	// create all workers, stop on first error and bail out
- 	ret=pthread_create(&pty_read_thread, NULL, pppd_read, tunnel);
- 	if (ret != 0) {
-    		log_debug("Error creating pty_read_thread: %s\n", strerror(ret));
-    		goto err_thread;
+	// create all workers, stop on first error and bail out
+	ret=pthread_create(&pty_read_thread, NULL, pppd_read, tunnel);
+	if (ret != 0) {
+		log_debug("Error creating pty_read_thread: %s\n", strerror(ret));
+		goto err_thread;
 	}
 
- 	ret=pthread_create(&pty_write_thread, NULL, pppd_write, tunnel);
- 	if (ret != 0) {
- 		log_debug("Error creating pty_write_thread: %s\n", strerror(ret));
- 		goto err_thread;
+	ret=pthread_create(&pty_write_thread, NULL, pppd_write, tunnel);
+	if (ret != 0) {
+		log_debug("Error creating pty_write_thread: %s\n", strerror(ret));
+		goto err_thread;
 	}
 
 	ret=pthread_create(&ssl_read_thread, NULL, ssl_read, tunnel);
@@ -671,7 +671,7 @@ int io_loop(struct tunnel *tunnel)
 
 	ret=pthread_create(&if_config_thread, NULL, if_config, tunnel);
 	if (ret != 0) {
-   		log_debug("Error creating if_config_thread: %s\n", strerror(ret));
+		log_debug("Error creating if_config_thread: %s\n", strerror(ret));
 		goto err_thread;
 	}
 
@@ -710,7 +710,7 @@ int io_loop(struct tunnel *tunnel)
 		log_debug("Error canceling pty_read_thread: %s\n", strerror(ret));
 	}
 
- 	log_info("Cleanup, joining threads...\n");
+	log_info("Cleanup, joining threads...\n");
 	// failure to clean is a possible zombie thread, consider it fatal
 	ret=pthread_join(if_config_thread, NULL);
 	if (ret != 0) {
@@ -752,7 +752,7 @@ int io_loop(struct tunnel *tunnel)
 	SEM_DESTROY(&sem_pppd_ready);
 
 	// should we have detected a fatal error
-  	if (fatal)
+	if (fatal)
 		goto err_thread;
 
 	return 0;
