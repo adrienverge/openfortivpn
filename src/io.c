@@ -605,6 +605,8 @@ int io_loop(struct tunnel *tunnel)
 
 	init_ssl_locks();
 
+	init_hdlc();
+
 	/*
 	 * I noticed that using TCP_NODELAY (i.e. disabling Nagle's algorithm)
 	 * gives much better performance. Probably because setting up the VPN
