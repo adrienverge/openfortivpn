@@ -274,12 +274,6 @@ AC_ARG_WITH([ppp],
 		with_pppd="no"
 	])
 )
-# resolvconf if present
-AC_ARG_WITH([resolvconf],
-        AS_HELP_STRING([--with-resolvconf],
-                       [Set the path to the resolvconf executable]),
-        RESOLVCONF_PATH="$withval"
-)
 
 # override for /proc/net/route detection
 AC_ARG_ENABLE([proc],
@@ -356,8 +350,6 @@ AS_IF([test "x$with_ppp" = "xyes" -a "x$with_pppd" = "xyes"], [
    with_ppp="no"
 ])
 
-AC_PATH_PROG(RESOLVCONF_PATH, [resolvconf], [/sbin/resolvconf], "$PATH:/sbin:/usr/sbin")
-
 AS_IF([test "x$with_ppp" = "xyes"], [
 	AC_DEFINE(HAVE_USR_SBIN_PPP, 1)
 	AC_MSG_NOTICE([HAVE_USR_SBIN_PPP... 1])
@@ -388,9 +380,66 @@ AS_IF([test "x$NETSTAT_PATH" != "x" ], [
     AC_MSG_NOTICE([NETSTAT_PATH...] $NETSTAT_PATH)
 ])
 
+# use resolvconf if present
+AC_PATH_PROG(RESOLVCONF_PATH, [resolvconf], [DISABLED], "$PATH:/sbin:/usr/sbin")
+
+# allow override at configure time
+AC_ARG_WITH([resolvconf],
+        AS_HELP_STRING([--with-resolvconf],
+                       [Set the path to the resolvconf executable]),
+        RESOLVCONF_PATH="$withval"
+)
+
 AC_SUBST(RESOLVCONF_PATH)
 AS_IF([test "x$RESOLVCONF_PATH" != "x" ], [
     AC_MSG_NOTICE([RESOLVCONF_PATH...] $RESOLVCONF_PATH)
+])
+AS_IF([test "x$RESOLVCONF_PATH" = "xDISABLED"], [
+	AC_DEFINE(HAVE_RESOLVCONF, 0)
+	AC_MSG_NOTICE([HAVE_RESOLVCONF... 0])
+],[
+	AC_DEFINE(HAVE_RESOLVCONF, 1)
+	AC_MSG_NOTICE([HAVE_RESOLVCONF... 1])
+])
+
+# the default for the --use-resolvconf runtime command line option
+AC_ARG_ENABLE([resolvconf],
+	AS_HELP_STRING([--enable-resolvconf],
+			[Enable usage of resolvconf by default, \
+			use --disable-resolvconf for the opposite]))
+
+# Checks for to determine how resolvconf works is it is installed
+# openresolv supports a -l option that lists the active configurations and returns 0
+# resolvctl supports -a -f which silently exits if no interface is suppplied
+# the resolvconf script in Ubuntu/Debian does not support listing
+# but returns 99 if invoked without parameters
+#
+AS_IF([test "x$enable_resolvconf" = "x" ], [
+  AC_CHECK_FILE([$RESOLVCONF_PATH],[
+    AS_IF([$RESOLVCONF_PATH -l &>/dev/null], [
+     enable_resolvconf="yes"
+    ],[
+      AS_IF([$RESOLVCONF_PATH -a -f &>/dev/null], [
+       enable_resolvconf="yes"
+      ],[
+	AS_IF([$RESOLVCONF_PATH &>/dev/null ; test $? -eq 99], [
+	 enable_resolvconf="yes"
+	],[
+	 enable_resolvconf="no"
+	])
+      ])
+    ])
+  ],[
+     enable_resolvconf="no"
+  ])
+])
+
+AS_IF([test "x$enable_resolvconf" = "xyes"], [
+	AC_DEFINE(USE_RESOLVCONF, 1)
+	AC_MSG_NOTICE([USE_RESOLVCONF... 1])
+],[
+	AC_DEFINE(USE_RESOLVCONF, 0)
+	AC_MSG_NOTICE([USE_RESOLVCONF... 0])
 ])
 
 AC_CONFIG_COMMANDS([timestamp], [touch src/.dirstamp])
