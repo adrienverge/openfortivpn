@@ -19,7 +19,6 @@
 #include "tunnel.h"
 #include "userinput.h"
 #include "log.h"
-#include "hdlc.h"
 
 #include <getopt.h>
 #include <unistd.h>
@@ -596,8 +595,6 @@ int main(int argc, char **argv)
 			ret = EXIT_SUCCESS;
 		if ((cfg.persistent > 0) && (get_sig_received() == 0))
 			sleep(cfg.persistent);
-		// Reset static variables
-		hdlc_reset();
 	} while ((get_sig_received() == 0) && (cfg.persistent != 0));
 
 	goto exit;

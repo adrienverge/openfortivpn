@@ -99,12 +99,12 @@ static const uint16_t address_control_checksum = 0x3de3;
  * The first frame begins with a Flag Sequence.
  * Subsequent frames rely on the Flag Sequence that ends the previous frame.
  */
-static int need_flag_sequence = 1;
+static int need_flag_sequence;
 
 /*
- * After disconnection, the first frame begins with a Flag Sequence.
+ * Upon connection, the first frame begins with a Flag Sequence.
  */
-void hdlc_reset(void)
+void init_hdlc(void)
 {
 	need_flag_sequence = 1;
 }
