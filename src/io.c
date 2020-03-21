@@ -589,6 +589,8 @@ static void sig_handler(int signo)
 int io_loop(struct tunnel *tunnel)
 {
 	int tcp_nodelay_flag = 1;
+	int ret = 0;               // keep track of pthread_* return value
+	int fatal = 0;             // indicate a fatal error during pthread_* calls
 
 	pthread_t pty_read_thread;
 	pthread_t pty_write_thread;
@@ -642,16 +644,36 @@ int io_loop(struct tunnel *tunnel)
 	if (signal(SIGHUP, SIG_IGN) == SIG_ERR)
 		goto err_signal;
 
-	if (pthread_create(&pty_read_thread, NULL, pppd_read, tunnel))
+ 	// create all workers, stop on first error and bail out
+ 	ret=pthread_create(&pty_read_thread, NULL, pppd_read, tunnel);
+ 	if (ret != 0) {
+    		log_debug("Error creating pty_read_thread: %s\n", strerror(ret));
+    		goto err_thread;
+	}
+
+ 	ret=pthread_create(&pty_write_thread, NULL, pppd_write, tunnel);
+ 	if (ret != 0) {
+ 		log_debug("Error creating pty_write_thread: %s\n", strerror(ret));
+ 		goto err_thread;
+	}
+
+	ret=pthread_create(&ssl_read_thread, NULL, ssl_read, tunnel);
+	if (ret != 0) {
+		log_debug("Error creating ssl_read_thread: %s\n", strerror(ret));
 		goto err_thread;
-	if (pthread_create(&pty_write_thread, NULL, pppd_write, tunnel))
+	}
+
+	ret=pthread_create(&ssl_write_thread, NULL, ssl_write, tunnel);
+	if (ret != 0) {
+		log_debug("Error creating ssl_write_thread: %s\n", strerror(ret));
 		goto err_thread;
-	if (pthread_create(&ssl_read_thread, NULL, ssl_read, tunnel))
+	}
+
+	ret=pthread_create(&if_config_thread, NULL, if_config, tunnel);
+	if (ret != 0) {
+   		log_debug("Error creating if_config_thread: %s\n", strerror(ret));
 		goto err_thread;
-	if (pthread_create(&ssl_write_thread, NULL, ssl_write, tunnel))
-		goto err_thread;
-	if (pthread_create(&if_config_thread, NULL, if_config, tunnel))
-		goto err_thread;
+	}
 
 #if !HAVE_MACH_MACH_H
 	// Restore the signal for the main thread
@@ -662,17 +684,63 @@ int io_loop(struct tunnel *tunnel)
 	SEM_WAIT(&sem_stop_io);
 
 	log_info("Cancelling threads...\n");
-	pthread_cancel(if_config_thread);
-	pthread_cancel(ssl_write_thread);
-	pthread_cancel(ssl_read_thread);
-	pthread_cancel(pty_write_thread);
-	pthread_cancel(pty_read_thread);
+	// no goto err_thread here, try to cancel all threads
+	ret=pthread_cancel(if_config_thread);
+	if (ret != 0) {
+		log_debug("Error canceling if_config_thread: %s\n", strerror(ret));
+	}
 
-	pthread_join(if_config_thread, NULL);
-	pthread_join(ssl_write_thread, NULL);
-	pthread_join(ssl_read_thread, NULL);
-	pthread_join(pty_write_thread, NULL);
-	pthread_join(pty_read_thread, NULL);
+	ret=pthread_cancel(ssl_write_thread);
+	if (ret != 0) {
+		log_debug("Error canceling ssl_write_thread: %s\n", strerror(ret));
+	}
+
+	ret=pthread_cancel(ssl_read_thread);
+	if (ret != 0) {
+		log_debug("Error canceling safe_ssl_read_thread: %s\n", strerror(ret));
+	}
+
+	ret=pthread_cancel(pty_write_thread);
+	if (ret != 0) {
+		log_debug("Error canceling pty_write_thread: %s\n", strerror(ret));
+	}
+
+	ret=pthread_cancel(pty_read_thread);
+	if (ret != 0) {
+		log_debug("Error canceling pty_read_thread: %s\n", strerror(ret));
+	}
+
+ 	log_info("Cleanup, joining threads...\n");
+	// failure to clean is a possible zombie thread, consider it fatal
+	ret=pthread_join(if_config_thread, NULL);
+	if (ret != 0) {
+		log_debug("Error joining if_config_thread: %s\n", strerror(ret));
+		fatal=1;
+	}
+
+	ret=pthread_join(ssl_write_thread, NULL);
+	if (ret != 0) {
+		log_debug("Error joining ssl_write_thread: %s\n", strerror(ret));
+		fatal=1;
+	}
+
+	ret=pthread_join(ssl_read_thread, NULL);
+	if (ret != 0) {
+		log_debug("Error joining ssl_read_thread: %s\n", strerror(ret));
+		fatal=1;
+	}
+
+	ret=pthread_join(pty_write_thread, NULL);
+	if (ret != 0) {
+		log_debug("Error joining pty_write_thread: %s\n", strerror(ret));
+		fatal=1;
+	}
+
+	ret=pthread_join(pty_read_thread, NULL);
+	if (ret != 0) {
+		log_debug("Error joining pty_read_thread: %s\n", strerror(ret));
+		fatal=1;
+	}
 
 	destroy_ssl_locks();
 
@@ -682,6 +750,10 @@ int io_loop(struct tunnel *tunnel)
 	SEM_DESTROY(&sem_stop_io);
 	SEM_DESTROY(&sem_if_config);
 	SEM_DESTROY(&sem_pppd_ready);
+
+	// should we have detected a fatal error
+  	if (fatal)
+		goto err_thread;
 
 	return 0;
 
