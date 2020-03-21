@@ -31,7 +31,7 @@ install-data-hook:
 			 $(DESTDIR)$(sysconfdir)/openfortivpn/config ; \
 		sed -i'.bak' -e 's/^/# /' $(DESTDIR)$(sysconfdir)/openfortivpn/config ; \
 		rm $(DESTDIR)$(sysconfdir)/openfortivpn/config.bak ; \
-	fi 
+	fi
 
 dist_man_MANS = doc/openfortivpn.1
 
