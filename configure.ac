@@ -23,8 +23,8 @@ AC_CHECK_LIB([pthread], [pthread_create], [], [AC_MSG_ERROR([Cannot find libpthr
 AC_CHECK_LIB([util], [forkpty], [], [AC_MSG_ERROR([Cannot find libutil.])])
 PKG_CHECK_MODULES(LIBSYSTEMD, [libsystemd], [AC_DEFINE(HAVE_SYSTEMD)], [AC_MSG_RESULT([libsystemd not present])])
 
-# we assume presence of the follwowing C standard headers
-# and ommit them in the follwoing header checks
+# we assume presence of the following C standard headers
+# and omit them in the following header checks
 #
 # assert.h
 # ctype.h
