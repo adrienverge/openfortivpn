@@ -14,6 +14,15 @@ Releases
 This high level changelog is usually updated when a release is tagged.
 On the master branch there may be changes that are not (yet) described here.
 
+### 1.13.0
+
+* [-] avoid unsupported versions of resolvconf
+* [~] add configure and command line option for resolvconf
+* [-] increase BUFSIZ
+* [-] reinitialize static variables with the --persistent option
+* [-] fix Makefile incompatibility with BSD sed
+* [-] fix a memory leak in ipv4_add_nameservers_to_resolv_conf
+
 ### 1.12.0
 
 * [-] fix CVE-2020-7043: TLS Certificate CommonName NULL Byte Vulnerability
