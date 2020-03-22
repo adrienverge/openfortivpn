@@ -14,6 +14,10 @@ Releases
 This high level changelog is usually updated when a release is tagged.
 On the master branch there may be changes that are not (yet) described here.
 
+### 1.13.1
+
+* [-] build in the absence of resolvconf
+
 ### 1.13.0
 
 * [-] avoid unsupported versions of resolvconf
