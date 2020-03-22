@@ -29,7 +29,9 @@
 
 #define PWD_BUFSIZ	4096
 
-#if HAVE_USR_SBIN_PPPD
+#if HAVE_USR_SBIN_PPPD && HAVE_USR_SBIN_PPP
+#error "Both HAVE_USR_SBIN_PPPD and HAVE_USR_SBIN_PPP have been defined."
+#elif HAVE_USR_SBIN_PPPD
 #define PPPD_USAGE \
 "                    [--pppd-use-peerdns=<0|1>] [--pppd-log=<file>]\n" \
 "                    [--pppd-ifname=<string>] [--pppd-ipparam=<string>]\n" \
@@ -50,13 +52,14 @@
 "  --pppd-call=<name>            Move most pppd options from pppd cmdline to\n" \
 "                                /etc/ppp/peers/<name> and invoke pppd with\n" \
 "                                'call <name>'\n"
-#endif
-#if HAVE_USR_SBIN_PPP
+#elif HAVE_USR_SBIN_PPP
 #define PPPD_USAGE \
 "                    [--ppp-system=<system>]\n"
 #define PPPD_HELP \
 "  --ppp-system=<system>         Connect to the specified system as defined in\n" \
 "                                /etc/ppp/ppp.conf\n"
+#else
+#error "Neither HAVE_USR_SBIN_PPPD nor HAVE_USR_SBIN_PPP have been defined."
 #endif
 
 #if HAVE_RESOLVCONF
