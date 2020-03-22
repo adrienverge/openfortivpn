@@ -64,6 +64,9 @@
 "[--use-resolvconf=<0|1>] "
 #define RESOLVCONF_HELP \
 "  --use-resolvconf=[01]         If possible use resolvconf to update /etc/resolv.conf\n"
+#else
+#define RESOLVCONF_USAGE ""
+#define RESOLVCONF_HELP ""
 #endif
 
 #define usage \
