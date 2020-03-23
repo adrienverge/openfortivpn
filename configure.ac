@@ -219,13 +219,13 @@ LIBS="${save_openssl_LIBS}"
 # When cross compile, don't run the tests.
 AC_ARG_WITH([rt_dst],
 	AS_HELP_STRING([--with-rt_dst],
-			  [disable rtentry with rt_dst testing (for linux target when cross compile)]),
+	               [disable rtentry with rt_dst testing (for linux target when cross compile)]),
 	AS_IF([test "x$with_rt_dst" = "xyes"],[
-	AC_MSG_NOTICE([HAVE_RT_ENTRY_WITH_RT_DST... 1])
-	AC_DEFINE(HAVE_RT_ENTRY_WITH_RT_DST)
+		AC_MSG_NOTICE([HAVE_RT_ENTRY_WITH_RT_DST... 1])
+		AC_DEFINE(HAVE_RT_ENTRY_WITH_RT_DST)
 	])
 )
-AS_IF([test "x$with_rt_dst" = "x" ], [
+AS_IF([test "x$with_rt_dst" = "x"], [
 AC_MSG_CHECKING(whether rtentry is available and has rt_dst)
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
 #include <sys/types.h>
@@ -233,15 +233,15 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
 #include <net/route.h>
 static inline struct sockaddr_in *cast_addr(struct sockaddr *addr)
 {
-  return (struct sockaddr_in *) addr;
+	return (struct sockaddr_in *) addr;
 }
 ],[
 struct rtentry route;
 cast_addr(&(&route)->rt_dst)->sin_family = AF_INET;
 ])],[
-  AC_DEFINE(HAVE_RT_ENTRY_WITH_RT_DST)
-  AC_MSG_RESULT(yes)
-], AC_MSG_RESULT(no) )
+	AC_DEFINE(HAVE_RT_ENTRY_WITH_RT_DST)
+	AC_MSG_RESULT(yes)
+], AC_MSG_RESULT(no))
 ])
 
 NETSTAT_PATH=""
@@ -250,15 +250,15 @@ RESOLVCONF_PATH=""
 
 # prepare possibility to override default locations
 AC_ARG_WITH([netstat],
-        AS_HELP_STRING([--with-netstat],
-                       [Set the path to the netstat executable on MacOSX or FreeBSD]),
-        NETSTAT_PATH="$withval"
+	AS_HELP_STRING([--with-netstat],
+	               [Set the path to the netstat executable on MacOSX or FreeBSD]),
+	NETSTAT_PATH="$withval"
 )
 # this is for the pppd daemon executable
 AC_ARG_WITH([pppd],
-        AS_HELP_STRING([--with-pppd],
-                       [Set the path to the pppd daemon executable]),
-        AS_IF([test ! "x$with_pppd" = "xno" -a ! "x$with_pppd" = "xyes"],[
+	AS_HELP_STRING([--with-pppd],
+	               [Set the path to the pppd daemon executable]),
+	AS_IF([test ! "x$with_pppd" = "xno" -a ! "x$with_pppd" = "xyes"],[
 		PPP_PATH="$withval"
 		with_pppd="yes"
 		with_ppp="no"
@@ -266,9 +266,9 @@ AC_ARG_WITH([pppd],
 )
 # and this is for the ppp user space client on FreeBSD
 AC_ARG_WITH([ppp],
-        AS_HELP_STRING([--with-ppp],
-                       [Set the path to the ppp userspace client on FreeBSD]),
-        AS_IF([test ! "x$with_ppp" = "xno" -a ! "x$with_ppp" = "xyes"],[
+	AS_HELP_STRING([--with-ppp],
+	               [Set the path to the ppp userspace client on FreeBSD]),
+	AS_IF([test ! "x$with_ppp" = "xno" -a ! "x$with_ppp" = "xyes"],[
 		PPP_PATH="$withval"
 		with_ppp="yes"
 		with_pppd="no"
@@ -278,76 +278,72 @@ AC_ARG_WITH([ppp],
 # override for /proc/net/route detection
 AC_ARG_ENABLE([proc],
 	AS_HELP_STRING([--enable-proc],
-			[Enable route manipulations directly via /proc/net/route \
-			when cross-compiling, use --disable-proc for the opposite]))
+	               [Enable route manipulations directly via /proc/net/route \
+	                when cross-compiling, use --disable-proc for the opposite]))
 
-# Checks for existence of specific files if not cross-compiling.
-AS_IF([test "x$enable_proc" = "x" ], [
-AC_CHECK_FILE([/proc/net/route],[
-  AS_IF([test "x$enable_proc" = "x" ], [
-    enable_proc="yes"
-  ])
-],[
-  AS_IF([test "x$NETSTAT_PATH" = "x" ], [
-    AC_CHECK_FILE([/usr/sbin/netstat],[
-      NETSTAT_PATH="/usr/sbin/netstat"
-    ],[
-      AC_CHECK_FILE([/usr/bin/netstat],[
-	NETSTAT_PATH="/usr/bin/netstat"
-      ],[])
-    ])
-  ])
-])
+# check for netstat if not cross-compiling
+AS_IF([test "x$enable_proc" = "x"], [
+	AC_CHECK_FILE([/proc/net/route],[
+		AS_IF([test "x$enable_proc" = "x"], [
+			enable_proc="yes"
+		])
+	],[
+		AS_IF([test "x$NETSTAT_PATH" = "x"], [
+			AC_CHECK_FILE([/usr/sbin/netstat],[
+				NETSTAT_PATH="/usr/sbin/netstat"
+			],[
+				AC_CHECK_FILE([/usr/bin/netstat],[
+					NETSTAT_PATH="/usr/bin/netstat"
+				],[])
+			])
+		])
+	])
 ])
 
-# check for ppp user space client if not specified
+# check for ppp if not specified
 AC_PATH_PROG(PPP, [ppp], [/usr/sbin/ppp], "$PATH:/sbin:/usr/sbin")
-AS_IF([test "x$PPP_PATH" = "x" ], [
-AC_CHECK_FILE([$PPP], [
-  AS_IF([test "x$PPP_PATH" = "x" ], [
-    PPP_PATH="$PPP"
-  ])
-  AS_IF([test "x$with_ppp" = "x" ], [
-    with_ppp="yes"
-  ])
-],[])
+AS_IF([test "x$PPP_PATH" = "x"], [
+	AC_CHECK_FILE([$PPP], [
+		AS_IF([test "x$PPP_PATH" = "x"], [
+			PPP_PATH="$PPP"
+		])
+		AS_IF([test "x$with_ppp" = "x"], [
+			with_ppp="yes"
+		])
+	],[])
 ])
 # check for pppd if not specified
 AC_PATH_PROG(PPPD, [pppd], [/usr/sbin/pppd], "$PATH:/sbin:/usr/sbin")
-AS_IF([test "x$PPP_PATH" = "x" ], [
-AC_CHECK_FILE([$PPPD], [
-  AS_IF([test "x$PPP_PATH" = "x" ], [
-    PPP_PATH="$PPPD"
-  ])
-  AS_IF([test "x$with_pppd" = "x" ], [
-    with_pppd="yes"
-  ])
-],[])
+AS_IF([test "x$PPP_PATH" = "x"], [
+	AC_CHECK_FILE([$PPPD], [
+		AS_IF([test "x$PPP_PATH" = "x"], [
+			PPP_PATH="$PPPD"
+		])
+		AS_IF([test "x$with_pppd" = "x"], [
+			with_pppd="yes"
+		])
+	],[])
+])
+# when neither ppp nor pppd are enabled fall back to a sensible choice for the platform
+AS_IF([test "x$with_ppp" = "x" -a "x$with_pppd" = "x"], [
+	AS_IF([test "x$uname" = "xFreeBSD"], [
+		with_ppp="yes"
+		PPP_PATH="/usr/sbin/ppp"
+	], [
+		with_pppd="yes"
+		PPP_PATH="/usr/sbin/pppd"
+	])
+])
+# when both are enabled, give pppd the higher priority (we can only use one of them)
+AS_IF([test "x$with_ppp" = "xyes" -a "x$with_pppd" = "xyes"], [
+	with_ppp="no"
 ])
 # replace empty settings with "no"
-AS_IF([test "x$with_ppp" = "x" ], [
-    with_ppp="no"
+AS_IF([test "x$with_pppd" = "x"], [
+	with_pppd="no"
 ])
-AS_IF([test "x$with_pppd" = "x" ], [
-    with_pppd="no"
-])
-
-# when neither ppp nor pppd are enabled fall back to a sensible choice for the platform
-AS_IF([test "x$with_ppp" = "xno" -a "x$with_pppd" = "xno" ], [
-   AS_IF([test "x$uname" = "xFreeBSD" ], [
-     PPP_PATH="/usr/sbin/ppp"
-     with_ppp="yes"
-   ], [
-     with_pppd="yes"
-     PPP_PATH="/usr/sbin/pppd"
-   ])
-])
-
-# When both are enabled, give pppd the higher priority (we can only use one of them).
-# Note that PPP_PATH should already be correct since pppd is detected later
-# and PPP_PATH is overwritten during detection.
-AS_IF([test "x$with_ppp" = "xyes" -a "x$with_pppd" = "xyes"], [
-   with_ppp="no"
+AS_IF([test "x$with_ppp" = "x"], [
+	with_ppp="no"
 ])
 
 AS_IF([test "x$with_ppp" = "xyes"], [
@@ -376,8 +372,8 @@ AC_SUBST(PPP_PATH)
 AC_MSG_NOTICE([PPP_PATH...] $PPP_PATH)
 
 AC_SUBST(NETSTAT_PATH)
-AS_IF([test "x$NETSTAT_PATH" != "x" ], [
-    AC_MSG_NOTICE([NETSTAT_PATH...] $NETSTAT_PATH)
+AS_IF([test "x$NETSTAT_PATH" != "x"], [
+	AC_MSG_NOTICE([NETSTAT_PATH...] $NETSTAT_PATH)
 ])
 
 # use resolvconf if present
@@ -385,14 +381,14 @@ AC_PATH_PROG(RESOLVCONF_PATH, [resolvconf], [DISABLED], "$PATH:/sbin:/usr/sbin")
 
 # allow override at configure time
 AC_ARG_WITH([resolvconf],
-        AS_HELP_STRING([--with-resolvconf],
-                       [Set the path to the resolvconf executable]),
-        RESOLVCONF_PATH="$withval"
+	AS_HELP_STRING([--with-resolvconf],
+	               [Set the path to the resolvconf executable]),
+	RESOLVCONF_PATH="$withval"
 )
 
 AC_SUBST(RESOLVCONF_PATH)
-AS_IF([test "x$RESOLVCONF_PATH" != "x" ], [
-    AC_MSG_NOTICE([RESOLVCONF_PATH...] $RESOLVCONF_PATH)
+AS_IF([test "x$RESOLVCONF_PATH" != "x"], [
+	AC_MSG_NOTICE([RESOLVCONF_PATH...] $RESOLVCONF_PATH)
 ])
 AS_IF([test "x$RESOLVCONF_PATH" = "xDISABLED"], [
 	AC_DEFINE(HAVE_RESOLVCONF, 0)
@@ -405,28 +401,28 @@ AS_IF([test "x$RESOLVCONF_PATH" = "xDISABLED"], [
 # the default for the --use-resolvconf runtime command line option
 AC_ARG_ENABLE([resolvconf],
 	AS_HELP_STRING([--enable-resolvconf],
-			[Enable usage of resolvconf by default, \
-			use --disable-resolvconf for the opposite]))
+	               [Enable usage of resolvconf by default, \
+	                use --disable-resolvconf for the opposite]))
 
 # Determine how resolvconf works at build-time if it is installed:
 # * openresolv supports option -l that lists active configurations and returns 0
 # * resolvconf in Ubuntu/Debian does not support listing but returns 99
 #   if invoked without parameters
 # * skip resolvectl which does not work as expected when invoked as resolveconf
-AS_IF([test "x$enable_resolvconf" = "x" ], [
-  AC_CHECK_FILE([$RESOLVCONF_PATH],[
-    AS_IF([$RESOLVCONF_PATH -l &>/dev/null], [
-     enable_resolvconf="yes"
-    ],[
-      AS_IF([$RESOLVCONF_PATH &>/dev/null ; test $? -eq 99], [
-       enable_resolvconf="yes"
-      ],[
-       enable_resolvconf="no"
-      ])
-    ])
-  ],[
-     enable_resolvconf="no"
-  ])
+AS_IF([test "x$enable_resolvconf" = "x"], [
+	AC_CHECK_FILE([$RESOLVCONF_PATH],[
+		AS_IF([$RESOLVCONF_PATH -l &>/dev/null], [
+			enable_resolvconf="yes"
+		],[
+			AS_IF([$RESOLVCONF_PATH &>/dev/null ; test $? -eq 99], [
+				enable_resolvconf="yes"
+			],[
+				enable_resolvconf="no"
+			])
+		])
+	],[
+		enable_resolvconf="no"
+	])
 ])
 
 AS_IF([test "x$enable_resolvconf" = "xyes"], [
