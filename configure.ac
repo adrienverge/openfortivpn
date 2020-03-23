@@ -408,25 +408,20 @@ AC_ARG_ENABLE([resolvconf],
 			[Enable usage of resolvconf by default, \
 			use --disable-resolvconf for the opposite]))
 
-# Checks for to determine how resolvconf works is it is installed
-# openresolv supports a -l option that lists the active configurations and returns 0
-# resolvctl supports -a -f which silently exits if no interface is suppplied
-# the resolvconf script in Ubuntu/Debian does not support listing
-# but returns 99 if invoked without parameters
-#
+# Determine how resolvconf works at build-time if it is installed:
+# * openresolv supports option -l that lists active configurations and returns 0
+# * resolvconf in Ubuntu/Debian does not support listing but returns 99
+#   if invoked without parameters
+# * skip resolvectl which does not work as expected when invoked as resolveconf
 AS_IF([test "x$enable_resolvconf" = "x" ], [
   AC_CHECK_FILE([$RESOLVCONF_PATH],[
     AS_IF([$RESOLVCONF_PATH -l &>/dev/null], [
      enable_resolvconf="yes"
     ],[
-      AS_IF([$RESOLVCONF_PATH -a -f &>/dev/null], [
+      AS_IF([$RESOLVCONF_PATH &>/dev/null ; test $? -eq 99], [
        enable_resolvconf="yes"
       ],[
-	AS_IF([$RESOLVCONF_PATH &>/dev/null ; test $? -eq 99], [
-	 enable_resolvconf="yes"
-	],[
-	 enable_resolvconf="no"
-	])
+       enable_resolvconf="no"
       ])
     ])
   ],[
