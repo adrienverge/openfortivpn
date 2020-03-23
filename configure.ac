@@ -382,7 +382,10 @@ AC_PATH_PROG(RESOLVCONF_PATH, [resolvconf], [DISABLED], "$PATH:/sbin:/usr/sbin")
 # allow override at configure time
 AC_ARG_WITH([resolvconf],
 	AS_HELP_STRING([--with-resolvconf],
-	               [Set the path to the resolvconf executable]),
+	               [Set the path to the resolvconf executable. \
+		       Set this to "DISABLED" to fully disable resolvconf support. \
+		       In that case it will not be compiled in and therefore be \
+		       unavailable at runtime.]),
 	RESOLVCONF_PATH="$withval"
 )
 
@@ -401,8 +404,10 @@ AS_IF([test "x$RESOLVCONF_PATH" = "xDISABLED"], [
 # the default for the --use-resolvconf runtime command line option
 AC_ARG_ENABLE([resolvconf],
 	AS_HELP_STRING([--enable-resolvconf],
-	               [Enable usage of resolvconf by default, \
-	                use --disable-resolvconf for the opposite]))
+	               [Enable usage of resolvconf at runtime by default. \
+	                Use --disable-resolvconf for the opposite, note that \
+			resolvconf support will still be compliled in, but \
+			disabled if not explicitly enabled at run time.]))
 
 # Determine how resolvconf works at build-time if it is installed:
 # * openresolv supports option -l that lists active configurations and returns 0
