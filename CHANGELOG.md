@@ -14,6 +14,10 @@ Releases
 This high level changelog is usually updated when a release is tagged.
 On the master branch there may be changes that are not (yet) described here.
 
+### 1.13.2
+
+* [-] properly build on FreeBSD, even if ppp is not installed at configure time
+
 ### 1.13.1
 
 * [-] build in the absence of resolvconf
