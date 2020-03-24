@@ -326,7 +326,7 @@ AS_IF([test "x$PPP_PATH" = "x"], [
 ])
 # when neither ppp nor pppd are enabled fall back to a sensible choice for the platform
 AS_IF([test "x$with_ppp" = "x" -a "x$with_pppd" = "x"], [
-	AS_IF([test "x$uname" = "xFreeBSD"], [
+	AS_IF([test "x$(uname)" = "xFreeBSD"], [
 		with_ppp="yes"
 		PPP_PATH="/usr/sbin/ppp"
 	], [
@@ -416,10 +416,10 @@ AC_ARG_ENABLE([resolvconf],
 # * skip resolvectl which does not work as expected when invoked as resolveconf
 AS_IF([test "x$enable_resolvconf" = "x"], [
 	AC_CHECK_FILE([$RESOLVCONF_PATH],[
-		AS_IF([$RESOLVCONF_PATH -l &>/dev/null], [
+		AS_IF([$RESOLVCONF_PATH -l >/dev/null 2>/dev/null], [
 			enable_resolvconf="yes"
 		],[
-			AS_IF([$RESOLVCONF_PATH &>/dev/null ; test $? -eq 99], [
+			AS_IF([$RESOLVCONF_PATH  >/dev/null 2>/dev/null ; test $? -eq 99], [
 				enable_resolvconf="yes"
 			],[
 				enable_resolvconf="no"
