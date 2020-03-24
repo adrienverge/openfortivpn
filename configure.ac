@@ -1,4 +1,4 @@
-#                                               -*- Autoconf -*-
+#					       -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
@@ -219,7 +219,7 @@ LIBS="${save_openssl_LIBS}"
 # When cross compile, don't run the tests.
 AC_ARG_WITH([rt_dst],
 	AS_HELP_STRING([--with-rt_dst],
-	               [disable rtentry with rt_dst testing (for linux target when cross compile)]),
+		       [disable rtentry with rt_dst testing (for linux target when cross compile)]),
 	AS_IF([test "x$with_rt_dst" = "xyes"],[
 		AC_MSG_NOTICE([HAVE_RT_ENTRY_WITH_RT_DST... 1])
 		AC_DEFINE(HAVE_RT_ENTRY_WITH_RT_DST)
@@ -251,13 +251,13 @@ RESOLVCONF_PATH=""
 # prepare possibility to override default locations
 AC_ARG_WITH([netstat],
 	AS_HELP_STRING([--with-netstat],
-	               [Set the path to the netstat executable on MacOSX or FreeBSD]),
+		       [Set the path to the netstat executable on MacOSX or FreeBSD]),
 	NETSTAT_PATH="$withval"
 )
 # this is for the pppd daemon executable
 AC_ARG_WITH([pppd],
 	AS_HELP_STRING([--with-pppd],
-	               [Set the path to the pppd daemon executable]),
+		       [Set the path to the pppd daemon executable]),
 	AS_IF([test ! "x$with_pppd" = "xno" -a ! "x$with_pppd" = "xyes"],[
 		PPP_PATH="$withval"
 		with_pppd="yes"
@@ -267,7 +267,7 @@ AC_ARG_WITH([pppd],
 # and this is for the ppp user space client on FreeBSD
 AC_ARG_WITH([ppp],
 	AS_HELP_STRING([--with-ppp],
-	               [Set the path to the ppp userspace client on FreeBSD]),
+		       [Set the path to the ppp userspace client on FreeBSD]),
 	AS_IF([test ! "x$with_ppp" = "xno" -a ! "x$with_ppp" = "xyes"],[
 		PPP_PATH="$withval"
 		with_ppp="yes"
@@ -278,8 +278,8 @@ AC_ARG_WITH([ppp],
 # override for /proc/net/route detection
 AC_ARG_ENABLE([proc],
 	AS_HELP_STRING([--enable-proc],
-	               [Enable route manipulations directly via /proc/net/route \
-	                when cross-compiling, use --disable-proc for the opposite]))
+		       [Enable route manipulations directly via /proc/net/route \
+			when cross-compiling, use --disable-proc for the opposite]))
 
 # check for netstat if not cross-compiling
 AS_IF([test "x$enable_proc" = "x"], [
@@ -382,10 +382,10 @@ AC_PATH_PROG(RESOLVCONF_PATH, [resolvconf], [DISABLED], "$PATH:/sbin:/usr/sbin")
 # allow override at configure time
 AC_ARG_WITH([resolvconf],
 	AS_HELP_STRING([--with-resolvconf],
-	               [Set the path to the resolvconf executable. \
-		       Set this to "DISABLED" to fully disable resolvconf support. \
-		       In that case it will not be compiled in and therefore be \
-		       unavailable at runtime.]),
+		       [Set the path to the resolvconf executable. \
+			Set this to "DISABLED" to fully disable resolvconf support. \
+			In that case it will not be compiled in and therefore be \
+			unavailable at runtime.]),
 	RESOLVCONF_PATH="$withval"
 )
 
@@ -404,10 +404,10 @@ AS_IF([test "x$RESOLVCONF_PATH" = "xDISABLED"], [
 # the default for the --use-resolvconf runtime command line option
 AC_ARG_ENABLE([resolvconf],
 	AS_HELP_STRING([--enable-resolvconf],
-	               [Enable usage of resolvconf at runtime by default. \
-	                Use --disable-resolvconf for the opposite, note that \
+		       [Enable usage of resolvconf at runtime by default. \
+			Use --disable-resolvconf for the opposite, note that \
 			resolvconf support will still be compliled in, but \
-			disabled if not explicitly enabled at run time.]))
+			disabled if not explicitly enabled at runtime.]))
 
 # Determine how resolvconf works at build-time if it is installed:
 # * openresolv supports option -l that lists active configurations and returns 0
