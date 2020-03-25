@@ -1,0 +1,25 @@
+---
+name: openfortivpn
+version: git
+base: core18
+summary: openfortivpn, a PPP+SSL VPN client
+description: |
+    Openfortivpn is a client for PPP+SSL VPN tunnel services.
+    It spawns a pppd process and operates the communication between
+    the gateway and this process.
+confinement: strict
+grade: stable
+
+apps:
+    openfortivpn:
+        command: openfortivpn
+        plugs: [network-bind]
+
+parts:
+    openfortivpn:
+        plugin: autotools
+        source: .
+        build-packages:
+            - build-essential
+            - pkg-config
+            - libssl-dev
