@@ -414,7 +414,7 @@ AC_ARG_ENABLE([resolvconf],
 # * resolvconf in Ubuntu/Debian does not support listing but returns 99
 #   if invoked without parameters
 # * skip resolvectl which does not work as expected when invoked as resolveconf
-AS_IF([test "x$enable_resolvconf" = "x"], [
+AS_IF([test "x$enable_resolvconf" = "x" -a "x$RESOLVCONF_PATH" != "xDISABLED"], [
 	AC_CHECK_FILE([$RESOLVCONF_PATH],[
 		AS_IF([$RESOLVCONF_PATH -l >/dev/null 2>/dev/null], [
 			enable_resolvconf="yes"
