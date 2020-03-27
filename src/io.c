@@ -596,6 +596,7 @@ int io_loop(struct tunnel *tunnel)
 	int tcp_nodelay_flag = 1;
 	int ret = 0;		// keep track of pthread_* return value
 	int fatal = 0;		// indicate a fatal error during pthread_* calls
+	int flags = 1;
 
 	pthread_t pty_read_thread;
 	pthread_t pty_write_thread;
@@ -627,9 +628,56 @@ int io_loop(struct tunnel *tunnel)
 	 */
 	if (setsockopt(tunnel->ssl_socket, IPPROTO_TCP, TCP_NODELAY,
 	               (const char *) &tcp_nodelay_flag, sizeof(int))) {
-		log_error("setsockopt: %s\n", strerror(errno));
+		log_error("setsockopt TCP_NODELAY: %s\n", strerror(errno));
 		goto err_sockopt;
 	}
+
+#ifdef SO_KEEPALIVE
+	/*
+	 * implement tcp keepalive feature on the socket
+	 * Fortinet's client usese an interval of 27 seconds
+	 */
+	flags = 1;
+	if (setsockopt(tunnel->ssl_socket, SOL_SOCKET, SO_KEEPALIVE,
+	               (void *)&flags, sizeof(flags))) {
+		log_error("setsockopt SO_KEEPALIVE: %s\n", strerror(errno));
+		goto err_sockopt;
+	}
+
+	flags = 27;
+#ifdef TCP_KEEPIDLE
+	if (setsockopt(tunnel->ssl_socket, IPPROTO_TCP, TCP_KEEPIDLE,
+	               (void *)&flags, sizeof(flags))) {
+		log_error("setsockopt TCP_KEEPIDLE: %s\n", strerror(errno));
+		goto err_sockopt;
+	}
+
+#endif
+#ifdef TCP_KEEPALIVE // on MacOSX
+	if (setsockopt(tunnel->ssl_socket, IPPROTO_TCP, TCP_KEEPALIVE,
+	               (void *)&flags, sizeof(flags))) {
+		log_error("setsockopt TCP_KEEPIDLE: %s\n", strerror(errno));
+		goto err_sockopt;
+	}
+
+#endif
+#ifdef TCP_KEEPINTVL
+	if (setsockopt(tunnel->ssl_socket, IPPROTO_TCP, TCP_KEEPINTVL,
+	               (void *)&flags, sizeof(flags))) {
+		log_error("setsockopt TCP_KEEPINTVL: %s\n", strerror(errno));
+		goto err_sockopt;
+	}
+
+#endif
+#ifdef TCP_KEEPCNT
+	flags = 127;
+	if (setsockopt(tunnel->ssl_socket, IPPROTO_TCP, TCP_KEEPCNT,
+	               (void *)&flags, sizeof(flags))) {
+		log_error("setsockopt TCP_KEEPCNT: %s\n", strerror(errno));
+		goto err_sockopt;
+	}
+#endif
+#endif
 
 // on osx this prevents the program from being stopped with ctrl-c
 #if !HAVE_MACH_MACH_H
