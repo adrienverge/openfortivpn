@@ -1,3 +1,8 @@
+os:
+- linux
+- osx
+- freebsd
+
 language: c
 
 sudo: false
@@ -7,16 +12,31 @@ cache:
     - $HOME/.openfortivpn-deps
 
 before_install:
-  - tests/ci/install_astyle.sh $HOME/.openfortivpn-deps
-  - tests/ci/install_openssl.sh $HOME/.openfortivpn-deps
+  - |
+    if [ "$TRAVIS_OS_NAME" = "linux" ]; then
+        tests/ci/install_astyle.sh $HOME/.openfortivpn-deps
+    fi
+  - |
+    if [ "$TRAVIS_OS_NAME" != "osx" ]; then
+        tests/ci/install_openssl.sh $HOME/.openfortivpn-deps
+    fi
 
 install:
   - ./autogen.sh
-  - PKG_CONFIG_PATH=$HOME/.openfortivpn-deps/lib/pkgconfig ./configure --prefix=/usr --sysconfdir=/etc
+  - |
+    if [ "$TRAVIS_OS_NAME" = "osx" ]; then
+        export PKG_CONFIG_PATH="/usr/local/opt/openssl/lib/pkgconfig:$PKG_CONFIG_PATH"
+    else
+        export PKG_CONFIG_PATH="$HOME/.openfortivpn-deps/lib/pkgconfig"
+    fi
+  - ./configure --prefix=/usr --sysconfdir=/etc
   - make
 
 script:
-  - ./tests/lint/run.sh
+  - |
+    if [ "$TRAVIS_OS_NAME" = "linux" ]; then
+        ./tests/lint/run.sh
+    fi
 
 env:
   global:
@@ -24,6 +44,9 @@ env:
     - secure: "HuYAk43itUiq0YJjmyvCyOM3mnRo8bFqSwksOmQ5fjvQscVWqZg6M9h8Abb+lKAc9L9avrwObjhu3EmOqoZ9Cjtp4WS4IdESK/UNe/jHpODFknsKefPgP67Z/yEFNVU1+5pS0+r+gTWQcZMyJrWrDde0lWpWHR/W7rTtqIbZH8Bp/T7oUN5q10x8PBcOZi/yVqNNicyuERIvUkobro5k+e4rY1N1HkptKs4wVY8M4WZUHwokNtuVfs0yoGQtrpi1KVRWq8sDkb8DNTeNv0MMEoQYUmNlEWxPaKJ9DBr65ajGLHzwUkWaNJGYw7mXwXoBwn5uKOyoytRA6Tj1wbVj4ggqqq6P6tbIcZ4YUW6N72gRaqvCnm6mRnbDHQtvzpqqxtr585mD11mh0DNmB15rvjNcZU/4wHHNQBsFcYEr+fN2/2ef/T3n0dymnnv2uZ05d11V5uSC6XYt3h0VxMDwarOVvOcWKYIQqzs4Bhigd2982v3OlIi5tbOSzHkbiCSP1msOKd6/XpCiCFpqed2UtSGZukisp3wQNfPnUOWoguOJ38nNe2o2G/l6HNOLd6u3sFlhzzthnJ6LPFD1CD9LPaOVYIVrRr90l0B2j1vPQM03eiiw7P6XvI6hPdqAM3VSEyjyrzUJRCUXAA8tovRwKTFlc506FWiFlGBFXFFI3zs="
 
 addons:
+  homebrew:
+    packages:
+    - openssl@1.0
   coverity_scan:
     project:
       name: adrienverge/openfortivpn
