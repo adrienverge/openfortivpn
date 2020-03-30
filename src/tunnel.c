@@ -570,6 +570,7 @@ static int tcp_connect(struct tunnel *tunnel)
 		        tunnel->config->gateway_port,
 		        inet_ntoa(tunnel->config->gateway_ip),
 		        tunnel->config->gateway_port);
+
 		ssize_t bytes_written = write(handle, request, strlen(request));
 
 		if (bytes_written != strlen(request)) {
@@ -584,27 +585,24 @@ static int tcp_connect(struct tunnel *tunnel)
 
 		memset(&(request), '\0', sizeof(request));
 		for (int j = 0; response == NULL; j++) {
-			/*
-			 * Coverity detected a defect:
-			 *  CID 200508: String not null terminated (STRING_NULL)
-			 *
-			 * It is actually a false positive:
-			 * • Function memset() initializes 'request' with '\0'
-			 * • Function read() gets a single char into: request[j]
-			 * • The final '\0' cannot be overwritten because:
-			 *      j < ARRAY_SIZE(request) - 1
-			 */
-			ssize_t bytes_read = read(handle, &(request[j]), 1);
-
-			if (bytes_read < 1) {
+			if (j >= ARRAY_SIZE(request) - 1) {
 				log_error("Proxy response is unexpectedly large and cannot fit in the %lu-bytes buffer.\n",
 				          ARRAY_SIZE(request));
 				goto err_proxy_response;
 			}
 
-			// detect "200"
+			ssize_t bytes_read = read(handle, &(request[j]), 1);
 			static const char HTTP_STATUS_200[] = "200";
 
+			// we have reached the end of the data sent by the proxy
+			// and have not seen HTTP status code 200
+			if (bytes_read < 1) {
+				log_error("Proxy response does not contain \"%s\" as expected.\n",
+				          HTTP_STATUS_200);
+				goto err_proxy_response;
+			}
+
+			// detect "200"
 			response = strstr(request, HTTP_STATUS_200);
 
 			// detect end-of-line after "200"
@@ -638,11 +636,6 @@ static int tcp_connect(struct tunnel *tunnel)
 				response = eol;
 			}
 
-			if (j > ARRAY_SIZE(request) - 2) {
-				log_error("Proxy response does not contain \"%s\" as expected.\n",
-				          HTTP_STATUS_200);
-				goto err_proxy_response;
-			}
 		}
 
 		free(env_proxy); // release memory allocated by strdup()
