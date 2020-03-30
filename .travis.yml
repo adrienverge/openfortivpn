@@ -1,7 +1,10 @@
 os:
-- linux
+  - linux
 
 language: c
+compiler:
+  - gcc
+  - clang
 
 sudo: false
 
