@@ -1,7 +1,5 @@
 os:
 - linux
-- osx
-- freebsd
 
 language: c
 
