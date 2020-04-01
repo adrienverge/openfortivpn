@@ -105,13 +105,39 @@ static int ofv_append_varr(struct ofv_varr *p, const char *x)
 	return 0;
 }
 
+static int ipv4_run_ifup_script(struct tunnel *tunnel)
+{
+	char ns[32];
+
+	setenv("NET_DEVICE", tunnel->ppp_iface, 0);
+
+	ns[0] = '\0';
+
+	if (tunnel->ipv4.ns1_addr.s_addr != 0)
+		strncat(ns, inet_ntoa(tunnel->ipv4.ns1_addr), 15);
+
+	if (tunnel->ipv4.ns2_addr.s_addr != 0) {
+		strcpy(ns, " ");
+		strncat(ns, inet_ntoa(tunnel->ipv4.ns2_addr), 15);
+	}
+
+	setenv("DNS_SERVERS", ns, 0);
+
+	if (tunnel->ipv4.dns_suffix != NULL)
+		setenv("DNS_SUFFIX", tunnel->ipv4.dns_suffix, 0);
+	else
+		setenv("DNS_SUFFIX", "", 0);
+
+	return system(tunnel->config->ifup_script);
+}
+
 static int on_ppp_if_up(struct tunnel *tunnel)
 {
+	int ret;
+
 	log_info("Interface %s is UP.\n", tunnel->ppp_iface);
 
 	if (tunnel->config->set_routes) {
-		int ret;
-
 		log_info("Setting new routes...\n");
 
 		ret = ipv4_set_tunnel_routes(tunnel);
@@ -123,6 +149,13 @@ static int on_ppp_if_up(struct tunnel *tunnel)
 	if (tunnel->config->set_dns) {
 		log_info("Adding VPN nameservers...\n");
 		ipv4_add_nameservers_to_resolv_conf(tunnel);
+	}
+
+	if (tunnel->config->ifup_script) {
+		log_info("Running `ifup` script...\n");
+		ret = ipv4_run_ifup_script(tunnel);
+		if (ret != 0)
+			log_warn("The `ifup` script failed. Please check your logs.\n");
 	}
 
 	log_info("Tunnel is up and running.\n");

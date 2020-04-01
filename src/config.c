@@ -292,6 +292,9 @@ int load_config(struct vpn_config *cfg, const char *filename)
 		} else if (strcmp(key, "realm") == 0) {
 			strncpy(cfg->realm, val, REALM_SIZE);
 			cfg->realm[REALM_SIZE] = '\0';
+		} else if (strcmp(key, "ifup-script") == 0) {
+			strncpy(cfg->ifup_script, val, MAXPATHLEN - 1);
+			cfg->ifup_script[MAXPATHLEN] = '\0';
 		} else if (strcmp(key, "set-dns") == 0) {
 			int set_dns = strtob(val);
 
