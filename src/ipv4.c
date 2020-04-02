@@ -890,12 +890,10 @@ static int ipv4_set_split_routes(struct tunnel *tunnel)
 		route_iface(route) = strdup(tunnel->ppp_iface);
 		if (!route_iface(route))
 			return ERR_IPV4_NO_MEM;
-#ifndef HAVE_RT_ENTRY_WITH_RT_DST
 		if (route_gtw(route).s_addr == tunnel->ipv4.ip_addr.s_addr)
 			route_gtw(route).s_addr = 0;
 		if (route_gtw(route).s_addr == 0)
 			route->rt_flags &= ~RTF_GATEWAY;
-#endif
 		if (route_gtw(route).s_addr != 0)
 			route->rt_flags |= RTF_GATEWAY;
 		ret = ipv4_set_route(route);
