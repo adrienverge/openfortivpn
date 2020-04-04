@@ -122,6 +122,11 @@ static int ipv4_get_route(struct rtentry *route)
 	uint32_t rtdest, rtmask, rtgtw;
 	int rtfound = 0;
 
+	if (!buffer) {
+		err = ERR_IPV4_SEE_ERRNO;
+		goto cleanup;
+	}
+
 	/*
 	 * initialize the buffer with zeroes, aiming to address the
 	 * coverity issue "TAINTED_SCALAR passed to a tainted sink"
@@ -733,6 +738,10 @@ int ipv4_protect_tunnel_route(struct tunnel *tunnel)
 	route_dest(def_rt).s_addr = inet_addr("0.0.0.0");
 	route_mask(def_rt).s_addr = inet_addr("0.0.0.0");
 	route_iface(def_rt) = malloc(strlen(tunnel->ppp_iface) + 2);
+	if (!route_iface(def_rt)) {
+		log_error("malloc: %s\n", strerror(errno));
+		goto err_destroy;
+	}
 	sprintf(route_iface(def_rt), "!%s", tunnel->ppp_iface);
 
 	ret = ipv4_get_route(def_rt);
