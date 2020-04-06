@@ -934,7 +934,12 @@ static int ipv4_set_default_routes(struct tunnel *tunnel)
 		route_iface(ppp_rt) = strdup(tunnel->ppp_iface);
 		if (!route_iface(ppp_rt))
 			return ERR_IPV4_NO_MEM;
-
+		if (route_gtw(ppp_rt).s_addr == tunnel->ipv4.ip_addr.s_addr)
+			route_gtw(ppp_rt).s_addr = 0;
+		if (route_gtw(ppp_rt).s_addr == 0)
+			ppp_rt->rt_flags &= ~RTF_GATEWAY;
+		if (route_gtw(ppp_rt).s_addr != 0)
+			ppp_rt->rt_flags |= RTF_GATEWAY;
 		ret = ipv4_set_route(ppp_rt);
 		if (ret == ERR_IPV4_SEE_ERRNO && errno == EEXIST) {
 			log_warn("Default route exists already.\n");
@@ -955,7 +960,12 @@ static int ipv4_set_default_routes(struct tunnel *tunnel)
 		route_iface(ppp_rt) = strdup(tunnel->ppp_iface);
 		if (!route_iface(ppp_rt))
 			return ERR_IPV4_NO_MEM;
-
+		if (route_gtw(ppp_rt).s_addr == tunnel->ipv4.ip_addr.s_addr)
+			route_gtw(ppp_rt).s_addr = 0;
+		if (route_gtw(ppp_rt).s_addr == 0)
+			ppp_rt->rt_flags &= ~RTF_GATEWAY;
+		if (route_gtw(ppp_rt).s_addr != 0)
+			ppp_rt->rt_flags |= RTF_GATEWAY;
 		ret = ipv4_set_route(ppp_rt);
 		if (ret == ERR_IPV4_SEE_ERRNO && errno == EEXIST) {
 			log_warn("0.0.0.0/1 route exists already.\n");
