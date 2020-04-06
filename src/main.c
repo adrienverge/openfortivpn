@@ -518,6 +518,7 @@ int main(int argc, char **argv)
 	log_debug_all("ATTENTION: the output contains sensitive information such as the THE CLEAR TEXT PASSWORD.\n");
 
 	log_debug("openfortivpn " VERSION "\n");
+	log_debug("    revision " REVISION "\n");
 
 	// Load config file
 	if (config_file[0] != '\0') {
