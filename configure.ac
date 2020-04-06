@@ -16,7 +16,7 @@ AC_PATH_PROG(GIT, [git], [""], "$PATH:/sbin:/usr/sbin")
 AS_IF([test "x$GIT" = "x"], [
 	REVISION=unavailable
 ], [
-	REVISION=`git -C . rev-parse --short HEAD`
+	REVISION=`git describe --tags | sed -e 's/-/+git/;y/-/./'`
 ])
 AC_SUBST(REVISION)
 
