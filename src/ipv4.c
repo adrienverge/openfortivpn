@@ -124,7 +124,7 @@ static int ipv4_get_route(struct rtentry *route)
 
 	if (!buffer) {
 		err = ERR_IPV4_SEE_ERRNO;
-		goto cleanup;
+		goto end;
 	}
 
 	/*
@@ -740,7 +740,7 @@ int ipv4_protect_tunnel_route(struct tunnel *tunnel)
 	route_iface(def_rt) = malloc(strlen(tunnel->ppp_iface) + 2);
 	if (!route_iface(def_rt)) {
 		log_error("malloc: %s\n", strerror(errno));
-		goto err_destroy;
+		return ERR_IPV4_SEE_ERRNO;
 	}
 	sprintf(route_iface(def_rt), "!%s", tunnel->ppp_iface);
 
