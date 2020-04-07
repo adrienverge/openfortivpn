@@ -28,7 +28,7 @@ install-data-hook:
 		mkdir -p $(DESTDIR)$(sysconfdir)/openfortivpn ; \
 		cp -a $(DESTDIR)$(datadir)/config.template \
 			 $(DESTDIR)$(sysconfdir)/openfortivpn/config ; \
-		sed -i'.bak' -e '3,$ s/^/# /' $(DESTDIR)$(sysconfdir)/openfortivpn/config ; \
+		sed -i'.bak' -e '3,$$ s/^/# /' $(DESTDIR)$(sysconfdir)/openfortivpn/config ; \
 		rm $(DESTDIR)$(sysconfdir)/openfortivpn/config.bak ; \
 		chmod 0600 $(DESTDIR)$(sysconfdir)/openfortivpn/config ; \
 	fi
