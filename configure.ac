@@ -12,12 +12,17 @@ AC_GNU_SOURCE
 m4_ifndef([PKG_PROG_PKG_CONFIG], [m4_fatal([Please install pkg-config.])])
 PKG_PROG_PKG_CONFIG
 
-AC_PATH_PROG(GIT, [git], [""], "$PATH:/sbin:/usr/sbin")
-AS_IF([test "x$GIT" = "x"], [
-	REVISION=unavailable
-], [
-	REVISION=`git describe --tags | sed -e 's/-/+git/;y/-/./'`
+REVISION=""
+AS_IF([test -d .git], [
+	AC_PATH_PROG(GIT, [git], [""], "$PATH:/sbin:/usr/sbin")
+	AS_IF([test "x$GIT" != "x"], [
+		REVISION=`$GIT describe --tags | sed -e 's/-/+git/;y/-/./'`
+	])
 ])
+AS_IF([test "x$REVISION" = "x"], [
+	REVISION="unavailable"
+])
+
 AC_SUBST(REVISION)
 
 # Helps support multiarch by setting 'host_os' and 'host_cpu'
