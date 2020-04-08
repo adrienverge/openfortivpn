@@ -1,0 +1,12 @@
+[Unit]
+Description=OpenFortiVPN for %I
+After=network-online.target
+
+[Service]
+Type=simple
+PrivateTmp=true
+ExecStart=@BINDIR@/openfortivpn -c @SYSCONFDIR@/openfortivpn/%I.conf
+OOMScoreAdjust=-100
+
+[Install]
+WantedBy=multi-user.target
