@@ -24,19 +24,21 @@ confdir=$(sysconfdir)/openfortivpn
 datadir=$(prefix)/share/openfortivpn
 data_DATA=etc/openfortivpn/config.template
 
-install-data-hook:
-	if ! test -e $(DESTDIR)$(sysconfdir)/openfortivpn/config ; then \
-		mkdir -p $(DESTDIR)$(sysconfdir)/openfortivpn ; \
-		cp -a $(DESTDIR)$(datadir)/config.template \
-			 $(DESTDIR)$(sysconfdir)/openfortivpn/config ; \
-		sed -i'.bak' -e '3,$$ s/^/# /' $(DESTDIR)$(sysconfdir)/openfortivpn/config ; \
-		rm $(DESTDIR)$(sysconfdir)/openfortivpn/config.bak ; \
-		chmod 0600 $(DESTDIR)$(sysconfdir)/openfortivpn/config ; \
+etc/openfortivpn/config:
+	$(MKDIR_P) etc/openfortivpn
+	$(SED) -e '3,$$ s/^/# /' $(srcdir)/etc/openfortivpn/config.template >$@
+
+install-data-hook: etc/openfortivpn/config
+	if ! test -f $(DESTDIR)$(sysconfdir)/openfortivpn/config ; then \
+		$(INSTALL) -d -m 755 $(DESTDIR)$(sysconfdir)/openfortivpn ; \
+		$(INSTALL) -m 600 etc/openfortivpn/config \
+		                  $(DESTDIR)$(sysconfdir)/openfortivpn/config ; \
 	fi
 
 dist_man_MANS = doc/openfortivpn.1
 
 doc/openfortivpn.1: $(srcdir)/doc/openfortivpn.1.in
-	mkdir -p doc; sed -e 's|[@]SYSCONFDIR[@]|$(sysconfdir)|g;s|[@]DATADIR[@]|$(datadir)|g;' $(srcdir)/doc/openfortivpn.1.in >$@
+	$(MKDIR_P) doc
+	$(SED) -e 's|[@]SYSCONFDIR[@]|$(sysconfdir)|g;s|[@]DATADIR[@]|$(datadir)|g;' $(srcdir)/doc/openfortivpn.1.in >$@
 
 EXTRA_DIST = LICENSE README.md doc/openfortivpn.1.in $(data_DATA)

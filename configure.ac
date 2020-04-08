@@ -8,7 +8,10 @@ AM_INIT_AUTOMAKE([foreign subdir-objects])
 
 # Checks for programs.
 AC_PROG_CC
-AC_GNU_SOURCE
+AC_PROG_MKDIR_P
+AC_PROG_SED
+AC_PROG_INSTALL
+AC_USE_SYSTEM_EXTENSIONS
 m4_ifndef([PKG_PROG_PKG_CONFIG], [m4_fatal([Please install pkg-config.])])
 PKG_PROG_PKG_CONFIG
 
