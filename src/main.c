@@ -293,7 +293,7 @@ int main(int argc, char **argv)
 			if (strcmp(long_options[option_index].name,
 			           "version") == 0) {
 				printf(VERSION "\n");
-				if (strlen(REVISION) > 10)
+				if (strcmp(&REVISION[1], VERSION))
 					log_debug("revision " REVISION "\n");
 				ret = EXIT_SUCCESS;
 				goto exit;
@@ -520,7 +520,7 @@ int main(int argc, char **argv)
 	log_debug_all("ATTENTION: the output contains sensitive information such as the THE CLEAR TEXT PASSWORD.\n");
 
 	log_debug("openfortivpn " VERSION "\n");
-	if (strlen(REVISION) > 10)
+	if (strcmp(&REVISION[1], VERSION))
 		log_debug("revision " REVISION "\n");
 
 	// Load config file
