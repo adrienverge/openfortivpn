@@ -13,10 +13,10 @@ m4_ifndef([PKG_PROG_PKG_CONFIG], [m4_fatal([Please install pkg-config.])])
 PKG_PROG_PKG_CONFIG
 
 REVISION=""
-AC_PATH_PROG(GIT, [git], [""], "$PATH:/sbin:/usr/sbin")
 AS_IF([test -d .git], [
+	AC_PATH_PROG(GIT, [git], [""], "$PATH:/sbin:/usr/sbin")
 	AS_IF([test "x$GIT" != "x"], [
-		REVISION=`git describe --tags | sed -e 's/-/+git/;y/-/./'`
+		REVISION=`$GIT describe --tags | sed -e 's/-/+git/;y/-/./'`
 	])
 ])
 AS_IF([test "x$REVISION" = "x"], [
