@@ -20,25 +20,33 @@ openfortivpn_LDADD = $(OPENSSL_LIBS) $(LIBSYSTEMD_LIBS)
 
 DISTCHECK_CONFIGURE_FLAGS = CFLAGS=-Werror
 
-confdir=$(sysconfdir)/openfortivpn
-datadir=$(prefix)/share/openfortivpn
+confdir=$(sysconfdir)/@PACKAGE@
+datadir=$(prefix)/share/@PACKAGE@
 data_DATA=etc/openfortivpn/config.template
 
-etc/openfortivpn/config:
+etc/openfortivpn/config: $(srcdir)/etc/openfortivpn/config.template
 	$(MKDIR_P) etc/openfortivpn
 	$(SED) -e '3,$$ s/^/# /' $(srcdir)/etc/openfortivpn/config.template >$@
 
 install-data-hook: etc/openfortivpn/config
-	if ! test -f $(DESTDIR)$(sysconfdir)/openfortivpn/config ; then \
-		$(INSTALL) -d -m 755 $(DESTDIR)$(sysconfdir)/openfortivpn ; \
+	if ! test -f $(DESTDIR)$(confdir)/config ; then \
+		$(MKDIR_P) $(DESTDIR)$(confdir) ; \
 		$(INSTALL) -m 600 etc/openfortivpn/config \
-		                  $(DESTDIR)$(sysconfdir)/openfortivpn/config ; \
+		                  $(DESTDIR)$(confdir)/config ; \
 	fi
+
+all-local: etc/openfortivpn/config
+
+clean-local:
+	-rm -f etc/openfortivpn/config
+
+uninstall-local:
+	-rm -f $(DESTDIR)$(confdir)/config
 
 dist_man_MANS = doc/openfortivpn.1
 
 doc/openfortivpn.1: $(srcdir)/doc/openfortivpn.1.in
 	$(MKDIR_P) doc
-	$(SED) -e 's|[@]SYSCONFDIR[@]|$(sysconfdir)|g;s|[@]DATADIR[@]|$(datadir)|g;' $(srcdir)/doc/openfortivpn.1.in >$@
+	$(SED) -e 's|[@]SYSCONFDIR[@]|$(sysconfdir)|g;s|[@]DATADIR[@]|$(datadir)|g' $(srcdir)/doc/openfortivpn.1.in >$@
 
-EXTRA_DIST = LICENSE README.md doc/openfortivpn.1.in $(data_DATA)
+EXTRA_DIST = autogen.sh CHANGELOG.md LICENSE LICENSE.OpenSSL README.md doc/openfortivpn.1.in $(data_DATA)
