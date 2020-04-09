@@ -28,9 +28,6 @@ AS_IF([test "x$REVISION" = "x"], [
 
 AC_SUBST(REVISION)
 
-# Helps support multiarch by setting 'host_os' and 'host_cpu'
-AC_CANONICAL_HOST
-
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 # Checks for libraries.
