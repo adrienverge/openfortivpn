@@ -473,7 +473,7 @@ static void *ssl_read(void *arg)
 
 		if (tunnel->state == STATE_CONNECTING) {
 			if (packet_is_ip_plus_dns(packet)) {
-				char line[ARRAY_SIZE("[xxx.xxx.xxx.xxx], ns [xxx.xxx.xxx.xxx, xxx.xxx.xxx.xxx]")];
+				char line[ARRAY_SIZE("[xxx.xxx.xxx.xxx], ns [xxx.xxx.xxx.xxx, xxx.xxx.xxx.xxx], ns_suffix []") + MAX_DOMAIN_LENGTH];
 
 				set_tunnel_ips(tunnel, packet);
 				strcpy(line, "[");
@@ -482,6 +482,8 @@ static void *ssl_read(void *arg)
 				strncat(line, inet_ntoa(tunnel->ipv4.ns1_addr), 15);
 				strcat(line, ", ");
 				strncat(line, inet_ntoa(tunnel->ipv4.ns2_addr), 15);
+				strcat(line, "], ns_suffix [");
+				strncat(line, tunnel->ipv4.dns_suffix, MAX_DOMAIN_LENGTH);
 				strcat(line, "]");
 				log_info("Got addresses: %s\n", line);
 			}
