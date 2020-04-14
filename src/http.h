@@ -20,6 +20,8 @@
 
 #include "tunnel.h"
 
+#include <stdint.h>
+
 #define ERR_HTTP_INVALID	-1
 #define ERR_HTTP_TOO_LONG	-2
 #define ERR_HTTP_NO_MEM		-3
