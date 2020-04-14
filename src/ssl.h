@@ -30,6 +30,7 @@
 #define OPENFORTIVPN_SSL_H
 
 #include <errno.h>
+#include <stdint.h>
 #include <string.h>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
@@ -76,7 +77,7 @@ static inline const char *err_ssl_str(int code)
 	else if (code == ERR_SSL_SEE_ERRNO)
 		return strerror(errno);
 	else if (code == ERR_SSL_SEE_SSLERR)
-		return ERR_error_string(ERR_peek_last_error(), NULL);
+		return ERR_reason_error_string(ERR_peek_last_error());
 	return "unknown";
 }
 
