@@ -132,6 +132,10 @@ static int on_ppp_if_up(struct tunnel *tunnel)
 
 static int on_ppp_if_down(struct tunnel *tunnel)
 {
+#if HAVE_SYSTEMD
+	sd_notify(0, "STOPPING=1");
+#endif
+
 	log_info("Setting ppp interface down.\n");
 
 	if (tunnel->config->set_routes) {
