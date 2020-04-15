@@ -473,7 +473,7 @@ static void *ssl_read(void *arg)
 
 		if (tunnel->state == STATE_CONNECTING) {
 			if (packet_is_ip_plus_dns(packet)) {
-				char line[57]; // 1 + 15 + 7 + 15 + 2 + 15 + 1 + 1
+				char line[ARRAY_SIZE("[xxx.xxx.xxx.xxx], ns [xxx.xxx.xxx.xxx, xxx.xxx.xxx.xxx]")];
 
 				set_tunnel_ips(tunnel, packet);
 				strcpy(line, "[");
