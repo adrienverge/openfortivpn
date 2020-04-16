@@ -26,7 +26,7 @@ data_DATA=etc/openfortivpn/config.template
 
 etc/openfortivpn/config: $(srcdir)/etc/openfortivpn/config.template
 	@$(MKDIR_P) etc/openfortivpn
-	$(AM_V_GEN)$(SED) -e '3,$$ s/^/# /' $(srcdir)/etc/openfortivpn/config.template >$@
+	$(AM_V_GEN)$(SED) -e '/^#/n;/^\s*$$/n;s/^/# /' $(srcdir)/etc/openfortivpn/config.template >$@
 
 install-data-hook: etc/openfortivpn/config
 	if ! test -f $(DESTDIR)$(confdir)/config ; then \
