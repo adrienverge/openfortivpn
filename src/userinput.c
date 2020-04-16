@@ -41,17 +41,23 @@ static char *uri_escape(const char *string)
 	for (i = 0; string[i]; i++) {
 		if (allocated_len + 4 >= real_len) {
 			allocated_len += 16;
-			escaped = realloc(escaped, allocated_len);
+			char *tmp = realloc(escaped, allocated_len);
+
 			// bail out if realloc fails
-			if (escaped == NULL)
-				return NULL;
+			if (tmp == NULL) {
+				free(escaped);
+				escaped = NULL;
+				break;
+			}
+			escaped = tmp;
 		}
 		if (isalnum(string[i]))
 			escaped[real_len++] = string[i];
 		else
 			real_len += sprintf(&escaped[real_len], "%%%02X", string[i]);
 	}
-	escaped[real_len] = '\0';
+	if (escaped)
+		escaped[real_len] = '\0';
 
 	return escaped;
 }
@@ -62,6 +68,10 @@ static char *uri_unescape(const char *string)
 	char *unescaped = malloc(escaped_len);
 	int real_len = 0;
 	int i = 0;
+
+	// bail out if malloc fails
+	if (unescaped == NULL)
+		return NULL;
 
 	while (string[i]) {
 		if (string[i] == '%' && isxdigit(string[i + 1])
