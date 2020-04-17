@@ -52,15 +52,25 @@ static const struct log_param_s log_params[OFV_LOG_DEBUG_ALL + 1] = {
 void init_logging(void)
 {
 	pthread_mutexattr_t mutexattr;
+	int e;
 
 	loglevel = OFV_LOG_INFO;
 	is_a_tty = isatty(STDOUT_FILENO);
 
-	pthread_mutexattr_init(&mutexattr);
+	e = pthread_mutexattr_init(&mutexattr);
+	if (e)
+		fprintf(stderr, "ERROR:  pthread_mutexattr_init: %s\n",
+		        strerror(e));
 #ifdef HAVE_PTHREAD_MUTEXATTR_SETROBUST
-	pthread_mutexattr_setrobust(&mutexattr, PTHREAD_MUTEX_ROBUST);
+	e = pthread_mutexattr_setrobust(&mutexattr, PTHREAD_MUTEX_ROBUST);
+	if (e)
+		fprintf(stderr, "ERROR:  pthread_mutexattr_setrobust: %s\n",
+		        strerror(e));
 #endif
-	pthread_mutex_init(&mutex, &mutexattr);
+	e = pthread_mutex_init(&mutex, &mutexattr);
+	if (e)
+		fprintf(stderr, "ERROR:  pthread_mutex_init: %s\n",
+		        strerror(e));
 }
 
 void set_syslog(int use_syslog)
@@ -86,8 +96,12 @@ void do_log(int verbosity, const char *format, ...)
 {
 	va_list args;
 	const struct log_param_s *lp = NULL;
+	int e;
 
-	pthread_mutex_lock(&mutex);
+	e = pthread_mutex_lock(&mutex);
+	if (e)
+		fprintf(stderr, "ERROR:  pthread_mutex_lock: %s\n",
+		        strerror(e));
 
 	// Use sane default if wrong verbosity specified
 	if (verbosity > OFV_LOG_DEBUG_ALL || verbosity < 0)
@@ -111,7 +125,10 @@ void do_log(int verbosity, const char *format, ...)
 		fflush(stdout);
 	}
 
-	pthread_mutex_unlock(&mutex);
+	e = pthread_mutex_unlock(&mutex);
+	if (e)
+		fprintf(stderr, "ERROR:  pthread_mutex_unlock: %s\n",
+		        strerror(e));
 }
 
 void do_log_packet(const char *prefix, size_t len, const uint8_t *packet)
