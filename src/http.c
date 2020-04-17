@@ -605,8 +605,7 @@ int auth_log_in(struct tunnel *tunnel)
 
 	tunnel->cookie[0] = '\0';
 
-	if (tunnel->config->use_engine > 0
-	    || (username[0] == '\0' && tunnel->config->password[0] == '\0')) {
+	if (username[0] == '\0' && tunnel->config->password[0] == '\0') {
 		snprintf(data, sizeof(data), "cert=&nup=1");
 		ret = http_request(tunnel, "GET", "/remote/login",
 		                   data, &res, &response_size);
