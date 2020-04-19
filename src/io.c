@@ -682,7 +682,6 @@ int io_loop(struct tunnel *tunnel)
 		goto err_thread;
 	}
 
-
 #if !HAVE_MACH_MACH_H
 	// Restore the signal for the main thread
 	pthread_sigmask(SIG_SETMASK, &oldset, NULL);
