@@ -749,13 +749,17 @@ int ipv4_protect_tunnel_route(struct tunnel *tunnel)
 		log_warn("Could not get current default route (%s).\n",
 		         err_ipv4_str(ret));
 		log_warn("Protecting tunnel route has failed. But this can be working except for some cases.\n");
-		goto err_destroy;
+		goto err_destroy_def_rt;
 	}
 
 	// Set the up a route to the tunnel gateway
 	route_dest(gtw_rt).s_addr = tunnel->config->gateway_ip.s_addr;
 	route_mask(gtw_rt).s_addr = inet_addr("255.255.255.255");
 	route_iface(gtw_rt) = malloc(strlen(tunnel->ppp_iface) + 2);
+	if (!route_iface(gtw_rt)) {
+		log_error("malloc: %s\n", strerror(errno));
+		return ERR_IPV4_SEE_ERRNO;
+	}
 	sprintf(route_iface(gtw_rt), "%s", tunnel->ppp_iface);
 	ret = ipv4_get_route(gtw_rt);
 	if ((ret == 0)
@@ -771,7 +775,7 @@ int ipv4_protect_tunnel_route(struct tunnel *tunnel)
 		log_warn("Could not get route to gateway (%s).\n",
 		         err_ipv4_str(ret));
 		log_warn("Protecting tunnel route has failed. But this can be working except for some cases.\n");
-		goto err_destroy;
+		goto err_destroy_gtw_rt;
 	}
 	route_dest(gtw_rt).s_addr = tunnel->config->gateway_ip.s_addr;
 	route_mask(gtw_rt).s_addr = inet_addr("255.255.255.255");
@@ -792,7 +796,9 @@ int ipv4_protect_tunnel_route(struct tunnel *tunnel)
 
 	return 0;
 
-err_destroy:
+err_destroy_gtw_rt:
+	route_destroy(gtw_rt);
+err_destroy_def_rt:
 	route_destroy(def_rt);
 	tunnel->ipv4.route_to_vpn_is_added = 0;
 	return ret;
