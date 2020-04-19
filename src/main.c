@@ -575,6 +575,11 @@ int main(int argc, char **argv)
 	if (cfg.password == NULL && cfg.username[0] != '\0') {
 		char *tmp_password = malloc(PWD_BUFSIZ); // allocate large buffer
 
+		if (tmp_password == NULL) {
+			log_error("malloc: %s\n", strerror(errno));
+			ret = EXIT_FAILURE;
+			goto exit;
+		}
 		read_password(cfg.pinentry, "password",
 		              "VPN account password: ", tmp_password, PWD_BUFSIZ);
 		cfg.password = strdup(tmp_password); // copy string of correct size
