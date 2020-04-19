@@ -136,7 +136,7 @@ static int on_ppp_if_down(struct tunnel *tunnel)
 	sd_notify(0, "STOPPING=1");
 #endif
 
-	log_info("Setting ppp interface down.\n");
+	log_info("Setting %s interface down.\n", tunnel->ppp_iface);
 
 	if (tunnel->config->set_routes) {
 		log_info("Restoring routes...\n");
