@@ -482,8 +482,11 @@ static void *ssl_read(void *arg)
 				strncat(line, inet_ntoa(tunnel->ipv4.ns1_addr), 15);
 				strcat(line, ", ");
 				strncat(line, inet_ntoa(tunnel->ipv4.ns2_addr), 15);
-				strcat(line, "], ns_suffix [");
-				strncat(line, tunnel->ipv4.dns_suffix, MAX_DOMAIN_LENGTH);
+				if (tunnel->ipv4.dns_suffix) {
+					strcat(line, "], ns_suffix [");
+					strncat(line, tunnel->ipv4.dns_suffix,
+					        MAX_DOMAIN_LENGTH);
+				}
 				strcat(line, "]");
 				log_info("Got addresses: %s\n", line);
 			}
