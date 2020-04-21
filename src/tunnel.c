@@ -648,7 +648,7 @@ static int tcp_connect(struct tunnel *tunnel)
 			// detect end-of-line after "200"
 			if (response != NULL) {
 				/*
-				 * RFC2616 states in section 2.2 Basic Rules:
+				 * RFC 2616 states in section 2.2 Basic Rules:
 				 *      CR     = <US-ASCII CR, carriage return (13)>
 				 *      LF     = <US-ASCII LF, linefeed (10)>
 				 *      HTTP/1.1 defines the sequence CR LF as the
@@ -657,7 +657,7 @@ static int tcp_connect(struct tunnel *tunnel)
 				 *      for tolerant applications).
 				 *              CRLF   = CR LF
 				 *
-				 * RFC2616 states in section 19.3 Tolerant Applications:
+				 * RFC 2616 states in section 19.3 Tolerant Applications:
 				 *      The line terminator for message-header fields
 				 *      is the sequence CRLF. However, we recommend
 				 *      that applications, when parsing such headers,

@@ -16,7 +16,7 @@
  */
 
 #include "xml.h"
-#include "ipv4.h"
+#include "config.h"
 #include "log.h"
 
 #include <string.h>

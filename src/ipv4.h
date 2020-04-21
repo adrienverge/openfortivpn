@@ -64,10 +64,6 @@ struct rtentry {
 #define MAX_SPLIT_ROUTES 65535
 #define STEP_SPLIT_ROUTES 32
 
-// see https://unix.stackexchange.com/questions/245849
-// ... /resolv-conf-limited-to-six-domains-with-a-total-of-256-characters
-#define MAX_DOMAIN_LENGTH 256
-
 struct ipv4_config {
 	struct in_addr	ip_addr;
 

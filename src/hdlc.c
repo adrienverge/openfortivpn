@@ -20,8 +20,7 @@
 /*
  * Encode and decode PPP packets from and into HDLC frames.
  *
- * RFC1622 describes the use of HDLC-like framing for PPP encapsulated packets:
- *
+ * RFC 1622 describes the use of HDLC-like framing for PPP encapsulated packets:
  * https://www.rfc-editor.org/info/rfc1662
  */
 
@@ -32,7 +31,7 @@
 	((byte) < 0x20)
 
 /*
- * Lookup table used to calculate the FCS, as generated in RFC1662.
+ * Lookup table used to calculate the FCS, as generated in RFC 1662.
  */
 static const uint16_t fcs_tab[] = {
 	0x0000, 0x1189, 0x2312, 0x329b, 0x4624, 0x57ad, 0x6536, 0x74bf,
