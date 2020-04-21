@@ -120,7 +120,7 @@ For other distros, you'll need to build and install from source:
     * Arch Linux: `gcc` `automake` `autoconf` `openssl` `pkg-config`
     * Gentoo Linux: `net-dialup/ppp` `pkg-config`
     * openSUSE: `gcc` `automake` `autoconf` `libopenssl-devel` `pkg-config`
-    * macOS (Homebrew): `automake` `autoconf` `openssl@1.0` `pkg-config`
+    * macOS (Homebrew): `automake` `autoconf` `openssl@1.1` `pkg-config`
     * FreeBSD: `automake` `autoconf` `libressl` `pkgconf`
 
     On Linux, if you manage your kernel yourself, ensure to compile those modules:
@@ -135,7 +135,7 @@ For other distros, you'll need to build and install from source:
     /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 
     # Install Dependencies
-    brew install automake autoconf openssl@1.0 pkg-config
+    brew install automake autoconf openssl@1.1 pkg-config
 
     # You may need to make this openssl available to compilers and pkg-config
     export LDFLAGS="-L/usr/local/opt/openssl/lib $LDFLAGS"
