@@ -491,7 +491,7 @@ static void *ssl_read(void *arg)
 				log_info("Got addresses: %s\n", line);
 			}
 			if (packet_is_end_negociation(packet)) {
-				log_info("negotiation complete\n");
+				log_info("Negotiation complete.\n");
 				SEM_POST(&sem_if_config);
 			}
 		}
