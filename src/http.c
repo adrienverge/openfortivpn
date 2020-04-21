@@ -166,7 +166,7 @@ int http_receive(
 	uint32_t content_size = 0;
 	int chunked = 0;
 
-	buffer = malloc(capacity);
+	buffer = malloc(capacity + 1); // room for terminal '\0'
 	if (buffer == NULL)
 		return ERR_HTTP_NO_MEM;
 
@@ -231,9 +231,13 @@ int http_receive(
 		if (bytes_read == capacity) {
 			char *new_buffer;
 
-			assert(UINT32_MAX / capacity >= 2);
+			if ((UINT32_MAX - 1) / capacity < 2) {
+				free(buffer);
+				return ERR_HTTP_TOO_LONG;
+			}
 			capacity *= 2;
-			new_buffer = realloc(buffer, capacity);
+
+			new_buffer = realloc(buffer, capacity + 1);
 			if (new_buffer == NULL) {
 				free(buffer);
 				return ERR_HTTP_NO_MEM;
@@ -253,20 +257,12 @@ int http_receive(
 	if (response == NULL) {
 		free(buffer);
 	} else {
-		char *tmp;
-
-		assert(capacity < UINT32_MAX);
-		capacity = bytes_read + 1;
-		tmp = realloc(buffer, capacity);
-		if (tmp == NULL) {
-			free(buffer);
-			return ERR_HTTP_NO_MEM;
-		}
-		tmp[bytes_read] = '\0';
-		*response = tmp;
+		assert(bytes_read < capacity);
+		buffer[bytes_read] = '\0';
+		*response = buffer;
 
 		if (response_size != NULL)
-			*response_size = capacity;
+			*response_size = bytes_read + 1;
 	}
 	return 1;
 }
