@@ -1062,10 +1062,12 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 	int ret = -1;
 	FILE *file;
 	struct stat stat;
-	static const size_t NS_SIZE = ARRAY_SIZE("nameserver xxx.xxx.xxx.xxx");
+#define NS_SIZE ARRAY_SIZE("nameserver xxx.xxx.xxx.xxx")
 	char ns1[NS_SIZE], ns2[NS_SIZE];
-	static const size_t DNS_SUFFIX_SIZE = ARRAY_SIZE("search ") + MAX_DOMAIN_LENGTH;
+#undef NS_SIZE
+#define DNS_SUFFIX_SIZE (ARRAY_SIZE("search ") + MAX_DOMAIN_LENGTH)
 	char dns_suffix[DNS_SUFFIX_SIZE];
+#undef DNS_SUFFIX_SIZE
 	char *buffer = NULL;
 	int use_resolvconf = 0;
 
@@ -1262,10 +1264,12 @@ int ipv4_del_nameservers_from_resolv_conf(struct tunnel *tunnel)
 	int ret = -1;
 	FILE *file;
 	struct stat stat;
-	static const size_t NS_SIZE = ARRAY_SIZE("nameserver xxx.xxx.xxx.xxx");
+#define NS_SIZE ARRAY_SIZE("nameserver xxx.xxx.xxx.xxx")
 	char ns1[NS_SIZE], ns2[NS_SIZE];
-	static const size_t DNS_SUFFIX_SIZE = ARRAY_SIZE("search ") + MAX_DOMAIN_LENGTH;
+#undef NS_SIZE
+#define DNS_SUFFIX_SIZE (ARRAY_SIZE("search ") + MAX_DOMAIN_LENGTH)
 	char dns_suffix[DNS_SUFFIX_SIZE];
+#undef DNS_SUFFIX_SIZE
 	char *buffer = NULL;
 	char *saveptr = NULL;
 

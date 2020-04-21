@@ -32,15 +32,10 @@
 #include <arpa/inet.h>
 
 /*
- * Implement HTTP requests and responses over SSL for initial communication
- * with the FortiGate appliance.
- */
-
-/*
  * Fixed size of the buffer for outgoing HTTP requests.
  * Initial size of the buffer for incoming HTTP responses.
  */
-static const uint32_t HTTP_BUFFER_SIZE = 0x8000;
+#define HTTP_BUFFER_SIZE 0x8000
 
 
 /*
