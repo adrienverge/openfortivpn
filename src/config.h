@@ -57,7 +57,23 @@ struct x509_digest {
 };
 
 #define FIELD_SIZE	64
+
+/*
+ * RFC 6265 does not limit the size of cookies:
+ * https://www.rfc-editor.org/info/rfc6265
+ *
+ * Yet browsers typically limit themselves to ~4K so we are on the safe side:
+ * http://browsercookielimits.squawky.net/
+ */
 #define COOKIE_SIZE	4096
+
+/*
+ * GNU libc used to limit the search list to 256 characters:
+ * https://unix.stackexchange.com/questions/245849
+ *
+ * We believe we are on the safe side using this value.
+ */
+#define MAX_DOMAIN_LENGTH 256
 
 struct vpn_config {
 	char		gateway_host[FIELD_SIZE + 1];

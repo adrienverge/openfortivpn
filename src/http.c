@@ -31,6 +31,15 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 
+/*
+ * Implement HTTP requests and responses over SSL for initial communication
+ * with the FortiGate appliance.
+ */
+
+/*
+ * Fixed size of the buffer for outgoing HTTP requests.
+ * Initial size of the buffer for incoming HTTP responses.
+ */
 static const uint32_t HTTP_BUFFER_SIZE = 0x8000;
 
 
@@ -174,7 +183,7 @@ int http_receive(
 		                          capacity - bytes_read)) == ERR_SSL_AGAIN)
 			;
 		if (n < 0) {
-			log_error("Error reading from SSL connection (%s).\n",
+			log_debug("Error reading from SSL connection (%s).\n",
 			          err_ssl_str(n));
 			free(buffer);
 			return ERR_HTTP_SSL;
@@ -314,17 +323,17 @@ static int http_request(struct tunnel *tunnel, const char *method,
                         uint32_t *response_size
                        )
 {
-	int ret = do_http_request(tunnel, method, uri, data,
-	                          response, response_size);
+	int ret;
 
+	ret = do_http_request(tunnel, method, uri, data,
+	                      response, response_size);
 	if (ret == ERR_HTTP_SSL) {
 		ssl_connect(tunnel);
 		ret = do_http_request(tunnel, method, uri, data,
 		                      response, response_size);
 	}
-
 	if (ret != 1)
-		log_warn("Error issuing %s request\n", uri);
+		log_debug("Error issuing %s request\n", uri);
 
 	return ret;
 }
