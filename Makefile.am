@@ -44,7 +44,7 @@ etc/openfortivpn/config: $(srcdir)/etc/openfortivpn/config.template
 	@$(MKDIR_P) etc/openfortivpn
 	$(AM_V_GEN)$(SED) -e '/^#/n;/^\s*$$/n;s/^/# /' $(srcdir)/etc/openfortivpn/config.template >$@
 
-install-data-hook: etc/openfortivpn/config lib/systemd/system/openfortivpn@.service
+install-data-hook: etc/openfortivpn/config
 	if ! test -f $(DESTDIR)$(confdir)/config ; then \
 		$(MKDIR_P) $(DESTDIR)$(confdir) ; \
 		$(INSTALL) -m 600 etc/openfortivpn/config \
