@@ -43,6 +43,9 @@
 /*
  * URL-encodes a string for HTTP requests.
  *
+ * RFC 3986 describes the percent-encoding mechanism:
+ * https://www.rfc-editor.org/info/rfc3986
+ *
  * The dest buffer size MUST be at least strlen(str) * 3 + 1.
  *
  * @param[out] dest  the buffer to write the URL-encoded string
@@ -172,7 +175,7 @@ static int parse_response_header(const struct phr_header *headers, size_t num_he
 	uint32_t content_length = 0;
 	int transfer_encoding_chunked = 0;
 
-	for (int i = 0; i != num_headers; ++i) {
+	for (int i = 0; i != num_headers; i++) {
 		if (header_name_cmp(headers[i], "Content-Length") == 0) {
 			long l = strtol(headers[i].name, NULL, 10);
 
@@ -218,6 +221,7 @@ int http_receive(
 	uint32_t header_size = 0;
 	uint32_t content_size = 0;
 	int chunked = 0;
+	struct phr_chunked_decoder decoder = {0}; // zero-clear
 
 	buffer = malloc(capacity + 1); // room for terminal '\0'
 	if (buffer == NULL)
@@ -225,7 +229,13 @@ int http_receive(
 
 	while (1) {
 		int n;
+		int minor_version, status;
+		const char *msg;
+		size_t msg_len;
+		struct phr_header headers[100]; // FIXME
+		size_t num_headers = ARRAY_SIZE(headers);
 
+		/* read SSL stream into buffer as long as ERR_SSL_AGAIN */
 		while ((n = safe_ssl_read(tunnel->ssl_handle,
 		                          (uint8_t *) buffer + bytes_read,
 		                          capacity - bytes_read)) == ERR_SSL_AGAIN)
@@ -241,23 +251,22 @@ int http_receive(
 
 		log_debug_details("%s:\n%s\n", __func__, buffer);
 
-		if (!header_size) {
-			/* Have we reached the end of the HTTP header? */
-			int minor_version, status;
-			const char *msg;
-			size_t msg_len;
-			struct phr_header headers[100]; // FIXME
-			size_t num_headers = ARRAY_SIZE(headers);
-
+		if (content_size == 0 && !chunked) {
+			/* parse the HTTP response header */
 			n = phr_parse_response(buffer, bytes_read,
-			                       &minor_version, &status,
-			                       &msg, &msg_len,
-			                       headers, &num_headers,
-			                       last_bytes_read);
+					&minor_version, &status,
+					&msg, &msg_len,
+					headers, &num_headers,
+					last_bytes_read);
 			if (n > 0) {
 				header_size = n;
+				log_error("*** header_size: %u\n", header_size);
 				n = parse_response_header(headers, num_headers,
 				                          &content_size, &chunked);
+				if (content_size)
+					log_error("*** content_size: %u\n", content_size);
+				if (chunked)
+					log_error("*** chunked: %d\n", chunked);
 				if (n < 0) {
 					free(buffer);
 					return n;
@@ -272,24 +281,46 @@ int http_receive(
 			} else if (n == -2) {
 				/* response is partial, continue the loop */
 			} else {
-				/* failed to parse the response */
+				/* failed to parse the response header */
 				assert(n == -1);
+				free(buffer);
+				return ERR_HTTP_INVALID;
 			}
 		}
+		if (chunked) {
+			size_t bufsz = bytes_read - header_size;
 
-		if (header_size) {
-			/* Have we reached the end of the HTTP body? */
-			if (chunked) {
-				static const char EOB[7] = "\r\n0\r\n\r\n";
+			n = phr_decode_chunked(&decoder,
+			                       &buffer[header_size], &bufsz);
 
-				/* Last chunk terminator. Done naively. */
-				if (bytes_read >= sizeof(EOB) &&
-				    !memcmp(&buffer[bytes_read - sizeof(EOB)],
-				            EOB, sizeof(EOB)))
-					break;
+			if (n >= 0) {
+				/* body is complete */
+				if (n > 0) {
+					/* garbage after body */
+					log_warn("Garbage after body (%d bytes).\n",
+					         n);
+				}
+			} else if (n == -2) {
+				/* body is incomplete, continue the loop */
 			} else {
-				if (bytes_read >= header_size + content_size)
-					break;
+				/* failed to parse the chunked body */
+				assert(n == -1);
+				free(buffer);
+				return ERR_HTTP_INVALID;
+			}
+			//~ /* parse the HTTP response chunked body */
+			//~ static const char EOB[7] = "\r\n0\r\n\r\n";
+
+			//~ /* Last chunk terminator. Done naively. */
+			//~ if (bytes_read >= sizeof(EOB) &&
+			    //~ !memcmp(&buffer[bytes_read - sizeof(EOB)],
+			            //~ EOB, sizeof(EOB)))
+				//~ break;
+		} else if (content_size > 0) {
+			/* read until the end of the HTTP response body */
+			if (bytes_read >= header_size + content_size) {
+				buffer[bytes_read] = '\0';
+				break;
 			}
 		}
 
