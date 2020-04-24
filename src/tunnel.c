@@ -761,7 +761,7 @@ static int ssl_verify_cert(struct tunnel *tunnel)
 		goto free_cert;
 	}
 
-	log_error("Gateway certificate validation failed, and the certificate digest in not in the local whitelist. If you trust it, rerun with:\n");
+	log_error("Gateway certificate validation failed, and the certificate digest is not in the local whitelist. If you trust it, rerun with:\n");
 	log_error("    --trusted-cert %s\n", digest_str);
 	log_error("or add this line to your config file:\n");
 	log_error("    trusted-cert = %s\n", digest_str);
