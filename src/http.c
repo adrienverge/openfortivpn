@@ -870,6 +870,8 @@ int auth_get_config(struct tunnel *tunnel)
 	if (ret == 1)
 		return ret;
 
+	log_warn("Configuration cannot be retrieved in XML format. This FortiGate appliance might be outdated and vulnerable, you might not be able to connect from systems with recent OpenSSL libraries.\n");
+
 	ret = http_request(tunnel, "GET", "/remote/fortisslvpn", "", &buffer, NULL);
 	if (ret == 1) {
 		ret = parse_config(tunnel, buffer);
