@@ -1,6 +1,7 @@
 [Unit]
 Description=OpenFortiVPN for %I
 After=network-online.target
+Documentation=man:openfortivpn(1)
 
 [Service]
 Type=simple
