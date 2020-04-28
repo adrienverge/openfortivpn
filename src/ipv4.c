@@ -1087,6 +1087,7 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 		int resolvconf_call_len;
 		char *resolvconf_call;
 
+		log_debug("Attempting to run %s.\n", RESOLVCONF_PATH);
 		resolvconf_call_len = strlen(RESOLVCONF_PATH) + 20
 		                      + strlen(tunnel->ppp_iface);
 		resolvconf_call = malloc(resolvconf_call_len);
@@ -1114,6 +1115,7 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 		free(resolvconf_call);
 	} else {
 #endif
+		log_debug("Attempting to modify /etc/resolv.conf directly.\n");
 		file = fopen("/etc/resolv.conf", "r+");
 		if (file == NULL) {
 			log_warn("Could not open /etc/resolv.conf (%s).\n",
