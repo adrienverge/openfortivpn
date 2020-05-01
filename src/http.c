@@ -807,6 +807,7 @@ static int parse_xml_config(struct tunnel *tunnel, const char *buffer)
 }
 
 
+#ifdef SUPPORT_OBSOLETE_CODE
 static int parse_config(struct tunnel *tunnel, const char *buffer)
 {
 	const char *c, *end;
@@ -855,6 +856,7 @@ static int parse_config(struct tunnel *tunnel, const char *buffer)
 
 	return 1;
 }
+#endif
 
 
 int auth_get_config(struct tunnel *tunnel)
@@ -867,6 +869,8 @@ int auth_get_config(struct tunnel *tunnel)
 		ret = parse_xml_config(tunnel, buffer);
 		free(buffer);
 	}
+
+#ifdef SUPPORT_OBSOLETE_CODE
 	if (ret == 1)
 		return ret;
 
@@ -877,6 +881,7 @@ int auth_get_config(struct tunnel *tunnel)
 		ret = parse_config(tunnel, buffer);
 		free(buffer);
 	}
+#endif
 
 	return ret;
 }
