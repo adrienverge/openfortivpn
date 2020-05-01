@@ -267,13 +267,13 @@ RESOLVCONF_PATH=""
 # prepare possibility to override default locations
 AC_ARG_WITH([netstat],
 	AS_HELP_STRING([--with-netstat],
-		       [Set the path to the netstat executable on MacOSX or FreeBSD]),
+		       [set the path to the netstat executable on MacOSX or FreeBSD]),
 	NETSTAT_PATH="$withval"
 )
 # this is for the pppd daemon executable
 AC_ARG_WITH([pppd],
 	AS_HELP_STRING([--with-pppd],
-		       [Set the path to the pppd daemon executable]),
+		       [set the path to the pppd daemon executable]),
 	AS_IF([test ! "x$with_pppd" = "xno" -a ! "x$with_pppd" = "xyes"],[
 		PPP_PATH="$withval"
 		with_pppd="yes"
@@ -283,7 +283,7 @@ AC_ARG_WITH([pppd],
 # and this is for the ppp user space client on FreeBSD
 AC_ARG_WITH([ppp],
 	AS_HELP_STRING([--with-ppp],
-		       [Set the path to the ppp userspace client on FreeBSD]),
+		       [set the path to the ppp userspace client on FreeBSD]),
 	AS_IF([test ! "x$with_ppp" = "xno" -a ! "x$with_ppp" = "xyes"],[
 		PPP_PATH="$withval"
 		with_ppp="yes"
@@ -294,7 +294,7 @@ AC_ARG_WITH([ppp],
 # override for /proc/net/route detection
 AC_ARG_ENABLE([proc],
 	AS_HELP_STRING([--enable-proc],
-		       [Enable route manipulations directly via /proc/net/route \
+		       [enable route manipulations directly via /proc/net/route \
 			when cross-compiling, use --disable-proc for the opposite]))
 
 # check for netstat if not cross-compiling
@@ -456,7 +456,7 @@ AS_IF([test "x$enable_resolvconf" = "xyes"], [
 
 # install systemd service file
 AC_ARG_WITH([systemdsystemunitdir],
-     [AS_HELP_STRING([--with-systemdsystemunitdir=DIR], [Directory for systemd service files])],,
+     [AS_HELP_STRING([--with-systemdsystemunitdir=DIR], [directory for systemd service files])],,
      [with_systemdsystemunitdir=auto])
 AS_IF([test "x$with_systemdsystemunitdir" = "xyes" -o "x$with_systemdsystemunitdir" = "xauto"], [
      def_systemdsystemunitdir=$($PKG_CONFIG --variable=systemdsystemunitdir systemd)
@@ -469,6 +469,16 @@ AS_IF([test "x$with_systemdsystemunitdir" = "xyes" -o "x$with_systemdsystemunitd
 AS_IF([test "x$with_systemdsystemunitdir" != "xno"],
       [AC_SUBST([systemdsystemunitdir], [$with_systemdsystemunitdir])])
 AM_CONDITIONAL([HAVE_SYSTEMD], [test "x$with_systemdsystemunitdir" != "xno"])
+
+# prepare to get rid of obsolete code (FortiOS 4)
+AC_ARG_ENABLE([obsolete],
+	[AS_HELP_STRING([--disable-obsolete], [disable support for FortiOS 4])],,
+	[enable_obsolete=yes])
+AS_CASE(["$enable_obsolete"],
+	[yes], [],
+	[no], [],
+	[AC_MSG_ERROR([unknown option '$enable_obsolete' for --enable-obsolete])])
+AS_IF([test "x$enable_obsolete" = "xyes"], [AC_DEFINE([SUPPORT_OBSOLETE_CODE])])
 
 
 AC_CONFIG_COMMANDS([timestamp], [touch src/.dirstamp])
