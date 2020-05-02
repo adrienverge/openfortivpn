@@ -18,9 +18,11 @@
 #ifndef OPENFORTIVPN_IO_H
 #define OPENFORTIVPN_IO_H
 
-#include <stdint.h>
-#include <sys/types.h>
 #include <pthread.h>
+#include <sys/types.h>
+
+#include <stddef.h>
+#include <stdint.h>
 
 /*
  * For performance reasons, we store the 6-byte header used by the SSL

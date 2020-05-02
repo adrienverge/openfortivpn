@@ -33,30 +33,32 @@
 #include "openssl_hostname_validation.h"
 #endif
 
+#include <openssl/err.h>
+#include <openssl/engine.h>
+#include <openssl/x509v3.h>
+#if HAVE_SYSTEMD
+#include <systemd/sd-daemon.h>
+#endif
+
 #include <unistd.h>
+#include <arpa/inet.h>
 #include <fcntl.h>
 #include <ifaddrs.h>
-#include <netdb.h>
-#include <errno.h>
-#include <string.h>
 #include <net/if.h>
-#include <arpa/inet.h>
-#include <sys/socket.h>
-#include <sys/ioctl.h>
-#include <openssl/err.h>
-#include <openssl/x509v3.h>
-#include <openssl/engine.h>
+#include <netdb.h>
 #if HAVE_PTY_H
 #include <pty.h>
 #elif HAVE_UTIL_H
 #include <util.h>
 #endif
-#include <termios.h>
-#include <signal.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
 #include <sys/wait.h>
-#if HAVE_SYSTEMD
-#include <systemd/sd-daemon.h>
-#endif
+#include <termios.h>
+
+#include <errno.h>
+#include <signal.h>
+#include <string.h>
 
 // we use this constant in the source, so define a fallback if not defined
 #ifndef OPENSSL_API_COMPAT

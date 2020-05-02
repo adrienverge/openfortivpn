@@ -29,11 +29,12 @@
 #ifndef OPENFORTIVPN_SSL_H
 #define OPENFORTIVPN_SSL_H
 
+#include <openssl/err.h>
+#include <openssl/ssl.h>
+
 #include <errno.h>
 #include <stdint.h>
 #include <string.h>
-#include <openssl/err.h>
-#include <openssl/ssl.h>
 
 #ifdef __clang__
 /*

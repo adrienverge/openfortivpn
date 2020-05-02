@@ -18,7 +18,6 @@
 #ifndef OPENFORTIVPN_IPV4_H
 #define OPENFORTIVPN_IPV4_H
 
-#include <sys/types.h>
 #include <sys/socket.h>
 #ifdef HAVE_SYS_MUTEX_H
 /* Mac OS X and BSD wants this explicit include */

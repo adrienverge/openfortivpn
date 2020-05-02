@@ -18,10 +18,11 @@
 #ifndef OPENFORTIVPN_CONFIG_H
 #define OPENFORTIVPN_CONFIG_H
 
-#include <errno.h>
-#include <string.h>
-#include <sys/types.h>
 #include <netinet/in.h>
+
+#include <errno.h>
+#include <stdint.h>
+#include <string.h>
 
 #define ERR_CFG_UNKNOWN		-1
 #define ERR_CFG_SEE_ERRNO	-2
