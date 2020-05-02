@@ -18,10 +18,12 @@
 #ifndef OPENFORTIVPN_HDLC_H
 #define OPENFORTIVPN_HDLC_H
 
-#include <stdint.h>
-#include <stdlib.h>
 #include <unistd.h>
 #include <sys/types.h>
+
+#include <stddef.h>
+#include <stdint.h>
+#include <stdlib.h>
 
 #define ERR_HDLC_BUFFER_TOO_SMALL	-1
 #define ERR_HDLC_NO_FRAME_FOUND		-2

@@ -29,14 +29,16 @@
 #include "config.h"
 #include "log.h"
 
+#include <openssl/x509.h>  /* work around OpenSSL bug: missing definition of STACK_OF */
+#include <openssl/tls1.h>
+
+#include <sys/stat.h>
+
+#include <ctype.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
-#include <sys/stat.h>
-#include <limits.h>
-#include <openssl/x509.h>  /* work around OpenSSL bug: missing definition of STACK_OF */
-#include <openssl/tls1.h>
 
 const struct vpn_config invalid_cfg = {
 	.gateway_host = {'\0'},

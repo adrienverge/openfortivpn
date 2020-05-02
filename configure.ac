@@ -46,6 +46,7 @@ PKG_CHECK_MODULES(LIBSYSTEMD, [libsystemd], [AC_DEFINE(HAVE_SYSTEMD)], [AC_MSG_R
 # limits.h
 # signal.h
 # stdarg.h
+# stddef.h
 # stdint.h
 # stdio.h
 # stdlib.h

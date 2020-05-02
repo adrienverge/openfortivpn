@@ -17,14 +17,15 @@
 
 #include "log.h"
 
+#include <unistd.h>
 #include <pthread.h>
 #include <syslog.h>
-#include <unistd.h>
+
+#include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <errno.h>
 
 static pthread_mutex_t mutex;
 static int do_syslog; //static variables of arithmetic type are initialized to zero in C99

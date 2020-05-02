@@ -22,14 +22,15 @@
 #include "userinput.h"
 #include "log.h"
 
+#include <unistd.h>
+#include <arpa/inet.h>
+
 #include <assert.h>
 #include <ctype.h>
-#include <string.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <arpa/inet.h>
+#include <string.h>
 
 /*
  * Fixed size of the buffer for outgoing HTTP requests.

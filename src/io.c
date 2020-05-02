@@ -32,12 +32,13 @@
 #include "tunnel.h"
 #include "log.h"
 
-#include <signal.h>
+#include <unistd.h>
 #include <arpa/inet.h>
 #include <netinet/tcp.h>
-#include <unistd.h>
-#include <string.h>
+
 #include <errno.h>
+#include <signal.h>
+#include <string.h>
 
 #if HAVE_MACH_MACH_H
 /* this is typical for mach kernel used on Mac OS X */
