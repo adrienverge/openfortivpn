@@ -326,7 +326,7 @@ static int pppd_run(struct tunnel *tunnel)
 		execv(pppd_args.data[0], (char *const *)pppd_args.data);
 		free(pppd_args.data);
 
-		fprintf(stderr, "execvp: %s\n", strerror(errno));
+		fprintf(stderr, "execv: %s\n", strerror(errno));
 		_exit(EXIT_FAILURE);
 	} else {
 		if (close(slave_stderr))
