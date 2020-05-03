@@ -836,7 +836,7 @@ int ssl_connect(struct tunnel *tunnel)
 		return 1;
 	}
 
-	// Load the OS default CA files
+	/* Load the OS default CA files */
 	if (!SSL_CTX_set_default_verify_paths(tunnel->ssl_context))
 		log_error("Could not load OS OpenSSL files.\n");
 
@@ -849,6 +849,64 @@ int ssl_connect(struct tunnel *tunnel)
 			return 1;
 		}
 	}
+
+	/* Modify default TLS security levels */
+	if (!tunnel->config->insecure_ssl) {
+		long sslctxopt = SSL_OP_NO_SSLv3 | SSL_OP_NO_COMPRESSION;
+		long checkopt;
+
+		checkopt = SSL_CTX_set_options(tunnel->ssl_context, sslctxopt);
+		if ((checkopt & sslctxopt) != sslctxopt) {
+			log_error("SSL_CTX_set_options didn't set opt: %s\n",
+			          ERR_error_string(ERR_peek_last_error(), NULL));
+			return 1;
+		}
+	}
+
+	if (!tunnel->config->insecure_ssl) {
+		if (!tunnel->config->cipher_list) {
+			const char *cipher_list;
+
+			if (tunnel->config->seclevel_1)
+				cipher_list = "HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4@SECLEVEL=1";
+			else
+				cipher_list = "HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4";
+			tunnel->config->cipher_list = strdup(cipher_list);
+		}
+	} else {
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+		if (tunnel->config->min_tls <= 0)
+			tunnel->config->min_tls = TLS1_VERSION;
+#endif
+		if (!tunnel->config->cipher_list && tunnel->config->seclevel_1) {
+			const char *cipher_list = "DEFAULT@SECLEVEL=1";
+
+			tunnel->config->cipher_list = strdup(cipher_list);
+		}
+	}
+
+	if (tunnel->config->cipher_list) {
+		log_debug("Setting cipher list to: %s\n", tunnel->config->cipher_list);
+		if (!SSL_CTX_set_cipher_list(tunnel->ssl_context,
+		                             tunnel->config->cipher_list)) {
+			log_error("SSL_CTX_set_cipher_list failed: %s\n",
+			          ERR_error_string(ERR_peek_last_error(), NULL));
+			return 1;
+		}
+	}
+
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+	if (tunnel->config->min_tls > 0) {
+		log_debug("Setting min proto version to: 0x%x\n",
+		          tunnel->config->min_tls);
+		if (!SSL_CTX_set_min_proto_version(tunnel->ssl_context,
+		                                   tunnel->config->min_tls)) {
+			log_error("SSL_CTX_set_min_proto_version failed: %s\n",
+			          ERR_error_string(ERR_peek_last_error(), NULL));
+			return 1;
+		}
+	}
+#endif
 
 	/* Use engine for PIV if user-cert config starts with pkcs11 URI: */
 	if (tunnel->config->use_engine > 0) {
@@ -942,69 +1000,12 @@ int ssl_connect(struct tunnel *tunnel)
 		}
 	}
 
-	if (!tunnel->config->insecure_ssl) {
-		long sslctxopt = SSL_OP_NO_SSLv3 | SSL_OP_NO_COMPRESSION;
-		long checkopt;
-
-		checkopt = SSL_CTX_set_options(tunnel->ssl_context, sslctxopt);
-		if ((checkopt & sslctxopt) != sslctxopt) {
-			log_error("SSL_CTX_set_options didn't set opt: %s\n",
-			          ERR_error_string(ERR_peek_last_error(), NULL));
-			return 1;
-		}
-	}
-
 	tunnel->ssl_handle = SSL_new(tunnel->ssl_context);
 	if (tunnel->ssl_handle == NULL) {
 		log_error("SSL_new: %s\n",
 		          ERR_error_string(ERR_peek_last_error(), NULL));
 		return 1;
 	}
-
-	if (!tunnel->config->insecure_ssl) {
-		if (!tunnel->config->cipher_list) {
-			const char *cipher_list;
-
-			if (tunnel->config->seclevel_1)
-				cipher_list = "HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4@SECLEVEL=1";
-			else
-				cipher_list = "HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4";
-			tunnel->config->cipher_list = strdup(cipher_list);
-		}
-	} else {
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L
-		if (tunnel->config->min_tls <= 0)
-			tunnel->config->min_tls = TLS1_VERSION;
-#endif
-		if (!tunnel->config->cipher_list && tunnel->config->seclevel_1) {
-			const char *cipher_list = "DEFAULT@SECLEVEL=1";
-
-			tunnel->config->cipher_list = strdup(cipher_list);
-		}
-	}
-
-	if (tunnel->config->cipher_list) {
-		log_debug("Setting cipher list to: %s\n", tunnel->config->cipher_list);
-		if (!SSL_set_cipher_list(tunnel->ssl_handle,
-		                         tunnel->config->cipher_list)) {
-			log_error("SSL_set_cipher_list failed: %s\n",
-			          ERR_error_string(ERR_peek_last_error(), NULL));
-			return 1;
-		}
-	}
-
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L
-	if (tunnel->config->min_tls > 0) {
-		log_debug("Setting min proto version to: 0x%x\n",
-		          tunnel->config->min_tls);
-		if (!SSL_set_min_proto_version(tunnel->ssl_handle,
-		                               tunnel->config->min_tls)) {
-			log_error("SSL_set_min_proto_version failed: %s\n",
-			          ERR_error_string(ERR_peek_last_error(), NULL));
-			return 1;
-		}
-	}
-#endif
 
 	if (!SSL_set_fd(tunnel->ssl_handle, tunnel->ssl_socket)) {
 		log_error("SSL_set_fd: %s\n",
