@@ -1,4 +1,4 @@
-.TH OPENFORTIVPN 1 "March 13, 2020" ""
+.TH OPENFORTIVPN 1 "May 4, 2020" ""
 
 .SH NAME
 openfortivpn \- Client for PPP+SSL VPN tunnel services
@@ -128,7 +128,7 @@ or a partial PKCS11-URI (p11tool --list-token-urls)
 
   --user-cert = pkcs11:model=PKCS%2315%20emulated;manufacturer=piv_II;serial=012345678;token=someuser
 
-\fBThis feature requires OpenSSL PKCS engine!
+\fBThis feature requires the OpenSSL PKCS engine!
 .TP
 \fB\-\-user\-key=\fI<file>\fR
 Use specified PEM-encoded key if the server requires authentication with
@@ -156,6 +156,8 @@ such as HIGH:!MD5:!RC4 or as suggested by the Cipher: line in the output of
 $ openssl s_client -connect \fI<host:port>\fR
 
 (default: HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4)
+
+\fBApplies to TLS v1.2 or lower only, not to be used with TLS v1.3 ciphers.\fR
 .TP
 \fB\-\-min\-tls=\fI<version>\fR
 Use minimum TLS version instead of system default. Valid values are 1.0,
@@ -164,6 +166,8 @@ Use minimum TLS version instead of system default. Valid values are 1.0,
 \fB\-\-seclevel\-1\fR
 If \fB\-\-cipher-list\fR is not specified, add @SECLEVEL=1 to the list of
 ciphers. This lowers limits on dh key.
+
+\fBApplies to TLS v1.2 or lower only.\fR
 .TP
 \fB\-\-use\-peer\-dns=\fI<bool>\fR, \fB\-\-pppd\-no\-peerdns\fR
 Whether to ask peer ppp server for DNS server addresses and let pppd

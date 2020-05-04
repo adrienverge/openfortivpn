@@ -102,8 +102,16 @@ PPPD_USAGE \
 "                                is not supported by your OpenSSL library."
 #endif
 
+#ifdef TLS1_3_VERSION
+#define help_cipher_list " Applies to TLS v1.2 or\n" \
+"                                lower only, not to be used with TLS v1.3 ciphers."
+#define help_seclevel_1 " Applies to TLS v1.2 or lower only."
+#else
+#define help_cipher_list ""
+#define help_seclevel_1 ""
+#endif
 
-#define help_options \
+#define help_options_part1 \
 "Options:\n" \
 "  -h --help                     Show this help message and exit.\n" \
 "  --version                     Show version and exit.\n" \
@@ -139,7 +147,9 @@ PPPD_USAGE \
 "                                certificate will be matched against this value.\n" \
 "                                <digest> is the X509 certificate's sha256 sum.\n" \
 "                                This option can be used multiple times to trust\n" \
-"                                several certificates.\n" \
+"                                several certificates.\n"
+
+#define help_options_part2 \
 "  --insecure-ssl                Do not disable insecure SSL protocols/ciphers.\n" \
 "                                Also enable TLS v1.0 if applicable.\n" \
 "                                If your server requires a specific cipher or protocol,\n" \
@@ -147,19 +157,18 @@ PPPD_USAGE \
 "  --cipher-list=<ciphers>       OpenSSL ciphers to use. If default does not work\n" \
 "                                you can try with the cipher suggested in the output\n" \
 "                                of 'openssl s_client -connect <host:port>'\n" \
-"                                (e.g. AES256-GCM-SHA384)\n" \
+"                                (e.g. AES256-GCM-SHA384)." help_cipher_list "\n" \
 "  --min-tls                     Use minimum TLS version instead of system default.\n" \
 "                                Valid values are 1.0, 1.1, 1.2, 1.3." help_min_tls "\n" \
 "  --seclevel-1                  If --cipher-list is not specified, add @SECLEVEL=1 to\n" \
 "                                (compiled in) list of ciphers. This lowers limits on\n" \
-"                                dh key.\n" \
+"                                dh key." help_seclevel_1 "\n" \
 "  --persistent=<interval>       Run the vpn persistently in a loop and try to re-\n" \
 "                                connect every <interval> seconds when dropping out\n" \
 "  -v                            Increase verbosity. Can be used multiple times\n" \
 "                                to be even more verbose.\n" \
 "  -q                            Decrease verbosity. Can be used multiple times\n" \
 "                                to be even less verbose.\n"
-
 
 #define help_config \
 "\n" \
@@ -483,7 +492,8 @@ int main(int argc, char **argv)
 			}
 			goto user_error;
 		case 'h':
-			printf("%s%s%s%s%s%s", usage, summary, help_options,
+			printf("%s%s%s%s%s%s%s", usage, summary,
+			       help_options_part1, help_options_part2,
 			       PPPD_HELP, RESOLVCONF_HELP, help_config);
 			ret = EXIT_SUCCESS;
 			goto exit;
