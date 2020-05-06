@@ -440,7 +440,7 @@ static void *ssl_read(void *arg)
 		if (ret < 0) {
 			log_debug("Error reading from SSL connection (%s).\n",
 			          err_ssl_str(ret));
-			goto exit;
+			break;
 		}
 
 		if (memcmp(header, http_header, 6) == 0) {
@@ -478,7 +478,7 @@ static void *ssl_read(void *arg)
 			log_debug("Error reading from SSL connection (%s).\n",
 			          err_ssl_str(ret));
 			free(packet);
-			goto exit;
+			break;
 		}
 
 		log_debug("gateway ---> %s (%lu bytes)\n", PPP_DAEMON, packet->len);
@@ -511,7 +511,6 @@ static void *ssl_read(void *arg)
 		}
 	}
 
-exit:
 	// Send message to main thread to stop other threads
 	SEM_POST(&sem_stop_io);
 	return NULL;
