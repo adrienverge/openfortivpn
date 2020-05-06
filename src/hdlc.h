@@ -18,7 +18,6 @@
 #ifndef OPENFORTIVPN_HDLC_H
 #define OPENFORTIVPN_HDLC_H
 
-#include <unistd.h>
 #include <sys/types.h>
 
 #include <stddef.h>
