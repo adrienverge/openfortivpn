@@ -433,6 +433,7 @@ static void *ssl_read(void *arg)
 		struct ppp_packet *packet;
 		int ret;
 		uint8_t header[6];
+		static const char http_header[6] = "HTTP/1";
 		uint16_t total, magic, size;
 
 		ret = safe_ssl_read_all(tunnel->ssl_handle, header, 6);
@@ -440,6 +441,18 @@ static void *ssl_read(void *arg)
 			log_debug("Error reading from SSL connection (%s).\n",
 			          err_ssl_str(ret));
 			goto exit;
+		}
+
+		if (memcmp(header, http_header, 6) == 0) {
+			/*
+			 * When the SSL-VPN portal has not been set up to allow
+			 * tunnel mode for VPN clients, while it allows web mode
+			 * for web browsers, it returns an HTTP error instead of
+			 * a PPP packet:
+			 * HTTP/1.1 403 Forbidden
+			 */
+			log_error("This SSL-VPN portal does not allow tunnel mode.\n");
+			break;
 		}
 
 		total = (header[0] << 8) | header[1];
