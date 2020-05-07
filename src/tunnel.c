@@ -61,10 +61,6 @@
 #include <signal.h>
 #include <string.h>
 
-// we use this constant in the source, so define a fallback if not defined
-#ifndef OPENSSL_API_COMPAT
-#define OPENSSL_API_COMPAT 0x0908000L
-#endif
 
 struct ofv_varr {
 	unsigned int cap;	// current capacity
@@ -822,8 +818,8 @@ int ssl_connect(struct tunnel *tunnel)
 	if (tunnel->ssl_socket == -1)
 		return 1;
 
-	// registration is deprecated from OpenSSL 1.1.0 onward
-#if OPENSSL_API_COMPAT < 0x10100000L
+	// https://wiki.openssl.org/index.php/Library_Initialization
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
 	// Register the error strings for libcrypto & libssl
 	SSL_load_error_strings();
 	// Register the available ciphers and digests
