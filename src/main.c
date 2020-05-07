@@ -95,13 +95,6 @@ PPPD_USAGE \
 "the gateway and this process.\n" \
 "\n"
 
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L
-#define help_min_tls ""
-#else
-#define help_min_tls " This option\n" \
-"                                is not supported by your OpenSSL library."
-#endif
-
 #ifdef TLS1_3_VERSION
 #define help_cipher_list " Applies to TLS v1.2 or\n" \
 "                                lower only, not to be used with TLS v1.3 ciphers."
@@ -159,7 +152,7 @@ PPPD_USAGE \
 "                                of 'openssl s_client -connect <host:port>'\n" \
 "                                (e.g. AES256-GCM-SHA384)." help_cipher_list "\n" \
 "  --min-tls                     Use minimum TLS version instead of system default.\n" \
-"                                Valid values are 1.0, 1.1, 1.2, 1.3." help_min_tls "\n" \
+"                                Valid values are 1.0, 1.1, 1.2, 1.3.\n" \
 "  --seclevel-1                  If --cipher-list is not specified, add @SECLEVEL=1 to\n" \
 "                                (compiled in) list of ciphers. This lowers limits on\n" \
 "                                dh key." help_seclevel_1 "\n" \
@@ -259,9 +252,7 @@ int main(int argc, char **argv)
 		{"trusted-cert",    required_argument, NULL, 0},
 		{"insecure-ssl",    no_argument, &cli_cfg.insecure_ssl, 1},
 		{"cipher-list",     required_argument, NULL, 0},
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L
 		{"min-tls",         required_argument, NULL, 0},
-#endif
 		{"seclevel-1",      no_argument, &cli_cfg.seclevel_1, 1},
 #if HAVE_USR_SBIN_PPPD
 		{"pppd-use-peerdns", required_argument, NULL, 0},
@@ -412,7 +403,6 @@ int main(int argc, char **argv)
 				cli_cfg.cipher_list = strdup(optarg);
 				break;
 			}
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L
 			if (strcmp(long_options[option_index].name,
 			           "min-tls") == 0) {
 				int min_tls = parse_min_tls(optarg);
@@ -425,7 +415,6 @@ int main(int argc, char **argv)
 				}
 				break;
 			}
-#endif
 			if (strcmp(long_options[option_index].name,
 			           "otp-prompt") == 0) {
 				cli_cfg.otp_prompt = strdup(optarg);

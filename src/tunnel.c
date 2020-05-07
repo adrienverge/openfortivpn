@@ -35,6 +35,7 @@
 
 #include <openssl/err.h>
 #include <openssl/engine.h>
+#include <openssl/ui.h>
 #include <openssl/x509v3.h>
 #if HAVE_SYSTEMD
 #include <systemd/sd-daemon.h>
@@ -850,21 +851,9 @@ int ssl_connect(struct tunnel *tunnel)
 		}
 	}
 
-	/* Modify default TLS security levels */
-	if (!tunnel->config->insecure_ssl) {
-		long sslctxopt = SSL_OP_NO_SSLv3 | SSL_OP_NO_COMPRESSION;
-		long checkopt;
-
-		checkopt = SSL_CTX_set_options(tunnel->ssl_context, sslctxopt);
-		if ((checkopt & sslctxopt) != sslctxopt) {
-			log_error("SSL_CTX_set_options didn't set opt: %s\n",
-			          ERR_error_string(ERR_peek_last_error(), NULL));
-			return 1;
-		}
-	}
-
-	if (!tunnel->config->insecure_ssl) {
-		if (!tunnel->config->cipher_list) {
+	/* Disable vulnerable TLS protocols and ciphers by default*/
+	if (!tunnel->config->cipher_list) {
+		if (!tunnel->config->insecure_ssl) {
 			const char *cipher_list;
 
 			if (tunnel->config->seclevel_1)
@@ -872,13 +861,7 @@ int ssl_connect(struct tunnel *tunnel)
 			else
 				cipher_list = "HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4";
 			tunnel->config->cipher_list = strdup(cipher_list);
-		}
-	} else {
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L
-		if (tunnel->config->min_tls <= 0)
-			tunnel->config->min_tls = TLS1_VERSION;
-#endif
-		if (!tunnel->config->cipher_list && tunnel->config->seclevel_1) {
+		} else if (tunnel->config->seclevel_1) {
 			const char *cipher_list = "DEFAULT@SECLEVEL=1";
 
 			tunnel->config->cipher_list = strdup(cipher_list);
@@ -897,11 +880,37 @@ int ssl_connect(struct tunnel *tunnel)
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
 	if (tunnel->config->min_tls > 0) {
-		log_debug("Setting min proto version to: 0x%x\n",
+		log_debug("Setting minimum protocol version to: 0x%x.\n",
 		          tunnel->config->min_tls);
 		if (!SSL_CTX_set_min_proto_version(tunnel->ssl_context,
 		                                   tunnel->config->min_tls)) {
-			log_error("SSL_CTX_set_min_proto_version failed: %s\n",
+			log_error("Cannot set minimum protocol version (%s).\n",
+			          ERR_error_string(ERR_peek_last_error(), NULL));
+			return 1;
+		}
+	}
+#else
+	if (!tunnel->config->insecure_ssl || tunnel->config->min_tls > 0) {
+		long sslctxopt = 0;
+		long checkopt;
+
+		if (!tunnel->config->insecure_ssl)
+			sslctxopt |= SSL_OP_NO_SSLv3 | SSL_OP_NO_COMPRESSION;
+#ifdef TLS1_VERSION
+		if (tunnel->config->min_tls > TLS1_VERSION)
+			sslctxopt |= SSL_OP_NO_TLSv1;
+#endif
+#ifdef TLS1_1_VERSION
+		if (tunnel->config->min_tls > TLS1_1_VERSION)
+			sslctxopt |= SSL_OP_NO_TLSv1_1;
+#endif
+#ifdef TLS1_2_VERSION
+		if (tunnel->config->min_tls > TLS1_2_VERSION)
+			sslctxopt |= SSL_OP_NO_TLSv1_2;
+#endif
+		checkopt = SSL_CTX_set_options(tunnel->ssl_context, sslctxopt);
+		if ((checkopt & sslctxopt) != sslctxopt) {
+			log_error("SSL_CTX_set_options didn't set opt: %s\n",
 			          ERR_error_string(ERR_peek_last_error(), NULL));
 			return 1;
 		}
