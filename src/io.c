@@ -451,7 +451,7 @@ static void *ssl_read(void *arg)
 			 * a PPP packet:
 			 * HTTP/1.1 403 Forbidden
 			 */
-			log_error("This SSL-VPN portal does not allow tunnel mode.\n");
+			log_error("Could not authenticate to the gateway. Please make sure tunnel mode is allowed by the gateway, check the realm, etc.\n");
 			break;
 		}
 
