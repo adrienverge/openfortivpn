@@ -236,50 +236,50 @@ int main(int argc, char **argv)
 	struct vpn_config cli_cfg = invalid_cfg;
 
 	const struct option long_options[] = {
-		{"help",            no_argument,       0, 'h'},
-		{"version",         no_argument,       0, 0},
-		{"config",          required_argument, 0, 'c'},
-		{"pinentry",        required_argument, 0, 0},
-		{"realm",           required_argument, 0, 0},
-		{"username",        required_argument, 0, 'u'},
-		{"password",        required_argument, 0, 'p'},
-		{"otp",             required_argument, 0, 'o'},
-		{"otp-prompt",      required_argument, 0, 0},
-		{"otp-delay",       required_argument, 0, 0},
-		{"set-routes",	    required_argument, 0, 0},
+		{"help",            no_argument,       NULL, 'h'},
+		{"version",         no_argument,       NULL, 0},
+		{"config",          required_argument, NULL, 'c'},
+		{"pinentry",        required_argument, NULL, 0},
+		{"realm",           required_argument, NULL, 0},
+		{"username",        required_argument, NULL, 'u'},
+		{"password",        required_argument, NULL, 'p'},
+		{"otp",             required_argument, NULL, 'o'},
+		{"otp-prompt",      required_argument, NULL, 0},
+		{"otp-delay",       required_argument, NULL, 0},
+		{"set-routes",	    required_argument, NULL, 0},
 		{"no-routes",       no_argument, &cli_cfg.set_routes, 0},
-		{"half-internet-routes", required_argument, 0, 0},
-		{"set-dns",         required_argument, 0, 0},
+		{"half-internet-routes", required_argument, NULL, 0},
+		{"set-dns",         required_argument, NULL, 0},
 		{"no-dns",          no_argument, &cli_cfg.set_dns, 0},
 		{"use-syslog",      no_argument, &cli_cfg.use_syslog, 1},
-		{"persistent",      required_argument, 0, 0},
-		{"ca-file",         required_argument, 0, 0},
-		{"user-cert",       required_argument, 0, 0},
-		{"user-key",        required_argument, 0, 0},
-		{"trusted-cert",    required_argument, 0, 0},
+		{"persistent",      required_argument, NULL, 0},
+		{"ca-file",         required_argument, NULL, 0},
+		{"user-cert",       required_argument, NULL, 0},
+		{"user-key",        required_argument, NULL, 0},
+		{"trusted-cert",    required_argument, NULL, 0},
 		{"insecure-ssl",    no_argument, &cli_cfg.insecure_ssl, 1},
-		{"cipher-list",     required_argument, 0, 0},
+		{"cipher-list",     required_argument, NULL, 0},
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
-		{"min-tls",         required_argument, 0, 0},
+		{"min-tls",         required_argument, NULL, 0},
 #endif
 		{"seclevel-1",      no_argument, &cli_cfg.seclevel_1, 1},
 #if HAVE_USR_SBIN_PPPD
-		{"pppd-use-peerdns", required_argument, 0, 0},
+		{"pppd-use-peerdns", required_argument, NULL, 0},
 		{"pppd-no-peerdns", no_argument, &cli_cfg.pppd_use_peerdns, 0},
-		{"pppd-log",        required_argument, 0, 0},
-		{"pppd-plugin",     required_argument, 0, 0},
-		{"pppd-ipparam",    required_argument, 0, 0},
-		{"pppd-ifname",     required_argument, 0, 0},
-		{"pppd-call",       required_argument, 0, 0},
-		{"plugin",          required_argument, 0, 0}, // deprecated
+		{"pppd-log",        required_argument, NULL, 0},
+		{"pppd-plugin",     required_argument, NULL, 0},
+		{"pppd-ipparam",    required_argument, NULL, 0},
+		{"pppd-ifname",     required_argument, NULL, 0},
+		{"pppd-call",       required_argument, NULL, 0},
+		{"plugin",          required_argument, NULL, 0}, // deprecated
 #endif
 #if HAVE_USR_SBIN_PPP
-		{"ppp-system",      required_argument, 0, 0},
+		{"ppp-system",      required_argument, NULL, 0},
 #endif
 #if HAVE_RESOLVCONF
-		{"use-resolvconf",  required_argument, 0, 0},
+		{"use-resolvconf",  required_argument, NULL, 0},
 #endif
-		{0, 0, 0, 0}
+		{NULL, 0, NULL, 0}
 	};
 
 	init_logging();
