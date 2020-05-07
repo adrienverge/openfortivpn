@@ -20,6 +20,8 @@
 #include "userinput.h"
 #include "log.h"
 
+#include <openssl/ssl.h>
+
 #include <unistd.h>
 #include <getopt.h>
 
@@ -220,7 +222,11 @@ int main(int argc, char **argv)
 		.user_cert = NULL,
 		.user_key = NULL,
 		.insecure_ssl = 0,
+#ifdef TLS1_2_VERSION
+		.min_tls = TLS1_2_VERSION,
+#else
 		.min_tls = 0,
+#endif
 		.seclevel_1 = 0,
 		.cipher_list = NULL,
 		.cert_whitelist = NULL,
