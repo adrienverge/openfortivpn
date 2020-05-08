@@ -79,6 +79,7 @@ AC_CHECK_HEADERS([net/route.h], [], AC_MSG_ERROR([Required header not found]), [
 
 # Checks for optional header files.
 AC_CHECK_HEADERS([ \
+libutil.h \
 mach/mach.h \
 pty.h \
 semaphore.h \

@@ -52,10 +52,13 @@
 #elif HAVE_UTIL_H
 #include <util.h>
 #endif
-#include <sys/socket.h>
 #include <sys/types.h>
+#include <sys/socket.h>
 #include <sys/wait.h>
 #include <termios.h>
+#if HAVE_LIBUTIL_H
+#include <libutil.h>
+#endif
 
 #include <errno.h>
 #include <signal.h>
