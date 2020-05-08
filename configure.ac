@@ -63,6 +63,7 @@ net/if.h \
 netinet/in.h \
 netinet/tcp.h \
 pthread.h \
+strings.h \
 sys/ioctl.h \
 syslog.h \
 sys/socket.h \
@@ -78,7 +79,6 @@ AC_CHECK_HEADERS([net/route.h], [], AC_MSG_ERROR([Required header not found]), [
 
 # Checks for optional header files.
 AC_CHECK_HEADERS([ \
-libutil.h \
 mach/mach.h \
 pty.h \
 semaphore.h \

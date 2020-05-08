@@ -18,8 +18,8 @@
 #ifndef OPENFORTIVPN_IO_H
 #define OPENFORTIVPN_IO_H
 
-#include <pthread.h>
 #include <sys/types.h>
+#include <pthread.h>
 
 #include <stddef.h>
 #include <stdint.h>
