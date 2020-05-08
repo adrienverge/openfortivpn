@@ -14,6 +14,21 @@ Releases
 This high level changelog is usually updated when a release is tagged.
 On the master branch there may be changes that are not (yet) described here.
 
+### 1.14.0
+
+* [+] add git commit id in debug output
+* [-] do not use interface ip for routing on linux
+* [-] avoid extra hop on interface for default route
+* [+] clean up, updates and improvments in the build system
+* [+] increase the inbound HTTP buffer capacity when needed
+* [+] print domain search list to output
+* [+] add systemd service file
+* [+] add systemd notification when stopping
+* [+] allow logging with both smartcard and username
+* [+] fix GCC 9 and clang warnings
+* [+] bump default minimal TLS version from TLSv1.0 to TLSv1.2
+* [-] fix a couple coverity warnin
+
 ### 1.13.3
 
 * [-] fix a coverity warning
