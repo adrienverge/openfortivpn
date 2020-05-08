@@ -32,9 +32,6 @@
 #include "config.h"
 #include "io.h"
 #include "ipv4.h"
-#if HAVE_LIBUTIL_H
-#include "libutil.h"
-#endif
 
 #include <openssl/ssl.h>
 #include <openssl/x509v3.h>
