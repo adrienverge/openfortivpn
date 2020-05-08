@@ -52,8 +52,8 @@
 #elif HAVE_UTIL_H
 #include <util.h>
 #endif
-#include <sys/ioctl.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 #include <sys/wait.h>
 #include <termios.h>
 
