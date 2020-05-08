@@ -55,6 +55,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
+#include <sys/ioctl.h>
 #include <termios.h>
 #if HAVE_LIBUTIL_H
 #include <libutil.h>
