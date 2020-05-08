@@ -21,6 +21,8 @@
 #include <sys/socket.h>
 #ifdef HAVE_SYS_MUTEX_H
 /* Mac OS X and BSD wants this explicit include */
+#include <sys/param.h>
+#include <sys/lock.h>
 #include <sys/mutex.h>
 #endif
 #include <netinet/in.h>
