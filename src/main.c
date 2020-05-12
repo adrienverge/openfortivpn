@@ -50,7 +50,7 @@
 "  --pppd-plugin=<file>          Use specified pppd plugin instead of configuring\n" \
 "                                resolver and routes directly.\n" \
 "  --pppd-ifname=<string>        Set the pppd interface name, if supported by pppd.\n" \
-"  --pppd-ipparam=<string>       Provides  an extra parameter to the ip-up, ip-pre-up\n" \
+"  --pppd-ipparam=<string>       Provides an extra parameter to the ip-up, ip-pre-up\n" \
 "                                and ip-down scripts. See man (8) pppd\n" \
 "  --pppd-call=<name>            Move most pppd options from pppd cmdline to\n" \
 "                                /etc/ppp/peers/<name> and invoke pppd with\n" \
