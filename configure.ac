@@ -244,6 +244,7 @@ AC_ARG_WITH([rt_dst],
 )
 AS_IF([test "x$with_rt_dst" = "x"], [
 AC_MSG_CHECKING(whether rtentry is available and has rt_dst)
+AC_LANG(C)
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -470,6 +471,23 @@ AS_IF([test "x$with_systemdsystemunitdir" = "xyes" -o "x$with_systemdsystemunitd
 AS_IF([test "x$with_systemdsystemunitdir" != "xno"],
       [AC_SUBST([systemdsystemunitdir], [$with_systemdsystemunitdir])])
 AM_CONDITIONAL([HAVE_SYSTEMD], [test "x$with_systemdsystemunitdir" != "xno"])
+
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([
+#include <sys/types.h>
+#include <sys/socket.h>
+int main(int argc, char **argv){
+        int ret, handle;
+        handle = socket(AF_INET, SOCK_STREAM, 0);
+        ret = setsockopt(handle, SOL_SOCKET, SO_BINDTODEVICE,"lo",3);
+}
+])], [
+	AC_DEFINE(HAVE_SO_BINDTODEVICE, 1)
+	AC_MSG_NOTICE([HAVE_SO_BINDTODEVICE... 1])
+],[
+	AC_DEFINE(HAVE_SO_BINDTODEVICE, 0)
+	AC_MSG_NOTICE([HAVE_SO_BINDTODEVICE... 0])
+])
+
 
 # prepare to get rid of obsolete code (FortiOS 4)
 AC_ARG_ENABLE([obsolete],
