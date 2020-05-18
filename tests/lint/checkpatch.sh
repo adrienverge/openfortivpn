@@ -12,7 +12,7 @@ for file in "$@"; do
 
   "$checkpatch_path" --no-tree --terse \
     --max-line-length=90 \
-    --ignore LEADING_SPACE,SPDX_LICENSE_TAG,CODE_INDENT,NAKED_SSCANF,VOLATILE,NEW_TYPEDEFS,LONG_LINE,LONG_LINE_STRING \
+    --ignore LEADING_SPACE,SPDX_LICENSE_TAG,CODE_INDENT,NAKED_SSCANF,VOLATILE,NEW_TYPEDEFS,LONG_LINE,LONG_LINE_STRING,QUOTED_WHITESPACE_BEFORE_NEWLINE \
     -f "$file" | tee "$tmp"
   
   if [ -s "$tmp" ]; then
