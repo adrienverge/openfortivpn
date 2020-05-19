@@ -578,7 +578,7 @@ int main(int argc, char **argv)
 		goto user_error;
 	}
 	// If username but no password given, interactively ask user
-	if (cfg.password == NULL && cfg.username[0] != '\0') {
+	if (cfg.password[0] == '\0' && cfg.username[0] != '\0') {
 		char *tmp_password = malloc(PWD_BUFSIZ); // allocate large buffer
 
 		if (tmp_password == NULL) {
