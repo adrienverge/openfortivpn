@@ -14,6 +14,10 @@ Releases
 This high level changelog is usually updated when a release is tagged.
 On the master branch there may be changes that are not (yet) described here.
 
+### 1.14.1
+
+* [-] fix out of bounds array access
+
 ### 1.14.0
 
 * [+] add git commit id in debug output
