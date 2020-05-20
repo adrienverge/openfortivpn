@@ -27,7 +27,7 @@ On the master branch there may be changes that are not (yet) described here.
 * [+] allow logging with both smartcard and username
 * [+] fix GCC 9 and clang warnings
 * [+] bump default minimal TLS version from TLSv1.0 to TLSv1.2
-* [-] fix a couple coverity warnin
+* [-] fix a couple coverity warnings
 
 ### 1.13.3
 
