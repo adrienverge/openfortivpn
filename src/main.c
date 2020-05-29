@@ -149,6 +149,7 @@ PPPD_USAGE \
 "                                Also enable TLS v1.0 if applicable.\n" \
 "                                If your server requires a specific cipher or protocol,\n" \
 "                                consider using --cipher-list and/or --min-tls instead.\n" \
+"  --trust-all-certs             Trust all gateway certificates.\n" \
 "  --cipher-list=<ciphers>       OpenSSL ciphers to use. If default does not work\n" \
 "                                you can try with the cipher suggested in the output\n" \
 "                                of 'openssl s_client -connect <host:port>'\n" \
@@ -222,6 +223,7 @@ int main(int argc, char **argv)
 		.user_cert = NULL,
 		.user_key = NULL,
 		.insecure_ssl = 0,
+		.trust_all_certs = 0,
 #ifdef TLS1_2_VERSION
 		.min_tls = TLS1_2_VERSION,
 #else
@@ -257,6 +259,7 @@ int main(int argc, char **argv)
 		{"user-key",        required_argument, NULL, 0},
 		{"trusted-cert",    required_argument, NULL, 0},
 		{"insecure-ssl",    no_argument, &cli_cfg.insecure_ssl, 1},
+		{"trust-all-certs", no_argument, &cli_cfg.trust_all_certs, 1 },
 		{"cipher-list",     required_argument, NULL, 0},
 		{"min-tls",         required_argument, NULL, 0},
 		{"seclevel-1",      no_argument, &cli_cfg.seclevel_1, 1},

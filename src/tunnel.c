@@ -753,6 +753,12 @@ static int ssl_verify_cert(struct tunnel *tunnel)
 	for (i = 0; i < SHA256LEN; i++)
 		sprintf(&digest_str[2 * i], "%02x", digest[i]);
 	digest_str[SHA256STRLEN - 1] = '\0';
+	// Do we trust all certificates?
+	if (tunnel->config->trust_all_certs > 0) {
+		log_debug("Trusted gateway certificate digest: %s\n", digest_str);
+		ret = 0;
+		goto free_cert;
+	}
 	// Is it in whitelist?
 	for (elem = tunnel->config->cert_whitelist; elem != NULL;
 	     elem = elem->next)

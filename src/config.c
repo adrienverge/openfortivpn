@@ -73,6 +73,7 @@ const struct vpn_config invalid_cfg = {
 	.user_cert = NULL,
 	.user_key = NULL,
 	.insecure_ssl = -1,
+	.trust_all_certs = -1,
 	.cipher_list = NULL,
 	.min_tls = -1,
 	.seclevel_1 = -1,
@@ -402,6 +403,15 @@ int load_config(struct vpn_config *cfg, const char *filename)
 				continue;
 			}
 			cfg->insecure_ssl = insecure_ssl;
+		} else if (strcmp(key, "trust-all-certs") == 0) {
+			int trust_all_certs = strtob(val);
+
+			if (trust_all_certs < 0) {
+				log_warn("Bad trust-all-certs in config file: \"%s\".\n",
+				         val);
+				continue;
+			}
+			cfg->trust_all_certs = trust_all_certs;
 		} else if (strcmp(key, "cipher-list") == 0) {
 			free(cfg->cipher_list);
 			cfg->cipher_list = strdup(val);
@@ -550,6 +560,8 @@ void merge_config(struct vpn_config *dst, struct vpn_config *src)
 	}
 	if (src->insecure_ssl != invalid_cfg.insecure_ssl)
 		dst->insecure_ssl = src->insecure_ssl;
+	if (src->trust_all_certs != invalid_cfg.trust_all_certs)
+		dst->trust_all_certs = src->trust_all_certs;
 	if (src->cipher_list) {
 		free(dst->cipher_list);
 		dst->cipher_list = src->cipher_list;

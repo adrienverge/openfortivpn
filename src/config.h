@@ -113,6 +113,7 @@ struct vpn_config {
 	char			*user_cert;
 	char			*user_key;
 	int			insecure_ssl;
+	int			trust_all_certs;
 	int			min_tls;
 	int			seclevel_1;
 	char			*cipher_list;
