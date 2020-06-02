@@ -11,6 +11,7 @@ openfortivpn \- Client for PPP+SSL VPN tunnel services
 [\fB\-\-otp=\fI<otp>\fR]
 [\fB\-\-otp\-prompt=\fI<prompt>\fR]
 [\fB\-\-otp\-delay=\fI<delay>\fR]
+[\fB\-\-no\-ftm\-push\fR]
 [\fB\-\-realm=\fI<realm>\fR]
 [\fB\-\-set\-routes=<bool>\fR]
 [\fB\-\-no\-routes\fR]
@@ -78,6 +79,12 @@ Search for the OTP password prompt starting with the string \fI<prompt>\fR.
 Set the amount of time to wait before sending the One-Time-Password.
 The delay time must be specified in seconds, where 0 means
 no wait (this is the default).
+.TP
+\fB\-\-no\-ftm\-push\fR
+Do not use FTM push if the server provides the option.
+The server may be configured to allow two factor authentication through a
+push notification to the mobile application. If this option is provided,
+authentication based on OTP will be used instead.
 .TP
 \fB\-\-realm=\fI<realm>\fR
 Connect to the specified authentication realm. Defaults to empty, which
@@ -285,6 +292,10 @@ password = bar
 # otp\-delay = 0
 .br
 # otp\-prompt = Please
+.br
+# This would disable FTM push notification support, and use OTP instead
+.br
+# no\-ftm\-push = 1
 .br
 # pinentry = pinentry program
 .br

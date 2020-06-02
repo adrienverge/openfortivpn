@@ -632,7 +632,7 @@ int auth_log_in(struct tunnel *tunnel)
 	char portal[64] = { '\0' };
 	char magic[32] = {'\0' };
 	char peer[32]  = { '\0' };
-	char data[1024], token[128], tokenresponse[256];
+	char data[1152], token[128], tokenresponse[256], tokenparams[320];
 	char action_url[1024] = { '\0' };
 	char *res = NULL;
 	uint32_t response_size;
@@ -711,21 +711,38 @@ int auth_log_in(struct tunnel *tunnel)
 		get_value_from_response(res, "magic=", magic, 32);
 		get_value_from_response(res, "peer=", peer, 32);
 
-		if (cfg->otp[0] == '\0') {
-			read_password(cfg->pinentry, "otp",
-			              "Two-factor authentication token: ",
-			              cfg->otp, FIELD_SIZE);
+		if (cfg->otp[0] == '\0' &&
+		    strncmp(token, "ftm_push", 8) == 0 &&
+		    cfg->no_ftm_push == 0) {
+			/*
+			 * The server supports FTM push if `tokeninfo` is `ftm_push`,
+			 * but only try this if the OTP is not provided by the config
+			 * file or command line.
+			 */
+			snprintf(tokenparams, sizeof(tokenparams), "ftmpush=1");
+		} else {
 			if (cfg->otp[0] == '\0') {
-				log_error("No token specified\n");
-				return 0;
+				// Prompt for OTP token
+				read_password(cfg->pinentry, "otp",
+				              "Two-factor authentication token: ",
+				              cfg->otp, FIELD_SIZE);
+
+				if (cfg->otp[0] == '\0') {
+					log_error("No token specified\n");
+					return 0;
+				}
 			}
+
+			url_encode(tokenresponse, cfg->otp);
+			snprintf(tokenparams, sizeof(tokenparams),
+			         "code=%s&code2=&magic=%s",
+			         tokenresponse, magic);
 		}
 
-		url_encode(tokenresponse, cfg->otp);
 		snprintf(data, sizeof(data),
-		         "username=%s&realm=%s&reqid=%s&polid=%s&grp=%s&code=%s&code2=&portal=%s&peer=%s&magic=%s",
-		         username, realm, reqid, polid, group, tokenresponse,
-		         portal, peer, magic);
+		         "username=%s&realm=%s&reqid=%s&polid=%s&grp=%s&portal=%s&peer=%s&%s",
+		         username, realm, reqid, polid, group, portal, peer,
+		         tokenparams);
 
 		delay_otp(tunnel);
 		ret = http_request(tunnel, "POST", "/remote/logincheck",
