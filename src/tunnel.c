@@ -678,7 +678,6 @@ static int tcp_connect(struct tunnel *tunnel)
 					eol = strstr(response, HTTP_EOL[i]);
 				response = eol;
 			}
-
 		}
 
 		free(env_proxy); // release memory allocated by strdup()
@@ -842,9 +841,8 @@ int ssl_connect(struct tunnel *tunnel)
 		log_error("Could not load OS OpenSSL files.\n");
 
 	if (tunnel->config->ca_file) {
-		if (!SSL_CTX_load_verify_locations(
-		            tunnel->ssl_context,
-		            tunnel->config->ca_file, NULL)) {
+		if (!SSL_CTX_load_verify_locations(tunnel->ssl_context,
+		                                   tunnel->config->ca_file, NULL)) {
 			log_error("SSL_CTX_load_verify_locations: %s\n",
 			          ERR_error_string(ERR_peek_last_error(), NULL));
 			return 1;
@@ -919,7 +917,6 @@ int ssl_connect(struct tunnel *tunnel)
 
 	/* Use engine for PIV if user-cert config starts with pkcs11 URI: */
 	if (tunnel->config->use_engine > 0) {
-
 		ENGINE *e;
 
 		ENGINE_load_builtin_engines();
@@ -991,9 +988,9 @@ int ssl_connect(struct tunnel *tunnel)
 		}
 
 		if (tunnel->config->user_key) {
-			if (!SSL_CTX_use_PrivateKey_file(
-			            tunnel->ssl_context, tunnel->config->user_key,
-			            SSL_FILETYPE_PEM)) {
+			if (!SSL_CTX_use_PrivateKey_file(tunnel->ssl_context,
+			                                 tunnel->config->user_key,
+			                                 SSL_FILETYPE_PEM)) {
 				log_error("SSL_CTX_use_PrivateKey_file: %s\n",
 				          ERR_error_string(ERR_peek_last_error(), NULL));
 				return 1;

@@ -220,7 +220,7 @@ cleanup:
 	log_debug("netstat_path: %s\n", netstat_path);
 
 	// Open the command for reading
-	fp = popen(NETSTAT_PATH" -f inet -rn", "r");
+	fp = popen(NETSTAT_PATH " -f inet -rn", "r");
 	if (fp == NULL) {
 		err = ERR_IPV4_SEE_ERRNO;
 		goto end;
@@ -475,7 +475,6 @@ cleanup:
 			       | ((mask & 0xff0000) >> 8)
 			       | ((mask & 0xff00) << 8)
 			       | ((mask & 0xff) << 24);
-
 		}
 		log_debug_details("- Destination IP Hex: %x\n", dest);
 		log_debug_details("- Destination Mask Hex: %x\n", mask);
@@ -846,11 +845,9 @@ int ipv4_add_split_vpn_route(struct tunnel *tunnel, char *dest, char *mask,
 	if ((tunnel->ipv4.split_rt == NULL)
 	    || ((tunnel->ipv4.split_routes % STEP_SPLIT_ROUTES) == 0)) {
 		void *new_ptr
-		        = realloc(
-		                  tunnel->ipv4.split_rt,
+		        = realloc(tunnel->ipv4.split_rt,
 		                  (size_t) (tunnel->ipv4.split_routes + STEP_SPLIT_ROUTES)
-		                  * sizeof(*(tunnel->ipv4.split_rt))
-		          );
+		                  * sizeof(*(tunnel->ipv4.split_rt)));
 		if (new_ptr == NULL)
 			return ERR_IPV4_NO_MEM;
 		tunnel->ipv4.split_rt = new_ptr;
@@ -1001,11 +998,10 @@ int ipv4_set_tunnel_routes(struct tunnel *tunnel)
 	if (tunnel->ipv4.split_routes)
 		// try even if ipv4_protect_tunnel_route has failed
 		return ipv4_set_split_routes(tunnel);
-	else if (ret == 0) {
+	else if (ret == 0)
 		return ipv4_set_default_routes(tunnel);
-	} else {
+	else
 		return ret;
-	}
 }
 
 int ipv4_restore_routes(struct tunnel *tunnel)
@@ -1036,7 +1032,6 @@ int ipv4_restore_routes(struct tunnel *tunnel)
 				log_warn("Could not restore default route (%s). Already restored?\n",
 				         err_ipv4_str(ret));
 			}
-
 		}
 	} else {
 		log_debug("Route to vpn server was not added\n");

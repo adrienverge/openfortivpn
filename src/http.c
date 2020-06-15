@@ -50,10 +50,10 @@
 static void url_encode(char *dest, const char *str)
 {
 	while (*str != '\0') {
-		if (isalnum(*str) || *str == '-' || *str == '_'
-		    || *str == '.' || *str == '~')
+		if (isalnum(*str) || *str == '-' || *str == '_' ||
+		    *str == '.' || *str == '~') {
 			*dest++ = *str;
-		else {
+		} else {
 			static const char hex[] = "0123456789ABCDEF";
 
 			*dest++ = '%';
@@ -122,11 +122,8 @@ int http_send(struct tunnel *tunnel, const char *request, ...)
 }
 
 
-static const char *find_header(
-        const char *res,
-        const char *header,
-        uint32_t response_size
-)
+static const char *find_header(const char *res, const char *header,
+                               uint32_t response_size)
 {
 	const char *line = res;
 
@@ -154,11 +151,8 @@ static const char *find_header(
  * @return     1         in case of success
  *             < 0       in case of error
  */
-int http_receive(
-        struct tunnel *tunnel,
-        char **response,
-        uint32_t *response_size
-)
+int http_receive(struct tunnel *tunnel,
+                 char **response, uint32_t *response_size)
 {
 	uint32_t capacity = HTTP_BUFFER_SIZE;
 	char *buffer;
@@ -376,11 +370,7 @@ end:
 }
 
 
-static int get_auth_cookie(
-        struct tunnel *tunnel,
-        char *buf,
-        uint32_t buffer_size
-)
+static int get_auth_cookie(struct tunnel *tunnel, char *buf, uint32_t buffer_size)
 {
 	int ret = 0;
 	const char *line;
@@ -425,12 +415,8 @@ static void delay_otp(struct tunnel *tunnel)
 }
 
 
-static int try_otp_auth(
-        struct tunnel *tunnel,
-        const char *buffer,
-        char **res,
-        uint32_t *response_size
-)
+static int try_otp_auth(struct tunnel *tunnel, const char *buffer,
+                        char **res, uint32_t *response_size)
 {
 	char data[256];
 	char path[40];
@@ -688,9 +674,8 @@ int auth_log_in(struct tunnel *tunnel)
 		         username, realm, reqid, polid, group, tokenresponse);
 
 		delay_otp(tunnel);
-		ret = http_request(
-		              tunnel, "POST", "/remote/logincheck",
-		              data, &res, &response_size);
+		ret = http_request(tunnel, "POST", "/remote/logincheck",
+		                   data, &res, &response_size);
 		if (ret != 1)
 			goto end;
 
@@ -756,8 +741,7 @@ static int parse_xml_config(struct tunnel *tunnel, const char *buffer)
 	val = buffer;
 	while ((val = xml_find('<', "dns", val, 2))) {
 		if (xml_find(' ', "domain=", val, 1)) {
-			tunnel->ipv4.dns_suffix
-			        = xml_get(xml_find(' ', "domain=", val, 1));
+			tunnel->ipv4.dns_suffix = xml_get(xml_find(' ', "domain=", val, 1));
 			log_debug("found dns suffix %s in xml config\n",
 			          tunnel->ipv4.dns_suffix);
 			break;

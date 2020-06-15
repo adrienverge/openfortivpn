@@ -132,7 +132,7 @@ ssize_t hdlc_encode(uint8_t *frame, size_t frmsize,
 	if (frmsize < 7)
 		return ERR_HDLC_BUFFER_TOO_SMALL;
 
-	// In theory each frame begins with a Flag Sequence, but it is ommitted
+	// In theory each frame begins with a Flag Sequence, but it is omitted
 	// if the previous frame ends with a Flag Sequence.
 	if (need_flag_sequence)
 		frame[written++] = 0x7e;

@@ -111,7 +111,7 @@ PPPD_USAGE \
 "  -h --help                     Show this help message and exit.\n" \
 "  --version                     Show version and exit.\n" \
 "  -c <file>, --config=<file>    Specify a custom config file (default:\n" \
-"                                "SYSCONFDIR"/openfortivpn/config).\n" \
+"                                " SYSCONFDIR "/openfortivpn/config).\n" \
 "  -u <user>, --username=<user>  VPN account username.\n" \
 "  -p <pass>, --password=<pass>  VPN account password.\n" \
 "  -o <otp>, --otp=<otp>         One-Time-Password.\n" \
@@ -170,7 +170,7 @@ PPPD_USAGE \
 "Config file:\n" \
 "  Options can be taken from a configuration file. Options passed in the\n" \
 "  command line will override those from the config file, though. The default\n" \
-"  config file is "SYSCONFDIR"/openfortivpn/config,\n" \
+"  config file is " SYSCONFDIR "/openfortivpn/config,\n" \
 "  but this can be set using the -c option.\n" \
 "  A simple config file example looks like:\n" \
 "      # this is a comment\n" \
@@ -185,7 +185,7 @@ PPPD_USAGE \
 int main(int argc, char **argv)
 {
 	int ret = EXIT_FAILURE;
-	const char *config_file = SYSCONFDIR"/openfortivpn/config";
+	const char *config_file = SYSCONFDIR "/openfortivpn/config";
 	const char *host;
 	char *port_str;
 

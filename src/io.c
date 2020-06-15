@@ -49,9 +49,9 @@ typedef semaphore_t os_semaphore_t;
 
 #define SEM_INIT(sem, x, value)	semaphore_create(mach_task_self(), sem, \
 								SYNC_POLICY_FIFO, value)
-#define SEM_WAIT(sem)			semaphore_wait(*sem)
-#define SEM_POST(sem)			semaphore_signal(*sem)
-#define SEM_DESTROY(sem)		semaphore_destroy(mach_task_self(), *sem)
+#define SEM_WAIT(sem)			semaphore_wait(*(sem))
+#define SEM_POST(sem)			semaphore_signal(*(sem))
+#define SEM_DESTROY(sem)		semaphore_destroy(mach_task_self(), *(sem))
 
 #else
 
@@ -74,14 +74,16 @@ static pthread_mutex_t *lockarray;
 static void lock_callback(int mode, int type, const char *file, int line)
 {
 	if (mode & CRYPTO_LOCK)
-		pthread_mutex_lock(&(lockarray[type]));
+		pthread_mutex_lock(&lockarray[type]);
 	else
-		pthread_mutex_unlock(&(lockarray[type]));
+		pthread_mutex_unlock(&lockarray[type]);
 }
+
 static unsigned long thread_id(void)
 {
 	return (unsigned long) pthread_self();
 }
+
 static void init_ssl_locks(void)
 {
 	int i;
@@ -89,17 +91,18 @@ static void init_ssl_locks(void)
 	lockarray = (pthread_mutex_t *) OPENSSL_malloc(CRYPTO_num_locks() *
 	                sizeof(pthread_mutex_t));
 	for (i = 0; i < CRYPTO_num_locks(); i++)
-		pthread_mutex_init(&(lockarray[i]), NULL);
+		pthread_mutex_init(&lockarray[i], NULL);
 	CRYPTO_set_id_callback((unsigned long (*)()) thread_id);
 	CRYPTO_set_locking_callback((void (*)()) lock_callback);
 }
+
 static void destroy_ssl_locks(void)
 {
 	int i;
 
 	CRYPTO_set_locking_callback(NULL);
 	for (i = 0; i < CRYPTO_num_locks(); i++)
-		pthread_mutex_destroy(&(lockarray[i]));
+		pthread_mutex_destroy(&lockarray[i]);
 	OPENSSL_free(lockarray);
 }
 #else
