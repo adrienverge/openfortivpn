@@ -87,6 +87,7 @@ void increase_verbosity(void)
 	if (loglevel < OFV_LOG_DEBUG_ALL)
 		loglevel++;
 }
+
 void decrease_verbosity(void)
 {
 	if (loglevel > OFV_LOG_MUTE)
