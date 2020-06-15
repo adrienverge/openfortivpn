@@ -890,6 +890,13 @@ static int ipv4_set_split_routes(struct tunnel *tunnel)
 		int ret;
 
 		route = &tunnel->ipv4.split_rt[i];
+		// check if the route to be added is not the one to the gateway itself
+		if (route_dest(route).s_addr == route_dest(&tunnel->ipv4.gtw_rt).s_addr) {
+			log_debug("Skipping route to tunnel gateway (%s).\n",
+			          ipv4_show_route(route));
+			continue;
+		}
+
 		free(route_iface(route));
 		route_iface(route) = strdup(tunnel->ppp_iface);
 		if (!route_iface(route))
