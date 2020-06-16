@@ -741,7 +741,8 @@ static int parse_xml_config(struct tunnel *tunnel, const char *buffer)
 	val = buffer;
 	while ((val = xml_find('<', "dns", val, 2))) {
 		if (xml_find(' ', "domain=", val, 1)) {
-			tunnel->ipv4.dns_suffix = xml_get(xml_find(' ', "domain=", val, 1));
+			tunnel->ipv4.dns_suffix
+			        = xml_get(xml_find(' ', "domain=", val, 1));
 			log_debug("found dns suffix %s in xml config\n",
 			          tunnel->ipv4.dns_suffix);
 			break;
