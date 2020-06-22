@@ -77,7 +77,10 @@ const struct vpn_config invalid_cfg = {
 	.min_tls = -1,
 	.seclevel_1 = -1,
 	.cert_whitelist = NULL,
-	.use_engine = -1
+	.use_engine = -1,
+	.user_agent = NULL,
+	.hostcheck = NULL,
+	.check_virtual_desktop = NULL
 };
 
 /*
@@ -426,11 +429,24 @@ int load_config(struct vpn_config *cfg, const char *filename)
 				continue;
 			}
 			cfg->seclevel_1 = seclevel_1;
+		} else if (strcmp(key, "user-agent") == 0) {
+			free(cfg->user_agent);
+			cfg->user_agent = strdup(val);
+		} else if (strcmp(key, "hostcheck") == 0) {
+			free(cfg->hostcheck);
+			cfg->hostcheck = strdup(val);
+		} else if (strcmp(key, "check-virtual-desktop") == 0) {
+			free(cfg->check_virtual_desktop);
+			cfg->check_virtual_desktop = strdup(val);
 		} else {
 			log_warn("Bad key in config file: \"%s\".\n", key);
 			goto err_free;
 		}
 	}
+
+	// Set default UA
+	if (cfg->user_agent == NULL)
+		cfg->user_agent = strdup("Mozilla/5.0 SV1");
 
 	ret = 0;
 
@@ -567,4 +583,10 @@ void merge_config(struct vpn_config *dst, struct vpn_config *src)
 		}
 		dst->cert_whitelist = src->cert_whitelist;
 	}
+	if (src->user_agent != invalid_cfg.user_agent)
+		dst->user_agent = src->user_agent;
+	if (src->hostcheck != invalid_cfg.hostcheck)
+		dst->hostcheck = src->hostcheck;
+	if (src->check_virtual_desktop != invalid_cfg.check_virtual_desktop)
+		dst->check_virtual_desktop = src->check_virtual_desktop;
 }

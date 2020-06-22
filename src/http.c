@@ -274,17 +274,20 @@ static int do_http_request(struct tunnel *tunnel,
 	int ret;
 	const char *template = ("%s %s HTTP/1.1\r\n"
 	                        "Host: %s:%d\r\n"
-	                        "User-Agent: Mozilla/5.0 SV1\r\n"
-	                        "Accept: text/plain\r\n"
-	                        "Accept-Encoding: identity\r\n"
+	                        "User-Agent: %s\r\n"
+	                        "Accept: */*\r\n"
+	                        "Accept-Encoding: gzip, deflate, br\r\n"
+	                        "Pragma: no-cache\r\n"
+	                        "Cache-Control: no-store, no-cache, must-revalidate\r\n"
+	                        "If-Modified-Since: Sat, 1 Jan 2000 00:00:00 GMT\r\n"
 	                        "Content-Type: application/x-www-form-urlencoded\r\n"
 	                        "Cookie: %s\r\n"
 	                        "Content-Length: %d\r\n"
 	                        "\r\n%s");
 
 	ret = http_send(tunnel, template, method, uri,
-	                tunnel->config->gateway_host,
-	                tunnel->config->gateway_port, tunnel->cookie,
+	                tunnel->config->gateway_host, tunnel->config->gateway_port,
+	                tunnel->config->user_agent, tunnel->cookie,
 	                strlen(data), data);
 	if (ret != 1)
 		return ret;
@@ -369,6 +372,41 @@ end:
 	return ret;
 }
 
+static int get_action_url(const char *buf, const char *key,
+                          char *retbuf, size_t retbuflen)
+{
+
+	int ret = -1;
+	char *tokens;
+	size_t keylen = strlen(key);
+	char *saveptr = NULL;
+
+	tokens = strdup(buf);
+	if (tokens == NULL) {
+		ret = -3;
+		goto end;
+	}
+
+	for (const char *kv_pair = strtok_r(tokens, " \"\r\n", &saveptr);
+	     kv_pair != NULL;
+	     kv_pair = strtok_r(NULL, " \"\r\n", &saveptr)) {
+		if (strncmp(key, kv_pair, keylen) == 0) {
+			const char *val = strtok_r(NULL, "\"\r\n", &saveptr);
+
+			if (strlen(val) > retbuflen - 1) {  // value too long
+				ret = -2;
+			} else {
+				strcpy(retbuf, val);
+				ret = 1;
+			}
+			break;
+		}
+	}
+
+	free(tokens);
+end:
+	return ret;
+}
 
 static int get_auth_cookie(struct tunnel *tunnel, char *buf, uint32_t buffer_size)
 {
@@ -383,13 +421,19 @@ static int get_auth_cookie(struct tunnel *tunnel, char *buf, uint32_t buffer_siz
 			if (line[11] == ';' || line[11] == '\0') {
 				log_debug("Empty cookie.\n");
 			} else {
-				char *end;
+				char *end1;
+				char *end2;
+				char end1_save = '\0';
+				char end2_save = '\0';
 
-				end = strstr(line, "\r");
-				end[0] = '\0';
-				end = strstr(line, ";");
-				if (end != NULL)
-					end[0] = '\0';
+				end1 = strstr(line, "\r");
+				end1_save = *end1;
+				end1[0] = '\0';
+				end2 = strstr(line, ";");
+				if (end2 != NULL) {
+					end2_save = *end2;
+					end2[0] = '\0';
+				}
 				log_debug("Cookie: %s\n", line);
 				strncpy(tunnel->cookie, line, COOKIE_SIZE);
 				tunnel->cookie[COOKIE_SIZE] = '\0';
@@ -399,6 +443,8 @@ static int get_auth_cookie(struct tunnel *tunnel, char *buf, uint32_t buffer_siz
 				} else {
 					ret = 1; // success
 				}
+				end1[0] = end1_save;
+				end2[0] = end2_save;
 			}
 		}
 	}
@@ -583,7 +629,11 @@ int auth_log_in(struct tunnel *tunnel)
 	char reqid[32] = { '\0' };
 	char polid[32] = { '\0' };
 	char group[128] = { '\0' };
+	char portal[64] = { '\0' };
+	char magic[32] = {'\0' };
+	char peer[32]  = { '\0' };
 	char data[1024], token[128], tokenresponse[256];
+	char action_url[1024] = { '\0' };
 	char *res = NULL;
 	uint32_t response_size;
 
@@ -604,7 +654,7 @@ int auth_log_in(struct tunnel *tunnel)
 		} else {
 			url_encode(password, tunnel->config->password);
 			snprintf(data, sizeof(data),
-			         "username=%s&credential=%s&realm=%s&ajax=1&redir=%%2Fremote%%2Findex&just_logged_in=1",
+			         "username=%s&credential=%s&realm=%s&ajax=1",
 			         username, password, realm);
 		}
 		ret = http_request(tunnel, "POST", "/remote/logincheck",
@@ -657,6 +707,9 @@ int auth_log_in(struct tunnel *tunnel)
 		get_value_from_response(res, "grp=", group, 128);
 		get_value_from_response(res, "reqid=", reqid, 32);
 		get_value_from_response(res, "polid=", polid, 32);
+		get_value_from_response(res, "portal=", portal, 64);
+		get_value_from_response(res, "magic=", magic, 32);
+		get_value_from_response(res, "peer=", peer, 32);
 
 		if (cfg->otp[0] == '\0') {
 			read_password(cfg->pinentry, "otp",
@@ -670,8 +723,9 @@ int auth_log_in(struct tunnel *tunnel)
 
 		url_encode(tokenresponse, cfg->otp);
 		snprintf(data, sizeof(data),
-		         "username=%s&realm=%s&reqid=%s&polid=%s&grp=%s&code=%s&code2=&redir=%%2Fremote%%2Findex&just_logged_in=1",
-		         username, realm, reqid, polid, group, tokenresponse);
+		         "username=%s&realm=%s&reqid=%s&polid=%s&grp=%s&code=%s&code2=&portal=%s&peer=%s&magic=%s",
+		         username, realm, reqid, polid, group, tokenresponse,
+		         portal, peer, magic);
 
 		delay_otp(tunnel);
 		ret = http_request(tunnel, "POST", "/remote/logincheck",
@@ -688,6 +742,18 @@ int auth_log_in(struct tunnel *tunnel)
 		}
 
 		ret = get_auth_cookie(tunnel, res, response_size);
+	}
+
+	/*
+	 * If hostchecking enabled, get action url
+	 */
+	get_action_url(res, "action=", action_url, 1024);
+	if (strlen(action_url) != 0) {
+		snprintf(data, sizeof(data), "hostcheck=%s&check_virtual_desktop=%s",
+		         tunnel->config->hostcheck,
+		         tunnel->config->check_virtual_desktop);
+		ret = http_request(tunnel, "POST", action_url,
+		                   data, &res, &response_size);
 	}
 
 end:
