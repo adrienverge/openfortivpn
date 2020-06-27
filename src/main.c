@@ -117,6 +117,7 @@ PPPD_USAGE \
 "  -o <otp>, --otp=<otp>         One-Time-Password.\n" \
 "  --otp-prompt=<prompt>         Search for the OTP prompt starting with this string\n" \
 "  --otp-delay=<delay>           Wait <delay> seconds before sending the OTP.\n" \
+"  --no-ftm-push                 Do not use FTM push if the server provides the option.\n" \
 "  --pinentry=<program>          Use the program to supply a secret instead of asking for it\n" \
 "  --realm=<realm>               Use specified authentication realm.\n" \
 "  --set-routes=[01]             Set if openfortivpn should configure routes\n" \
@@ -197,6 +198,7 @@ int main(int argc, char **argv)
 		.otp = {'\0'},
 		.otp_prompt = NULL,
 		.otp_delay = 0,
+		.no_ftm_push = 0,
 		.pinentry = NULL,
 		.realm = {'\0'},
 		.set_routes = 1,
@@ -245,6 +247,7 @@ int main(int argc, char **argv)
 		{"otp",             required_argument, NULL, 'o'},
 		{"otp-prompt",      required_argument, NULL, 0},
 		{"otp-delay",       required_argument, NULL, 0},
+		{"no-ftm-push",     no_argument, &cli_cfg.no_ftm_push, 1},
 		{"set-routes",	    required_argument, NULL, 0},
 		{"no-routes",       no_argument, &cli_cfg.set_routes, 0},
 		{"half-internet-routes", required_argument, NULL, 0},
