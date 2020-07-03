@@ -86,6 +86,7 @@ PPPD_USAGE \
 "                    [--user-cert=<file>] [--user-key=<file>]\n" \
 "                    [--trusted-cert=<digest>] [--use-syslog]\n" \
 "                    [--persistent=<interval>] [-c <file>] [-v|-q]\n" \
+"                    [--set-default-route=<0|1>]" \
 "       openfortivpn --help\n" \
 "       openfortivpn --version\n" \
 "\n"
@@ -122,6 +123,8 @@ PPPD_USAGE \
 "  --realm=<realm>               Use specified authentication realm.\n" \
 "  --set-routes=[01]             Set if openfortivpn should configure routes\n" \
 "                                when tunnel is up.\n" \
+"  --set-default-route=[01]      Configure the default route through the VPN when set to 1\n" \
+"                                Default is 1.\n" \
 "  --no-routes                   Do not configure routes, same as --set-routes=0.\n" \
 "  --half-internet-routes=[01]   Add two 0.0.0.0/1 and 128.0.0.0/1 routes with higher\n" \
 "                                priority instead of replacing the default route.\n" \
@@ -205,6 +208,7 @@ int main(int argc, char **argv)
 		.set_dns = 1,
 		.use_syslog = 0,
 		.half_internet_routes = 0,
+		.set_default_route = 1,
 		.persistent = 0,
 #if HAVE_RESOLVCONF
 		.use_resolvconf = USE_RESOLVCONF,
@@ -251,6 +255,7 @@ int main(int argc, char **argv)
 		{"set-routes",	    required_argument, NULL, 0},
 		{"no-routes",       no_argument, &cli_cfg.set_routes, 0},
 		{"half-internet-routes", required_argument, NULL, 0},
+		{"set-default-route", required_argument, NULL, 0},
 		{"set-dns",         required_argument, NULL, 0},
 		{"no-dns",          no_argument, &cli_cfg.set_dns, 0},
 		{"use-syslog",      no_argument, &cli_cfg.use_syslog, 1},
@@ -451,6 +456,18 @@ int main(int argc, char **argv)
 					break;
 				}
 				cli_cfg.half_internet_routes = half_internet_routes;
+				break;
+			}
+			if (strcmp(long_options[option_index].name,
+			           "set-default-route") == 0) {
+				int set_default_route = strtob(optarg);
+
+				if (set_default_route < 0) {
+					log_warn("Bad set-default-route option: \"%s\"\n",
+					         optarg);
+					break;
+				}
+				cli_cfg.set_default_route = set_default_route;
 				break;
 			}
 			if (strcmp(long_options[option_index].name,

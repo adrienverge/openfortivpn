@@ -97,6 +97,7 @@ struct vpn_config {
 	int	use_resolvconf;
 #endif
 	int	half_internet_routes;
+	int	set_default_route;
 
 	unsigned int	persistent;
 

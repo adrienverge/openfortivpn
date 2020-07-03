@@ -59,6 +59,7 @@ const struct vpn_config invalid_cfg = {
 #endif
 	.use_syslog = -1,
 	.half_internet_routes = -1,
+	.set_default_route = -1,
 	.persistent = -1,
 #if HAVE_USR_SBIN_PPPD
 	.pppd_log = NULL,
@@ -320,6 +321,15 @@ int load_config(struct vpn_config *cfg, const char *filename)
 				continue;
 			}
 			cfg->half_internet_routes = half_internet_routes;
+		} else if (strcmp(key, "set-default-route") == 0) {
+			int set_default_route = strtob(val);
+
+			if (set_default_route < 0) {
+				log_warn("Bad set_default_route in config file: \"%s\".\n",
+				         val);
+				continue;
+			}
+			cfg->set_default_route = set_default_route;
 		} else if (strcmp(key, "persistent") == 0) {
 			unsigned long persistent = strtoul(val, NULL, 0);
 
@@ -532,6 +542,8 @@ void merge_config(struct vpn_config *dst, struct vpn_config *src)
 		dst->use_syslog = src->use_syslog;
 	if (src->half_internet_routes != invalid_cfg.half_internet_routes)
 		dst->half_internet_routes = src->half_internet_routes;
+	if (src->set_default_route != invalid_cfg.set_default_route)
+		dst->set_default_route = src->set_default_route;
 	if (src->persistent != invalid_cfg.persistent)
 		dst->persistent = src->persistent;
 #if HAVE_USR_SBIN_PPPD
