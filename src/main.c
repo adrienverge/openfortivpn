@@ -510,6 +510,8 @@ int main(int argc, char **argv)
 			break;
 		case 'p':
 			cli_cfg.password = strdup(optarg);
+			while (*optarg)
+				*optarg++ = '*';  // nuke it
 			break;
 		case 'o':
 			strncpy(cli_cfg.otp, optarg, FIELD_SIZE);
