@@ -397,7 +397,7 @@ static int pppd_terminate(struct tunnel *tunnel)
 		log_debug("waitpid: %s exit status code %d\n",
 		          PPP_DAEMON, exit_status);
 #if HAVE_USR_SBIN_PPPD
-		if (exit_status >= ARRAY_SIZE(pppd_message) || exit_status < 0) {
+		if (exit_status >= (int)ARRAY_SIZE(pppd_message) || exit_status < 0) {
 			log_error("%s: Returned an unknown exit status: %d\n",
 			          PPP_DAEMON, exit_status);
 		} else {
@@ -614,7 +614,7 @@ static int tcp_connect(struct tunnel *tunnel)
 		        inet_ntoa(tunnel->config->gateway_ip),
 		        tunnel->config->gateway_port);
 
-		ssize_t bytes_written = write(handle, request, strlen(request));
+		size_t bytes_written = write(handle, request, strlen(request));
 
 		if (bytes_written != strlen(request)) {
 			log_error("write error while talking to proxy: %s\n",
@@ -627,7 +627,7 @@ static int tcp_connect(struct tunnel *tunnel)
 		const char *response = NULL;
 
 		memset(&(request), '\0', sizeof(request));
-		for (int j = 0; response == NULL; j++) {
+		for (size_t j = 0; response == NULL; j++) {
 			if (j >= ARRAY_SIZE(request) - 1) {
 				log_error("Proxy response is unexpectedly large and cannot fit in the %lu-bytes buffer.\n",
 				          ARRAY_SIZE(request));
@@ -673,7 +673,7 @@ static int tcp_connect(struct tunnel *tunnel)
 				};
 				const char *eol = NULL;
 
-				for (int i = 0; (i < ARRAY_SIZE(HTTP_EOL)) &&
+				for (size_t i = 0; (i < ARRAY_SIZE(HTTP_EOL)) &&
 				     (eol == NULL); i++)
 					eol = strstr(response, HTTP_EOL[i]);
 				response = eol;

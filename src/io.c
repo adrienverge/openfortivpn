@@ -71,7 +71,7 @@ typedef sem_t os_semaphore_t;
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
 static pthread_mutex_t *lockarray;
 
-static void lock_callback(int mode, int type, const char *file, int line)
+static void lock_callback(int mode, int type)
 {
 	if (mode & CRYPTO_LOCK)
 		pthread_mutex_lock(&lockarray[type]);

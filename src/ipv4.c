@@ -1052,7 +1052,7 @@ int ipv4_restore_routes(struct tunnel *tunnel)
 
 static inline char *replace_char(char *str, char find, char replace)
 {
-	int i;
+	size_t i;
 
 	for (i = 0; i < strlen(str); i++)
 		if (str[i] == find)

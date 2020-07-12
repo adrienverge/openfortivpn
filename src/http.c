@@ -473,7 +473,7 @@ static int try_otp_auth(struct tunnel *tunnel, const char *buffer,
 	char *d = data;
 	const char *p = NULL;
 	/* Length-check for destination buffer */
-#define SPACE_AVAILABLE(sz) (sizeof(data) - (d - data) >= (sz))
+#define SPACE_AVAILABLE(sz) ((long)sizeof(data) - (long)(d - data) >= (long)(sz))
 	/* Get the form action */
 	s = strcasestr(s, "<FORM");
 	if (s == NULL)
@@ -485,7 +485,7 @@ static int try_otp_auth(struct tunnel *tunnel, const char *buffer,
 	e = strchr(s, '"');
 	if (e == NULL)
 		return -1;
-	if (e - s + 1 > sizeof(path))
+	if (e - s + 1 > (long)sizeof(path))
 		return -1;
 	strncpy(path, s, e - s);
 	path[e - s] = '\0';
@@ -499,7 +499,7 @@ static int try_otp_auth(struct tunnel *tunnel, const char *buffer,
 	if (p) {
 		e = strchr(p, '<');
 		if (e != NULL) {
-			if (e - p + 1 < sizeof(prompt)) {
+			if (e - p + 1 < (long)sizeof(prompt)) {
 				strncpy(prompt, p, e - p);
 				prompt[e - p] = '\0';
 				p = prompt;
@@ -545,7 +545,7 @@ static int try_otp_auth(struct tunnel *tunnel, const char *buffer,
 			e = strchr(n, '"');
 			if (e == NULL)
 				return -1;
-			if (e - n + 1 > sizeof(tmp))
+			if (e - n + 1 > (long)sizeof(tmp))
 				return -1;
 			strncpy(tmp, n, e - n);
 			tmp[e - n] = '\0';
@@ -565,7 +565,7 @@ static int try_otp_auth(struct tunnel *tunnel, const char *buffer,
 			e = strchr(v, '"');
 			if (e == NULL)
 				return -1;
-			if (e - v + 1 > sizeof(tmp))
+			if (e - v + 1 > (long)sizeof(tmp))
 				return -1;
 			strncpy(tmp, v, e - v);
 			tmp[e - v] = '\0';

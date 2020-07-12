@@ -123,10 +123,10 @@ void init_hdlc(void)
 ssize_t hdlc_encode(uint8_t *frame, size_t frmsize,
                     const uint8_t *packet, size_t pktsize)
 {
-	ssize_t written = 0;
+	size_t written = 0;
 	uint16_t checksum;
 	const uint8_t address_control_fields[] = { 0xff, 0x03 };
-	int i;
+	size_t i;
 	uint8_t byte;
 
 	if (frmsize < 7)
@@ -197,7 +197,7 @@ ssize_t hdlc_encode(uint8_t *frame, size_t frmsize,
  */
 ssize_t hdlc_find_frame(const uint8_t *buffer, size_t bufsize, off_t *start)
 {
-	int i, s = -1, e = -1;
+	size_t i, s = -1, e = -1;
 
 	// Look for frame start
 	for (i = *start; i < bufsize - 2; i++) {
@@ -206,7 +206,7 @@ ssize_t hdlc_find_frame(const uint8_t *buffer, size_t bufsize, off_t *start)
 			break;
 		}
 	}
-	if (s == -1)
+	if (s == (size_t)-1)
 		return ERR_HDLC_NO_FRAME_FOUND;
 
 	// Discard empty frames
@@ -220,7 +220,7 @@ ssize_t hdlc_find_frame(const uint8_t *buffer, size_t bufsize, off_t *start)
 			break;
 		}
 	}
-	if (e == -1)
+	if (e == (size_t)-1)
 		return ERR_HDLC_NO_FRAME_FOUND;
 
 	*start = s;
@@ -243,9 +243,9 @@ ssize_t hdlc_decode(const uint8_t *frame, size_t frmsize,
                     uint8_t *packet, size_t pktsize)
 {
 	off_t start = 0;
-	ssize_t written = 0;
+	size_t written = 0;
 	int has_address_control_fields = 0;
-	int i;
+	size_t i;
 	int in_escape;
 	uint16_t checksum;
 
