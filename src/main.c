@@ -594,6 +594,10 @@ int main(int argc, char **argv)
 		cfg.password = strdup(tmp_password); // copy string of correct size
 		free(tmp_password);
 	}
+	// Set default UA
+	if (cfg.user_agent == invalid_cfg.user_agent)
+		cfg.user_agent = strdup("Mozilla/5.0 SV1");
+
 	log_debug("Config host = \"%s\"\n", cfg.gateway_host);
 	log_debug("Config realm = \"%s\"\n", cfg.realm);
 	log_debug("Config port = \"%d\"\n", cfg.gateway_port);
