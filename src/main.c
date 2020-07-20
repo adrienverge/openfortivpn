@@ -232,7 +232,8 @@ int main(int argc, char **argv)
 		.seclevel_1 = 0,
 		.cipher_list = NULL,
 		.cert_whitelist = NULL,
-		.use_engine = 0
+		.use_engine = 0,
+		.user_agent = "Mozilla/5.0 SV1",
 	};
 	struct vpn_config cli_cfg = invalid_cfg;
 
@@ -510,6 +511,8 @@ int main(int argc, char **argv)
 			break;
 		case 'p':
 			cli_cfg.password = strdup(optarg);
+			while (*optarg)
+				*optarg++ = '*';  // nuke it
 			break;
 		case 'o':
 			strncpy(cli_cfg.otp, optarg, FIELD_SIZE);
