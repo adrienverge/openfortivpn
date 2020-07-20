@@ -444,7 +444,8 @@ static int get_auth_cookie(struct tunnel *tunnel, char *buf, uint32_t buffer_siz
 					ret = 1; // success
 				}
 				end1[0] = end1_save;
-				end2[0] = end2_save;
+				if (end2 != NULL)
+					end2[0] = end2_save;
 			}
 		}
 	}
