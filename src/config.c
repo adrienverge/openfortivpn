@@ -82,7 +82,7 @@ const struct vpn_config invalid_cfg = {
 	.use_engine = -1,
 	.user_agent = NULL,
 	.hostcheck = NULL,
-	.check_virtual_desktop = NULL
+	.check_virtual_desktop = NULL,
 };
 
 /*
@@ -463,10 +463,6 @@ int load_config(struct vpn_config *cfg, const char *filename)
 			goto err_free;
 		}
 	}
-
-	// Set default UA
-	if (cfg->user_agent == NULL)
-		cfg->user_agent = strdup("Mozilla/5.0 SV1");
 
 	ret = 0;
 
