@@ -337,9 +337,13 @@ static void *pppd_write(void *arg)
 			n = write(tunnel->pppd_pty, &hdlc_buffer[written],
 			          len - written);
 			// retry on repeatable failure
-			if ((n == -1) && (errno != EAGAIN)) {
-				log_error("write: %s\n", strerror(errno));
-				goto err_free_buf;
+			if (n == -1) {
+				if (errno == EAGAIN) {
+					continue;
+				} else {
+					log_error("write: %s\n", strerror(errno));
+					goto err_free_buf;
+				}
 			}
 			written += n;
 		}
