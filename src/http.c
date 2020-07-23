@@ -427,8 +427,10 @@ static int get_auth_cookie(struct tunnel *tunnel, char *buf, uint32_t buffer_siz
 				char end2_save = '\0';
 
 				end1 = strstr(line, "\r");
-				end1_save = *end1;
-				end1[0] = '\0';
+				if (end1 != NULL) {
+					end1_save = *end1;
+					end1[0] = '\0';
+				}
 				end2 = strstr(line, ";");
 				if (end2 != NULL) {
 					end2_save = *end2;
@@ -443,7 +445,8 @@ static int get_auth_cookie(struct tunnel *tunnel, char *buf, uint32_t buffer_siz
 				} else {
 					ret = 1; // success
 				}
-				end1[0] = end1_save;
+				if (end1 != NULL)
+					end1[0] = end1_save;
 				if (end2 != NULL)
 					end2[0] = end2_save;
 			}
