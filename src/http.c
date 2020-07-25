@@ -726,8 +726,8 @@ int auth_log_in(struct tunnel *tunnel)
 			snprintf(tokenparams, sizeof(tokenparams), "ftmpush=1");
 		} else {
 			if (cfg->otp[0] == '\0') {
-				// Prompt for OTP token
-				read_password(cfg->pinentry, "otp",
+				// Prompt for 2FA token
+				read_password(cfg->pinentry, "2fa",
 				              "Two-factor authentication token: ",
 				              cfg->otp, FIELD_SIZE);
 
