@@ -135,6 +135,7 @@ static int pinentry_read(int from, char **retstr)
 	    || strncmp(buf, "D ", 2) == 0) {
 		if (retstr) {
 			*retstr = strchr(buf, ' ');
+			*retstr = strtok(*retstr, "\n");
 			*retstr = *retstr ? uri_unescape(*retstr + 1) : NULL;
 		}
 		free(buf);
