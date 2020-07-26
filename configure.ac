@@ -206,7 +206,6 @@ strncmp \
 strncpy \
 strsignal \
 strstr \
-strtok \
 strtok_r \
 strtol \
 strtoul \
