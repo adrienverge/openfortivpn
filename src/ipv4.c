@@ -1060,6 +1060,79 @@ static inline char *replace_char(char *str, char find, char replace)
 	return str;
 }
 
+//string trim function it removes trim chars from first & end of string
+static inline void str_trim(const char* input, char* output,char* trim_chars){
+    int i, j, len = strlen(input), start_index=-1, end_index=-1, trim_char_len, flag;
+    char temp;
+    if(trim_chars==NULL){
+	//if trim chars is NULL then set default
+        assign_trim_chars:
+        trim_chars = " \n\r";
+        trim_char_len = 3;
+    }else{
+        trim_char_len = strlen(trim_chars);
+        if(trim_char_len<=0){
+            goto assign_trim_chars;
+        }
+    }
+	// remove trim chars from first untill reach character other than trim char
+    for ( i = 0; i < len; i++)
+    {
+        temp = input[i];
+        if(temp=='\0'){
+            break;
+        }
+        flag = 0;
+        for (int j = 0; j < trim_char_len; j++)
+        {
+            if (temp == trim_chars[j])
+            {
+                flag=1;
+            }
+            
+        }
+        if(flag==0){
+            start_index = i;
+            break;
+        }
+        
+    }
+	//if start_index is -1 then all chars are trim chars so set 0th char to \0 and return
+    if(start_index==-1){
+        output[0]='\0';
+        return;
+    }
+	// remove trim chars from last to first untill reach character other than trim char
+    for ( i = len-1; i > -1; i--)
+    {
+        temp = input[i];
+        flag = 0;
+        for (j = 0; j < trim_char_len; j++)
+        {
+            if (temp == trim_chars[j])
+            {
+                flag=1;
+            }
+            
+        }
+        if(flag==0){
+            end_index = i;
+            break;
+        }
+        
+    }
+	//end index other than trim char so add +1 for loop
+    ++end_index;
+    
+    for (i = start_index,j=0; i < end_index; i++,j++)
+    {
+        output[j] = input[i];
+    }
+	//add final as \0
+    output[j]='\0';
+	return;
+}
+
 int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 {
 	int ret = -1;
@@ -1072,6 +1145,8 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 	char dns_suffix[DNS_SUFFIX_SIZE];
 #undef DNS_SUFFIX_SIZE
 	char *buffer = NULL;
+	//resolv_conf_data used to hold resolvconf data because strtok_r changed input buffer
+	char *resolv_conf_data = NULL;
 	int use_resolvconf = 0;
 
 	tunnel->ipv4.ns1_was_there = 0;
@@ -1139,19 +1214,20 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 		}
 
 		buffer = malloc(stat.st_size + 1);
-		if (buffer == NULL) {
+		resolv_conf_data = malloc(stat.st_size + 1);
+		if (buffer == NULL || resolv_conf_data == NULL) {
 			log_warn("Could not read /etc/resolv.conf (%s).\n",
 			         strerror(errno));
 			goto err_close;
 		}
 
 		// Copy all file contents at once
-		if (fread(buffer, stat.st_size, 1, file) != 1) {
+		if (fread(resolv_conf_data, stat.st_size, 1, file) != 1) {
 			log_warn("Could not read /etc/resolv.conf.\n");
 			goto err_free;
 		}
 
-		buffer[stat.st_size] = '\0';
+		resolv_conf_data[stat.st_size] = '\0';
 #if HAVE_RESOLVCONF
 	}
 #endif
@@ -1173,13 +1249,14 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 		strcpy(dns_suffix, "search ");
 		strncat(dns_suffix, tunnel->ipv4.dns_suffix, MAX_DOMAIN_LENGTH);
 		replace_char(dns_suffix, ';', ' ');
+		str_trim(dns_suffix, dns_suffix, NULL);
 	} else {
 		dns_suffix[0] = '\0';
 	}
 
 	if (use_resolvconf == 0) {
 		char *saveptr = NULL;
-
+		strcpy(buffer, resolv_conf_data);
 		for (const char *line = strtok_r(buffer, "\n", &saveptr);
 		     line != NULL;
 		     line = strtok_r(NULL, "\n", &saveptr)) {
@@ -1192,6 +1269,7 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 		if (tunnel->ipv4.ns1_was_there == 0)
 			log_debug("Adding \"%s\", to /etc/resolv.conf.\n", ns1);
 
+		strcpy(buffer, resolv_conf_data);
 		for (const char *line = strtok_r(buffer, "\n", &saveptr);
 		     line != NULL;
 		     line = strtok_r(NULL, "\n", &saveptr)) {
@@ -1207,6 +1285,7 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 		if (dns_suffix[0] == '\0') {
 			tunnel->ipv4.dns_suffix_was_there = -1;
 		} else {
+			strcpy(buffer, resolv_conf_data);
 			for (const char *line = strtok_r(buffer, "\n", &saveptr);
 			     line != NULL;
 			     line = strtok_r(NULL, "\n", &saveptr)) {
@@ -1351,6 +1430,8 @@ int ipv4_del_nameservers_from_resolv_conf(struct tunnel *tunnel)
 	if (tunnel->ipv4.dns_suffix != NULL && tunnel->ipv4.dns_suffix[0] != '\0') {
 		strcpy(dns_suffix, "search ");
 		strncat(dns_suffix, tunnel->ipv4.dns_suffix, MAX_DOMAIN_LENGTH);
+		replace_char(dns_suffix, ';', ' ');
+		str_trim(dns_suffix, dns_suffix, NULL);
 	}
 
 	file = freopen("/etc/resolv.conf", "w", file);
