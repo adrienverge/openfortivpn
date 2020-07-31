@@ -1090,12 +1090,14 @@ assign_trim_chars:
 			break;
 		}
     }
-	//if start_index is -1 then all chars are trim chars so set 0th char to \0 and return
+	//if start_index is -1 then
+	//all chars are trim chars so set 0th char to \0 and return
     if (start_index == -1) {
         output[0] = '\0';
         return output;
     }
-	// remove trim chars from last to first untill reach character other than trim char
+	// remove trim chars from last to first
+	//untill reach character other than trim char
     for (i = len-1; i > -1; i--) {
         temp = input[i];
         flag = 0;
@@ -1128,7 +1130,8 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 	char dns_suffix[DNS_SUFFIX_SIZE];
 #undef DNS_SUFFIX_SIZE
 	char *buffer = NULL;
-	//resolv_conf_data used to hold resolvconf data because strtok_r changed input buffer
+	//resolv_conf_data used to hold resolvconf data
+	//because strtok_r changed input buffer
 	char *resolv_conf_data = NULL;
 	int use_resolvconf = 0;
 
