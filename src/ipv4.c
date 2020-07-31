@@ -1063,19 +1063,20 @@ static inline char *replace_char(char *str, char find, char replace)
 //string trim function it removes trim chars from first & end of string
 static inline char *str_trim(const char *input, char *output, char *trim_chars)
 {
-    int i, j, len = strlen(input), start_index = -1, end_index = -1, trim_char_len, flag;
-    char temp;
+	int i, j, len = strlen(input);
+	int start_index = -1, end_index = -1, trim_char_len, flag;
+	char temp;
 
-    if (trim_chars == NULL) {
+	if (trim_chars == NULL) {
 		//if trim chars is NULL then set default
 assign_trim_chars:
-        trim_chars = " \n\r";
-        trim_char_len = 3;
-    } else {
-        trim_char_len = strlen(trim_chars);
+		trim_chars = " \n\r";
+		trim_char_len = 3;
+	} else {
+		trim_char_len = strlen(trim_chars);
 		if (trim_char_len <= 0)
 			goto assign_trim_chars;
-    }
+	}
 	// remove trim chars from first untill reach character other than trim char
 	for (i = 0; i < len; i++) {
 		temp = input[i];
@@ -1089,32 +1090,32 @@ assign_trim_chars:
 			start_index = i;
 			break;
 		}
-    }
+	}
 	//if start_index is -1 then
 	//all chars are trim chars so set 0th char to \0 and return
-    if (start_index == -1) {
-        output[0] = '\0';
-        return output;
-    }
+	if (start_index == -1) {
+		output[0] = '\0';
+		return output;
+	}
 	// remove trim chars from last to first
 	//untill reach character other than trim char
-    for (i = len-1; i > -1; i--) {
-        temp = input[i];
-        flag = 0;
+	for (i = len-1; i > -1; i--) {
+		temp = input[i];
+		flag = 0;
 		for (j = 0; j < trim_char_len; j++)
 			if (temp == trim_chars[j])
 				flag = 1;
 		if (flag == 0) {
 			end_index = i;
 			break;
-        }
-    }
+		}
+	}
 	//end index other than trim char so add +1 for loop
-    ++end_index;
-    for (i = start_index, j = 0; i < end_index; i++, j++)
-        output[j] = input[i];
+	++end_index;
+	for (i = start_index, j = 0; i < end_index; i++, j++)
+		output[j] = input[i];
 	//add final as \0
-    output[j] = '\0';
+	output[j] = '\0';
 	return output;
 }
 
