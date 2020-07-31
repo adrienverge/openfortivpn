@@ -1068,27 +1068,27 @@ static inline char *str_trim(const char *input, char *output, char *trim_chars)
 
     if (trim_chars == NULL) {
 		//if trim chars is NULL then set default
-        assign_trim_chars:
+assign_trim_chars:
         trim_chars = " \n\r";
         trim_char_len = 3;
     } else {
         trim_char_len = strlen(trim_chars);
-        if (trim_char_len <= 0)
-            goto assign_trim_chars;
+		if (trim_char_len <= 0)
+			goto assign_trim_chars;
     }
 	// remove trim chars from first untill reach character other than trim char
-    for (i = 0; i < len; i++) {
-        temp = input[i];
-        if (temp == '\0')
-            break;
-        flag = 0;
-        for (int j = 0; j < trim_char_len; j++)
-            if (temp == trim_chars[j])
-                flag=1;
-        if (flag == 0) {
-            start_index = i;
-            break;
-        }   
+	for (i = 0; i < len; i++) {
+		temp = input[i];
+		if (temp == '\0')
+			break;
+		flag = 0;
+		for (int j = 0; j < trim_char_len; j++)
+			if (temp == trim_chars[j])
+				flag = 1;
+		if (flag == 0) {
+			start_index = i;
+			break;
+		}
     }
 	//if start_index is -1 then all chars are trim chars so set 0th char to \0 and return
     if (start_index == -1) {
@@ -1099,13 +1099,13 @@ static inline char *str_trim(const char *input, char *output, char *trim_chars)
     for (i = len-1; i > -1; i--) {
         temp = input[i];
         flag = 0;
-        for (j = 0; j < trim_char_len; j++)
-            if (temp == trim_chars[j])
-                flag=1;
-        if (flag == 0) {
-            end_index = i;
-            break;
-        }   
+		for (j = 0; j < trim_char_len; j++)
+			if (temp == trim_chars[j])
+				flag = 1;
+		if (flag == 0) {
+			end_index = i;
+			break;
+        }
     }
 	//end index other than trim char so add +1 for loop
     ++end_index;
@@ -1239,7 +1239,7 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 
 	if (use_resolvconf == 0) {
 		char *saveptr = NULL;
-		
+
 		strcpy(buffer, resolv_conf_data);
 		for (const char *line = strtok_r(buffer, "\n", &saveptr);
 		     line != NULL;
