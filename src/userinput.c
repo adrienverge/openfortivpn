@@ -97,7 +97,7 @@ static char *uri_unescape(const char *string)
 static int pinentry_read(int from, char **retstr)
 {
 	int bufsiz = 0;
-	char *buf = NULL, *saveptr = NULL;;
+	char *buf = NULL, *saveptr = NULL;
 	int len = 0;
 	int ret;
 
