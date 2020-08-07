@@ -97,7 +97,7 @@ static char *uri_unescape(const char *string)
 static int pinentry_read(int from, char **retstr)
 {
 	int bufsiz = 0;
-	char *buf = NULL;
+	char *buf = NULL, *saveptr = NULL;;
 	int len = 0;
 	int ret;
 
@@ -135,7 +135,7 @@ static int pinentry_read(int from, char **retstr)
 	    || strncmp(buf, "D ", 2) == 0) {
 		if (retstr) {
 			*retstr = strchr(buf, ' ');
-			*retstr = *retstr ? strtok_r(*retstr, "\n", NULL) : NULL;
+			*retstr = *retstr ? strtok_r(*retstr, "\n", &saveptr) : NULL;
 			*retstr = *retstr ? uri_unescape(*retstr + 1) : NULL;
 		}
 		free(buf);
