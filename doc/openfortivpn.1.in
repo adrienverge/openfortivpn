@@ -13,6 +13,7 @@ openfortivpn \- Client for PPP+SSL VPN tunnel services
 [\fB\-\-otp\-delay=\fI<delay>\fR]
 [\fB\-\-no\-ftm\-push\fR]
 [\fB\-\-realm=\fI<realm>\fR]
+[\fB\-\-ifname=\fI<interface>\fR]
 [\fB\-\-set\-routes=<bool>\fR]
 [\fB\-\-no\-routes\fR]
 [\fB\-\-set\-dns=<bool>\fR]
@@ -89,6 +90,9 @@ authentication based on OTP will be used instead.
 \fB\-\-realm=\fI<realm>\fR
 Connect to the specified authentication realm. Defaults to empty, which
 is usually what you want.
+.TP
+\fB\-\-ifname=\fI<interface>\fR
+Bind the connection to the specified network interface.
 .TP
 \fB\-\-set\-routes=\fI<bool>\fR, \fB\-\-no-routes\fR
 Set if openfortivpn should try to configure IP routes through the VPN when

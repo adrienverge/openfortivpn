@@ -523,12 +523,46 @@ static int tcp_connect(struct tunnel *tunnel)
 	int ret, handle;
 	struct sockaddr_in server;
 	char *env_proxy;
+	const int iface_len = strnlen(tunnel->config->iface_name, IFNAMSIZ);
 
 	handle = socket(AF_INET, SOCK_STREAM, 0);
+
 	if (handle == -1) {
 		log_error("socket: %s\n", strerror(errno));
 		goto err_socket;
 	}
+	if (iface_len == IFNAMSIZ) {
+		log_error("socket: Too long iface name\n");
+		goto err_socket;
+	}
+	if (iface_len > 0) {
+#if HAVE_SO_BINDTODEVICE
+		ret = setsockopt(handle, SOL_SOCKET, SO_BINDTODEVICE,
+		                 tunnel->config->iface_name, iface_len);
+#else
+		struct ifreq ifr;
+
+		memset(&ifr, 0, sizeof(ifr));
+		if (strlcpy(ifr.ifr_name, tunnel->config->iface_name, IFNAMSIZ)
+		    >= IFNAMSIZ) {
+			log_error("interface name too long\n");
+			goto err_socket;
+		}
+		ifr.ifr_addr.sa_family = AF_INET;
+		if (-1 == ioctl(handle, SIOCGIFADDR, &ifr)) {
+			log_error("ioctl(%d,SIOCGIFADDR,\"%s\") failed\n", handle,
+			          ifr.ifr_name);
+			goto err_socket;
+		}
+		ret = bind(handle, &ifr.ifr_addr, ifr.ifr_addr.sa_len);
+#endif
+		if (ret) {
+			log_error("socket: setting interface name failed with error: %d\n",
+			          errno);
+			goto err_socket;
+		}
+	}
+
 	env_proxy = getenv("https_proxy");
 	if (env_proxy == NULL)
 		env_proxy = getenv("HTTPS_PROXY");

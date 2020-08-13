@@ -87,6 +87,7 @@ struct vpn_config {
 	unsigned int  otp_delay;
 	int         no_ftm_push;
 	char		*pinentry;
+	char		iface_name[FIELD_SIZE + 1];
 	char		realm[FIELD_SIZE + 1];
 
 	int	set_routes;

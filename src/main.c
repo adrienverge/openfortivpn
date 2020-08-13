@@ -51,16 +51,16 @@
 "                                resolver and routes directly.\n" \
 "  --pppd-ifname=<string>        Set the pppd interface name, if supported by pppd.\n" \
 "  --pppd-ipparam=<string>       Provides an extra parameter to the ip-up, ip-pre-up\n" \
-"                                and ip-down scripts. See man (8) pppd\n" \
+"                                and ip-down scripts. See man (8) pppd.\n" \
 "  --pppd-call=<name>            Move most pppd options from pppd cmdline to\n" \
 "                                /etc/ppp/peers/<name> and invoke pppd with\n" \
-"                                'call <name>'\n"
+"                                'call <name>'.\n"
 #elif HAVE_USR_SBIN_PPP
 #define PPPD_USAGE \
 "                    [--ppp-system=<system>]\n"
 #define PPPD_HELP \
 "  --ppp-system=<system>         Connect to the specified system as defined in\n" \
-"                                /etc/ppp/ppp.conf\n"
+"                                /etc/ppp/ppp.conf.\n"
 #else
 #error "Neither HAVE_USR_SBIN_PPPD nor HAVE_USR_SBIN_PPP have been defined."
 #endif
@@ -69,7 +69,7 @@
 #define RESOLVCONF_USAGE \
 "[--use-resolvconf=<0|1>] "
 #define RESOLVCONF_HELP \
-"  --use-resolvconf=[01]         If possible use resolvconf to update /etc/resolv.conf\n"
+"  --use-resolvconf=[01]         If possible use resolvconf to update /etc/resolv.conf.\n"
 #else
 #define RESOLVCONF_USAGE ""
 #define RESOLVCONF_HELP ""
@@ -77,14 +77,14 @@
 
 #define usage \
 "Usage: openfortivpn [<host>[:<port>]] [-u <user>] [-p <pass>]\n" \
-"                    [--pinentry=<program>]\n" \
-"                    [--realm=<realm>] [--otp=<otp>] [--otp-delay=<delay>]\n" \
-"                    [--otp-prompt=<prompt>] [--set-routes=<0|1>]\n" \
+"                    [--otp=<otp>] [--otp-delay=<delay>] [--otp-prompt=<prompt>]\n" \
+"                    [--pinentry=<program>] [--realm=<realm>]\n" \
+"                    [--ifname=<ifname>] [--set-routes=<0|1>]\n" \
 "                    [--half-internet-routes=<0|1>] [--set-dns=<0|1>]\n" \
 PPPD_USAGE \
 "                    " RESOLVCONF_USAGE "[--ca-file=<file>]\n" \
 "                    [--user-cert=<file>] [--user-key=<file>]\n" \
-"                    [--trusted-cert=<digest>] [--use-syslog]\n" \
+"                    [--use-syslog] [--trusted-cert=<digest>]\n" \
 "                    [--persistent=<interval>] [-c <file>] [-v|-q]\n" \
 "       openfortivpn --help\n" \
 "       openfortivpn --version\n" \
@@ -115,11 +115,12 @@ PPPD_USAGE \
 "  -u <user>, --username=<user>  VPN account username.\n" \
 "  -p <pass>, --password=<pass>  VPN account password.\n" \
 "  -o <otp>, --otp=<otp>         One-Time-Password.\n" \
-"  --otp-prompt=<prompt>         Search for the OTP prompt starting with this string\n" \
+"  --otp-prompt=<prompt>         Search for the OTP prompt starting with this string.\n" \
 "  --otp-delay=<delay>           Wait <delay> seconds before sending the OTP.\n" \
 "  --no-ftm-push                 Do not use FTM push if the server provides the option.\n" \
-"  --pinentry=<program>          Use the program to supply a secret instead of asking for it\n" \
+"  --pinentry=<program>          Use the program to supply a secret instead of asking for it.\n" \
 "  --realm=<realm>               Use specified authentication realm.\n" \
+"  --ifname=<interface>          Bind to interface.\n" \
 "  --set-routes=[01]             Set if openfortivpn should configure routes\n" \
 "                                when tunnel is up.\n" \
 "  --no-routes                   Do not configure routes, same as --set-routes=0.\n" \
@@ -128,7 +129,7 @@ PPPD_USAGE \
 "  --set-dns=[01]                Set if openfortivpn should add DNS name servers\n" \
 "                                and domain search list in /etc/resolv.conf.\n" \
 "                                If installed resolvconf is used for the update.\n" \
-"  --no-dns                      Do not reconfigure DNS, same as --set-dns=0\n" \
+"  --no-dns                      Do not reconfigure DNS, same as --set-dns=0.\n" \
 "  --ca-file=<file>              Use specified PEM-encoded certificate bundle\n" \
 "                                instead of system-wide store to verify the gateway\n" \
 "                                certificate.\n" \
@@ -201,6 +202,7 @@ int main(int argc, char **argv)
 		.no_ftm_push = 0,
 		.pinentry = NULL,
 		.realm = {'\0'},
+		.iface_name = {'\0'},
 		.set_routes = 1,
 		.set_dns = 1,
 		.use_syslog = 0,
@@ -249,6 +251,7 @@ int main(int argc, char **argv)
 		{"otp-prompt",      required_argument, NULL, 0},
 		{"otp-delay",       required_argument, NULL, 0},
 		{"no-ftm-push",     no_argument, &cli_cfg.no_ftm_push, 1},
+		{"ifname",          required_argument, NULL, 0},
 		{"set-routes",	    required_argument, NULL, 0},
 		{"no-routes",       no_argument, &cli_cfg.set_routes, 0},
 		{"half-internet-routes", required_argument, NULL, 0},
@@ -428,6 +431,12 @@ int main(int argc, char **argv)
 			if (strcmp(long_options[option_index].name,
 			           "otp-prompt") == 0) {
 				cli_cfg.otp_prompt = strdup(optarg);
+				break;
+			}
+			if (strcmp(long_options[option_index].name,
+			           "ifname") == 0) {
+				strncpy(cli_cfg.iface_name, optarg, FIELD_SIZE);
+				cli_cfg.iface_name[FIELD_SIZE] = '\0';
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
