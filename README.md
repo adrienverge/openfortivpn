@@ -168,9 +168,9 @@ openfortivpn needs elevated privileges at three steps during tunnel set up:
 * when setting IP routes through VPN (when the tunnel is up);
 * when adding nameservers to `/etc/resolv.conf` (when the tunnel is up).
 
-For these reasons, you may need to use `sudo openfortivpn`.
+For these reasons, you need to use `sudo openfortivpn`.
 If you need it to be usable by non-sudoer users, you might consider adding an
-entry in `/etc/sudoers`.
+entry in `/etc/sudoers` or a file under `/etc/sudoers.d`.
 
 For example:
 `visudo -f /etc/sudoers.d/openfortivpn`
@@ -179,6 +179,8 @@ Cmnd_Alias  OPENFORTIVPN = /usr/bin/openfortivpn
 
 %adm       ALL = (ALL) OPENFORTIVPN
 ```
+Adapt the above example by changing the `openofrtivpn` path or choosing
+a group different from `adm` - such as a dedicated `openfortivpn` group.
 
 **Warning**: Make sure only trusted users can run openfortivpn as root!
 As described in [#54](https://github.com/adrienverge/openfortivpn/issues/54),
