@@ -71,7 +71,7 @@ with `p11tool --list-token-urls`.
 Multiple readers are currently not supported.
 
 Smartcard support has been tested with Yubikey under Linux, but other PIV enabled
-smartcards may work too. On Mac OS X Mojave it is known that the pkcs eingine-by-id is not found.
+smartcards may work too. On Mac OS X Mojave it is known that the pkcs engine-by-id is not found.
 
 
 
@@ -81,7 +81,7 @@ Installing
 
 ### Installing existing packages
 
-Some Linux distibutions provide `openfortivpn` packages:
+Some Linux distributions provide `openfortivpn` packages:
 * [Fedora / CentOS](https://apps.fedoraproject.org/packages/openfortivpn)
 * [openSUSE / SLE](https://software.opensuse.org/package/openfortivpn)
 * [Gentoo](https://packages.gentoo.org/packages/net-vpn/openfortivpn)
@@ -179,7 +179,7 @@ Cmnd_Alias  OPENFORTIVPN = /usr/bin/openfortivpn
 
 %adm       ALL = (ALL) OPENFORTIVPN
 ```
-Adapt the above example by changing the `openofrtivpn` path or choosing
+Adapt the above example by changing the `openfortivpn` path or choosing
 a group different from `adm` - such as a dedicated `openfortivpn` group.
 
 **Warning**: Make sure only trusted users can run openfortivpn as root!
