@@ -533,7 +533,7 @@ static int tcp_connect(struct tunnel *tunnel)
 	}
 	if (iface_len == IFNAMSIZ) {
 		log_error("socket: Too long iface name\n");
-		goto err_socket;
+		goto err_post_socket;
 	}
 	if (iface_len > 0) {
 #if HAVE_SO_BINDTODEVICE
@@ -546,20 +546,20 @@ static int tcp_connect(struct tunnel *tunnel)
 		if (strlcpy(ifr.ifr_name, tunnel->config->iface_name, IFNAMSIZ)
 		    >= IFNAMSIZ) {
 			log_error("interface name too long\n");
-			goto err_socket;
+			goto err_post_socket;
 		}
 		ifr.ifr_addr.sa_family = AF_INET;
-		if (-1 == ioctl(handle, SIOCGIFADDR, &ifr)) {
+		if (ioctl(handle, SIOCGIFADDR, &ifr) == -1) {
 			log_error("ioctl(%d,SIOCGIFADDR,\"%s\") failed\n", handle,
 			          ifr.ifr_name);
-			goto err_socket;
+			goto err_post_socket;
 		}
 		ret = bind(handle, &ifr.ifr_addr, ifr.ifr_addr.sa_len);
 #endif
 		if (ret) {
 			log_error("socket: setting interface name failed with error: %d\n",
 			          errno);
-			goto err_socket;
+			goto err_post_socket;
 		}
 	}
 
@@ -723,6 +723,7 @@ err_proxy_response:
 err_connect:
 	free(env_proxy); // release memory allocated by strdup()
 err_strdup:
+err_post_socket:
 	if (close(handle))
 		log_warn("Could not close socket (%s).\n", strerror(errno));
 err_socket:
