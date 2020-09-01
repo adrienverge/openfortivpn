@@ -14,6 +14,17 @@ Releases
 This high level changelog is usually updated when a release is tagged.
 On the master branch there may be changes that are not (yet) described here.
 
+### 1.15.0
+
+* [-] fix issue sending pin codes
+* [+] add command line option to bind to specific interface
+* [+] use different hints for OTP and 2FA
+* [+] remove password from /proc/#/cmd
+* [+] extend OTP to allow FTM push
+* [+] add preliminary support for host checks
+* [-] don't accept route to the vpn gateway
+* [-] fix byte counter in pppd_write
+
 ### 1.14.1
 
 * [-] fix out of bounds array access
