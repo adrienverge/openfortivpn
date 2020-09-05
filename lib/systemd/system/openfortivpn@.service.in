@@ -8,7 +8,7 @@ Type=simple
 PrivateTmp=true
 ExecStart=@BINDIR@/openfortivpn -c @SYSCONFDIR@/openfortivpn/%I.conf
 OOMScoreAdjust=-100
-Restart=on-failure
+Restart=always
 RestartSec=10s
 
 [Install]
