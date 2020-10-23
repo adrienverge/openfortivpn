@@ -61,8 +61,8 @@ option. It takes the full or a partial PKCS#11 token URI.
 user-cert = pkcs11:
 user-cert = pkcs11:token=someuser
 user-cert = pkcs11:model=PKCS%2315%20emulated;manufacturer=piv_II;serial=012345678;token=someuser
-username = none
-password = none
+username =
+password =
 ```
 
 In most cases `user-cert = pkcs11:` will do it, but if needed you can get the token-URI
