@@ -302,6 +302,16 @@ static int pppd_run(struct tunnel *tunnel)
 				return 1;
 			}
 		}
+		if (tunnel->config->pppd_keepalive) {
+			if (ofv_append_varr(&pppd_args, "lcp-echo-interval")) {
+				free(pppd_args.data);
+				return 1;
+			}
+			if (ofv_append_varr(&pppd_args, tunnel->config->pppd_keepalive)) {
+				free(pppd_args.data);
+				return 1;
+			}
+		}
 		if (tunnel->config->pppd_ifname) {
 			if (ofv_append_varr(&pppd_args, "ifname")) {
 				free(pppd_args.data);

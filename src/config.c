@@ -65,6 +65,7 @@ const struct vpn_config invalid_cfg = {
 	.pppd_log = NULL,
 	.pppd_plugin = NULL,
 	.pppd_ipparam = NULL,
+	.pppd_keepalive = NULL,
 	.pppd_ifname = NULL,
 	.pppd_call = NULL,
 #endif
@@ -349,6 +350,9 @@ int load_config(struct vpn_config *cfg, const char *filename)
 		} else if (strcmp(key, "pppd-ipparam") == 0) {
 			free(cfg->pppd_ipparam);
 			cfg->pppd_ipparam = strdup(val);
+		} else if (strcmp(key, "pppd-keepalive") == 0) {
+			free(cfg->pppd_keepalive);
+			cfg->pppd_keepalive = strdup(val);
 		} else if (strcmp(key, "pppd-ifname") == 0) {
 			free(cfg->pppd_ifname);
 			cfg->pppd_ifname = strdup(val);
@@ -475,6 +479,7 @@ void destroy_vpn_config(struct vpn_config *cfg)
 	free(cfg->pppd_log);
 	free(cfg->pppd_plugin);
 	free(cfg->pppd_ipparam);
+	free(cfg->pppd_keepalive);
 	free(cfg->pppd_ifname);
 	free(cfg->pppd_call);
 #endif
@@ -545,6 +550,10 @@ void merge_config(struct vpn_config *dst, struct vpn_config *src)
 	if (src->pppd_ipparam) {
 		free(dst->pppd_ipparam);
 		dst->pppd_ipparam = src->pppd_ipparam;
+	}
+	if (src->pppd_keepalive) {
+		free(dst->pppd_keepalive);
+		dst->pppd_keepalive = src->pppd_keepalive;
 	}
 	if (src->pppd_ifname) {
 		free(dst->pppd_ifname);

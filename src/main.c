@@ -38,7 +38,8 @@
 #define PPPD_USAGE \
 "                    [--pppd-use-peerdns=<0|1>] [--pppd-log=<file>]\n" \
 "                    [--pppd-ifname=<string>] [--pppd-ipparam=<string>]\n" \
-"                    [--pppd-call=<name>] [--pppd-plugin=<file>]\n"
+"                    [--pppd-call=<name>] [--pppd-plugin=<file>]\n" \
+"                    [--pppd-keepalive=<interval>]\n"
 
 #define PPPD_HELP \
 "  --pppd-use-peerdns=[01]       Whether to ask peer ppp server for DNS server\n" \
@@ -54,7 +55,9 @@
 "                                and ip-down scripts. See man (8) pppd.\n" \
 "  --pppd-call=<name>            Move most pppd options from pppd cmdline to\n" \
 "                                /etc/ppp/peers/<name> and invoke pppd with\n" \
-"                                'call <name>'.\n"
+"                                'call <name>'.\n" \
+"  --pppd-keepalive=<interval>   Keep connection alive using LCP echo-request frames\n" \
+"                                sent by pppd every <interval> seconds.\n"
 #elif HAVE_USR_SBIN_PPP
 #define PPPD_USAGE \
 "                    [--ppp-system=<system>]\n"
@@ -216,6 +219,7 @@ int main(int argc, char **argv)
 		.pppd_log = NULL,
 		.pppd_plugin = NULL,
 		.pppd_ipparam = NULL,
+		.pppd_keepalive = NULL,
 		.pppd_ifname = NULL,
 		.pppd_call = NULL,
 #endif
@@ -273,6 +277,7 @@ int main(int argc, char **argv)
 		{"pppd-log",        required_argument, NULL, 0},
 		{"pppd-plugin",     required_argument, NULL, 0},
 		{"pppd-ipparam",    required_argument, NULL, 0},
+		{"pppd-keepalive",  required_argument, NULL, 0},
 		{"pppd-ifname",     required_argument, NULL, 0},
 		{"pppd-call",       required_argument, NULL, 0},
 		{"plugin",          required_argument, NULL, 0}, // deprecated
@@ -343,6 +348,11 @@ int main(int argc, char **argv)
 			if (strcmp(long_options[option_index].name,
 			           "pppd-ipparam") == 0) {
 				cli_cfg.pppd_ipparam = strdup(optarg);
+				break;
+			}
+			if (strcmp(long_options[option_index].name,
+			           "pppd-keepalive") == 0) {
+				cli_cfg.pppd_keepalive = strdup(optarg);
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
