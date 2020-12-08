@@ -54,10 +54,17 @@ enum tunnel_state {
 	STATE_DISCONNECTING
 };
 
+enum tun_ppp_state {
+	TUN_PPP_LCP,
+	TUN_PPP_IPCP,
+	TUN_PPP_SESSION,
+};
+
 struct tunnel {
 	struct vpn_config *config;
 
 	enum tunnel_state state;
+	enum tun_ppp_state tun_state;
 	char cookie[COOKIE_SIZE + 1];
 
 	struct ppp_packet_pool ssl_to_pty_pool;
@@ -65,6 +72,8 @@ struct tunnel {
 
 	pid_t	pppd_pid;
 	pid_t	pppd_pty;
+	int	use_tun;
+	char	tun_iface[ROUTE_IFACE_LEN];
 	char	ppp_iface[ROUTE_IFACE_LEN];
 
 	int	ssl_socket;
