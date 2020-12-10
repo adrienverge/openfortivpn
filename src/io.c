@@ -39,7 +39,6 @@
 #include <errno.h>
 #include <signal.h>
 #include <string.h>
-#include <assert.h>
 
 #if HAVE_MACH_MACH_H
 /* this is typical for mach kernel used on Mac OS X */
@@ -612,26 +611,11 @@ static void sig_handler(int signo)
 		SEM_POST(&sem_stop_io);
 }
 
-static int ssl_getsockopt(int sockfd, int level, int optname)
-{
-	int optval;
-	socklen_t optlen = sizeof(optval);
-
-	if (getsockopt(sockfd, level, optname,
-	               (void *)&optval, &optlen)) {
-		log_error("getsockopt: %s\n", strerror(errno));
-		return -1;
-	}
-	assert(optlen == sizeof(optval));
-	return optval;
-}
-
 int io_loop(struct tunnel *tunnel)
 {
 	int tcp_nodelay_flag = 1;
 	int ret = 0;		// keep track of pthread_* return value
 	int fatal = 0;		// indicate a fatal error during pthread_* calls
-	int sockopt;
 
 	pthread_t pty_read_thread;
 	pthread_t pty_write_thread;
@@ -666,60 +650,6 @@ int io_loop(struct tunnel *tunnel)
 		log_error("setsockopt: %s\n", strerror(errno));
 		goto err_sockopt;
 	}
-
-	/*
-	 * Attempt to find default SSL socket options on different platforms.
-	 */
-#ifdef SO_KEEPALIVE
-	sockopt = ssl_getsockopt(tunnel->ssl_socket, SOL_SOCKET, SO_KEEPALIVE);
-	if (sockopt < 0)
-		goto err_sockopt;
-	else
-		log_debug("SO_KEEPALIVE: %d\n", sockopt);
-#ifdef TCP_KEEPIDLE
-	sockopt = ssl_getsockopt(tunnel->ssl_socket, IPPROTO_TCP, TCP_KEEPIDLE);
-	if (sockopt < 0)
-		goto err_sockopt;
-	else
-		log_debug("TCP_KEEPIDLE: %d\n", sockopt);
-#endif
-#ifdef TCP_KEEPALIVE
-	sockopt = ssl_getsockopt(tunnel->ssl_socket, IPPROTO_TCP, TCP_KEEPALIVE);
-	if (sockopt < 0)
-		goto err_sockopt;
-	else
-		log_debug("TCP_KEEPALIVE: %d\n", sockopt);
-#endif
-#ifdef TCP_KEEPINTVL
-	sockopt = ssl_getsockopt(tunnel->ssl_socket, IPPROTO_TCP, TCP_KEEPINTVL);
-	if (sockopt < 0)
-		goto err_sockopt;
-	else
-		log_debug("TCP_KEEPINTVL: %d\n", sockopt);
-#endif
-#ifdef TCP_KEEPCNT
-	sockopt = ssl_getsockopt(tunnel->ssl_socket, IPPROTO_TCP, TCP_KEEPCNT);
-	if (sockopt < 0)
-		goto err_sockopt;
-	else
-		log_debug("TCP_KEEPCNT: %d\n", sockopt);
-#endif
-#endif
-
-#ifdef SO_SNDBUF
-	sockopt = ssl_getsockopt(tunnel->ssl_socket, SOL_SOCKET, SO_SNDBUF);
-	if (sockopt < 0)
-		goto err_sockopt;
-	else
-		log_debug("SO_SNDBUF: %d\n", sockopt);
-#endif
-#ifdef SO_RCVBUF
-	sockopt = ssl_getsockopt(tunnel->ssl_socket, SOL_SOCKET, SO_RCVBUF);
-	if (sockopt < 0)
-		goto err_sockopt;
-	else
-		log_debug("SO_RCVBUF: %d\n", sockopt);
-#endif
 
 // on osx this prevents the program from being stopped with ctrl-c
 #if !HAVE_MACH_MACH_H
