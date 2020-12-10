@@ -64,6 +64,7 @@
 #include <errno.h>
 #include <signal.h>
 #include <string.h>
+#include <assert.h>
 
 
 struct ofv_varr {
@@ -515,6 +516,20 @@ static int get_gateway_host_ip(struct tunnel *tunnel)
 	return 0;
 }
 
+static int tcp_getsockopt(int sockfd, int optname)
+{
+	int optval;
+	socklen_t optlen = sizeof(optval);
+
+	if (getsockopt(sockfd, IPPROTO_TCP, optname,
+	               (void *)&optval, &optlen)) {
+		log_error("getsockopt: %s\n", strerror(errno));
+		return -1;
+	}
+	assert(optlen == sizeof(optval));
+	return optval;
+}
+
 /*
  * Establish a regular TCP connection.
  */
@@ -531,6 +546,60 @@ static int tcp_connect(struct tunnel *tunnel)
 		log_error("socket: %s\n", strerror(errno));
 		goto err_socket;
 	}
+
+	/*
+	 * Attempt to find default TCP socket options on different platforms.
+	 */
+#ifdef SO_KEEPALIVE
+	ret = tcp_getsockopt(handle, SO_KEEPALIVE);
+	if (ret < 0)
+		goto err_socket;
+	else
+		log_debug("SO_KEEPALIVE: %d\n", ret);
+#ifdef TCP_KEEPIDLE
+	ret = tcp_getsockopt(handle, TCP_KEEPIDLE);
+	if (ret < 0)
+		goto err_socket;
+	else
+		log_debug("TCP_KEEPIDLE: %d\n", ret);
+#endif
+#ifdef TCP_KEEPALIVE
+	ret = tcp_getsockopt(handle, TCP_KEEPALIVE);
+	if (ret < 0)
+		goto err_socket;
+	else
+		log_debug("TCP_KEEPALIVE: %d\n", ret);
+#endif
+#ifdef TCP_KEEPINTVL
+	ret = tcp_getsockopt(handle, TCP_KEEPINTVL);
+	if (ret < 0)
+		goto err_socket;
+	else
+		log_debug("TCP_KEEPINTVL: %d\n", ret);
+#endif
+#ifdef TCP_KEEPCNT
+	ret = tcp_getsockopt(handle, TCP_KEEPCNT);
+	if (ret < 0)
+		goto err_socket;
+	else
+		log_debug("TCP_KEEPCNT: %d\n", ret);
+#endif
+#endif
+#ifdef SO_SNDBUF
+	ret = tcp_getsockopt(handle, SO_SNDBUF);
+	if (ret < 0)
+		goto err_socket;
+	else
+		log_debug("SO_SNDBUF: %d\n", ret);
+#endif
+#ifdef SO_RCVBUF
+	ret = tcp_getsockopt(handle, SO_RCVBUF);
+	if (ret < 0)
+		goto err_socket;
+	else
+		log_debug("SO_RCVBUF: %d\n", ret);
+#endif
+
 	if (iface_len == IFNAMSIZ) {
 		log_error("socket: Too long iface name\n");
 		goto err_post_socket;
