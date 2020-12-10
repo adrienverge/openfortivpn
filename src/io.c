@@ -35,7 +35,9 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <netinet/tcp.h>
+#if HAVE_LINUX_IF_PPP_H
 #include <net/if_ppp.h>
+#endif
 
 #include <errno.h>
 #include <signal.h>
@@ -235,18 +237,21 @@ struct lcp_option_conf {
 	int len;
 	const char *name;
 };
-int default_mru = 1534;
-const struct lcp_option_conf lcp_valid_options[256] = {
+
+static const int default_mru = 1534;
+
+static const struct lcp_option_conf lcp_valid_options[256] = {
 	[0] = {           0, 0, "RESERVED",                   },
-	[1] = {LCP_OF_VALID, 4, "MRU",                        },		/* RFC 1661 */
-	[2] = {LCP_OF_VALID, 6, "Async-Control-Character-Map",},		/* RFC 1172 */
+	[1] = {LCP_OF_VALID, 4, "MRU",                        }, /* RFC 1661 */
+	[2] = {LCP_OF_VALID, 6, "Async-Control-Character-Map",}, /* RFC 1172 */
 	[3] = {LCP_OF_VALID, 4, "Auth-Protocol",              },
 	[4] = {LCP_OF_VALID, 4, "Quality-Protocol",           },
 	[5] = {LCP_OF_VALID, 6, "Magic-Num",                  },
-	[6] = {LCP_OF_VALID, 6, "Link-Quality-Monitoring",    },		/* RFC 1172 */
+	[6] = {LCP_OF_VALID, 6, "Link-Quality-Monitoring",    }, /* RFC 1172 */
 	[7] = {LCP_OF_VALID, 2, "Protocol-Field-Comp",        },
-	[8] = {LCP_OF_VALID, 2, "Addr&Ctrl-Field-Comp",       },          
+	[8] = {LCP_OF_VALID, 2, "Addr&Ctrl-Field-Comp",       },
 };
+
 struct lcp_option_value {
 	int flag;
 #define LCP_OF_DEFAULT 0x20000
@@ -259,131 +264,132 @@ struct lcp_option_value {
 	} u;
 	void *extra;
 };
-int magic_seed = 0x64696E67;
-/*
-struct conf_option lcp_default[256] = {
-	[1] = {LCP_OF_DEFAULT, {.number = 1500}, },
-	[2] = {LCP_OF_DEFAULT, {.number = 0xFFFFFFFF}, },
-	[3] = {LCP_OF_DEFAULT | LCP_OF_DISABLE, },
-	[4] = {LCP_OF_DEFAULT | LCP_OF_DISABLE, },
-	[5] = {LCP_OF_DEFAULT | LCP_OF_DISABLE, },
-	[6] = {LCP_OF_DEFAULT | LCP_OF_DISABLE, },
-	[7] = {LCP_OF_DEFAULT | LCP_OF_DISABLE, },
-	[8] = {LCP_OF_DEFAULT | LCP_OF_DISABLE, },
-};
-*/
-struct conf_option *lcp_self[256] = {
+
+static const uint32_t magic_seed = 0x64696E67; /* ['d', 'i', 'n', 'g'] */
+
+static struct conf_option *lcp_self[256] = {
 	NULL,
 };
-struct conf_option *lcp_peer[256] = {
+static struct conf_option *lcp_peer[256] = {
 	NULL,
 };
 
-static int lcp_id = 0;
-int conf_option_get(struct conf_option **options, int type, void *data, int len)
+static int lcp_id;
+
+#ifdef OPENFORTIVPN_DEFINE_DEAD_CODE
+static int conf_option_get(struct conf_option **options, int type, void *data, int len)
 {
 	struct conf_option *opt = options[type];
+
 	if (opt != NULL) {
 		int copy = opt->length - 2;
-		if (copy > len) {
+
+		if (copy > len)
 			copy = len;
-		}
 		memcpy(data, opt->data, copy);
 		return 0;
 	}
 	return -1;
 }
-int conf_option_set(struct conf_option **options, int type, int len, void *data)
+#endif
+
+static int conf_option_set(struct conf_option **options, int type, int len, void *data)
 {
 	struct conf_option *opt = options[type];
+
 	if (len == 0) {
 		options[type] = NULL;
 		free(opt);
 		return 0;
 	}
 
-	if (opt == NULL) {
+	if (opt == NULL)
 		opt = malloc(len);
-	} else if (opt->length != len) {
+	else if (opt->length != len)
 		opt = realloc(opt, len);
-	}
 	if (opt != NULL) {
 		options[type] = opt;
 		opt->type = type;
 		opt->length = len;
-		if (len > 2) {
+		if (len > 2)
 			memcpy(opt->data, data, len - 2);
-		}
 	}
 	return (opt == NULL) ? -1 : 0;
 }
-struct conf_option *conf_option_init(struct conf_option_list *optlist)
+
+static struct conf_option *conf_option_init(struct conf_option_list *optlist)
 {
 	int header = sizeof(struct lcp_header) + sizeof(uint16_t);
+
 	optlist->head = malloc(header + default_mru);
 	if (optlist->head) {
 		memset(optlist->head, 0, header + default_mru);
-		optlist->head = (struct conf_option *)(((uint8_t *)optlist->head) + header);
+		optlist->head = (struct conf_option *)(((uint8_t *)optlist->head)
+		                                       + header);
 		optlist->tail = optlist->head;
 	}
 	return optlist->head;
 }
-int conf_option_encode(struct conf_option_list *optlist, int type, int len, void *data)
+
+static int conf_option_encode(struct conf_option_list *optlist, int type, int len,
+                              void *data)
 {
 	optlist->tail->type = type;
 	optlist->tail->length = len;
-	if (len > 2) {
+	if (len > 2)
 		memcpy(optlist->tail->data, data, len - 2);
-	}
 	optlist->tail = (struct conf_option *)(optlist->tail->data + len - 2);
 	return 0;
 }
-int conf_option_length(struct conf_option_list *optlist)
+
+static int conf_option_length(const struct conf_option_list *optlist)
 {
-	int len = 0;
-	if (optlist) {
-		len = (uint8_t *)optlist->tail - (uint8_t *)optlist->head;
-	}
-	return len;
+	if (optlist)
+		return (uint8_t *)optlist->tail - (uint8_t *)optlist->head;
+	else
+		return 0;
 }
-int conf_option_free(struct conf_option_list *optlist)
+
+static int conf_option_free(struct conf_option_list *optlist)
 {
 	if (optlist->head != NULL) {
 		int header = sizeof(struct lcp_header) + sizeof(uint16_t);
+
 		free((uint8_t *)optlist->head - header);
 		optlist->head = optlist->tail = NULL;
 	}
 	return 0;
 }
-int lcp_option_send(struct tunnel *tunnel, int id, int code, struct conf_option_list *optlist, int force)
+
+static int lcp_option_send(struct tunnel *tunnel, int id,
+                           int code, struct conf_option_list *optlist, int force)
 {
 	int ret = -1;
+
 	if (optlist && optlist->head) {
 		uint8_t *head = (uint8_t *)optlist->head;
 		struct lcp_header *header = ((struct lcp_header *)head) - 1;
 		unsigned short *ppp_type = ((unsigned short *)header) - 1;
-		int len = conf_option_length(optlist);
-		int hdrlen = sizeof(struct lcp_header) + sizeof(uint16_t);
+		const size_t hdrlen = sizeof(struct lcp_header) + sizeof(uint16_t);
+		const int len = conf_option_length(optlist);
 
 		if (len > 0 || force) {
-			ssize_t pktsize;
+			const ssize_t pktsize = hdrlen + len;
 			struct ppp_packet *packet = NULL;
 
 			*ppp_type = htons(PPP_LCP);
 			header->code = code;
-			header->id = id ? id : lcp_id ++;
+			header->id = id ? id : lcp_id++;
 			header->length = htons(len + sizeof(*header));
 
-			pktsize = hdrlen + len;
 			packet = malloc(sizeof(*packet) + 6 + pktsize);
-			if (packet == NULL) {
+			if (packet == NULL)
 				goto out;
-			}
 			packet->len = pktsize;
 			memcpy(pkt_data(packet), ppp_type, pktsize);
 
 			log_debug("%s ---> gateway (%lu bytes)\n", PPP_DAEMON,
-				  packet->len);
+			          packet->len);
 #if HAVE_USR_SBIN_PPPD
 			log_packet("pppd:   ", packet->len, pkt_data(packet));
 #else
@@ -397,12 +403,14 @@ int lcp_option_send(struct tunnel *tunnel, int id, int code, struct conf_option_
 out:
 	return ret;
 }
-int conf_request(struct tunnel *tunnel)
+
+static int conf_request(struct tunnel *tunnel)
 {
 	int ret = 0;
 	struct conf_option_list request;
-	uint16_t mru = htons(default_mru);
-	int magic = htonl(magic_seed);
+	uint16_t mru = htons((uint16_t)default_mru);
+	uint32_t magic = htonl(magic_seed);
+
 	conf_option_init(&request);
 	conf_option_encode(&request, LCP_COPT_MRU, 4, &mru);
 	conf_option_encode(&request, LCP_COPT_MAGIC, 6, &magic);
@@ -410,38 +418,39 @@ int conf_request(struct tunnel *tunnel)
 	conf_option_free(&request);
 	return ret;
 }
-int lcp_packet(struct tunnel *tunnel, void *packet, int len)
+
+static int lcp_packet(struct tunnel *tunnel, void *packet, int len)
 {
 	struct lcp_header *header = packet;
 
 	log_debug("packet %s\n", lcp_code_name[header->code]);
 	switch (header->code) {
-	case LCP_CONF_REQUEST:
-	{
-		int olen = ntohs(header->length);
-		struct conf_option *co = NULL;
+	case LCP_CONF_REQUEST: {
+		struct conf_option *co = (struct conf_option *)(header + 1);
+		int olen = ntohs(header->length) - sizeof(struct lcp_header);
 		struct conf_option_list ack;
 		struct conf_option_list nack;
 		struct conf_option_list reject;
+
 		conf_option_init(&ack);
 		conf_option_init(&nack);
 		conf_option_init(&reject);
-		olen -= sizeof(struct lcp_header);
-		co = (struct conf_option *)(header + 1);
 		while (olen > 0) {
 			char buff[128];
 			char *p = buff;
+
 			p += sprintf(p, "option %s: ", lcp_valid_options[co->type].name);
 			switch (co->type) {
 			case LCP_COPT_ACCM:
 				p += sprintf(p, "%x", ntohl(*(uint32_t *)co_data(co)));
-				conf_option_set(lcp_peer, co->type, co->length, co_data(co));
-				conf_option_encode(&ack, co->type, co->length, co_data(co));
+				conf_option_set(lcp_peer, co->type,
+				                co->length, co_data(co));
+				conf_option_encode(&ack, co->type,
+				                   co->length, co_data(co));
 				break;
 			case LCP_COPT_AUTH:
 				switch (ntohs(*(uint16_t *)co_data(co))) {
-				case PPP_CHAP:
-				{
+				case PPP_CHAP: {
 					struct {
 						uint16_t chap;
 						uint8_t  algo;
@@ -450,24 +459,32 @@ int lcp_packet(struct tunnel *tunnel, void *packet, int len)
 					break;
 				}
 				default:
-					p += sprintf(p, "%x", ntohs(*(uint16_t *)co_data(co)));
+					p += sprintf(p, "%x",
+					             ntohs(*(uint16_t *)co_data(co)));
 					break;
 				}
-				conf_option_set(lcp_peer, co->type, co->length, co_data(co));
-				conf_option_encode(&ack, co->type, co->length, co_data(co));
+				conf_option_set(lcp_peer, co->type,
+				                co->length, co_data(co));
+				conf_option_encode(&ack, co->type,
+				                   co->length, co_data(co));
 				break;
 			case LCP_COPT_MAGIC:
 				p += sprintf(p, "%x", ntohl(*(uint32_t *)co_data(co)));
-				conf_option_set(lcp_peer, co->type, co->length, co_data(co));
-				conf_option_encode(&ack, co->type, co->length, co_data(co));
+				conf_option_set(lcp_peer, co->type,
+				                co->length, co_data(co));
+				conf_option_encode(&ack, co->type,
+				                   co->length, co_data(co));
 				break;
 			case LCP_COPT_PFC:
 			case LCP_COPT_ACFC:
-				conf_option_set(lcp_peer, co->type, co->length, co_data(co));
-				conf_option_encode(&ack, co->type, co->length, co_data(co));
+				conf_option_set(lcp_peer, co->type,
+				                co->length, co_data(co));
+				conf_option_encode(&ack, co->type,
+				                   co->length, co_data(co));
 				break;
 			default:
-				conf_option_encode(&reject, co->type, co->length, co_data(co));
+				conf_option_encode(&reject, co->type,
+				                   co->length, co_data(co));
 				break;
 			}
 			log_debug("%s\n", buff);
@@ -475,21 +492,27 @@ int lcp_packet(struct tunnel *tunnel, void *packet, int len)
 			co = (struct conf_option *)((uint8_t *)co + co->length);
 		}
 		if (header->code == LCP_CONF_REQUEST) {
-			int ret = -1;
-			ret = lcp_option_send(tunnel, header->id, LCP_CONF_ACK, &ack, 0);
+			int ret = lcp_option_send(tunnel, header->id, LCP_CONF_ACK,
+			                          &ack, 0);
+
 			if (ret < 0) {
-				log_error("send conf_ack failed %d: %s\n", errno, strerror(errno));
-				exit(1);
+				log_error("send conf_ack failed %d: %s\n",
+				          errno, strerror(errno));
+				exit(EXIT_FAILURE);
 			}
-			ret = lcp_option_send(tunnel, header->id, LCP_CONF_NAK, &nack, 0);
+			ret = lcp_option_send(tunnel, header->id, LCP_CONF_NAK,
+			                      &nack, 0);
 			if (ret < 0) {
-				log_error("send conf_ack failed %d: %s\n", errno, strerror(errno));
-				exit(1);
+				log_error("send conf_ack failed %d: %s\n",
+				          errno, strerror(errno));
+				exit(EXIT_FAILURE);
 			}
-			ret = lcp_option_send(tunnel, header->id, LCP_CONF_REJECT, &reject, 0);
+			ret = lcp_option_send(tunnel, header->id, LCP_CONF_REJECT,
+			                      &reject, 0);
 			if (ret < 0) {
-				log_error("send conf_ack failed %d: %s\n", errno, strerror(errno));
-				exit(1);
+				log_error("send conf_ack failed %d: %s\n",
+				          errno, strerror(errno));
+				exit(EXIT_FAILURE);
 			}
 			switch (tunnel->tun_state) {
 			case TUN_PPP_LCP:
@@ -505,15 +528,14 @@ int lcp_packet(struct tunnel *tunnel, void *packet, int len)
 
 		break;
 	}
-	case LCP_CONF_ACK:
-	{
-		int olen = ntohs(header->length);
-		struct conf_option *co = NULL;
-		olen -= sizeof(struct lcp_header);
-		co = (struct conf_option *)(header + 1);
+	case LCP_CONF_ACK: {
+		struct conf_option *co = (struct conf_option *)(header + 1);
+		int olen = ntohs(header->length) - sizeof(struct lcp_header);
+
 		while (olen > 0) {
 			char buff[128];
 			char *p = buff;
+
 			conf_option_set(lcp_self, co->type, co->length, co_data(co));
 			p += sprintf(p, "option %s: ", lcp_valid_options[co->type].name);
 			switch (co->type) {
@@ -546,15 +568,14 @@ int lcp_packet(struct tunnel *tunnel, void *packet, int len)
 		}
 		break;
 	}
-	case LCP_CONF_NAK:
-	{
-		int olen = ntohs(header->length);
-		struct conf_option *co = NULL;
-		olen -= sizeof(struct lcp_header);
-		co = (struct conf_option *)(header + 1);
+	case LCP_CONF_NAK: {
+		struct conf_option *co = (struct conf_option *)(header + 1);
+		int olen = ntohs(header->length) - sizeof(struct lcp_header);
+
 		while (olen > 0) {
 			char buff[128];
 			char *p = buff;
+
 			conf_option_set(lcp_self, co->type, 0, NULL);
 			p += sprintf(p, "option %s: ", lcp_valid_options[co->type].name);
 			switch (co->type) {
@@ -582,15 +603,14 @@ int lcp_packet(struct tunnel *tunnel, void *packet, int len)
 		}
 		break;
 	}
-	case LCP_CONF_REJECT:
-	{
-		int olen = ntohs(header->length);
-		struct conf_option *co = NULL;
-		olen -= sizeof(struct lcp_header);
-		co = (struct conf_option *)(header + 1);
+	case LCP_CONF_REJECT: {
+		struct conf_option *co = (struct conf_option *)(header + 1);
+		int olen = ntohs(header->length) - sizeof(struct lcp_header);
+
 		while (olen > 0) {
 			char buff[128];
 			char *p = buff;
+
 			conf_option_set(lcp_self, co->type, 0, NULL);
 			p += sprintf(p, "option %s: ", lcp_valid_options[co->type].name);
 			switch (co->type) {
@@ -678,17 +698,16 @@ const char *ipcp_code_name[] = {
 	"IPCP Code-Reject",
 };
 
-int nroutes = 0;
-char **routes = NULL;
 
-uint32_t ip_address = 0;
-uint32_t peer_address = 0;
-uint32_t primary_dns = 0;
-uint32_t secondary_dns = 0;
+static uint32_t ip_address;
+static uint32_t peer_address;
+static uint32_t primary_dns;
+static uint32_t secondary_dns;
 
 int ipcp_add_route(struct tunnel *tunnel, uint32_t dst, uint32_t mask, uint32_t gw)
 {
 	int ret = 0;
+	int sd = -1;
 	struct rtentry rt;
 	struct sockaddr_in *sin = NULL;
 
@@ -711,47 +730,53 @@ int ipcp_add_route(struct tunnel *tunnel, uint32_t dst, uint32_t mask, uint32_t 
 	sin->sin_port = 0;
 	sin->sin_addr.s_addr = htonl(mask);
 
-	int sd = socket(AF_INET, SOCK_DGRAM, 0);
-	ret = ioctl(sd, SIOCADDRT, &rt);
-	if (ret == 0) {
-		log_debug("route add success\n");
-	} else {
-		log_error("route add failed %d: %s\n", errno, strerror(errno));
+	sd = socket(AF_INET, SOCK_DGRAM, 0);
+	if (sd < 0) {
+		log_error("socket: %s\n", strerror(errno));
+		return sd;
 	}
-	close(sd);
+
+	ret = ioctl(sd, SIOCADDRT, &rt);
+	if (ret == 0)
+		log_debug("route add success\n");
+	else
+		log_error("route add failed %d: %s\n", errno, strerror(errno));
+	if (close(sd))
+		log_warn("close: %s\n", strerror(errno));
 
 	return ret;
 }
-int ipcp_option_send(struct tunnel *tunnel, int id, int code, struct conf_option_list *optlist, int force)
+
+int ipcp_option_send(struct tunnel *tunnel, int id, int code,
+                     struct conf_option_list *optlist, int force)
 {
 	int ret = -1;
+
 	if (optlist && optlist->head) {
 		uint8_t *packet = (uint8_t *)optlist->head;
 		struct ipcp_header *header = ((struct ipcp_header *)packet) - 1;
 		unsigned short *ppp_type = ((unsigned short *)header) - 1;
-		int len = conf_option_length(optlist);
-		int hdrlen = sizeof(struct ipcp_header) + sizeof(uint16_t);
+		const size_t hdrlen = sizeof(struct ipcp_header) + sizeof(uint16_t);
+		const int len = conf_option_length(optlist);
 
 		if (len > 0 || force) {
-			ssize_t pktsize;
+			const ssize_t pktsize = hdrlen + len;
 			struct ppp_packet *packet = NULL;
 
 			*ppp_type = htons(PPP_IPCP);
 			header->code = code;
-			header->id = id ? id : lcp_id ++;
+			header->id = id ? id : lcp_id++;
 			header->length = htons(len + sizeof(*header));
 			log_debug("send ipcp %d\n", len);
 
-			pktsize = hdrlen + len;
 			packet = malloc(sizeof(*packet) + 6 + pktsize);
-			if (packet == NULL) {
+			if (packet == NULL)
 				goto out;
-			}
 			packet->len = pktsize;
 			memcpy(pkt_data(packet), ppp_type, pktsize);
 
 			log_debug("%s ---> gateway (%lu bytes)\n", PPP_DAEMON,
-				  packet->len);
+			          packet->len);
 #if HAVE_USR_SBIN_PPPD
 			log_packet("pppd:   ", packet->len, pkt_data(packet));
 #else
@@ -765,6 +790,7 @@ int ipcp_option_send(struct tunnel *tunnel, int id, int code, struct conf_option
 out:
 	return ret;
 }
+
 int ipcp_packet(struct tunnel *tunnel, void *packet, int len)
 {
 	int ret = 0;
@@ -772,35 +798,38 @@ int ipcp_packet(struct tunnel *tunnel, void *packet, int len)
 
 	log_debug("packet %s\n", ipcp_code_name[header->code]);
 	switch (header->code) {
-	case IPCP_CONF_REQUEST:
-	{
-		int olen = ntohs(header->length);
-		struct conf_option *co = NULL;
+	case IPCP_CONF_REQUEST: {
+		struct conf_option *co = (struct conf_option *)(header + 1);
+		int olen = ntohs(header->length) - sizeof(struct ipcp_header);
 		struct conf_option_list ack;
 		struct conf_option_list nack;
 		struct conf_option_list reject;
 		struct conf_option_list request;
+
 		conf_option_init(&ack);
 		conf_option_init(&nack);
 		conf_option_init(&reject);
 		conf_option_init(&request);
-		olen -= sizeof(struct ipcp_header);
-		co = (struct conf_option *)(header + 1);
+
 		while (olen > 0) {
 			char buff[128];
 			char *p = buff;
+
 			p += sprintf(p, "option %s: ", ipcp_valid_options[co->type]);
 			switch (co->type) {
 			case IPCP_COPT_ADDRESSES:
 				p += sprintf(p, "%x", ntohl(*(uint32_t *)co_data(co)));
-				conf_option_encode(&ack, co->type, co->length, co_data(co));
+				conf_option_encode(&ack, co->type,
+				                   co->length, co_data(co));
 				break;
 			case IPCP_COPT_COMPRESS:
-				conf_option_encode(&ack, co->type, co->length, co_data(co));
+				conf_option_encode(&ack, co->type,
+				                   co->length, co_data(co));
 				break;
 			case IPCP_COPT_ADDRESS:
 				p += sprintf(p, "%x", ntohl(*(uint32_t *)co_data(co)));
-				conf_option_encode(&ack, co->type, co->length, co_data(co));
+				conf_option_encode(&ack, co->type,
+				                   co->length, co_data(co));
 				peer_address = *(uint32_t *)co_data(co);
 				break;
 			default:
@@ -812,32 +841,46 @@ int ipcp_packet(struct tunnel *tunnel, void *packet, int len)
 		}
 		if (header->code == IPCP_CONF_REQUEST) {
 			int ret = -1;
-			ret = ipcp_option_send(tunnel, header->id, IPCP_CONF_ACK, &ack, 0);
+
+			ret = ipcp_option_send(tunnel, header->id, IPCP_CONF_ACK,
+			                       &ack, 0);
 			if (ret < 0) {
-				log_debug("send conf_ack failed %d: %s\n", errno, strerror(errno));
-				exit(1);
+				log_debug("send conf_ack failed %d: %s\n",
+				          errno, strerror(errno));
+				exit(EXIT_FAILURE);
 			}
-			ret = ipcp_option_send(tunnel, header->id, IPCP_CONF_NAK, &nack, 0);
+			ret = ipcp_option_send(tunnel, header->id, IPCP_CONF_NAK,
+			                       &nack, 0);
 			if (ret < 0) {
-				log_debug("send conf_ack failed %d: %s\n", errno, strerror(errno));
-				exit(1);
+				log_debug("send conf_ack failed %d: %s\n",
+				          errno, strerror(errno));
+				exit(EXIT_FAILURE);
 			}
-			ret = ipcp_option_send(tunnel, header->id, IPCP_CONF_REJECT, &reject, 0);
+			ret = ipcp_option_send(tunnel, header->id, IPCP_CONF_REJECT,
+			                       &reject, 0);
 			if (ret < 0) {
-				log_debug("send conf_ack failed %d: %s\n", errno, strerror(errno));
-				exit(1);
+				log_debug("send conf_ack failed %d: %s\n",
+				          errno, strerror(errno));
+				exit(EXIT_FAILURE);
 			}
 
 			do {
 				uint32_t compress = htonl(0x002d0f01);
-				conf_option_encode(&request, IPCP_COPT_ADDRESS, 6, &ip_address);
-				conf_option_encode(&request, IPCP_COPT_COMPRESS, 6, &compress);
-				// conf_option_encode(&request, IPCP_COPT_PRIMARY_DNS, 6, &primary_dns);
-				// conf_option_encode(&request, IPCP_COPT_SECONDARY_DNS, 6, &secondary_dns);
-				ret = ipcp_option_send(tunnel, 0, IPCP_CONF_REQUEST, &request, 0);
+
+				conf_option_encode(&request, IPCP_COPT_ADDRESS,
+				                   6, &ip_address);
+				conf_option_encode(&request, IPCP_COPT_COMPRESS,
+				                   6, &compress);
+				// conf_option_encode(&request, IPCP_COPT_PRIMARY_DNS,
+				//                    6, &primary_dns);
+				// conf_option_encode(&request, IPCP_COPT_SECONDARY_DNS,
+				//                    6, &secondary_dns);
+				ret = ipcp_option_send(tunnel, 0, IPCP_CONF_REQUEST,
+				                       &request, 0);
 				if (ret < 0) {
-					log_debug("send conf_ack failed %d: %s\n", errno, strerror(errno));
-					exit(1);
+					log_debug("send conf_ack failed %d: %s\n",
+					          errno, strerror(errno));
+					exit(EXIT_FAILURE);
 				}
 			} while (0);
 		}
@@ -848,15 +891,16 @@ int ipcp_packet(struct tunnel *tunnel, void *packet, int len)
 
 		break;
 	}
-	case IPCP_CONF_ACK:
-	{
+	case IPCP_CONF_ACK: {
 		int olen = ntohs(header->length);
 		struct conf_option *co = NULL;
+
 		olen -= sizeof(struct lcp_header);
 		co = (struct conf_option *)(header + 1);
 		while (olen > 0) {
 			char buff[128];
 			char *p = buff;
+
 			p += sprintf(p, "option %s: ", ipcp_valid_options[co->type]);
 			switch (co->type) {
 			case IPCP_COPT_ADDRESSES:
@@ -884,21 +928,19 @@ int ipcp_packet(struct tunnel *tunnel, void *packet, int len)
 			co = (struct conf_option *)((uint8_t *)co + co->length);
 		}
 
-		int tun_ifup(char *ifname, uint32_t ip_addr, uint32_t peer_addr);
 		tun_ifup(tunnel->tun_iface, ip_address, peer_address);
 		ipv4_set_tunnel_routes(tunnel);
 		break;
 	}
-	case IPCP_CONF_NAK:
-	{
+	case IPCP_CONF_NAK: {
 		int send_request = 0;
-		int olen = ntohs(header->length);
-		struct conf_option *co = NULL;
-		olen -= sizeof(struct lcp_header);
-		co = (struct conf_option *)(header + 1);
+		struct conf_option *co = (struct conf_option *)(header + 1);
+		int olen = ntohs(header->length) - sizeof(struct lcp_header);
+
 		while (olen > 0) {
 			char buff[128];
 			char *p = buff;
+
 			p += sprintf(p, "option %s: ", ipcp_valid_options[co->type]);
 			switch (co->type) {
 			case IPCP_COPT_ADDRESSES:
@@ -937,28 +979,34 @@ int ipcp_packet(struct tunnel *tunnel, void *packet, int len)
 
 		if (send_request) {
 			struct conf_option_list request;
+
 			conf_option_init(&request);
-			conf_option_encode(&request, IPCP_COPT_ADDRESS, 6, &ip_address);
-			// conf_option_encode(&request, IPCP_COPT_PRIMARY_DNS, 6, &primary_dns);
-			// conf_option_encode(&request, IPCP_COPT_SECONDARY_DNS, 6, &secondary_dns);
-			ret = ipcp_option_send(tunnel, 0, IPCP_CONF_REQUEST, &request, 0);
+			conf_option_encode(&request, IPCP_COPT_ADDRESS,
+			                   6, &ip_address);
+			// conf_option_encode(&request, IPCP_COPT_PRIMARY_DNS,
+			//                    6, &primary_dns);
+			// conf_option_encode(&request, IPCP_COPT_SECONDARY_DNS,
+			//                    6, &secondary_dns);
+			ret = ipcp_option_send(tunnel, 0, IPCP_CONF_REQUEST,
+			                       &request, 0);
 			if (ret < 0) {
-				log_debug("send conf_ack failed %d: %s\n", errno, strerror(errno));
-				exit(1);
+				log_debug("send conf_ack failed %d: %s\n",
+				          errno, strerror(errno));
+				exit(EXIT_FAILURE);
 			}
 			conf_option_free(&request);
 		}
 		break;
 	}
-	case IPCP_CONF_REJECT:
-	{
+	case IPCP_CONF_REJECT: {
+		struct conf_option *co = (struct conf_option *)(header + 1);
 		int olen = ntohs(header->length);
-		struct conf_option *co = NULL;
+
 		olen -= sizeof(struct lcp_header);
-		co = (struct conf_option *)(header + 1);
 		while (olen > 0) {
 			char buff[128];
 			char *p = buff;
+
 			p += sprintf(p, "option %s: ", ipcp_valid_options[co->type]);
 			switch (co->type) {
 			case IPCP_COPT_ADDRESSES:
@@ -985,14 +1033,20 @@ int ipcp_packet(struct tunnel *tunnel, void *packet, int len)
 
 		do {
 			struct conf_option_list request;
+
 			conf_option_init(&request);
-			conf_option_encode(&request, IPCP_COPT_ADDRESS, 6, &ip_address);
-			// conf_option_encode(&request, IPCP_COPT_PRIMARY_DNS, 6, &primary_dns);
-			// conf_option_encode(&request, IPCP_COPT_SECONDARY_DNS, 6, &secondary_dns);
-			ret = ipcp_option_send(tunnel, 0, IPCP_CONF_REQUEST, &request, 0);
+			conf_option_encode(&request, IPCP_COPT_ADDRESS, 6,
+			                   &ip_address);
+			// conf_option_encode(&request, IPCP_COPT_PRIMARY_DNS, 6,
+			//                    &primary_dns);
+			// conf_option_encode(&request, IPCP_COPT_SECONDARY_DNS, 6,
+			//                    &secondary_dns);
+			ret = ipcp_option_send(tunnel, 0, IPCP_CONF_REQUEST,
+			                       &request, 0);
 			if (ret < 0) {
-				log_debug("send conf_ack failed %d: %s\n", errno, strerror(errno));
-				exit(1);
+				log_debug("send conf_ack failed %d: %s\n",
+				          errno, strerror(errno));
+				exit(EXIT_FAILURE);
 			}
 		} while (0);
 		break;
@@ -1067,21 +1121,19 @@ static void *pppd_read(void *arg)
 			first_time = 0;
 		}
 		if (tunnel->use_tun) {
-			ssize_t pktsize;
+			ssize_t pktsize = n + 2;
 			struct ppp_packet *packet = NULL;
 
-			pktsize = n + 2;
 			packet = malloc(sizeof(*packet) + 6 + pktsize);
-			if (packet == NULL) {
+			if (packet == NULL)
 				goto exit;
-			}
 			packet->len = pktsize;
 			pkt_data(packet)[0] = 0x00;
 			pkt_data(packet)[1] = 0x21;
 			memcpy(pkt_data(packet) + 2, buf, n);
 
 			log_debug("%s ---> gateway (%lu bytes)\n", PPP_DAEMON,
-				  packet->len);
+			          packet->len);
 #if HAVE_USR_SBIN_PPPD
 			log_packet("pppd:   ", packet->len, pkt_data(packet));
 #else
@@ -1214,7 +1266,7 @@ static void *pppd_write(void *arg)
 				break;
 			}
 			len = hdlc_encode(hdlc_buffer, hdlc_bufsize,
-					  pkt_data(packet), packet->len);
+			                  pkt_data(packet), packet->len);
 			if (len < 0) {
 				log_error("Failed to encode PPP packet into HDLC frame.\n");
 				goto err_free_buf;
@@ -1399,10 +1451,9 @@ static void *ssl_read(void *arg)
 
 				set_tunnel_ips(tunnel, packet);
 
-				if (tunnel->use_tun) {
-					int tun_ifup(char *ifname, uint32_t ip_addr, uint32_t peer_addr);
-					tun_ifup(tunnel->tun_iface, tunnel->ipv4.ip_addr.s_addr, 0);
-				}
+				if (tunnel->use_tun)
+					tun_ifup(tunnel->tun_iface,
+					         tunnel->ipv4.ip_addr.s_addr, 0);
 				strcpy(line, "[");
 				strncat(line, inet_ntoa(tunnel->ipv4.ip_addr), 15);
 				strcat(line, "], ns [");
