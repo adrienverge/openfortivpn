@@ -158,24 +158,23 @@ static int on_ppp_if_down(struct tunnel *tunnel)
 	return 0;
 }
 
-#define TUN_PATH "/dev/net/tun"
+static const char TUN_PATH[] = "/dev/net/tun";
 
-#define TUN_ASSERT(cond, fmt, ...) do {                      \
-		if (! (cond)) {                              \
-			log_info(fmt "\n", ##__VA_ARGS__);   \
-			exit(1);                             \
-		}                                            \
+#define TUN_ASSERT(cond, fmt, ...) do {                    \
+		if (!(cond)) {                             \
+			log_info(fmt "\n", ##__VA_ARGS__); \
+			exit(EXIT_FAILURE);                \
+		}                                          \
 	} while (0)
 
-static int
-tun_open(struct ifreq *ifr)
+static int tun_open(struct ifreq *ifr)
 {
 	int ret = 0;
 	int fd = -1;
 
 	fd = open(TUN_PATH, O_RDWR, 0);
 	if (fd >= 0) {
-		ret = ioctl(fd, TUNSETIFF, (unsigned long)ifr);
+		ret = ioctl(fd, TUNSETIFF, ifr);
 		if (ret < 0) {
 			log_error("ioctl: %s\n", strerror(errno));
 			close(fd);
@@ -189,53 +188,53 @@ tun_open(struct ifreq *ifr)
 	return fd;
 }
 
-static int
-__attribute__((unused))
-tun_close(int fd)
+static int tun_close(int fd)
 {
 	return close(fd);
 }
 
-int
-tun_ifup(char *ifname, uint32_t ip_addr, uint32_t peer_addr)
+int tun_ifup(const char *ifname, uint32_t ip_addr, uint32_t peer_addr)
 {
 	struct ifreq ifreq = {
 		.ifr_flags = IFF_UP,
 	};
-	struct sockaddr_in *sin = NULL;
 	int fd = -1;
 	int ret = -1;
 
 	fd = socket(AF_INET, SOCK_DGRAM, 0);
-	if (fd < 0) {
+	if (fd < 0)
 		return fd;
-	}
-	strncpy(ifreq.ifr_name, ifname, IFNAMSIZ);
-	ret = ioctl(fd, SIOCGIFFLAGS, (unsigned long)&ifreq);
-	TUN_ASSERT(ret == 0, "ioctl get ifflags", 0);
+
+	TUN_ASSERT(strlen(ifname) < IFNAMSIZ, "ifname length");
+	strcpy(ifreq.ifr_name, ifname);
+
+	ret = ioctl(fd, SIOCGIFFLAGS, &ifreq);
+	TUN_ASSERT(ret == 0, "ioctl get ifflags");
 	if (ret == 0) {
 		ifreq.ifr_flags |= IFF_UP;
-		ret = ioctl(fd, SIOCSIFFLAGS, (unsigned long)&ifreq);
-		TUN_ASSERT(ret == 0, "ioctl set ifflags", 0);
+		ret = ioctl(fd, SIOCSIFFLAGS, &ifreq);
+		TUN_ASSERT(ret == 0, "ioctl set ifflags");
 	}
 
 	if (ip_addr != 0) {
-		sin = (struct sockaddr_in *)&ifreq.ifr_addr;
+		struct sockaddr_in *sin = (struct sockaddr_in *)&ifreq.ifr_addr;
+
 		sin->sin_family = AF_INET;
 		sin->sin_port = 0;
 		sin->sin_addr.s_addr = ip_addr;
-		ret = ioctl(fd, SIOCSIFADDR, (unsigned long)&ifreq);
+		ret = ioctl(fd, SIOCSIFADDR, &ifreq);
 		TUN_ASSERT(ret == 0, "ioctl set ifaddr err: %s", strerror(errno));
 		log_info("setup <%s> ip addr to %s\n", ifname, inet_ntoa(sin->sin_addr));
 	}
 
 	if (peer_addr != 0) {
-		sin = (struct sockaddr_in *)&ifreq.ifr_addr;
+		struct sockaddr_in *sin = (struct sockaddr_in *)&ifreq.ifr_addr;
+
 		sin->sin_family = AF_INET;
 		sin->sin_port = 0;
 		sin->sin_addr.s_addr = peer_addr;
-		ret = ioctl(fd, SIOCSIFDSTADDR, (unsigned long)&ifreq);
-		TUN_ASSERT(ret == 0, "ioctl set dst ifaddr", 0);
+		ret = ioctl(fd, SIOCSIFDSTADDR, &ifreq);
+		TUN_ASSERT(ret == 0, "ioctl set dst ifaddr");
 	}
 
 	close(fd);
@@ -243,17 +242,15 @@ tun_ifup(char *ifname, uint32_t ip_addr, uint32_t peer_addr)
 	return ret;
 }
 
-static int
-__attribute__((unused))
-tun_setup(struct tunnel *tunnel)
+static int tun_setup(struct tunnel *tunnel)
 {
 	int flags = 0;
 	int tun_fd = -1;
-        struct ifreq ifreq = {
-                .ifr_flags = IFF_TUN | IFF_NO_PI,
-        };
+	struct ifreq ifreq = {
+		.ifr_flags = IFF_TUN | IFF_NO_PI,
+	};
 
-        tun_fd = tun_open(&ifreq);
+	tun_fd = tun_open(&ifreq);
 	if (tun_fd < 0) {
 		log_error("tun_open failed: %s\n", strerror(errno));
 		return 1;
@@ -264,6 +261,7 @@ tun_setup(struct tunnel *tunnel)
 		flags = 0;
 	if (fcntl(tun_fd, F_SETFL, flags | O_NONBLOCK) == -1) {
 		log_error("fcntl failed: %s\n", strerror(errno));
+		tun_close(tun_fd);
 		return 1;
 	}
 
@@ -276,9 +274,7 @@ tun_setup(struct tunnel *tunnel)
 	return 0;
 }
 
-static int
-__attribute__((unused))
-pppd_run(struct tunnel *tunnel)
+static int pppd_run(struct tunnel *tunnel)
 {
 	pid_t pid;
 	int amaster;
@@ -790,6 +786,8 @@ static int tcp_connect(struct tunnel *tunnel)
 		    >= IF_NAMESIZE) {
 			log_error("interface name too long\n");
 			goto err_post_socket;
+		} else {
+			strcpy(ifr.ifr_name, tunnel->config->iface_name);
 		}
 		ifr.ifr_addr.sa_family = AF_INET;
 		if (ioctl(handle, SIOCGIFADDR, &ifr) == -1) {
@@ -1436,16 +1434,15 @@ int run_tunnel(struct vpn_config *config)
 
 	// Step 4: run a pppd process
 	log_info("Establishing the tunnel\n");
-	if (tunnel.use_tun) {
+	if (tunnel.use_tun)
 		ret = tun_setup(&tunnel);
-	} else {
+	else
 		ret = pppd_run(&tunnel);
-	}
 	if (ret)
 		goto err_tunnel;
 
 	// Step 5: ask gateway to start tunneling
-	log_info("Switch to tunneling mode\n");
+	log_debug("Switch to tunneling mode\n");
 	ret = http_send(&tunnel,
 	                "GET /remote/sslvpn-tunnel HTTP/1.1\r\n"
 	                "Host: sslvpn\r\n"
@@ -1459,7 +1456,7 @@ int run_tunnel(struct vpn_config *config)
 	tunnel.state = STATE_CONNECTING;
 
 	// Step 6: perform io between pppd and the gateway, while tunnel is up
-	log_info("Starting IO through the tunnel\n");
+	log_debug("Starting IO through the tunnel\n");
 	io_loop(&tunnel);
 
 	log_debug("disconnecting\n");

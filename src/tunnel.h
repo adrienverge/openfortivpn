@@ -93,6 +93,8 @@ struct token {
 
 int ppp_interface_is_up(struct tunnel *tunnel);
 
+int tun_ifup(const char *ifname, uint32_t ip_addr, uint32_t peer_addr);
+
 int ssl_connect(struct tunnel *tunnel);
 
 int run_tunnel(struct vpn_config *config);
