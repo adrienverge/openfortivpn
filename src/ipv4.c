@@ -1072,7 +1072,9 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 	char dns_suffix[DNS_SUFFIX_SIZE];
 #undef DNS_SUFFIX_SIZE
 	char *buffer = NULL;
+#if HAVE_RESOLVCONF
 	int use_resolvconf = 0;
+#endif
 
 	tunnel->ipv4.ns1_was_there = 0;
 	tunnel->ipv4.ns2_was_there = 0;
@@ -1177,7 +1179,9 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 		dns_suffix[0] = '\0';
 	}
 
+#if HAVE_RESOLVCONF
 	if (use_resolvconf == 0) {
+#endif
 		char *saveptr = NULL;
 
 		for (const char *line = strtok_r(buffer, "\n", &saveptr);
@@ -1230,7 +1234,9 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 		buffer[stat.st_size] = '\0';
 
 		rewind(file);
+#if HAVE_RESOLVCONF
 	}
+#endif
 	if (tunnel->ipv4.ns1_was_there == 0) {
 		strcat(ns1, "\n");
 		fputs(ns1, file);
@@ -1243,7 +1249,9 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 		strcat(dns_suffix, "\n");
 		fputs(dns_suffix, file);
 	}
+#if HAVE_RESOLVCONF
 	if (use_resolvconf == 0)
+#endif
 		fwrite(buffer, stat.st_size, 1, file);
 
 	ret = 0;
@@ -1251,15 +1259,19 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 err_free:
 	free(buffer);
 err_close:
+#if HAVE_RESOLVCONF
 	if (use_resolvconf == 0) {
+#endif
 		if (fclose(file))
 			log_warn("Could not close /etc/resolv.conf: %s\n",
 			         strerror(errno));
+#if HAVE_RESOLVCONF
 	} else {
 		if (pclose(file) == -1)
 			log_warn("Could not close resolvconf pipe: %s\n",
 			         strerror(errno));
 	}
+#endif
 
 	return ret;
 }
