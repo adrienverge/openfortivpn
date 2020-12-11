@@ -553,49 +553,49 @@ static int tcp_connect(struct tunnel *tunnel)
 #ifdef SO_KEEPALIVE
 	ret = tcp_getsockopt(handle, SO_KEEPALIVE);
 	if (ret < 0)
-		goto err_socket;
+		goto err_post_socket;
 	else
 		log_debug("SO_KEEPALIVE: %d\n", ret);
+#endif
 #ifdef TCP_KEEPIDLE
 	ret = tcp_getsockopt(handle, TCP_KEEPIDLE);
 	if (ret < 0)
-		goto err_socket;
+		goto err_post_socket;
 	else
 		log_debug("TCP_KEEPIDLE: %d\n", ret);
 #endif
 #ifdef TCP_KEEPALIVE
 	ret = tcp_getsockopt(handle, TCP_KEEPALIVE);
 	if (ret < 0)
-		goto err_socket;
+		goto err_post_socket;
 	else
 		log_debug("TCP_KEEPALIVE: %d\n", ret);
 #endif
 #ifdef TCP_KEEPINTVL
 	ret = tcp_getsockopt(handle, TCP_KEEPINTVL);
 	if (ret < 0)
-		goto err_socket;
+		goto err_post_socket;
 	else
 		log_debug("TCP_KEEPINTVL: %d\n", ret);
 #endif
 #ifdef TCP_KEEPCNT
 	ret = tcp_getsockopt(handle, TCP_KEEPCNT);
 	if (ret < 0)
-		goto err_socket;
+		goto err_post_socket;
 	else
 		log_debug("TCP_KEEPCNT: %d\n", ret);
-#endif
 #endif
 #ifdef SO_SNDBUF
 	ret = tcp_getsockopt(handle, SO_SNDBUF);
 	if (ret < 0)
-		goto err_socket;
+		goto err_post_socket;
 	else
 		log_debug("SO_SNDBUF: %d\n", ret);
 #endif
 #ifdef SO_RCVBUF
 	ret = tcp_getsockopt(handle, SO_RCVBUF);
 	if (ret < 0)
-		goto err_socket;
+		goto err_post_socket;
 	else
 		log_debug("SO_RCVBUF: %d\n", ret);
 #endif
