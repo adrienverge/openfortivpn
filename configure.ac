@@ -83,7 +83,6 @@ libutil.h \
 mach/mach.h \
 pty.h \
 semaphore.h \
-sys/mutex.h \
 util.h \
 ])
 
