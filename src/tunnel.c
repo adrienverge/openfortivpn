@@ -522,10 +522,8 @@ static int tcp_getsockopt(int sockfd, int optname)
 	socklen_t optlen = sizeof(optval);
 
 	if (getsockopt(sockfd, IPPROTO_TCP, optname,
-	               (void *)&optval, &optlen)) {
-		log_error("getsockopt: %s\n", strerror(errno));
+	               (void *)&optval, &optlen))
 		return -1;
-	}
 	assert(optlen == sizeof(optval));
 	return optval;
 }
@@ -553,49 +551,49 @@ static int tcp_connect(struct tunnel *tunnel)
 #ifdef SO_KEEPALIVE
 	ret = tcp_getsockopt(handle, SO_KEEPALIVE);
 	if (ret < 0)
-		goto err_post_socket;
+		log_warn("getsockopt: %s: %s\n", "SO_KEEPALIVE", strerror(errno));
 	else
 		log_debug("SO_KEEPALIVE: %d\n", ret);
 #endif
 #ifdef TCP_KEEPIDLE
 	ret = tcp_getsockopt(handle, TCP_KEEPIDLE);
 	if (ret < 0)
-		goto err_post_socket;
+		log_warn("getsockopt: %s: %s\n", "TCP_KEEPIDLE", strerror(errno));
 	else
 		log_debug("TCP_KEEPIDLE: %d\n", ret);
 #endif
 #ifdef TCP_KEEPALIVE
 	ret = tcp_getsockopt(handle, TCP_KEEPALIVE);
 	if (ret < 0)
-		goto err_post_socket;
+		log_warn("getsockopt: %s: %s\n", "TCP_KEEPALIVE", strerror(errno));
 	else
 		log_debug("TCP_KEEPALIVE: %d\n", ret);
 #endif
 #ifdef TCP_KEEPINTVL
 	ret = tcp_getsockopt(handle, TCP_KEEPINTVL);
 	if (ret < 0)
-		goto err_post_socket;
+		log_warn("getsockopt: %s: %s\n", "TCP_KEEPINTVL", strerror(errno));
 	else
 		log_debug("TCP_KEEPINTVL: %d\n", ret);
 #endif
 #ifdef TCP_KEEPCNT
 	ret = tcp_getsockopt(handle, TCP_KEEPCNT);
 	if (ret < 0)
-		goto err_post_socket;
+		log_warn("getsockopt: %s: %s\n", "TCP_KEEPCNT", strerror(errno));
 	else
 		log_debug("TCP_KEEPCNT: %d\n", ret);
 #endif
 #ifdef SO_SNDBUF
 	ret = tcp_getsockopt(handle, SO_SNDBUF);
 	if (ret < 0)
-		goto err_post_socket;
+		log_warn("getsockopt: %s: %s\n", "SO_SNDBUF", strerror(errno));
 	else
 		log_debug("SO_SNDBUF: %d\n", ret);
 #endif
 #ifdef SO_RCVBUF
 	ret = tcp_getsockopt(handle, SO_RCVBUF);
 	if (ret < 0)
-		goto err_post_socket;
+		log_warn("getsockopt: %s: %s\n", "SO_RCVBUF", strerror(errno));
 	else
 		log_debug("SO_RCVBUF: %d\n", ret);
 #endif
