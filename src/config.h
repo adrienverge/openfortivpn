@@ -58,10 +58,10 @@ struct x509_digest {
 	char data[SHA256STRLEN];
 };
 
-#define FIELD_SIZE	64
 #define GATEWAY_HOST_SIZE	253
 #define USERNAME_SIZE	64
 #define PASSWORD_SIZE	256
+#define OTP_SIZE	64
 #define REALM_SIZE	63
 
 /*
@@ -88,7 +88,7 @@ struct vpn_config {
 	char		username[USERNAME_SIZE + 1];
 	char		password[PASSWORD_SIZE + 1];
 	int		password_set;
-	char		otp[FIELD_SIZE + 1];
+	char		otp[OTP_SIZE + 1];
 	char		*otp_prompt;
 	unsigned int  otp_delay;
 	int         no_ftm_push;

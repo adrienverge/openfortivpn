@@ -524,8 +524,8 @@ int main(int argc, char **argv)
 				*optarg++ = '*';  // nuke it
 			break;
 		case 'o':
-			strncpy(cli_cfg.otp, optarg, FIELD_SIZE);
-			cli_cfg.otp[FIELD_SIZE] = '\0';
+			strncpy(cli_cfg.otp, optarg, OTP_SIZE);
+			cli_cfg.otp[OTP_SIZE] = '\0';
 			break;
 		default:
 			goto user_error;

@@ -45,7 +45,6 @@
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <ifaddrs.h>
-#include <net/if.h>
 #include <netdb.h>
 #if HAVE_PTY_H
 #include <pty.h>

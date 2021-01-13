@@ -268,8 +268,8 @@ int load_config(struct vpn_config *cfg, const char *filename)
 			cfg->password[PASSWORD_SIZE] = '\0';
 			cfg->password_set = 1;
 		} else if (strcmp(key, "otp") == 0) {
-			strncpy(cfg->otp, val, FIELD_SIZE);
-			cfg->otp[FIELD_SIZE] = '\0';
+			strncpy(cfg->otp, val, OTP_SIZE);
+			cfg->otp[OTP_SIZE] = '\0';
 		} else if (strcmp(key, "otp-prompt") == 0) {
 			free(cfg->otp_prompt);
 			cfg->otp_prompt = strdup(val);
