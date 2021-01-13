@@ -58,6 +58,7 @@ struct x509_digest {
 };
 
 #define FIELD_SIZE	64
+#define REALM_SIZE	63
 
 /*
  * RFC 6265 does not limit the size of cookies:
@@ -88,7 +89,7 @@ struct vpn_config {
 	int         no_ftm_push;
 	char		*pinentry;
 	char		iface_name[FIELD_SIZE + 1];
-	char		realm[FIELD_SIZE + 1];
+	char		realm[REALM_SIZE + 1];
 
 	int	set_routes;
 	int	set_dns;

@@ -629,7 +629,7 @@ int auth_log_in(struct tunnel *tunnel)
 	int ret;
 	char username[3 * FIELD_SIZE + 1];
 	char password[3 * FIELD_SIZE + 1];
-	char realm[3 * FIELD_SIZE + 1];
+	char realm[3 * REALM_SIZE + 1];
 	char reqid[32] = { '\0' };
 	char polid[32] = { '\0' };
 	char group[128] = { '\0' };
