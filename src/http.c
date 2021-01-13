@@ -636,7 +636,8 @@ int auth_log_in(struct tunnel *tunnel)
 	char portal[64] = { '\0' };
 	char magic[32] = {'\0' };
 	char peer[32]  = { '\0' };
-	char data[1152], token[128], tokenresponse[256], tokenparams[320];
+	char data[9 + 3 * USERNAME_SIZE + 12 + 3 * PASSWORD_SIZE + 7 + 3 * REALM_SIZE + 7 + 1];
+	char token[128], tokenresponse[256], tokenparams[320];
 	char action_url[1024] = { '\0' };
 	char *res = NULL;
 	uint32_t response_size;
