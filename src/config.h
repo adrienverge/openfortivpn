@@ -58,6 +58,7 @@ struct x509_digest {
 };
 
 #define FIELD_SIZE	64
+#define GATEWAY_HOST_SIZE	253
 #define USERNAME_SIZE	64
 #define PASSWORD_SIZE	256
 #define REALM_SIZE	63
@@ -80,7 +81,7 @@ struct x509_digest {
 #define MAX_DOMAIN_LENGTH 256
 
 struct vpn_config {
-	char		gateway_host[FIELD_SIZE + 1];
+	char		gateway_host[GATEWAY_HOST_SIZE + 1];
 	struct in_addr	gateway_ip;
 	uint16_t	gateway_port;
 	char		username[USERNAME_SIZE + 1];

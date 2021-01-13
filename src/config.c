@@ -249,8 +249,8 @@ int load_config(struct vpn_config *cfg, const char *filename)
 		}
 
 		if (strcmp(key, "host") == 0) {
-			strncpy(cfg->gateway_host, val, FIELD_SIZE);
-			cfg->gateway_host[FIELD_SIZE] = '\0';
+			strncpy(cfg->gateway_host, val, GATEWAY_HOST_SIZE);
+			cfg->gateway_host[GATEWAY_HOST_SIZE] = '\0';
 		} else if (strcmp(key, "port") == 0) {
 			unsigned long port = strtoul(val, NULL, 0);
 

@@ -582,8 +582,8 @@ int main(int argc, char **argv)
 				goto user_error;
 			}
 		}
-		strncpy(cfg.gateway_host, host, FIELD_SIZE);
-		cfg.gateway_host[FIELD_SIZE] = '\0';
+		strncpy(cfg.gateway_host, host, GATEWAY_HOST_SIZE);
+		cfg.gateway_host[GATEWAY_HOST_SIZE] = '\0';
 	}
 
 	// Check host and port
