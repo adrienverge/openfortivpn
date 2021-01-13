@@ -260,8 +260,8 @@ int load_config(struct vpn_config *cfg, const char *filename)
 			}
 			cfg->gateway_port = port;
 		} else if (strcmp(key, "username") == 0) {
-			strncpy(cfg->username, val, FIELD_SIZE - 1);
-			cfg->username[FIELD_SIZE] = '\0';
+			strncpy(cfg->username, val, USERNAME_SIZE);
+			cfg->username[USERNAME_SIZE] = '\0';
 		} else if (strcmp(key, "password") == 0) {
 			cfg->password = strdup(val);
 		} else if (strcmp(key, "otp") == 0) {

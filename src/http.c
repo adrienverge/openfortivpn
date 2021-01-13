@@ -627,7 +627,7 @@ static int try_otp_auth(struct tunnel *tunnel, const char *buffer,
 int auth_log_in(struct tunnel *tunnel)
 {
 	int ret;
-	char username[3 * FIELD_SIZE + 1];
+	char username[3 * USERNAME_SIZE + 1];
 	char password[3 * FIELD_SIZE + 1];
 	char realm[3 * REALM_SIZE + 1];
 	char reqid[32] = { '\0' };

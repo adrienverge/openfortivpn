@@ -58,6 +58,7 @@ struct x509_digest {
 };
 
 #define FIELD_SIZE	64
+#define USERNAME_SIZE	64
 #define REALM_SIZE	63
 
 /*
@@ -81,7 +82,7 @@ struct vpn_config {
 	char		gateway_host[FIELD_SIZE + 1];
 	struct in_addr	gateway_ip;
 	uint16_t	gateway_port;
-	char		username[FIELD_SIZE + 1];
+	char		username[USERNAME_SIZE + 1];
 	char		*password;
 	char		otp[FIELD_SIZE + 1];
 	char		*otp_prompt;
