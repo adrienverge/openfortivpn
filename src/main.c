@@ -515,8 +515,8 @@ int main(int argc, char **argv)
 			config_file = optarg;
 			break;
 		case 'u':
-			strncpy(cli_cfg.username, optarg, FIELD_SIZE);
-			cli_cfg.username[FIELD_SIZE] = '\0';
+			strncpy(cli_cfg.username, optarg, USERNAME_SIZE);
+			cli_cfg.username[USERNAME_SIZE] = '\0';
 			break;
 		case 'p':
 			cli_cfg.password = strdup(optarg);
