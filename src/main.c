@@ -401,8 +401,8 @@ int main(int argc, char **argv)
 			}
 			if (strcmp(long_options[option_index].name,
 			           "realm") == 0) {
-				strncpy(cli_cfg.realm, optarg, FIELD_SIZE);
-				cli_cfg.realm[FIELD_SIZE] = '\0';
+				strncpy(cli_cfg.realm, optarg, REALM_SIZE);
+				cli_cfg.realm[REALM_SIZE] = '\0';
 				break;
 			}
 			if (strcmp(long_options[option_index].name,

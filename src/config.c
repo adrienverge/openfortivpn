@@ -292,8 +292,8 @@ int load_config(struct vpn_config *cfg, const char *filename)
 			free(cfg->pinentry);
 			cfg->pinentry = strdup(val);
 		} else if (strcmp(key, "realm") == 0) {
-			strncpy(cfg->realm, val, FIELD_SIZE - 1);
-			cfg->realm[FIELD_SIZE] = '\0';
+			strncpy(cfg->realm, val, REALM_SIZE);
+			cfg->realm[REALM_SIZE] = '\0';
 		} else if (strcmp(key, "set-dns") == 0) {
 			int set_dns = strtob(val);
 
