@@ -87,7 +87,7 @@ int http_send(struct tunnel *tunnel, const char *request, ...)
 	strcpy(logbuffer, buffer);
 	if (loglevel <= OFV_LOG_DEBUG_DETAILS && tunnel->config->password[0] != '\0') {
 		char *pwstart;
-		char password[3 * FIELD_SIZE + 1];
+		char password[3 * PASSWORD_SIZE + 1];
 
 		url_encode(password, tunnel->config->password);
 		pwstart = strstr(logbuffer, password);
@@ -628,7 +628,7 @@ int auth_log_in(struct tunnel *tunnel)
 {
 	int ret;
 	char username[3 * USERNAME_SIZE + 1];
-	char password[3 * FIELD_SIZE + 1];
+	char password[3 * PASSWORD_SIZE + 1];
 	char realm[3 * REALM_SIZE + 1];
 	char reqid[32] = { '\0' };
 	char polid[32] = { '\0' };

@@ -30,8 +30,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define PWD_BUFSIZ	4096
-
 #if HAVE_USR_SBIN_PPPD && HAVE_USR_SBIN_PPP
 #error "Both HAVE_USR_SBIN_PPPD and HAVE_USR_SBIN_PPP have been defined."
 #elif HAVE_USR_SBIN_PPPD
@@ -195,7 +193,7 @@ int main(int argc, char **argv)
 		.gateway_host = {'\0'},
 		.gateway_port = 443,
 		.username = {'\0'},
-		.password = NULL,
+		.password = {'\0'},
 		.otp = {'\0'},
 		.otp_prompt = NULL,
 		.otp_delay = 0,
@@ -519,7 +517,9 @@ int main(int argc, char **argv)
 			cli_cfg.username[USERNAME_SIZE] = '\0';
 			break;
 		case 'p':
-			cli_cfg.password = strdup(optarg);
+			strncpy(cli_cfg.password, optarg, PASSWORD_SIZE);
+			cli_cfg.password[PASSWORD_SIZE] = '\0';
+			cli_cfg.password_set = 1;
 			while (*optarg)
 				*optarg++ = '*';  // nuke it
 			break;
@@ -535,7 +535,7 @@ int main(int argc, char **argv)
 	if (optind < argc - 1 || optind > argc)
 		goto user_error;
 
-	if (cli_cfg.password != NULL && cli_cfg.password[0] != '\0')
+	if (cli_cfg.password[0] != '\0')
 		log_warn("You should not pass the password on the command line. Type it interactively or use a config file instead.\n");
 
 	log_debug_all("ATTENTION: the output contains sensitive information such as the THE CLEAR TEXT PASSWORD.\n");
@@ -553,7 +553,10 @@ int main(int argc, char **argv)
 			log_warn("Could not load config file \"%s\" (%s).\n",
 			         config_file, err_cfg_str(ret));
 	}
-	if (cfg.password != NULL && cli_cfg.password == NULL) {
+	if (cli_cfg.password_set) {
+		if (cli_cfg.password[0] == '\0')
+			log_debug("Disabled password due to empty command-line option\n");
+	} else if (cfg.password_set) {
 		if (cfg.password[0] == '\0')
 			log_debug("Disabled password due to empty entry in config file \"%s\"\n",
 			          config_file);
@@ -561,6 +564,7 @@ int main(int argc, char **argv)
 			log_debug("Loaded password from config file \"%s\"\n",
 			          config_file);
 	}
+
 	// Then apply CLI config
 	merge_config(&cfg, &cli_cfg);
 	set_syslog(cfg.use_syslog);
@@ -588,33 +592,24 @@ int main(int argc, char **argv)
 		goto user_error;
 	}
 	// Check username
-	if (cfg.username[0] == '\0' && cfg.user_cert == NULL) {
-		log_error("Specify a username.\n");
-		goto user_error;
-	}
-	// If username but no password given, interactively ask user
-	if (cfg.password == NULL && cfg.username[0] != '\0') {
-		char *tmp_password = malloc(PWD_BUFSIZ); // allocate large buffer
-
-		if (tmp_password == NULL) {
-			log_error("malloc: %s\n", strerror(errno));
-			ret = EXIT_FAILURE;
-			goto exit;
+	if (cfg.username[0] == '\0')
+		// Need either username or cert
+		if (cfg.user_cert == NULL) {
+			log_error("Specify a username.\n");
+			goto user_error;
 		}
-		read_password(cfg.pinentry, "password",
-		              "VPN account password: ", tmp_password, PWD_BUFSIZ);
-		cfg.password = strdup(tmp_password); // copy string of correct size
-		free(tmp_password);
+	// If username but no password given, interactively ask user
+	if (!cfg.password_set && cfg.username[0] != '\0') {
+		read_password(cfg.pinentry,
+		              "password", "VPN account password: ",
+		              cfg.password, PASSWORD_SIZE);
 	}
 	log_debug("Config host = \"%s\"\n", cfg.gateway_host);
 	log_debug("Config realm = \"%s\"\n", cfg.realm);
 	log_debug("Config port = \"%d\"\n", cfg.gateway_port);
 	if (cfg.username[0] != '\0')
 		log_debug("Config username = \"%s\"\n", cfg.username);
-	if (cfg.password != NULL)
-		log_debug_all("Config password = \"%s\"\n", cfg.password);
-	else
-		cfg.password = strdup("");
+	log_debug_all("Config password = \"%s\"\n", cfg.password);
 	if (cfg.otp[0] != '\0')
 		log_debug("One-time password = \"%s\"\n", cfg.otp);
 

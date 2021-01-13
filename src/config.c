@@ -44,7 +44,8 @@ const struct vpn_config invalid_cfg = {
 	.gateway_host = {'\0'},
 	.gateway_port = 0,
 	.username = {'\0'},
-	.password = NULL,
+	.password = {'\0'},
+	.password_set = 0,
 	.otp = {'\0'},
 	.otp_prompt = NULL,
 	.otp_delay = -1,
@@ -263,7 +264,9 @@ int load_config(struct vpn_config *cfg, const char *filename)
 			strncpy(cfg->username, val, USERNAME_SIZE);
 			cfg->username[USERNAME_SIZE] = '\0';
 		} else if (strcmp(key, "password") == 0) {
-			cfg->password = strdup(val);
+			strncpy(cfg->password, val, PASSWORD_SIZE);
+			cfg->password[PASSWORD_SIZE] = '\0';
+			cfg->password_set = 1;
 		} else if (strcmp(key, "otp") == 0) {
 			strncpy(cfg->otp, val, FIELD_SIZE - 1);
 			cfg->otp[FIELD_SIZE] = '\0';
@@ -468,7 +471,6 @@ err_close:
 
 void destroy_vpn_config(struct vpn_config *cfg)
 {
-	free(cfg->password);
 	free(cfg->otp_prompt);
 	free(cfg->pinentry);
 #if HAVE_USR_SBIN_PPPD
@@ -501,8 +503,10 @@ void merge_config(struct vpn_config *dst, struct vpn_config *src)
 		dst->gateway_port = src->gateway_port;
 	if (src->username[0])
 		strcpy(dst->username, src->username);
-	if (src->password != NULL && src->password[0])
-		dst->password = strdup(src->password);
+	if (src->password_set) {
+		strcpy(dst->password, src->password);
+		dst->password_set = src->password_set;
+	}
 	if (src->otp[0])
 		strcpy(dst->otp, src->otp);
 	if (src->otp_delay != invalid_cfg.otp_delay)
