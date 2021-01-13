@@ -584,7 +584,7 @@ static int try_otp_auth(struct tunnel *tunnel, const char *buffer,
 			v = NULL;
 			if (cfg->otp[0] == '\0') {
 				read_password(cfg->pinentry, "otp",
-				              p, cfg->otp, FIELD_SIZE);
+				              p, cfg->otp, OTP_SIZE);
 				if (cfg->otp[0] == '\0') {
 					log_error("No OTP specified\n");
 					return 0;
@@ -730,7 +730,7 @@ int auth_log_in(struct tunnel *tunnel)
 				// Prompt for 2FA token
 				read_password(cfg->pinentry, "2fa",
 				              "Two-factor authentication token: ",
-				              cfg->otp, FIELD_SIZE);
+				              cfg->otp, OTP_SIZE);
 
 				if (cfg->otp[0] == '\0') {
 					log_error("No token specified\n");
