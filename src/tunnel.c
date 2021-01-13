@@ -585,7 +585,7 @@ static int tcp_connect(struct tunnel *tunnel)
 	int ret, handle;
 	struct sockaddr_in server;
 	char *env_proxy;
-	const int iface_len = strnlen(tunnel->config->iface_name, IFNAMSIZ);
+	const int iface_len = strnlen(tunnel->config->iface_name, IF_NAMESIZE);
 
 	handle = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -647,7 +647,7 @@ static int tcp_connect(struct tunnel *tunnel)
 		log_debug("SO_RCVBUF: %d\n", ret);
 #endif
 
-	if (iface_len == IFNAMSIZ) {
+	if (iface_len == IF_NAMESIZE) {
 		log_error("socket: Too long iface name\n");
 		goto err_post_socket;
 	}
@@ -659,8 +659,8 @@ static int tcp_connect(struct tunnel *tunnel)
 		struct ifreq ifr;
 
 		memset(&ifr, 0, sizeof(ifr));
-		if (strlcpy(ifr.ifr_name, tunnel->config->iface_name, IFNAMSIZ)
-		    >= IFNAMSIZ) {
+		if (strlcpy(ifr.ifr_name, tunnel->config->iface_name, IF_NAMESIZE)
+		    >= IF_NAMESIZE) {
 			log_error("interface name too long\n");
 			goto err_post_socket;
 		}

@@ -433,8 +433,8 @@ int main(int argc, char **argv)
 			}
 			if (strcmp(long_options[option_index].name,
 			           "ifname") == 0) {
-				strncpy(cli_cfg.iface_name, optarg, FIELD_SIZE);
-				cli_cfg.iface_name[FIELD_SIZE] = '\0';
+				strncpy(cli_cfg.iface_name, optarg, IF_NAMESIZE - 1);
+				cli_cfg.iface_name[IF_NAMESIZE - 1] = '\0';
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
