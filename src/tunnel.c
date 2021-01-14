@@ -1268,7 +1268,6 @@ int run_tunnel(struct vpn_config *config)
 	                tunnel.cookie);
 	if (ret != 1) {
 		log_error("Could not start tunnel (%s).\n", err_http_str(ret));
-		ret = 1;
 		goto err_start_tunnel;
 	}
 
