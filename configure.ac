@@ -495,6 +495,12 @@ int main(int argc, char **argv){
 	AC_MSG_NOTICE([HAVE_SO_BINDTODEVICE... 0])
 ])
 
+AC_ARG_WITH([resolvconf-config-file],
+	AS_HELP_STRING([--with-resolvconf-config-file],
+		       [Set the path to the resolv.conf config file. \
+		        Default is /etc/resolv.conf.]),
+	AC_DEFINE_UNQUOTED([RESOLV_CONF_FILE_PATH],["$withval"])
+)
 
 # prepare to get rid of obsolete code (FortiOS 4)
 AC_ARG_ENABLE([obsolete],
