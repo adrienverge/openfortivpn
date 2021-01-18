@@ -320,26 +320,34 @@ AS_IF([test "x$enable_proc" = "x"], [
 # check for ppp if not specified
 AC_PATH_PROG(PPP, [ppp], [/usr/sbin/ppp], "$PATH:/sbin:/usr/sbin")
 AS_IF([test "x$PPP_PATH" = "x"], [
-	AC_CHECK_FILE([$PPP], [
-		AS_IF([test "x$PPP_PATH" = "x"], [
-			PPP_PATH="$PPP"
-		])
-		AS_IF([test "x$with_ppp" = "x"], [
-			with_ppp="yes"
-		])
-	],[])
+	if test "$cross_compiling" = "yes"; then
+		AC_MSG_NOTICE([Cross compiling, ommited PPP path check])
+	else
+		AC_CHECK_FILE([$PPP], [
+			AS_IF([test "x$PPP_PATH" = "x"], [
+				PPP_PATH="$PPP"
+			])
+			AS_IF([test "x$with_ppp" = "x"], [
+				with_ppp="yes"
+			])
+		],[])
+	fi
 ])
 # check for pppd if not specified
 AC_PATH_PROG(PPPD, [pppd], [/usr/sbin/pppd], "$PATH:/sbin:/usr/sbin")
 AS_IF([test "x$PPP_PATH" = "x"], [
-	AC_CHECK_FILE([$PPPD], [
-		AS_IF([test "x$PPP_PATH" = "x"], [
-			PPP_PATH="$PPPD"
-		])
-		AS_IF([test "x$with_pppd" = "x"], [
-			with_pppd="yes"
-		])
-	],[])
+	if test "$cross_compiling" = "yes"; then
+		AC_MSG_NOTICE([Cross compiling, ommited PPP path check])
+	else
+		AC_CHECK_FILE([$PPPD], [
+			AS_IF([test "x$PPP_PATH" = "x"], [
+				PPP_PATH="$PPPD"
+			])
+			AS_IF([test "x$with_pppd" = "x"], [
+				with_pppd="yes"
+			])
+		],[])
+	fi
 ])
 # when neither ppp nor pppd are enabled fall back to a sensible choice for the platform
 AS_IF([test "x$with_ppp" = "x" -a "x$with_pppd" = "x"], [
