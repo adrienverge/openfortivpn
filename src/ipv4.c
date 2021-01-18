@@ -46,7 +46,7 @@ static char show_route_buffer[SHOW_ROUTE_BUFFER_SIZE];
 #define ERR_IPV4_PROC_NET_ROUTE	-5
 
 #ifndef RESOLV_CONF_FILE_PATH
-#define RESOLV_CONF_FILE_PATH /etc/resolv.conf
+#define RESOLV_CONF_FILE_PATH "/etc/resolv.conf"
 #endif
 
 static inline const char *err_ipv4_str(int code)

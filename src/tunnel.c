@@ -67,7 +67,9 @@
 #include <signal.h>
 #include <string.h>
 #include <assert.h>
-
+#if !HAVE_IFADDRS
+#include "ifaddrs.h"
+#endif
 
 struct ofv_varr {
 	unsigned int cap;	// current capacity
@@ -503,8 +505,11 @@ int ppp_interface_is_up(struct tunnel *tunnel)
 	struct ifaddrs *ifap, *ifa;
 
 	log_debug("Got Address: %s\n", inet_ntoa(tunnel->ipv4.ip_addr));
-
+#if HAVE_IFADDRS
 	if (getifaddrs(&ifap)) {
+#else
+	if (rep_getifaddrs(&ifap)) {
+#endif
 		log_error("getifaddrs: %s\n", strerror(errno));
 		return 0;
 	}
@@ -532,13 +537,21 @@ int ppp_interface_is_up(struct tunnel *tunnel)
 				if (tunnel->ipv4.ip_addr.s_addr == if_ip_addr.s_addr) {
 					strncpy(tunnel->ppp_iface, ifa->ifa_name,
 					        ROUTE_IFACE_LEN - 1);
+#if HAVE_IFADDRS
 					freeifaddrs(ifap);
+#else
+					rep_freeifaddrs(ifap);
+#endif
 					return 1;
 				}
 			}
 		}
 	}
+#if HAVE_IFADDRS
 	freeifaddrs(ifap);
+#else
+	rep_freeifaddrs(ifap);
+#endif
 
 	return 0;
 }

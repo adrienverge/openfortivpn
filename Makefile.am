@@ -8,6 +8,10 @@ openfortivpn_SOURCES = src/config.c src/config.h src/hdlc.c src/hdlc.h \
 		       src/xml.h src/userinput.c src/userinput.h \
 		       src/openssl_hostname_validation.c \
 		       src/openssl_hostname_validation.h
+if LIBREPLACE_REQUIRED
+openfortivpn_SOURCES += src/ifaddrs.c
+endif
+openfortivpn_CFLAGS = -Wall -pedantic
 openfortivpn_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" \
 			-DPPP_PATH=\"@PPP_PATH@\" \
 			-DNETSTAT_PATH=\"@NETSTAT_PATH@\" \
