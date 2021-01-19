@@ -118,6 +118,14 @@ static void destroy_ssl_locks(void)
 // global variable to pass signal out of its handler
 volatile sig_atomic_t sig_received = 0;
 
+enum tunnel_state *current_state;
+static uint64_t total_received_bytes;
+static uint64_t total_transmitted_bytes;
+static struct in_addr ip_addr;
+static struct in_addr ns1_addr;
+static struct in_addr ns2_addr;
+static char dns_suffix[MAX_DOMAIN_LENGTH];
+
 int get_sig_received(void)
 {
 	return (int)sig_received;
@@ -261,6 +269,8 @@ static void *pppd_read(void *arg)
 
 			log_debug("%s ---> gateway (%lu bytes)\n", PPP_DAEMON,
 			          packet->len);
+			total_transmitted_bytes += packet->len;
+			current_state = &tunnel->state;
 #if HAVE_USR_SBIN_PPPD
 			log_packet("pppd:   ", packet->len, pkt_data(packet));
 #else
@@ -292,6 +302,7 @@ static void *pppd_write(void *arg)
 	struct tunnel *tunnel = (struct tunnel *) arg;
 	fd_set write_fd;
 
+	current_state = &tunnel->state;
 	FD_ZERO(&write_fd);
 	FD_SET(tunnel->pppd_pty, &write_fd);
 
@@ -489,6 +500,7 @@ static void *ssl_read(void *arg)
 		}
 
 		log_debug("gateway ---> %s (%lu bytes)\n", PPP_DAEMON, packet->len);
+		total_received_bytes += packet->len;
 		log_packet("gtw:    ", packet->len, pkt_data(packet));
 		pool_push(&tunnel->ssl_to_pty_pool, packet);
 
@@ -510,6 +522,14 @@ static void *ssl_read(void *arg)
 				}
 				strcat(line, "]");
 				log_info("Got addresses: %s\n", line);
+				memcpy(&ip_addr, &tunnel->ipv4.ip_addr,
+				       sizeof(struct in_addr));
+				memcpy(&ns1_addr, &tunnel->ipv4.ns1_addr,
+				       sizeof(struct in_addr));
+				memcpy(&ns2_addr, &tunnel->ipv4.ns2_addr,
+				       sizeof(struct in_addr));
+				memcpy(&dns_suffix, tunnel->ipv4.dns_suffix,
+				       MAX_DOMAIN_LENGTH);
 			}
 			if (packet_is_end_negociation(packet)) {
 				log_info("Negotiation complete.\n");
@@ -574,6 +594,7 @@ static void *if_config(void *arg)
 	struct tunnel *tunnel = (struct tunnel *) arg;
 	int timeout = 60000000; // one minute
 
+	current_state = &tunnel->state;
 	log_debug("%s thread\n", __func__);
 
 	// Wait for the right moment to configure IP interface
@@ -604,11 +625,45 @@ error:
 	return NULL;
 }
 
+static void print_statistics(void)
+{
+	if (current_state != NULL) {
+		switch (*current_state) {
+		case STATE_DOWN: {
+			log_info("State: disconnected\n");
+			break;
+		}
+		case STATE_CONNECTING: {
+			log_info("State: connecting\n");
+			break;
+		}
+		case STATE_UP: {
+			log_info("State: connected\n");
+			break;
+		}
+		case STATE_DISCONNECTING: {
+			log_info("State: disconnecting\n");
+			break;
+		}
+		}
+	}
+	log_info("Received bytes: %lu\n", total_received_bytes);
+	log_info("Transmitted bytes: %lu\n", total_transmitted_bytes);
+	log_info("IP Address: %s\n", inet_ntoa(ip_addr));
+	log_info("NSS1 Address: %s\n", inet_ntoa(ns1_addr));
+	log_info("NSS2 Address: %s\n", inet_ntoa(ns2_addr));
+	log_info("Domain: %s\n", dns_suffix);
+}
+
 static void sig_handler(int signo)
 {
-	sig_received = signo;
-	if (signo == SIGINT || signo == SIGTERM)
-		SEM_POST(&sem_stop_io);
+	if (signo == SIGUSR1) {
+		print_statistics();
+	} else {
+		sig_received = signo;
+		if (signo == SIGINT || signo == SIGTERM)
+			SEM_POST(&sem_stop_io);
+	}
 }
 
 int io_loop(struct tunnel *tunnel)
@@ -659,12 +714,14 @@ int io_loop(struct tunnel *tunnel)
 	sigemptyset(&sigset);
 	sigaddset(&sigset, SIGINT);
 	sigaddset(&sigset, SIGTERM);
+	sigaddset(&sigset, SIGUSR1);
 	pthread_sigmask(SIG_BLOCK, &sigset, &oldset);
 #endif
 
 	// Set signal handler
 	if (signal(SIGINT, sig_handler) == SIG_ERR ||
-	    signal(SIGTERM, sig_handler) == SIG_ERR)
+	    signal(SIGTERM, sig_handler) == SIG_ERR ||
+	    signal(SIGUSR1, sig_handler) == SIG_ERR)
 		goto err_signal;
 
 	// Ignore SIGHUP
