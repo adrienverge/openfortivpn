@@ -90,8 +90,8 @@ struct vpn_config {
 	int		password_set;
 	char		otp[OTP_SIZE + 1];
 	char		*otp_prompt;
-	unsigned int  otp_delay;
-	int         no_ftm_push;
+	unsigned int	otp_delay;
+	int		no_ftm_push;
 	char		*pinentry;
 	char		iface_name[IF_NAMESIZE];
 	char		realm[REALM_SIZE + 1];
@@ -125,10 +125,10 @@ struct vpn_config {
 	int			seclevel_1;
 	char			*cipher_list;
 	struct x509_digest	*cert_whitelist;
-	int                     use_engine;
-	char                    *user_agent;
-	char                    *hostcheck;
-	char                    *check_virtual_desktop;
+	int			use_engine;
+	char			*user_agent;
+	char			*hostcheck;
+	char			*check_virtual_desktop;
 };
 
 int add_trusted_cert(struct vpn_config *cfg, const char *digest);
