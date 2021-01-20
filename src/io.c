@@ -125,6 +125,7 @@ static struct in_addr ip_addr;
 static struct in_addr ns1_addr;
 static struct in_addr ns2_addr;
 static char dns_suffix[MAX_DOMAIN_LENGTH];
+static const char *status_file;
 
 int get_sig_received(void)
 {
@@ -594,7 +595,6 @@ static void *if_config(void *arg)
 	struct tunnel *tunnel = (struct tunnel *) arg;
 	int timeout = 60000000; // one minute
 
-	current_state = &tunnel->state;
 	log_debug("%s thread\n", __func__);
 
 	// Wait for the right moment to configure IP interface
@@ -625,28 +625,47 @@ error:
 	return NULL;
 }
 
-static void print_statistics(void)
+static void save_stats(void)
 {
+	FILE *fp;
+	const char *state_str;
+
 	if (current_state != NULL) {
 		switch (*current_state) {
 		case STATE_DOWN: {
-			log_info("State: disconnected\n");
+			state_str = "State: disconnected";
 			break;
 		}
 		case STATE_CONNECTING: {
-			log_info("State: connecting\n");
+			state_str = "State: connecting";
 			break;
 		}
 		case STATE_UP: {
-			log_info("State: connected\n");
+			state_str = "State: connected";
 			break;
 		}
 		case STATE_DISCONNECTING: {
-			log_info("State: disconnecting\n");
+			state_str = "State: disconnecting";
 			break;
 		}
 		}
 	}
+	if (status_file[0] != '\0') {
+		fp = fopen(status_file, "w");
+		if (fp != NULL) {
+			fprintf(fp, "State: %s\n", state_str);
+			fprintf(fp, "Received bytes: %lu\n", total_received_bytes);
+			fprintf(fp, "Transmitted bytes: %lu\n", total_transmitted_bytes);
+			fprintf(fp, "IP Address: %s\n", inet_ntoa(ip_addr));
+			fprintf(fp, "NSS1 Address: %s\n", inet_ntoa(ns1_addr));
+			fprintf(fp, "NSS2 Address: %s\n", inet_ntoa(ns2_addr));
+			fprintf(fp, "Domain: %s\n", dns_suffix);
+			fclose(fp);
+		} else {
+			log_error(" Cannot create status file!\n");
+		}
+	}
+	log_info("State: %s\n", state_str);
 	log_info("Received bytes: %lu\n", total_received_bytes);
 	log_info("Transmitted bytes: %lu\n", total_transmitted_bytes);
 	log_info("IP Address: %s\n", inet_ntoa(ip_addr));
@@ -655,10 +674,33 @@ static void print_statistics(void)
 	log_info("Domain: %s\n", dns_suffix);
 }
 
+/*
+ * Thread to print statistics
+ */
+static void *status_thread(void *arg)
+{
+	struct tunnel *tunnel = (struct tunnel *) arg;
+
+	log_debug("%s thread\n", __func__);
+
+	// Wait for the right moment to configure IP interface
+	SEM_WAIT(&sem_if_config);
+	if (tunnel->config->status_file[0] != '\0') {
+		while (1) {
+			current_state = &tunnel->state;
+			save_stats();
+			log_debug("Sleeping statistics thread for %u seconds...",
+			          tunnel->config->status_interval);
+			sleep(tunnel->config->status_interval);
+		}
+	}
+	return NULL;
+}
+
 static void sig_handler(int signo)
 {
 	if (signo == SIGUSR1) {
-		print_statistics();
+		save_stats();
 	} else {
 		sig_received = signo;
 		if (signo == SIGINT || signo == SIGTERM)
@@ -677,6 +719,7 @@ int io_loop(struct tunnel *tunnel)
 	pthread_t ssl_read_thread;
 	pthread_t ssl_write_thread;
 	pthread_t if_config_thread;
+	pthread_t stats_thread;
 
 	SEM_INIT(&sem_pppd_ready, 0, 0);
 	SEM_INIT(&sem_if_config, 0, 0);
@@ -688,6 +731,7 @@ int io_loop(struct tunnel *tunnel)
 	init_ssl_locks();
 
 	init_hdlc();
+	status_file = tunnel->config->status_file;
 
 	/*
 	 * I noticed that using TCP_NODELAY (i.e. disabling Nagle's algorithm)
@@ -759,6 +803,14 @@ int io_loop(struct tunnel *tunnel)
 		goto err_thread;
 	}
 
+	if (status_file[0] != '\0' && tunnel->config->status_interval != 0) {
+		ret = pthread_create(&stats_thread, NULL, status_thread, tunnel);
+		if (ret != 0) {
+			log_debug("Error creating status_thread: %s\n", strerror(ret));
+			goto err_thread;
+		}
+	}
+
 #if !HAVE_MACH_MACH_H
 	// Restore the signal for the main thread
 	pthread_sigmask(SIG_SETMASK, &oldset, NULL);
@@ -772,6 +824,11 @@ int io_loop(struct tunnel *tunnel)
 	ret = pthread_cancel(if_config_thread);
 	if (ret != 0)
 		log_debug("Error canceling if_config_thread: %s\n", strerror(ret));
+	if (status_file[0] != '\0') {
+		ret = pthread_cancel(stats_thread);
+		if (ret != 0)
+			log_debug("Error canceling stats_thread: %s\n", strerror(ret));
+	}
 
 	ret = pthread_cancel(ssl_write_thread);
 	if (ret != 0)
@@ -791,6 +848,13 @@ int io_loop(struct tunnel *tunnel)
 
 	log_info("Cleanup, joining threads...\n");
 	// failure to clean is a possible zombie thread, consider it fatal
+	if (status_file[0] != '\0' && tunnel->config->status_interval != 0) {
+		ret = pthread_join(stats_thread, NULL);
+		if (ret != 0) {
+			log_debug("Error joining stats_thread: %s\n", strerror(ret));
+			fatal = 1;
+		}
+	}
 	ret = pthread_join(if_config_thread, NULL);
 	if (ret != 0) {
 		log_debug("Error joining if_config_thread: %s\n", strerror(ret));

@@ -86,6 +86,8 @@ const struct vpn_config invalid_cfg = {
 	.user_agent = NULL,
 	.hostcheck = NULL,
 	.check_virtual_desktop = NULL,
+	.status_file = {'\0'},
+	.status_interval = 0
 };
 
 /*
@@ -458,6 +460,12 @@ int load_config(struct vpn_config *cfg, const char *filename)
 		} else if (strcmp(key, "check-virtual-desktop") == 0) {
 			free(cfg->check_virtual_desktop);
 			cfg->check_virtual_desktop = strdup(val);
+		} else if (strcmp(key, "status-file") == 0) {
+			strcpy(cfg->status_file, val);
+		} else if (strcmp(key, "status-interval") == 0) {
+			unsigned long status_interval = strtoul(val, NULL, 0);
+
+			cfg->status_interval = status_interval;
 		} else {
 			log_warn("Bad key in config file: \"%s\".\n", key);
 			goto err_free;
@@ -614,4 +622,8 @@ void merge_config(struct vpn_config *dst, struct vpn_config *src)
 		dst->hostcheck = src->hostcheck;
 	if (src->check_virtual_desktop != invalid_cfg.check_virtual_desktop)
 		dst->check_virtual_desktop = src->check_virtual_desktop;
+	if (src->status_file[0])
+		strcpy(dst->status_file, src->status_file);
+	if (src->status_interval != invalid_cfg.status_interval)
+		dst->status_interval = src->status_interval;
 }

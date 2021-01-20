@@ -143,7 +143,11 @@ PPPD_USAGE \
 "                                certificate will be matched against this value.\n" \
 "                                <digest> is the X509 certificate's sha256 sum.\n" \
 "                                This option can be used multiple times to trust\n" \
-"                                several certificates.\n"
+"                                several certificates.\n" \
+"  --status                      Create a status file with statistics.\n" \
+"  --status-interval             Interval between updating status file. \n " \
+"                                If status file is not set, then print it on log.\n" \
+"                                Printing is disabled by default.\n"
 
 #define help_options_part2 \
 "  --insecure-ssl                Do not disable insecure SSL protocols/ciphers.\n" \
@@ -208,6 +212,8 @@ int main(int argc, char **argv)
 		.use_syslog = 0,
 		.half_internet_routes = 0,
 		.persistent = 0,
+		.status_file = {'\0'},
+		.status_interval = 0,
 #if HAVE_RESOLVCONF
 		.use_resolvconf = USE_RESOLVCONF,
 #endif
@@ -270,6 +276,8 @@ int main(int argc, char **argv)
 		{"cipher-list",          required_argument, NULL, 0},
 		{"min-tls",              required_argument, NULL, 0},
 		{"seclevel-1",           no_argument, &cli_cfg.seclevel_1, 1},
+		{"status-file",          required_argument, NULL, 0},
+		{"status-interval",      required_argument, NULL, 0},
 #if HAVE_USR_SBIN_PPPD
 		{"pppd-use-peerdns",     required_argument, NULL, 0},
 		{"pppd-no-peerdns",      no_argument, &cli_cfg.pppd_use_peerdns, 0},
@@ -307,6 +315,7 @@ int main(int argc, char **argv)
 			/* If this option set a flag, do nothing else now. */
 			if (long_options[option_index].flag != 0)
 				break;
+			log_debug("%s\n", long_options[option_index].name);
 			if (strcmp(long_options[option_index].name,
 			           "version") == 0) {
 				printf(VERSION "\n");
@@ -509,6 +518,26 @@ int main(int argc, char **argv)
 				cli_cfg.set_dns = set_dns;
 				break;
 			}
+			if (strcmp(long_options[option_index].name,
+			           "status-file") == 0) {
+				log_debug(" COpying %s\n", optarg);
+				strncpy(cli_cfg.status_file, optarg, STATUS_FILE_SIZE);
+				cli_cfg.status_file[STATUS_FILE_SIZE] = '\0';
+				log_debug(" COpying %s\n", cli_cfg.status_file);
+				break;
+			}
+			if (strcmp(long_options[option_index].name,
+			           "status-interval") == 0) {
+				long status_interval = strtol(optarg, NULL, 0);
+
+				if (status_interval < 0 || status_interval > UINT_MAX) {
+					log_warn("Bad status_interval option: \"%s\"\n",
+					         optarg);
+					break;
+				}
+				cli_cfg.status_interval = status_interval;
+				break;
+			}
 			goto user_error;
 		case 'h':
 			printf("%s%s%s%s%s%s%s", usage, summary,
@@ -625,6 +654,9 @@ int main(int argc, char **argv)
 	log_debug_all("Config password = \"%s\"\n", cfg.password);
 	if (cfg.otp[0] != '\0')
 		log_debug("One-time password = \"%s\"\n", cfg.otp);
+	if (cfg.status_file[0] != '\0')
+		log_debug("Config status-file = \"%s\"\n", cfg.status_file);
+	log_debug("Config status-interval = \"%u\"\n", cfg.status_interval);
 
 	if (geteuid() != 0) {
 		log_error("This process was not spawned with root privileges, which are required.\n");
