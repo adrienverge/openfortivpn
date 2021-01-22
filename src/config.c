@@ -86,6 +86,7 @@ const struct vpn_config invalid_cfg = {
 	.user_agent = NULL,
 	.hostcheck = NULL,
 	.check_virtual_desktop = NULL,
+	.daemonize = 0
 };
 
 /*
@@ -448,6 +449,15 @@ int load_config(struct vpn_config *cfg, const char *filename)
 		} else if (strcmp(key, "check-virtual-desktop") == 0) {
 			free(cfg->check_virtual_desktop);
 			cfg->check_virtual_desktop = strdup(val);
+		} else if (strcmp(key, "daemonize") == 0) {
+			int daemonize = strtob(val);
+
+			if (daemonize < 0) {
+				log_warn("Bad daemonize in config file: \"%s\".\n",
+				         val);
+				continue;
+			}
+			cfg->daemonize = daemonize;
 		} else {
 			log_warn("Bad key in configuration file: \"%s\".\n", key);
 			goto err_close;
@@ -613,4 +623,6 @@ void merge_config(struct vpn_config *dst, struct vpn_config *src)
 		dst->hostcheck = src->hostcheck;
 	if (src->check_virtual_desktop != invalid_cfg.check_virtual_desktop)
 		dst->check_virtual_desktop = src->check_virtual_desktop;
+	if (src->daemonize != invalid_cfg.daemonize)
+		dst->daemonize = src->daemonize;
 }
