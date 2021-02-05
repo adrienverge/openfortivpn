@@ -515,7 +515,7 @@ static int try_otp_auth(struct tunnel *tunnel, const char *buffer,
 		}
 	}
 	if (p == NULL)
-		p = "Please enter one-time password:";
+		p = "Please enter one-time password: ";
 	/* Search for all inputs */
 	while ((s = strcasestr(s, "<INPUT"))) {
 		s += 6;
