@@ -75,6 +75,8 @@ const struct vpn_config invalid_cfg = {
 	.ca_file = NULL,
 	.user_cert = NULL,
 	.user_key = NULL,
+	.pem_passphrase = {'\0'},
+	.pem_passphrase_set = 0,
 	.insecure_ssl = -1,
 	.cipher_list = NULL,
 	.min_tls = -1,
@@ -410,6 +412,10 @@ int load_config(struct vpn_config *cfg, const char *filename)
 		} else if (strcmp(key, "user-key") == 0) {
 			free(cfg->user_key);
 			cfg->user_key = strdup(val);
+		} else if (strcmp(key, "pem-passphrase") == 0) {
+			strncpy(cfg->pem_passphrase, val, PEM_PASSPHRASE_SIZE);
+			cfg->pem_passphrase[PEM_PASSPHRASE_SIZE] = '\0';
+			cfg->pem_passphrase_set = 1;
 		} else if (strcmp(key, "insecure-ssl") == 0) {
 			int insecure_ssl = strtob(val);
 
@@ -578,6 +584,10 @@ void merge_config(struct vpn_config *dst, struct vpn_config *src)
 	if (src->user_key) {
 		free(dst->user_key);
 		dst->user_key = src->user_key;
+	}
+	if (src->pem_passphrase_set) {
+		strcpy(dst->pem_passphrase, src->pem_passphrase);
+		dst->pem_passphrase_set = src->pem_passphrase_set;
 	}
 	if (src->insecure_ssl != invalid_cfg.insecure_ssl)
 		dst->insecure_ssl = src->insecure_ssl;

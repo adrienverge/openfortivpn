@@ -145,6 +145,9 @@ or a partial PKCS11-URI (p11tool --list-token-urls)
 Use specified PEM-encoded key if the server requires authentication with
 a certificate.
 .TP
+\fB\-\-pem-passphrase=\fI<pass>\fR
+Pass phrase for the PEM-encoded key.
+.TP
 \fB\-\-use\-syslog\fR
 Log to syslog instead of terminal.
 .TP
@@ -308,6 +311,8 @@ user\-cert = @SYSCONFDIR@/openfortivpn/user\-cert.pem
 # user\-cert = pkcs1: # use smartcard as client certificate
 .br
 user\-key = @SYSCONFDIR@/openfortivpn/user\-key.pem
+.br
+pem\-passphrase = baz
 .br
 # the sha256 digest of the trusted host certs obtained by
 .br
