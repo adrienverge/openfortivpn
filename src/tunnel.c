@@ -29,6 +29,7 @@
 #include "tunnel.h"
 #include "http.h"
 #include "log.h"
+#include "userinput.h"
 #ifndef HAVE_X509_CHECK_HOST
 #include "openssl_hostname_validation.h"
 #endif
@@ -961,6 +962,41 @@ static void ssl_disconnect(struct tunnel *tunnel)
 }
 
 /*
+ * Query for the pass phrase used for encrypted PEM structures
+ * (normally only private keys).
+ */
+static int pem_passphrase_cb(char *buf, int size, int rwflag, void *u)
+{
+	struct vpn_config *cfg = (struct vpn_config *)u;
+
+	/* We expect to only read PEM pass phrases, not write them. */
+	if (rwflag == 0) {
+		if (!cfg->pem_passphrase_set) {
+			if (size > PEM_PASSPHRASE_SIZE) {
+				read_password(NULL, NULL,
+				              "Enter PEM pass phrase: ",
+				              cfg->pem_passphrase,
+				              PEM_PASSPHRASE_SIZE + 1);
+				cfg->pem_passphrase_set =  1;
+			} else {
+				log_error("Buffer too small for PEM pass phrase: %d.",
+				          size);
+			}
+		}
+		if (cfg->pem_passphrase_set) {
+			assert(strlen(cfg->pem_passphrase) < size);
+			strncpy(buf, cfg->pem_passphrase, size);
+			buf[size - 1] = '\0';
+			return strlen(buf);
+		}
+	} else {
+		log_error("We refuse to write PEM pass phrases!");
+	}
+
+	return -1;
+}
+
+/*
  * Connects to the gateway and initiate an SSL session.
  */
 int ssl_connect(struct tunnel *tunnel)
@@ -1015,6 +1051,10 @@ int ssl_connect(struct tunnel *tunnel)
 			tunnel->config->cipher_list = strdup(cipher_list);
 		}
 	}
+
+	/* Set the password callback for PEM certificates with encryption. */
+	SSL_CTX_set_default_passwd_cb(tunnel->ssl_context, &pem_passphrase_cb);
+	SSL_CTX_set_default_passwd_cb_userdata(tunnel->ssl_context, tunnel->config);
 
 	if (tunnel->config->cipher_list) {
 		log_debug("Setting cipher list to: %s\n", tunnel->config->cipher_list);

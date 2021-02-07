@@ -136,6 +136,7 @@ PPPD_USAGE \
 "  --user-cert=pkcs11:           Use smartcard. Takes also partial or full PKCS11-URI.\n" \
 "  --user-key=<file>             Use specified PEM-encoded key if the server requires\n" \
 "                                authentication with a certificate.\n" \
+"  --pem-passphrase=<pass>       Pass phrase for the PEM-encoded key.\n" \
 "  --use-syslog                  Log to syslog instead of terminal.\n" \
 "  --trusted-cert=<digest>       Trust a given gateway. If classical SSL\n" \
 "                                certificate validation fails, the gateway\n" \
@@ -194,6 +195,7 @@ int main(int argc, char **argv)
 		.gateway_port = 443,
 		.username = {'\0'},
 		.password = {'\0'},
+		.password_set = 0,
 		.otp = {'\0'},
 		.otp_prompt = NULL,
 		.otp_delay = 0,
@@ -223,6 +225,8 @@ int main(int argc, char **argv)
 		.ca_file = NULL,
 		.user_cert = NULL,
 		.user_key = NULL,
+		.pem_passphrase = {'\0'},
+		.pem_passphrase_set = 0,
 		.insecure_ssl = 0,
 #ifdef TLS1_2_VERSION
 		.min_tls = TLS1_2_VERSION,
@@ -238,42 +242,43 @@ int main(int argc, char **argv)
 	struct vpn_config cli_cfg = invalid_cfg;
 
 	const struct option long_options[] = {
-		{"help",            no_argument,       NULL, 'h'},
-		{"version",         no_argument,       NULL, 0},
-		{"config",          required_argument, NULL, 'c'},
-		{"pinentry",        required_argument, NULL, 0},
-		{"realm",           required_argument, NULL, 0},
-		{"username",        required_argument, NULL, 'u'},
-		{"password",        required_argument, NULL, 'p'},
-		{"otp",             required_argument, NULL, 'o'},
-		{"otp-prompt",      required_argument, NULL, 0},
-		{"otp-delay",       required_argument, NULL, 0},
-		{"no-ftm-push",     no_argument, &cli_cfg.no_ftm_push, 1},
-		{"ifname",          required_argument, NULL, 0},
-		{"set-routes",	    required_argument, NULL, 0},
-		{"no-routes",       no_argument, &cli_cfg.set_routes, 0},
+		{"help",                 no_argument,       NULL, 'h'},
+		{"version",              no_argument,       NULL, 0},
+		{"config",               required_argument, NULL, 'c'},
+		{"pinentry",             required_argument, NULL, 0},
+		{"realm",                required_argument, NULL, 0},
+		{"username",             required_argument, NULL, 'u'},
+		{"password",             required_argument, NULL, 'p'},
+		{"otp",                  required_argument, NULL, 'o'},
+		{"otp-prompt",           required_argument, NULL, 0},
+		{"otp-delay",            required_argument, NULL, 0},
+		{"no-ftm-push",          no_argument, &cli_cfg.no_ftm_push, 1},
+		{"ifname",               required_argument, NULL, 0},
+		{"set-routes",	         required_argument, NULL, 0},
+		{"no-routes",            no_argument, &cli_cfg.set_routes, 0},
 		{"half-internet-routes", required_argument, NULL, 0},
-		{"set-dns",         required_argument, NULL, 0},
-		{"no-dns",          no_argument, &cli_cfg.set_dns, 0},
-		{"use-syslog",      no_argument, &cli_cfg.use_syslog, 1},
-		{"persistent",      required_argument, NULL, 0},
-		{"ca-file",         required_argument, NULL, 0},
-		{"user-cert",       required_argument, NULL, 0},
-		{"user-key",        required_argument, NULL, 0},
-		{"trusted-cert",    required_argument, NULL, 0},
-		{"insecure-ssl",    no_argument, &cli_cfg.insecure_ssl, 1},
-		{"cipher-list",     required_argument, NULL, 0},
-		{"min-tls",         required_argument, NULL, 0},
-		{"seclevel-1",      no_argument, &cli_cfg.seclevel_1, 1},
+		{"set-dns",              required_argument, NULL, 0},
+		{"no-dns",               no_argument, &cli_cfg.set_dns, 0},
+		{"use-syslog",           no_argument, &cli_cfg.use_syslog, 1},
+		{"persistent",           required_argument, NULL, 0},
+		{"ca-file",              required_argument, NULL, 0},
+		{"user-cert",            required_argument, NULL, 0},
+		{"user-key",             required_argument, NULL, 0},
+		{"pem-passphrase",       required_argument, NULL, 0},
+		{"trusted-cert",         required_argument, NULL, 0},
+		{"insecure-ssl",         no_argument, &cli_cfg.insecure_ssl, 1},
+		{"cipher-list",          required_argument, NULL, 0},
+		{"min-tls",              required_argument, NULL, 0},
+		{"seclevel-1",           no_argument, &cli_cfg.seclevel_1, 1},
 #if HAVE_USR_SBIN_PPPD
-		{"pppd-use-peerdns", required_argument, NULL, 0},
-		{"pppd-no-peerdns", no_argument, &cli_cfg.pppd_use_peerdns, 0},
-		{"pppd-log",        required_argument, NULL, 0},
-		{"pppd-plugin",     required_argument, NULL, 0},
-		{"pppd-ipparam",    required_argument, NULL, 0},
-		{"pppd-ifname",     required_argument, NULL, 0},
-		{"pppd-call",       required_argument, NULL, 0},
-		{"plugin",          required_argument, NULL, 0}, // deprecated
+		{"pppd-use-peerdns",     required_argument, NULL, 0},
+		{"pppd-no-peerdns",      no_argument, &cli_cfg.pppd_use_peerdns, 0},
+		{"pppd-log",             required_argument, NULL, 0},
+		{"pppd-plugin",          required_argument, NULL, 0},
+		{"pppd-ipparam",         required_argument, NULL, 0},
+		{"pppd-ifname",          required_argument, NULL, 0},
+		{"pppd-call",            required_argument, NULL, 0},
+		{"plugin",               required_argument, NULL, 0}, // deprecated
 #endif
 #if HAVE_USR_SBIN_PPP
 		{"ppp-system",      required_argument, NULL, 0},
@@ -390,6 +395,14 @@ int main(int argc, char **argv)
 			if (strcmp(long_options[option_index].name,
 			           "user-key") == 0) {
 				cli_cfg.user_key = strdup(optarg);
+				break;
+			}
+			if (strcmp(long_options[option_index].name,
+			           "pem-passphrase") == 0) {
+				strncpy(cli_cfg.pem_passphrase, optarg,
+				        PEM_PASSPHRASE_SIZE);
+				cli_cfg.pem_passphrase[PEM_PASSPHRASE_SIZE] = '\0';
+				cli_cfg.pem_passphrase_set = 1;
 				break;
 			}
 			if (strcmp(long_options[option_index].name,

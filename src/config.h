@@ -63,6 +63,7 @@ struct x509_digest {
 #define PASSWORD_SIZE	256
 #define OTP_SIZE	64
 #define REALM_SIZE	63
+#define PEM_PASSPHRASE_SIZE	31
 
 /*
  * RFC 6265 does not limit the size of cookies:
@@ -120,6 +121,8 @@ struct vpn_config {
 	char			*ca_file;
 	char			*user_cert;
 	char			*user_key;
+	char			pem_passphrase[PEM_PASSPHRASE_SIZE + 1];
+	int			pem_passphrase_set;
 	int			insecure_ssl;
 	int			min_tls;
 	int			seclevel_1;
