@@ -884,6 +884,7 @@ int ipv4_add_split_vpn_route(struct tunnel *tunnel, char *dest, char *mask,
 static int ipv4_set_split_routes(struct tunnel *tunnel)
 {
 	int i;
+	struct vpn_config *cfg = tunnel->config;
 
 	for (i = 0; i < tunnel->ipv4.split_routes; i++) {
 		struct rtentry *route;
@@ -901,10 +902,19 @@ static int ipv4_set_split_routes(struct tunnel *tunnel)
 		route_iface(route) = strdup(tunnel->ppp_iface);
 		if (!route_iface(route))
 			return ERR_IPV4_NO_MEM;
+		// in case of manually configured default route into the server, and default route disabled, ignore
+		if (!cfg->set_default_route && route_dest(route).s_addr == 0)
+			continue;
 		if (route_gtw(route).s_addr == tunnel->ipv4.ip_addr.s_addr)
 			route_gtw(route).s_addr = 0;
-		if (route_gtw(route).s_addr == 0)
+		if (route_gtw(route).s_addr == 0) {
+			// when default route disabled, gateway must be set. 
+			// use the local address instead of remote gateway to avoid trouble
+			// with vpn dup configurations
+			if (!cfg->set_default_route)
+				route_gtw(route).s_addr = tunnel->ipv4.ip_addr.s_addr;
 			route->rt_flags &= ~RTF_GATEWAY;
+		}
 		if (route_gtw(route).s_addr != 0)
 			route->rt_flags |= RTF_GATEWAY;
 		ret = ipv4_set_route(route);
@@ -1000,15 +1010,20 @@ static int ipv4_set_default_routes(struct tunnel *tunnel)
 
 int ipv4_set_tunnel_routes(struct tunnel *tunnel)
 {
-	int ret = ipv4_protect_tunnel_route(tunnel);
+	int ret = 0;
+	struct vpn_config *cfg = tunnel->config;
+
+	if (cfg->set_default_route)
+		ret = ipv4_protect_tunnel_route(tunnel);
 
 	if (tunnel->ipv4.split_routes)
 		// try even if ipv4_protect_tunnel_route has failed
 		return ipv4_set_split_routes(tunnel);
-	else if (ret == 0)
-		return ipv4_set_default_routes(tunnel);
-	else
-		return ret;
+	else if (ret == 0) {
+		if (cfg->set_default_route)
+			return ipv4_set_default_routes(tunnel);
+	}
+	return ret;
 }
 
 int ipv4_restore_routes(struct tunnel *tunnel)
@@ -1034,10 +1049,12 @@ int ipv4_restore_routes(struct tunnel *tunnel)
 
 			// Restore the default route. It seems not to be
 			// automatically restored on all linux distributions
-			ret = ipv4_set_route(def_rt);
-			if (ret != 0) {
-				log_warn("Could not restore default route (%s). Already restored?\n",
-				         err_ipv4_str(ret));
+			if (cfg->set_default_route) {
+				ret = ipv4_set_route(def_rt);
+				if (ret != 0) {
+					log_warn("Could not restore default route (%s). Already restored?\n",
+					         err_ipv4_str(ret));
+				}
 			}
 		}
 	} else {
