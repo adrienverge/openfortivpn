@@ -111,6 +111,7 @@ struct vpn_config {
 	char	*pppd_log;
 	char	*pppd_plugin;
 	char	*pppd_ipparam;
+	char	*pppd_keepalive;
 	char	*pppd_ifname;
 	char	*pppd_call;
 #endif
