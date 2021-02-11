@@ -14,6 +14,15 @@ Releases
 This high level changelog is usually updated when a release is tagged.
 On the master branch there may be changes that are not (yet) described here.
 
+### 1.16.0
+
+* [+] support for user key pass phrase
+* [~] add a space at the end of the OTP prompt
+* [-] improve tunnel speed on macOS
+* [-] modify memory allocation in the tunnel configuration structure
+* [+] openfortivpn returns the PPP exit status
+* [+] print SSL socket options in log
+
 ### 1.15.0
 
 * [-] fix issue sending pin codes
