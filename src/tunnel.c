@@ -35,7 +35,9 @@
 #endif
 
 #include <openssl/err.h>
+#ifdef OPENSSL_ENGINE
 #include <openssl/engine.h>
+#endif
 #include <openssl/ui.h>
 #include <openssl/x509v3.h>
 #if HAVE_SYSTEMD
@@ -1106,6 +1108,7 @@ int ssl_connect(struct tunnel *tunnel)
 #endif
 
 	/* Use engine for PIV if user-cert config starts with pkcs11 URI: */
+#ifdef OPENSSL_ENGINE
 	if (tunnel->config->use_engine > 0) {
 		ENGINE *e;
 
@@ -1166,6 +1169,7 @@ int ssl_connect(struct tunnel *tunnel)
 		}
 
 	} else {        /* end PKCS11-engine */
+#endif
 
 		if (tunnel->config->user_cert) {
 			if (!SSL_CTX_use_certificate_file(
@@ -1194,7 +1198,9 @@ int ssl_connect(struct tunnel *tunnel)
 				return 1;
 			}
 		}
+#ifdef OPENSSL_ENGINE
 	}
+#endif /* PKCS11-engine */
 
 	tunnel->ssl_handle = SSL_new(tunnel->ssl_context);
 	if (tunnel->ssl_handle == NULL) {
