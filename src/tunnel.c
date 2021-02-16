@@ -635,15 +635,19 @@ static int tcp_connect(struct tunnel *tunnel)
 #ifdef SO_SNDBUF
 	ret = tcp_getsockopt(handle, SO_SNDBUF);
 	if (ret < 0)
+#ifndef __APPLE__
 		log_warn("getsockopt: %s: %s\n", "SO_SNDBUF", strerror(errno));
 	else
+#endif
 		log_debug("SO_SNDBUF: %d\n", ret);
 #endif
 #ifdef SO_RCVBUF
 	ret = tcp_getsockopt(handle, SO_RCVBUF);
 	if (ret < 0)
+#ifndef __APPLE__
 		log_warn("getsockopt: %s: %s\n", "SO_RCVBUF", strerror(errno));
 	else
+#endif
 		log_debug("SO_RCVBUF: %d\n", ret);
 #endif
 
