@@ -1176,10 +1176,9 @@ int ssl_connect(struct tunnel *tunnel)
 #endif
 
 		if (tunnel->config->user_cert) {
-			if (!SSL_CTX_use_certificate_file(
-			            tunnel->ssl_context, tunnel->config->user_cert,
-			            SSL_FILETYPE_PEM)) {
-				log_error("SSL_CTX_use_certificate_file: %s\n",
+			if (!SSL_CTX_use_certificate_chain_file(
+			            tunnel->ssl_context, tunnel->config->user_cert)) {
+				log_error("SSL_CTX_use_certificate_chain_file: %s\n",
 				          ERR_error_string(ERR_peek_last_error(), NULL));
 				return 1;
 			}
