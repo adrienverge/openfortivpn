@@ -18,7 +18,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Install Dependencies
-        run: ./tests/ci/install_astyle.sh $HOME/.openfortivpn-deps
+        run: sudo apt-get install -y astyle
 
       - name: Artistic Style
         run: ./tests/lint/astyle.sh $(git ls-files '*.[ch]' | grep -v openssl_hostname_validation)
