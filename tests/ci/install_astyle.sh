@@ -4,7 +4,7 @@ set -e
 
 PREFIX="$1"
 
-ln -fs "${PREFIX}/bin/astyle" "${HOME}/bin/astyle"
+ln -fs "${PREFIX}/bin/astyle" "${HOME}/.local/bin/astyle"
 [ -x "${PREFIX}/bin/astyle" ] && exit 0
 
 VERSION=3.1

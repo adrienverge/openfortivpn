@@ -1,0 +1,51 @@
+---
+name: Tests
+
+on:
+  push:
+    branches-ignore: [master]
+    # Remove the line above to run when pushing to master
+  pull_request:
+    branches: [master]
+
+jobs:
+  astyle:
+    name: Style
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Install Dependencies
+        run: ./tests/ci/install_astyle.sh $HOME/.openfortivpn-deps
+
+      - name: Artistic Style
+        run: ./tests/lint/astyle.sh $(git ls-files '*.[ch]' | grep -v openssl_hostname_validation)
+
+      - name: Linux Kernel Coding Style
+        run: ./tests/lint/checkpatch.sh $(git ls-files '*.[ch]' | grep -v openssl_hostname_validation)
+
+      - name: EOL at EOF
+        run: ./tests/lint/eol-at-eof.sh $(git ls-files | grep -v openssl_hostname_validation)
+
+      - name: Line Length
+        run: ./tests/lint/line_length.py $(git ls-files '*.[ch]' | grep -v openssl_hostname_validation)
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Install Dependencies
+        run: ./tests/ci/install_openssl.sh $HOME/.openfortivpn-deps
+
+      - name: Build
+        run: |
+          ./autogen.sh
+          export PKG_CONFIG_PATH="$HOME/.openfortivpn-deps/lib/pkgconfig"
+          ./configure --prefix=/usr --sysconfdir=/etc
+          make
