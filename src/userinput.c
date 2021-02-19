@@ -213,20 +213,20 @@ static void pinentry_read_password(const char *pinentry, const char *hint,
 		close(to_pinentry[1]);
 		if (dup2(to_pinentry[0], STDIN_FILENO) == -1) {
 			perror("dup2");
-			exit(1);
+			exit(EXIT_FAILURE);
 		}
 		close(to_pinentry[0]);
 
 		close(from_pinentry[0]);
 		if (dup2(from_pinentry[1], STDOUT_FILENO) == -1) {
 			perror("dup2");
-			exit(1);
+			exit(EXIT_FAILURE);
 		}
 		close(from_pinentry[1]);
 
 		execlp(pinentry, pinentry, NULL);
 		perror(pinentry);
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
 	close(to_pinentry[0]);
