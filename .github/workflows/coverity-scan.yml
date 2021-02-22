@@ -1,0 +1,43 @@
+---
+name: Synopsys
+
+on:
+  push:
+    branches: [coverity_scan]
+
+jobs:
+  coverity-scan:
+    name: Coverity Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Download the Coverity Scan Build Tool
+        run: |
+          wget -q https://scan.coverity.com/download/cxx/linux64 --post-data "token=$TOKEN&project=adrienverge%2Fopenfortivpn" -O cov-analysis-linux64.tar.gz
+          mkdir cov-analysis-linux64
+          tar xzf cov-analysis-linux64.tar.gz --strip 1 -C cov-analysis-linux64
+        env:
+          TOKEN: ${{ secrets.COVERITY_SCAN_TOKEN }}
+
+      - name: Build
+        run: |
+          ./autogen.sh
+          ./configure --prefix=/usr --sysconfdir=/etc
+          export PATH=`pwd`/cov-analysis-linux64/bin:$PATH
+          cov-build --dir cov-int make
+
+      - name: Upload the Project Build
+        run: |
+          tar caf openfortivpn.xz cov-int
+          curl \
+            --form token=$TOKEN \
+            --form email=DimitriPapadopoulos@users.noreply.github.com \
+            --form file=@openfortivpn.xz \
+            --form version=coverity_scan \
+            --form description="Client for PPP+SSL VPN tunnel services" \
+            https://scan.coverity.com/builds?project=adrienverge%2Fopenfortivpn
+        env:
+          TOKEN: ${{ secrets.COVERITY_SCAN_TOKEN }}
