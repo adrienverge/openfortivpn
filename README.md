@@ -109,7 +109,7 @@ or [install MacPorts](https://www.macports.org/install.php) then install openfor
 sudo port install openfortivpn
 ```
 
-A more complete overview can be obtained from repology
+A more complete overview can be obtained from repology:
 
 [![Packaging status](https://repology.org/badge/vertical-allrepos/openfortivpn.svg)](https://repology.org/project/openfortivpn/versions)
 
