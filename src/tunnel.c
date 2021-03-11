@@ -1019,9 +1019,11 @@ int ssl_connect(struct tunnel *tunnel)
 	SSL_load_error_strings();
 	// Register the available ciphers and digests
 	SSL_library_init();
-#endif
 
 	tunnel->ssl_context = SSL_CTX_new(SSLv23_client_method());
+#else
+	tunnel->ssl_context = SSL_CTX_new(TLS_client_method());
+#endif
 	if (tunnel->ssl_context == NULL) {
 		log_error("SSL_CTX_new: %s\n",
 		          ERR_error_string(ERR_peek_last_error(), NULL));
