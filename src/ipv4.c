@@ -45,6 +45,10 @@ static char show_route_buffer[SHOW_ROUTE_BUFFER_SIZE];
 #define ERR_IPV4_NO_SUCH_ROUTE	-4
 #define ERR_IPV4_PROC_NET_ROUTE	-5
 
+#ifndef RESOLV_CONF_FILE_PATH
+#define RESOLV_CONF_FILE_PATH "/etc/resolv.conf"
+#endif
+
 static inline const char *err_ipv4_str(int code)
 {
 	if (code == ERR_IPV4_SEE_ERRNO)
@@ -1120,36 +1124,36 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 		free(resolvconf_call);
 	} else {
 #endif
-		log_debug("Attempting to modify /etc/resolv.conf directly.\n");
-		file = fopen("/etc/resolv.conf", "r+");
+		log_debug("Attempting to modify " RESOLV_CONF_FILE_PATH " directly.\n");
+		file = fopen(RESOLV_CONF_FILE_PATH, "r+");
 		if (file == NULL) {
-			log_warn("Could not open /etc/resolv.conf (%s).\n",
+			log_warn("Could not open " RESOLV_CONF_FILE_PATH " (%s).\n",
 			         strerror(errno));
 			return 1;
 		}
 
 		if (fstat(fileno(file), &stat) == -1) {
-			log_warn("Could not stat /etc/resolv.conf (%s).\n",
+			log_warn("Could not stat " RESOLV_CONF_FILE_PATH " (%s).\n",
 			         strerror(errno));
 			goto err_close;
 		}
 
 		if (stat.st_size == 0) {
-			log_warn("Could not read /etc/resolv.conf (%s).\n",
+			log_warn("Could not read " RESOLV_CONF_FILE_PATH " (%s).\n",
 			         "Empty file");
 			goto err_close;
 		}
 
 		buffer = malloc(stat.st_size + 1);
 		if (buffer == NULL) {
-			log_warn("Could not read /etc/resolv.conf (%s).\n",
+			log_warn("Could not read " RESOLV_CONF_FILE_PATH " (%s).\n",
 			         strerror(errno));
 			goto err_close;
 		}
 
 		// Copy all file contents at once
 		if (fread(buffer, stat.st_size, 1, file) != 1) {
-			log_warn("Could not read /etc/resolv.conf.\n");
+			log_warn("Could not read "RESOLV_CONF_FILE_PATH ".\n");
 			goto err_free;
 		}
 
@@ -1189,24 +1193,24 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 		     line = strtok_r(NULL, "\n", &saveptr)) {
 			if (strcmp(line, ns1) == 0) {
 				tunnel->ipv4.ns1_was_there = 1;
-				log_debug("ns1 already present in /etc/resolv.conf.\n");
+				log_debug("ns1 already present in " RESOLV_CONF_FILE_PATH ".\n");
 			}
 		}
 
 		if (tunnel->ipv4.ns1_was_there == 0)
-			log_debug("Adding \"%s\", to /etc/resolv.conf.\n", ns1);
+			log_debug("Adding \"%s\", to " RESOLV_CONF_FILE_PATH " .\n", ns1);
 
 		for (const char *line = strtok_r(buffer, "\n", &saveptr);
 		     line != NULL;
 		     line = strtok_r(NULL, "\n", &saveptr)) {
 			if (strcmp(line, ns2) == 0) {
 				tunnel->ipv4.ns2_was_there = 1;
-				log_debug("ns2 already present in /etc/resolv.conf.\n");
+				log_debug("ns2 already present in " RESOLV_CONF_FILE_PATH ".\n");
 			}
 		}
 
 		if (tunnel->ipv4.ns2_was_there == 0)
-			log_debug("Adding \"%s\", to /etc/resolv.conf.\n", ns2);
+			log_debug("Adding \"%s\", to " RESOLV_CONF_FILE_PATH ".\n", ns2);
 
 		if (dns_suffix[0] == '\0') {
 			tunnel->ipv4.dns_suffix_was_there = -1;
@@ -1217,17 +1221,18 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 				if (dns_suffix[0] != '\0'
 				    && strcmp(line, dns_suffix) == 0) {
 					tunnel->ipv4.dns_suffix_was_there = 1;
-					log_debug("dns_suffix already present in /etc/resolv.conf.\n");
+					log_debug("dns_suffix already present in " RESOLV_CONF_FILE_PATH ".\n");
 				}
 			}
 		}
 
 		if (tunnel->ipv4.dns_suffix_was_there == 0)
-			log_debug("Adding \"%s\", to /etc/resolv.conf.\n", dns_suffix);
+			log_debug("Adding \"%s\", to " RESOLV_CONF_FILE_PATH ".\n",
+			          dns_suffix);
 
 		rewind(file);
 		if (fread(buffer, stat.st_size, 1, file) != 1) {
-			log_warn("Could not read /etc/resolv.conf.\n");
+			log_warn("Could not read " RESOLV_CONF_FILE_PATH ".\n");
 			goto err_free;
 		}
 
@@ -1263,7 +1268,7 @@ err_close:
 	if (use_resolvconf == 0) {
 #endif
 		if (fclose(file))
-			log_warn("Could not close /etc/resolv.conf: %s\n",
+			log_warn("Could not close " RESOLV_CONF_FILE_PATH": %s\n",
 			         strerror(errno));
 #if HAVE_RESOLVCONF
 	} else {
@@ -1321,29 +1326,29 @@ int ipv4_del_nameservers_from_resolv_conf(struct tunnel *tunnel)
 	}
 #endif
 
-	file = fopen("/etc/resolv.conf", "r+");
+	file = fopen(RESOLV_CONF_FILE_PATH, "r+");
 	if (file == NULL) {
-		log_warn("Could not open /etc/resolv.conf (%s).\n",
+		log_warn("Could not open " RESOLV_CONF_FILE_PATH " (%s).\n",
 		         strerror(errno));
 		return 1;
 	}
 
 	if (fstat(fileno(file), &stat) == -1) {
-		log_warn("Could not stat /etc/resolv.conf (%s).\n",
+		log_warn("Could not stat " RESOLV_CONF_FILE_PATH " (%s).\n",
 		         strerror(errno));
 		goto err_close;
 	}
 
 	buffer = malloc(stat.st_size + 1);
 	if (buffer == NULL) {
-		log_warn("Could not read /etc/resolv.conf (%s).\n",
+		log_warn("Could not read " RESOLV_CONF_FILE_PATH " (%s).\n",
 		         strerror(errno));
 		goto err_close;
 	}
 
 	// Copy all file contents at once
 	if (fread(buffer, stat.st_size, 1, file) != 1) {
-		log_warn("Could not read /etc/resolv.conf.\n");
+		log_warn("Could not read " RESOLV_CONF_FILE_PATH ".\n");
 		goto err_free;
 	}
 
@@ -1365,9 +1370,9 @@ int ipv4_del_nameservers_from_resolv_conf(struct tunnel *tunnel)
 		strncat(dns_suffix, tunnel->ipv4.dns_suffix, MAX_DOMAIN_LENGTH);
 	}
 
-	file = freopen("/etc/resolv.conf", "w", file);
+	file = freopen(RESOLV_CONF_FILE_PATH, "w", file);
 	if (file == NULL) {
-		log_warn("Could not reopen /etc/resolv.conf (%s).\n",
+		log_warn("Could not reopen " RESOLV_CONF_FILE_PATH " (%s).\n",
 		         strerror(errno));
 		goto err_free;
 	}
@@ -1377,13 +1382,16 @@ int ipv4_del_nameservers_from_resolv_conf(struct tunnel *tunnel)
 	     line = strtok_r(NULL, "\n", &saveptr)) {
 		if (ns1[0] != '\0' && strcmp(line, ns1) == 0
 		    && (tunnel->ipv4.ns1_was_there == 0)) {
-			log_debug("Deleting \"%s\" from /etc/resolv.conf.\n", ns1);
+			log_debug("Deleting \"%s\" from " RESOLV_CONF_FILE_PATH ".\n",
+			          ns1);
 		} else if (ns2[0] != '\0' && strcmp(line, ns2) == 0
 		           && (tunnel->ipv4.ns2_was_there == 0)) {
-			log_debug("Deleting \"%s\" from /etc/resolv.conf.\n", ns2);
+			log_debug("Deleting \"%s\" from " RESOLV_CONF_FILE_PATH ".\n",
+			          ns2);
 		} else if (dns_suffix[0] != '\0' && strcmp(line, dns_suffix) == 0
 		           && (tunnel->ipv4.dns_suffix_was_there == 0)) {
-			log_debug("Deleting \"%s\" from /etc/resolv.conf.\n", dns_suffix);
+			log_debug("Deleting \"%s\" from " RESOLV_CONF_FILE_PATH ".\n",
+			          dns_suffix);
 		} else {
 			fputs(line, file);
 			fputs("\n", file);
@@ -1396,7 +1404,7 @@ err_free:
 	free(buffer);
 err_close:
 	if (file && fclose(file))
-		log_warn("Could not close /etc/resolv.conf (%s).\n",
+		log_warn("Could not close " RESOLV_CONF_FILE_PATH " (%s).\n",
 		         strerror(errno));
 	return ret;
 }

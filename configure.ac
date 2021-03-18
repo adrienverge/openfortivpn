@@ -103,8 +103,6 @@ AC_TYPE_UINT8_T
 AC_CHECK_TYPES([struct termios], [], [], [#include <termios.h>])
 
 # Checks for library functions.
-AC_FUNC_MALLOC
-AC_FUNC_REALLOC
 AC_CHECK_FUNCS([ \
 access \
 atoi \
@@ -125,7 +123,6 @@ fputs \
 fread \
 free \
 freeaddrinfo \
-freeifaddrs \
 freopen \
 fwrite \
 gai_strerror \
@@ -133,7 +130,6 @@ getaddrinfo \
 getchar \
 getenv \
 geteuid \
-getifaddrs \
 getopt_long \
 htons \
 index \
@@ -320,26 +316,34 @@ AS_IF([test "x$enable_proc" = "x"], [
 # check for ppp if not specified
 AC_PATH_PROG(PPP, [ppp], [/usr/sbin/ppp], "$PATH:/sbin:/usr/sbin")
 AS_IF([test "x$PPP_PATH" = "x"], [
-	AC_CHECK_FILE([$PPP], [
-		AS_IF([test "x$PPP_PATH" = "x"], [
-			PPP_PATH="$PPP"
-		])
-		AS_IF([test "x$with_ppp" = "x"], [
-			with_ppp="yes"
-		])
-	],[])
+	if test "$cross_compiling" = "yes"; then
+		AC_MSG_NOTICE([Cross compiling, ommited PPP path check])
+	else
+		AC_CHECK_FILE([$PPP], [
+			AS_IF([test "x$PPP_PATH" = "x"], [
+				PPP_PATH="$PPP"
+			])
+			AS_IF([test "x$with_ppp" = "x"], [
+				with_ppp="yes"
+			])
+		],[])
+	fi
 ])
 # check for pppd if not specified
 AC_PATH_PROG(PPPD, [pppd], [/usr/sbin/pppd], "$PATH:/sbin:/usr/sbin")
 AS_IF([test "x$PPP_PATH" = "x"], [
-	AC_CHECK_FILE([$PPPD], [
-		AS_IF([test "x$PPP_PATH" = "x"], [
-			PPP_PATH="$PPPD"
-		])
-		AS_IF([test "x$with_pppd" = "x"], [
-			with_pppd="yes"
-		])
-	],[])
+	if test "$cross_compiling" = "yes"; then
+		AC_MSG_NOTICE([Cross compiling, ommited PPP path check])
+	else
+		AC_CHECK_FILE([$PPPD], [
+			AS_IF([test "x$PPP_PATH" = "x"], [
+				PPP_PATH="$PPPD"
+			])
+			AS_IF([test "x$with_pppd" = "x"], [
+				with_pppd="yes"
+			])
+		],[])
+	fi
 ])
 # when neither ppp nor pppd are enabled fall back to a sensible choice for the platform
 AS_IF([test "x$with_ppp" = "x" -a "x$with_pppd" = "x"], [
@@ -487,6 +491,50 @@ int main(int argc, char **argv){
 	AC_MSG_NOTICE([HAVE_SO_BINDTODEVICE... 0])
 ])
 
+AC_ARG_WITH([resolvconf-config-file],
+	AS_HELP_STRING([--with-resolvconf-config-file],
+		       [Set the path to the resolv.conf config file. \
+		        Default is /etc/resolv.conf.]),
+	AC_DEFINE_UNQUOTED([RESOLV_CONF_FILE_PATH],["$withval"])
+)
+
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([
+#include <sys/types.h>
+#if STDC_HEADERS
+#include <stdlib.h>
+#include <stddef.h>
+#endif
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <ifaddrs.h>
+#include <netdb.h>
+int main(int argc, char **argv){
+	struct ifaddrs *ifp = NULL;
+	int ret = getifaddrs (&ifp);
+	freeifaddrs(ifp);
+}
+])], [
+	libreplace_required=no
+	AC_MSG_NOTICE([HAVE_IFADDRS... 1])
+],[
+	libreplace_required=yes
+	AC_MSG_NOTICE([HAVE_IFADDRS... 0])
+])
+
+AC_ARG_ENABLE([libreplace],
+	[AS_HELP_STRING([--enable-libreplace], [Force to use libreplace ifaddrs implementation])],
+	[enable_libreplace=yes],
+	[enable_libreplace=no])
+AS_CASE(["$enable_libreplace"],
+	[yes], [
+		AC_MSG_NOTICE([Force using libreplace...])
+	],
+	[no], [
+	],
+	[AC_MSG_ERROR([unknown option '$enable_libreplace' for --enable-libreplace])])
+AS_IF([test "x$enable_libreplace" != "xno" -o "x$libreplace_required" != "xno"], [AC_DEFINE([HAVE_IFADDRS],[0])], [AC_DEFINE([HAVE_IFADDRS],[1])])
+AM_CONDITIONAL([LIBREPLACE_REQUIRED], [test "x$enable_libreplace" = "xyes" -o "x$libreplace_required" = "xyes"])
 
 # prepare to get rid of obsolete code (FortiOS 4)
 AC_ARG_ENABLE([obsolete],
