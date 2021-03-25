@@ -8,6 +8,7 @@ openfortivpn \- Client for PPP+SSL VPN tunnel services
 [\fI<host>\fR[:\fI<port>\fR]]
 [\fB\-u\fR \fI<user>\fR]
 [\fB\-p\fR \fI<pass>\fR]
+[\fB\-\-pinentry=\fI<name>\fR]
 [\fB\-\-otp=\fI<otp>\fR]
 [\fB\-\-otp\-prompt=\fI<prompt>\fR]
 [\fB\-\-otp\-delay=\fI<delay>\fR]
@@ -68,7 +69,11 @@ Specify a custom config file (default: @SYSCONFDIR@/openfortivpn/config).
 VPN account username.
 .TP
 \fB\-p \fI<pass>\fR, \fB\-\-password=\fI<pass>\fR
-VPN account password.
+VPN account password in plain text. For a secure alternative, use pinentry.
+.TP
+\fB\-\-pinentry=\fI<name>\fR
+The pinentry program to use. Allows supplying the password in a secure manner.
+For example: pinentry-gnome3 on Linux, or pinentry-mac on macOS.
 .TP
 \fB\-o \fI<otp>\fR, \fB\-\-otp=\fI<otp>\fR
 One-Time-Password.
@@ -288,7 +293,13 @@ port = 443
 .br
 username = foo
 .br
-password = bar
+# Password in plain text. For a secure alternative, use pinentry.
+.br
+# password = bar
+.br
+# The pinentry program to use. Allows supplying the password in a secure manner.
+.br
+# pinentry = pinentry-mac
 .br
 # realm = some-realm
 .br
@@ -303,8 +314,6 @@ password = bar
 # This would disable FTM push notification support, and use OTP instead
 .br
 # no\-ftm\-push = 1
-.br
-# pinentry = pinentry program
 .br
 user\-cert = @SYSCONFDIR@/openfortivpn/user\-cert.pem
 .br

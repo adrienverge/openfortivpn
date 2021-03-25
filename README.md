@@ -7,8 +7,13 @@ this process.
 
 It is compatible with Fortinet VPNs.
 
-
+Usage
 --------
+
+```
+man openfortivpn
+```
+
 Examples
 --------
 
@@ -24,7 +29,7 @@ Examples
 
 * Don't set IP routes and don't add VPN nameservers to `/etc/resolv.conf`:
   ```
-  openfortivpn vpn-gateway:8443 -u foo -p bar --no-routes --no-dns --pppd-no-peerdns
+  openfortivpn vpn-gateway:8443 -u foo --no-routes --no-dns --pppd-no-peerdns
   ```
 * Using a config file:
   ```
@@ -37,15 +42,19 @@ Examples
   port = 8443
   username = foo
   password = bar
-  set-routes = 0
+  # The pinentry program to use. Allows supplying the password in a secure manner. See the man page for details.
+  # pinentry = pinentry-mac
   set-dns = 0
   pppd-use-peerdns = 0
   # X509 certificate sha256 sum, trust only this one!
   trusted-cert = e46d4aff08ba6914e64daa85bc6112a422fa7ce16631bff0b592a28556f993db
   ```
 
+* For the full list of config options, see the `CONFIG FILE` section of
+  ```
+  man openfortivpn
+  ```
 
----------
 Smartcard
 ---------
 
@@ -73,9 +82,6 @@ Multiple readers are currently not supported.
 Smartcard support has been tested with Yubikey under Linux, but other PIV enabled
 smartcards may work too. On Mac OS X Mojave it is known that the pkcs engine-by-id is not found.
 
-
-
-----------
 Installing
 ----------
 
@@ -160,7 +166,6 @@ For other distros, you'll need to build and install from source:
 
     Finally, install runtime dependency `ppp` or `pppd`.
 
-----------------
 Running as root?
 ----------------
 
@@ -189,8 +194,6 @@ As described in [#54](https://github.com/adrienverge/openfortivpn/issues/54),
 a malicious user could use `--pppd-plugin` and `--pppd-log` options to divert
 the program's behaviour.
 
-
-------------
 Contributing
 ------------
 
