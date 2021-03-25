@@ -228,7 +228,7 @@ Increase verbosity. Can be used multiple times to be even more verbose.
 \fB\-q\fR
 Decrease verbosity. Can be used multiple times to be even less verbose.
 
-.SH ENVIRONMENT and proxy support
+.SH ENVIRONMENT VARIABLES and proxy support
 .B openfortivpn
 can be run behind an HTTP proxy that supports the HTTP connect command.
 It checks if one of the environment variables
