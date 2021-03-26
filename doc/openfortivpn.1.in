@@ -69,7 +69,8 @@ Specify a custom config file (default: @SYSCONFDIR@/openfortivpn/config).
 VPN account username.
 .TP
 \fB\-p \fI<pass>\fR, \fB\-\-password=\fI<pass>\fR
-VPN account password in plain text. For a secure alternative, use pinentry.
+VPN account password in plain text.
+For a secure alternative, use pinentry or let openfortivpn prompt for the password.
 .TP
 \fB\-\-pinentry=\fI<name>\fR
 The pinentry program to use. Allows supplying the password in a secure manner.
@@ -293,7 +294,9 @@ port = 443
 .br
 username = foo
 .br
-# Password in plain text. For a secure alternative, use pinentry.
+# Password in plain text.
+.br
+# For a secure alternative, use pinentry or let openfortivpn prompt for the password.
 .br
 # password = bar
 .br
