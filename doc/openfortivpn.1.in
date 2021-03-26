@@ -378,3 +378,10 @@ cipher\-list = HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4
 persistent = 0
 .br
 seclevel-1 = 0
+
+.SH SEE ALSO
+
+The \fBopenfortivpn\fR home page
+(\fIhttps://github.com/adrienverge/openfortivpn\fR)
+provides a short introduction in the \fBREADME\fR file and additional
+information under the \fBWiki\fR tab.
