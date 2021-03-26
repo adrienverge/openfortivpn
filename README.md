@@ -27,6 +27,11 @@ Examples
   openfortivpn vpn-gateway:8443 --username=foo --realm=bar
   ```
 
+* Store password securely with a pinentry program:
+  ```
+  openfortivpn vpn-gateway:8443 --username=foo --pinentry=pinentry-mac
+  ```
+
 * Don't set IP routes and don't add VPN nameservers to `/etc/resolv.conf`:
   ```
   openfortivpn vpn-gateway:8443 -u foo --no-routes --no-dns --pppd-no-peerdns
@@ -41,9 +46,6 @@ Examples
   host = vpn-gateway
   port = 8443
   username = foo
-  password = bar
-  # The pinentry program to use. Allows supplying the password in a secure manner. See the man page for details.
-  # pinentry = pinentry-mac
   set-dns = 0
   pppd-use-peerdns = 0
   # X509 certificate sha256 sum, trust only this one!
