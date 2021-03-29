@@ -108,7 +108,7 @@ PPPD_USAGE \
 "Options:\n" \
 "  -h --help                     Show this help message and exit.\n" \
 "  --version                     Show version and exit.\n" \
-"  -c <file>, --config=<file>    Specify a custom config file (default:\n" \
+"  -c <file>, --config=<file>    Specify a custom configuration file (default:\n" \
 "                                " SYSCONFDIR "/openfortivpn/config).\n" \
 "  -u <user>, --username=<user>  VPN account username.\n" \
 "  -p <pass>, --password=<pass>  VPN account password.\n" \
@@ -168,12 +168,12 @@ PPPD_USAGE \
 
 #define help_config \
 "\n" \
-"Config file:\n" \
+"Configuration file:\n" \
 "  Options can be taken from a configuration file. Options passed in the\n" \
-"  command line will override those from the config file, though. The default\n" \
-"  config file is " SYSCONFDIR "/openfortivpn/config,\n" \
+"  command line will override those from the configuration file, though. The\n" \
+"  default configuration file is " SYSCONFDIR "/openfortivpn/config,\n" \
 "  but this can be set using the -c option.\n" \
-"  A simple config file example looks like:\n" \
+"  A simple configuration file example looks like:\n" \
 "      # this is a comment\n" \
 "      host = vpn-gateway\n" \
 "      port = 8443\n" \
@@ -181,7 +181,7 @@ PPPD_USAGE \
 "      password = bar\n" \
 "      trusted-cert = certificatedigest4daa8c5fe6c...\n" \
 "      trusted-cert = othercertificatedigest6631bf...\n" \
-"  For a full-featured config see man openfortivpn(1).\n"
+"  For a full-featured configuration see man openfortivpn(1).\n"
 
 int main(int argc, char **argv)
 {
@@ -549,7 +549,7 @@ int main(int argc, char **argv)
 		goto user_error;
 
 	if (cli_cfg.password[0] != '\0')
-		log_warn("You should not pass the password on the command line. Type it interactively or use a config file instead.\n");
+		log_warn("You should not pass the password on the command line. Type it interactively or use a configuration file instead.\n");
 
 	log_debug_all("ATTENTION: the output contains sensitive information such as the THE CLEAR TEXT PASSWORD.\n");
 
@@ -557,13 +557,13 @@ int main(int argc, char **argv)
 	if (strcmp(&REVISION[1], VERSION))
 		log_debug("revision " REVISION "\n");
 
-	// Load config file
+	// Load configuration file
 	if (config_file[0] != '\0') {
 		ret = load_config(&cfg, config_file);
 		if (ret == 0)
-			log_debug("Loaded config file \"%s\".\n", config_file);
+			log_debug("Loaded configuration file \"%s\".\n", config_file);
 		else
-			log_warn("Could not load config file \"%s\" (%s).\n",
+			log_warn("Could not load configuration file \"%s\" (%s).\n",
 			         config_file, err_cfg_str(ret));
 	}
 	if (cli_cfg.password_set) {
@@ -571,14 +571,14 @@ int main(int argc, char **argv)
 			log_debug("Disabled password due to empty command-line option\n");
 	} else if (cfg.password_set) {
 		if (cfg.password[0] == '\0')
-			log_debug("Disabled password due to empty entry in config file \"%s\"\n",
+			log_debug("Disabled password due to empty entry in configuration file \"%s\"\n",
 			          config_file);
 		else
-			log_debug("Loaded password from config file \"%s\"\n",
+			log_debug("Loaded password from configuration file \"%s\"\n",
 			          config_file);
 	}
 
-	// Then apply CLI config
+	// Then apply CLI configuration
 	merge_config(&cfg, &cli_cfg);
 	set_syslog(cfg.use_syslog);
 
@@ -617,12 +617,12 @@ int main(int argc, char **argv)
 		              "password", "VPN account password: ",
 		              cfg.password, PASSWORD_SIZE);
 	}
-	log_debug("Config host = \"%s\"\n", cfg.gateway_host);
-	log_debug("Config realm = \"%s\"\n", cfg.realm);
-	log_debug("Config port = \"%d\"\n", cfg.gateway_port);
+	log_debug("Configuration host = \"%s\"\n", cfg.gateway_host);
+	log_debug("Configuration realm = \"%s\"\n", cfg.realm);
+	log_debug("Configuration port = \"%d\"\n", cfg.gateway_port);
 	if (cfg.username[0] != '\0')
-		log_debug("Config username = \"%s\"\n", cfg.username);
-	log_debug_all("Config password = \"%s\"\n", cfg.password);
+		log_debug("Configuration username = \"%s\"\n", cfg.username);
+	log_debug_all("Configuration password = \"%s\"\n", cfg.password);
 	if (cfg.otp[0] != '\0')
 		log_debug("One-time password = \"%s\"\n", cfg.otp);
 

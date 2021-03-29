@@ -36,7 +36,7 @@ Examples
   ```
   openfortivpn vpn-gateway:8443 -u foo --no-routes --no-dns --pppd-no-peerdns
   ```
-* Using a config file:
+* Using a configuration file:
   ```
   openfortivpn -c /etc/openfortivpn/my-config
   ```

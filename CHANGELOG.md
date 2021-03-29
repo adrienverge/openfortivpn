@@ -82,7 +82,7 @@ On the master branch there may be changes that are not (yet) described here.
 * [-] fix CVE-2020-7041: incorrect use of X509_check_host (regarding return value).
 * [-] always hide cleartest password in -vv output
 * [+] add a clear warning about sensitive information in the debug output
-* [+] add a hint in debug output when password is read from config file
+* [+] add a hint in debug output when password is read from configuration file
 * [-] fix segfault when connecting with empty password
 * [+] use resolvconf if available to update resolv.conf file
 * [~] replace semicolon by space in dns-suffix string
@@ -146,7 +146,7 @@ On the master branch there may be changes that are not (yet) described here.
 * [~] Invert order of ssl libraries (this may help linking on some platforms)
 * [+] Add FreeBSD support and redesigned the autoconf mechanism
 * [+] Support building with gcc 8
-* [-] Prioritize command line arguments over config file parameters
+* [-] Prioritize command line arguments over configuration file parameters
 * [~] Dynamically allocate routing buffer and therefore allow larger routing table
 * [+] Support systemd notification upon tunnel up
 * [+] Support building in a separate directory
@@ -156,7 +156,7 @@ On the master branch there may be changes that are not (yet) described here.
 
 ### 1.7.1
 
-* [~] Be more tolerant about white space in config file
+* [~] Be more tolerant about white space in configuration file
 * [~] Make better usage of pkg-config
 * [~] Rework linking against OpenSSL
 * [-] Build again on Mac OSX where pthread_mutexattr_setrobust is not available
@@ -164,7 +164,7 @@ On the master branch there may be changes that are not (yet) described here.
 ### 1.7.0
 
 * [~] Correctly set up route to vpn gateway (add support for some particular situations)
-* [+] Support two factor authentication with config file (for NM-plugin)
+* [+] Support two factor authentication with configuration file (for NM-plugin)
 * [~] Change the ip address in the pppd call parameters by a rfc3330 test-net address
 * [-] Correctly report the exit status codes of pppd
 * [+] Add --pppd-call option
@@ -181,7 +181,7 @@ On the master branch there may be changes that are not (yet) described here.
 * [+] Support pppd ifname option
 * [+] Print a clear error message at runtime if pppd does not exist
 * [+] Print clear text error messages of pppd upon failure
-* [~] Existing config file is not overwritten anymore at installation time
+* [~] Existing configuration file is not overwritten anymore at installation time
 * [~] Increase the accepted cookie size and align the error behavior according to RFCs
 * [-] More gracefully handle unexcpected content of resolv.conf
 * [~] Dynamically allocate memory for split routes and thus support larger numbers of routes
@@ -190,10 +190,10 @@ On the master branch there may be changes that are not (yet) described here.
 
 * [~] Improve error handling around the call of pppd
 * [+] Add half-internet-routes option
-* [-] realm was not recognized in the config file
+* [-] realm was not recognized in the configuration file
 * [~] Switch from no-routes and no-dns to set-routes and set-dns option
 * [+] Add pppd-no-peerdns and pppd-log option
-* [~] Allow passing the otp via the config file for use with NetworkManager plugin
+* [~] Allow passing the otp via the configuration file for use with NetworkManager plugin
 * [-] Fix issues initializing memory and with build system
 * [+] Support building against Openssl 1.1
 * [~] use pkg-config for configuration of openssl instead of configure option
@@ -236,7 +236,7 @@ On the master branch there may be changes that are not (yet) described here.
 
 ### 1.2.0
 
-* [+] Support login with client certificate, key, and ca-file specified in config file
+* [+] Support login with client certificate, key, and ca-file specified in configuration file
 * [~] Use more meaningful error codes when loading config fails
 * [-] Correctly report errors of hostname lookup
 * [+] Add an option not to ask ppp peer for dns servers
@@ -255,7 +255,7 @@ On the master branch there may be changes that are not (yet) described here.
 
 ### 1.1.3
 
-* [~] Support set-dns and set-routes flag from config file as well
+* [~] Support set-dns and set-routes flag from configuration file as well
 * [-] Properly URL-encode values sent in http requests
 * [+] Add support for realm authentication
 * [+] Add support for two factor authentication
@@ -295,13 +295,13 @@ On the master branch there may be changes that are not (yet) described here.
 
 * [~] Better error messages in /etc/resolv.conf helpers
 * [~] Use better colors for warnings and error messages and only if output is a tty
-* [-] Fix parsing of "trusted-cert" in config file
+* [-] Fix parsing of "trusted-cert" in configuration file
 * [~] Add --pedantic to CFLAGS
 * [+] Add ability to type password interactively
 * [+] Verify gateway's X509 certificate
 * [-] Don't delete nameservers at tear down if they were here before
 * [~] Set /etc/openfortivpn/config not readable by other users
-* [+] Add ability to use a config file
+* [+] Add ability to use a configuration file
 
 ### 1.0.0
 
