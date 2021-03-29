@@ -922,7 +922,7 @@ static int ssl_verify_cert(struct tunnel *tunnel)
 
 	log_error("Gateway certificate validation failed, and the certificate digest is not in the local whitelist. If you trust it, rerun with:\n");
 	log_error("    --trusted-cert %s\n", digest_str);
-	log_error("or add this line to your config file:\n");
+	log_error("or add this line to your configuration file:\n");
 	log_error("    trusted-cert = %s\n", digest_str);
 	log_error("Gateway certificate:\n");
 	log_error("    subject:\n");
@@ -1348,7 +1348,7 @@ err_tunnel:
 		log_info("Logged out.\n");
 	}
 
-	// explicitly free the buffer allocated for split routes of the ipv4 config
+	// explicitly free the buffer allocated for split routes of the ipv4 configuration
 	if (tunnel.ipv4.split_rt != NULL) {
 		free(tunnel.ipv4.split_rt);
 		tunnel.ipv4.split_rt = NULL;

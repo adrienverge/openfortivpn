@@ -63,7 +63,7 @@ Show the help message and exit.
 Show version and exit.
 .TP
 \fB\-c \fI<file>\fR, \fB\-\-config=\fI<file>\fR
-Specify a custom config file (default: @SYSCONFDIR@/openfortivpn/config).
+Specify a custom configuration file (default: @SYSCONFDIR@/openfortivpn/config).
 .TP
 \fB\-u \fI<user>\fR, \fB\-\-username=\fI<user>\fR
 VPN account username.
@@ -252,7 +252,7 @@ incoming connections. If one of these variables is defined,
 .B openfortivpn
 tries to first establish a TCP connection to this proxy (plain HTTP, not encrypted),
 and then makes a request to connect to the VPN host as given on the command line
-or in the config file. The proxy is supposed to forward any subsequent packets
+or in the configuration file. The proxy is supposed to forward any subsequent packets
 transparently to the VPN host, so that the TLS layer of the connection effectively
 is established between the client and the VPN host, and the proxy just acts as a
 forwarding instance on the lower level of the TCP connection.
@@ -279,13 +279,14 @@ available. On FreeBSD \fB\-\-ppp\-system\fR is available instead.
 
 .SH CONFIGURATION
 Options can be taken from a configuration file. Options passed in the command
-line will override those from the config file, though. The default config file
-is @SYSCONFDIR@/openfortivpn/config, but this can be set using the \fB\-c\fR option.
-An empty template for the config file is installed to
+line will override those from the configuration file, though. The default
+configuration file is @SYSCONFDIR@/openfortivpn/config, but this can be set
+using the \fB\-c\fR option.
+An empty template for the configuration file is installed to
 @DATADIR@/config.template
 
 .TP
-A config file looks like:
+A configuration file looks like:
 # this is a comment
 .br
 host = vpn\-gateway
@@ -306,7 +307,7 @@ username = foo
 .br
 # realm = some-realm
 .br
-# useful for a gui that passes a config file to openfortivpn
+# useful for a gui that passes a configuration file to openfortivpn
 .br
 # otp = 123456
 .br
