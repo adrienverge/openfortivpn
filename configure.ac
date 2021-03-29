@@ -136,7 +136,6 @@ geteuid \
 getifaddrs \
 getopt_long \
 htons \
-index \
 inet_addr \
 inet_ntoa \
 ioctl \
