@@ -120,7 +120,6 @@ fileno \
 fopen \
 forkpty \
 fprintf \
-fputc \
 fputs \
 fread \
 free \
@@ -142,7 +141,6 @@ ioctl \
 isatty \
 isdigit \
 isspace \
-malloc \
 memcmp \
 memcpy \
 memmem \
@@ -151,8 +149,6 @@ memset \
 ntohs \
 open \
 openlog \
-optarg \
-optind \
 pclose \
 popen \
 printf \
@@ -169,10 +165,8 @@ pthread_mutex_lock \
 pthread_mutex_unlock \
 pthread_self \
 pthread_sigmask \
-putchar \
 puts \
 read \
-realloc \
 rewind \
 select \
 sem_destroy \
