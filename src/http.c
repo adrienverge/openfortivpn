@@ -197,7 +197,7 @@ int http_receive(struct tunnel *tunnel,
 				                                 header_size);
 
 				if (header)
-					content_size = atoi(header);
+					content_size = strtol(header, NULL, 10);
 
 				if (find_header(buffer,
 				                "Transfer-Encoding: chunked",
