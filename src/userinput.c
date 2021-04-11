@@ -143,7 +143,7 @@ static int pinentry_read(int from, char **retstr)
 	}
 
 	if (strncmp(buf, "ERR ", 4) == 0 || strncmp(buf, "S ERROR", 7) == 0) {
-		ret = atoi(&buf[4]);
+		ret = strtol(&buf[4], NULL, 10);
 		if (!ret)
 			ret = -1;
 		if (retstr) {
