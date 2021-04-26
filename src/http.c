@@ -583,7 +583,12 @@ static int try_otp_auth(struct tunnel *tunnel, const char *buffer,
 
 			v = NULL;
 			if (cfg->otp[0] == '\0') {
-				read_password(cfg->pinentry, "otp",
+				// Interactively ask user for OTP
+				char hint[USERNAME_SIZE + 1 + REALM_SIZE + 1 + GATEWAY_HOST_SIZE + 5];
+
+				sprintf(hint, "%s_%s_%s_otp",
+				        cfg->username, cfg->realm, cfg->gateway_host);
+				read_password(cfg->pinentry, hint,
 				              p, cfg->otp, OTP_SIZE);
 				if (cfg->otp[0] == '\0') {
 					log_error("No OTP specified\n");
@@ -727,8 +732,12 @@ int auth_log_in(struct tunnel *tunnel)
 			snprintf(tokenparams, sizeof(tokenparams), "ftmpush=1");
 		} else {
 			if (cfg->otp[0] == '\0') {
-				// Prompt for 2FA token
-				read_password(cfg->pinentry, "2fa",
+				// Interactively ask user for 2FA token
+				char hint[USERNAME_SIZE + 1 + REALM_SIZE + 1 + GATEWAY_HOST_SIZE + 5];
+
+				sprintf(hint, "%s_%s_%s_2fa",
+				        cfg->username, cfg->realm, cfg->gateway_host);
+				read_password(cfg->pinentry, hint,
 				              "Two-factor authentication token: ",
 				              cfg->otp, OTP_SIZE);
 
