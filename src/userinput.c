@@ -39,7 +39,7 @@ static char *uri_escape(const char *string)
 	int real_len = 0;
 
 	while (*string != '\0') {
-		if (allocated_len + 4 >= real_len) {
+		if (allocated_len < real_len + 4) {
 			allocated_len += 16;
 			char *tmp = realloc(escaped, allocated_len);
 
