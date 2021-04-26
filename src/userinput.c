@@ -52,7 +52,8 @@ static char *uri_escape(const char *string)
 			}
 			escaped = tmp;
 		}
-		if (isalnum(string[i]))
+		if (isalnum(string[i]) || string[i] == '-' || string[i] == '_' ||
+		    string[i] == '.' || string[i] == '~')
 			escaped[real_len++] = string[i];
 		else
 			real_len += sprintf(&escaped[real_len], "%%%02X",
