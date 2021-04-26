@@ -37,9 +37,8 @@ static char *uri_escape(const char *string)
 	char *escaped = NULL;
 	int allocated_len = 0;
 	int real_len = 0;
-	int i;
 
-	for (i = 0; string[i]; i++) {
+	while (*string != '\0') {
 		if (allocated_len + 4 >= real_len) {
 			allocated_len += 16;
 			char *tmp = realloc(escaped, allocated_len);
@@ -52,12 +51,13 @@ static char *uri_escape(const char *string)
 			}
 			escaped = tmp;
 		}
-		if (isalnum(string[i]) || string[i] == '-' || string[i] == '_' ||
-		    string[i] == '.' || string[i] == '~')
-			escaped[real_len++] = string[i];
+		if (isalnum(*string) || *string == '-' || *string == '_' ||
+		    *string == '.' || *string == '~')
+			escaped[real_len++] = *string;
 		else
 			real_len += sprintf(&escaped[real_len], "%%%02X",
-			                    (unsigned char)string[i]);
+			                    (unsigned char)*string);
+		string++;
 	}
 	if (escaped)
 		escaped[real_len] = '\0';
