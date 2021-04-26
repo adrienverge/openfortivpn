@@ -613,8 +613,12 @@ int main(int argc, char **argv)
 		}
 	// If username but no password given, interactively ask user
 	if (!cfg.password_set && cfg.username[0] != '\0') {
-		read_password(cfg.pinentry,
-		              "password", "VPN account password: ",
+		char hint[USERNAME_SIZE + 1 + REALM_SIZE + 1 + GATEWAY_HOST_SIZE + 10];
+
+		sprintf(hint, "%s_%s_%s_password",
+		        cfg.username, cfg.realm, cfg.gateway_host);
+		read_password(cfg.pinentry, hint,
+		              "VPN account password: ",
 		              cfg.password, PASSWORD_SIZE);
 	}
 	log_debug("Configuration host = \"%s\"\n", cfg.gateway_host);
