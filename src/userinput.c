@@ -55,7 +55,8 @@ static char *uri_escape(const char *string)
 		if (isalnum(string[i]))
 			escaped[real_len++] = string[i];
 		else
-			real_len += sprintf(&escaped[real_len], "%%%02X", string[i]);
+			real_len += sprintf(&escaped[real_len], "%%%02X",
+			                    (unsigned char)string[i]);
 	}
 	if (escaped)
 		escaped[real_len] = '\0';
