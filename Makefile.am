@@ -12,8 +12,9 @@ openfortivpn_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" \
 			-DPPP_PATH=\"@PPP_PATH@\" \
 			-DNETSTAT_PATH=\"@NETSTAT_PATH@\" \
 			-DRESOLVCONF_PATH=\"@RESOLVCONF_PATH@\" \
-			-DREVISION=\"@REVISION@\"
-openfortivpn_CFLAGS = -Wall -pedantic $(OPENSSL_CFLAGS) $(LIBSYSTEMD_CFLAGS)
+			-DREVISION=\"@REVISION@\" \
+			 $(OPENSSL_CFLAGS) $(LIBSYSTEMD_CFLAGS)
+openfortivpn_CFLAGS = -Wall -pedantic
 openfortivpn_LDADD = $(OPENSSL_LIBS) $(LIBSYSTEMD_LIBS)
 
 PATHFILES =
