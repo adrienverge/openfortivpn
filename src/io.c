@@ -116,7 +116,7 @@ static void destroy_ssl_locks(void)
 #endif
 
 // global variable to pass signal out of its handler
-volatile sig_atomic_t sig_received = 0;
+volatile sig_atomic_t sig_received; //static variables are initialized to zero in C99
 
 int get_sig_received(void)
 {
