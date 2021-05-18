@@ -493,6 +493,9 @@ void destroy_vpn_config(struct vpn_config *cfg)
 	free(cfg->user_cert);
 	free(cfg->user_key);
 	free(cfg->cipher_list);
+	free(cfg->user_agent);
+	free(cfg->hostcheck);
+	free(cfg->check_virtual_desktop);
 	while (cfg->cert_whitelist != NULL) {
 		struct x509_digest *tmp = cfg->cert_whitelist->next;
 

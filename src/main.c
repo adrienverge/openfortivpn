@@ -237,7 +237,7 @@ int main(int argc, char **argv)
 		.cipher_list = NULL,
 		.cert_whitelist = NULL,
 		.use_engine = 0,
-		.user_agent = "Mozilla/5.0 SV1",
+		.user_agent = NULL,
 	};
 	struct vpn_config cli_cfg = invalid_cfg;
 
@@ -581,6 +581,10 @@ int main(int argc, char **argv)
 	// Then apply CLI configuration
 	merge_config(&cfg, &cli_cfg);
 	set_syslog(cfg.use_syslog);
+
+	// Set default UA
+	if (cfg.user_agent == NULL)
+		cfg.user_agent = strdup("Mozilla/5.0 SV1");
 
 	// Read host and port from the command line
 	if (optind == argc - 1) {
