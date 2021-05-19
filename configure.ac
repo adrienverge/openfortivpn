@@ -103,8 +103,6 @@ AC_TYPE_UINT8_T
 AC_CHECK_TYPES([struct termios], [], [], [#include <termios.h>])
 
 # Checks for library functions.
-AC_FUNC_MALLOC
-AC_FUNC_REALLOC
 AC_CHECK_FUNCS([ \
 access \
 close \
