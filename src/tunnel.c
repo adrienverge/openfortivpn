@@ -327,6 +327,7 @@ static int pppd_run(struct tunnel *tunnel)
 
 		if (close(tunnel->ssl_socket))
 			log_warn("Could not close ssl socket (%s).\n", strerror(errno));
+		tunnel->ssl_socket = -1;
 		execv(pppd_args.data[0], (char *const *)pppd_args.data);
 		free(pppd_args.data);
 
@@ -959,12 +960,14 @@ static void ssl_disconnect(struct tunnel *tunnel)
 
 	SSL_shutdown(tunnel->ssl_handle);
 	SSL_free(tunnel->ssl_handle);
+	tunnel->ssl_handle = NULL;
+
 	SSL_CTX_free(tunnel->ssl_context);
+	tunnel->ssl_context = NULL;
+
 	if (close(tunnel->ssl_socket))
 		log_warn("Could not close ssl socket (%s).\n", strerror(errno));
-
-	tunnel->ssl_handle = NULL;
-	tunnel->ssl_context = NULL;
+	tunnel->ssl_socket = -1;
 }
 
 /*
@@ -1011,7 +1014,7 @@ int ssl_connect(struct tunnel *tunnel)
 
 	tunnel->ssl_socket = tcp_connect(tunnel);
 	if (tunnel->ssl_socket == -1)
-		return 1;
+		goto err_tcp_connect;
 
 	// https://wiki.openssl.org/index.php/Library_Initialization
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
@@ -1027,7 +1030,7 @@ int ssl_connect(struct tunnel *tunnel)
 	if (tunnel->ssl_context == NULL) {
 		log_error("SSL_CTX_new: %s\n",
 		          ERR_error_string(ERR_peek_last_error(), NULL));
-		return 1;
+		goto err_ssl_socket;
 	}
 
 	/* Load the OS default CA files */
@@ -1039,7 +1042,7 @@ int ssl_connect(struct tunnel *tunnel)
 		                                   tunnel->config->ca_file, NULL)) {
 			log_error("SSL_CTX_load_verify_locations: %s\n",
 			          ERR_error_string(ERR_peek_last_error(), NULL));
-			return 1;
+			goto err_ssl_context;
 		}
 	}
 
@@ -1070,7 +1073,7 @@ int ssl_connect(struct tunnel *tunnel)
 		                             tunnel->config->cipher_list)) {
 			log_error("SSL_CTX_set_cipher_list failed: %s\n",
 			          ERR_error_string(ERR_peek_last_error(), NULL));
-			return 1;
+			goto err_ssl_context;
 		}
 	}
 
@@ -1082,7 +1085,7 @@ int ssl_connect(struct tunnel *tunnel)
 		                                   tunnel->config->min_tls)) {
 			log_error("Cannot set minimum protocol version (%s).\n",
 			          ERR_error_string(ERR_peek_last_error(), NULL));
-			return 1;
+			goto err_ssl_context;
 		}
 	}
 #else
@@ -1108,7 +1111,7 @@ int ssl_connect(struct tunnel *tunnel)
 		if ((checkopt & sslctxopt) != sslctxopt) {
 			log_error("SSL_CTX_set_options didn't set opt: %s\n",
 			          ERR_error_string(ERR_peek_last_error(), NULL));
-			return 1;
+			goto err_ssl_context;
 		}
 	}
 #endif
@@ -1123,13 +1126,13 @@ int ssl_connect(struct tunnel *tunnel)
 		if (!e) {
 			log_error("Could not load pkcs11 Engine: %s\n",
 			          ERR_error_string(ERR_peek_last_error(), NULL));
-			return 1;
+			goto err_ssl_context;
 		}
 		if (!ENGINE_init(e)) {
 			log_error("Could not init pkcs11 Engine: %s\n",
 			          ERR_error_string(ERR_peek_last_error(), NULL));
 			ENGINE_free(e);
-			return 1;
+			goto err_ssl_context;
 		}
 		if (!ENGINE_set_default_RSA(e))
 			abort();
@@ -1145,13 +1148,13 @@ int ssl_connect(struct tunnel *tunnel)
 		if (!ENGINE_ctrl_cmd(e, "LOAD_CERT_CTRL", 0, &parms, NULL, 1)) {
 			log_error("PKCS11 ENGINE_ctrl_cmd: %s\n",
 			          ERR_error_string(ERR_peek_last_error(), NULL));
-			return 1;
+			goto err_ssl_context;
 		}
 
 		if (!SSL_CTX_use_certificate(tunnel->ssl_context, parms.cert)) {
 			log_error("PKCS11 SSL_CTX_use_certificate: %s\n",
 			          ERR_error_string(ERR_peek_last_error(), NULL));
-			return 1;
+			goto err_ssl_context;
 		}
 
 		EVP_PKEY * privkey = ENGINE_load_private_key(
@@ -1159,19 +1162,19 @@ int ssl_connect(struct tunnel *tunnel)
 		if (!privkey) {
 			log_error("PKCS11 ENGINE_load_private_key: %s\n",
 			          ERR_error_string(ERR_peek_last_error(), NULL));
-			return 1;
+			goto err_ssl_context;
 		}
 
 		if (!SSL_CTX_use_PrivateKey(tunnel->ssl_context, privkey)) {
 			log_error("PKCS11 SSL_CTX_use_PrivateKey_file: %s\n",
 			          ERR_error_string(ERR_peek_last_error(), NULL));
-			return 1;
+			goto err_ssl_context;
 		}
 
 		if (!SSL_CTX_check_private_key(tunnel->ssl_context)) {
 			log_error("PKCS11 SSL_CTX_check_private_key: %s\n",
 			          ERR_error_string(ERR_peek_last_error(), NULL));
-			return 1;
+			goto err_ssl_context;
 		}
 
 	} else {        /* end PKCS11-engine */
@@ -1182,7 +1185,7 @@ int ssl_connect(struct tunnel *tunnel)
 			            tunnel->ssl_context, tunnel->config->user_cert)) {
 				log_error("SSL_CTX_use_certificate_chain_file: %s\n",
 				          ERR_error_string(ERR_peek_last_error(), NULL));
-				return 1;
+				goto err_ssl_context;
 			}
 		}
 
@@ -1192,7 +1195,7 @@ int ssl_connect(struct tunnel *tunnel)
 			                                 SSL_FILETYPE_PEM)) {
 				log_error("SSL_CTX_use_PrivateKey_file: %s\n",
 				          ERR_error_string(ERR_peek_last_error(), NULL));
-				return 1;
+				goto err_ssl_context;
 			}
 		}
 
@@ -1200,7 +1203,7 @@ int ssl_connect(struct tunnel *tunnel)
 			if (!SSL_CTX_check_private_key(tunnel->ssl_context)) {
 				log_error("SSL_CTX_check_private_key: %s\n",
 				          ERR_error_string(ERR_peek_last_error(), NULL));
-				return 1;
+				goto err_ssl_context;
 			}
 		}
 #ifdef OPENSSL_ENGINE
@@ -1211,13 +1214,13 @@ int ssl_connect(struct tunnel *tunnel)
 	if (tunnel->ssl_handle == NULL) {
 		log_error("SSL_new: %s\n",
 		          ERR_error_string(ERR_peek_last_error(), NULL));
-		return 1;
+		goto err_ssl_context;
 	}
 
 	if (!SSL_set_fd(tunnel->ssl_handle, tunnel->ssl_socket)) {
 		log_error("SSL_set_fd: %s\n",
 		          ERR_error_string(ERR_peek_last_error(), NULL));
-		return 1;
+		goto err_ssl_handle;
 	}
 	SSL_set_mode(tunnel->ssl_handle, SSL_MODE_AUTO_RETRY);
 
@@ -1226,18 +1229,32 @@ int ssl_connect(struct tunnel *tunnel)
 		log_error("SSL_connect: %s\n"
 		          "You might want to try --insecure-ssl or specify a different --cipher-list\n",
 		          ERR_error_string(ERR_peek_last_error(), NULL));
-		return 1;
+		goto err_ssl_handle;
 	}
 	SSL_set_mode(tunnel->ssl_handle, SSL_MODE_AUTO_RETRY);
 
 	if (ssl_verify_cert(tunnel))
-		return 1;
+		goto err_ssl_handle;
 
 	// Disable SIGPIPE (occurs when trying to write to an already-closed
 	// socket).
 	signal(SIGPIPE, SIG_IGN);
 
 	return 0;
+
+err_ssl_handle:
+	SSL_shutdown(tunnel->ssl_handle);
+	SSL_free(tunnel->ssl_handle);
+	tunnel->ssl_handle = NULL;
+err_ssl_context:
+	SSL_CTX_free(tunnel->ssl_context);
+	tunnel->ssl_context = NULL;
+err_ssl_socket:
+	if (close(tunnel->ssl_socket))
+		log_warn("Could not close ssl socket (%s).\n", strerror(errno));
+	tunnel->ssl_socket = -1;
+err_tcp_connect:
+	return 1;
 }
 
 int run_tunnel(struct vpn_config *config)
@@ -1246,6 +1263,7 @@ int run_tunnel(struct vpn_config *config)
 	struct tunnel tunnel = {
 		.config = config,
 		.state = STATE_DOWN,
+		.ssl_socket = -1,
 		.ssl_context = NULL,
 		.ssl_handle = NULL,
 		.ipv4.ns1_addr.s_addr = 0,
