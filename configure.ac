@@ -439,8 +439,8 @@ int main(int argc, char **argv){
 
 # prepare to get rid of obsolete code (FortiOS 4)
 AC_ARG_ENABLE([obsolete],
-	[AS_HELP_STRING([--disable-obsolete], [disable support for FortiOS 4])],,
-	[enable_obsolete=yes])
+	[AS_HELP_STRING([--enable-obsolete], [enable support for FortiOS 4])],,
+	[enable_obsolete=no])
 AS_CASE(["$enable_obsolete"],
 	[yes], [],
 	[no], [],
