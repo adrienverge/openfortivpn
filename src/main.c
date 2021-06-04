@@ -160,7 +160,7 @@ PPPD_USAGE \
 "                                (compiled in) list of ciphers. This lowers limits on\n" \
 "                                dh key." help_seclevel_1 "\n" \
 "  --persistent=<interval>       Run the vpn persistently in a loop and try to re-\n" \
-"                                connect every <interval> seconds when dropping out\n" \
+"                                connect every <interval> seconds when dropping out.\n" \
 "  -v                            Increase verbosity. Can be used multiple times\n" \
 "                                to be even more verbose.\n" \
 "  -q                            Decrease verbosity. Can be used multiple times\n" \
