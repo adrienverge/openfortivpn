@@ -14,6 +14,14 @@ Releases
 This high level changelog is usually updated when a release is tagged.
 On the master branch there may be changes that are not (yet) described here.
 
+### 1.17.0
+
+* [-] make OpenSSL engines optional
+* [+] document and favor --pinentry over plain text password in configuration file
+* [-] fix buffer overflow and other errors in URI espcaping for --pinentry
+* [~] use different --pinentry hints for different hosts, usernames and realms
+* [-] fix memory management errors related to --user-agent option
+
 ### 1.16.0
 
 * [+] support for user key pass phrase
