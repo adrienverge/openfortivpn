@@ -52,7 +52,7 @@ Examples
   trusted-cert = e46d4aff08ba6914e64daa85bc6112a422fa7ce16631bff0b592a28556f993db
   ```
 
-* For the full list of config options, see the `CONFIG FILE` section of
+* For the full list of config options, see the `CONFIGURATION` section of
   ```
   man openfortivpn
   ```
