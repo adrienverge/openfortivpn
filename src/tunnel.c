@@ -521,8 +521,7 @@ int ppp_interface_is_up(struct tunnel *tunnel)
 		        strstr(ifa->ifa_name, "tun") != NULL &&
 #endif
 		        ifa->ifa_flags & IFF_UP) {
-			if (&(ifa->ifa_addr->sa_family) != NULL
-			    && ifa->ifa_addr->sa_family == AF_INET) {
+			if (ifa->ifa_addr->sa_family == AF_INET) {
 				struct in_addr if_ip_addr =
 				        cast_addr(ifa->ifa_addr)->sin_addr;
 
