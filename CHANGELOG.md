@@ -51,7 +51,7 @@ On the master branch there may be changes that are not (yet) described here.
 * [+] add git commit id in debug output
 * [-] do not use interface ip for routing on linux
 * [-] avoid extra hop on interface for default route
-* [+] clean up, updates and improvments in the build system
+* [+] clean up, updates and improvements in the build system
 * [+] increase the inbound HTTP buffer capacity when needed
 * [+] print domain search list to output
 * [+] add systemd service file
@@ -191,7 +191,7 @@ On the master branch there may be changes that are not (yet) described here.
 * [+] Print clear text error messages of pppd upon failure
 * [~] Existing configuration file is not overwritten anymore at installation time
 * [~] Increase the accepted cookie size and align the error behavior according to RFCs
-* [-] More gracefully handle unexcpected content of resolv.conf
+* [-] More gracefully handle unexpected content of resolv.conf
 * [~] Dynamically allocate memory for split routes and thus support larger numbers of routes
 
 ### 1.5.0
@@ -286,8 +286,8 @@ On the master branch there may be changes that are not (yet) described here.
 * [+] Add support for client keys and certificates
 * [~] Extend the split VPN support with older FortiOS servers
 * [+] Add a config parser to handle received non-xml content
-* [~] Allow ommitting the gateway for split routes
-* [~] Allow ommitting DNS servers
+* [~] Allow omitting the gateway for split routes
+* [~] Allow omitting DNS servers
 * [-] Fix a memory leak in auth_get_config
 * [+] Support split routes
 * [+] Export the configuration of routes and gateway to environment
