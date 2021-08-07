@@ -143,7 +143,7 @@ static int ipv4_get_route(struct rtentry *route)
 	 * - the routing table is to some extent trusted input,
 	 * - it's not that large,
 	 * - and the loop in strtok_r increments the pointer in each
-	 *   interation until it reaches the area where we have ensured
+	 *   iteration until it reaches the area where we have ensured
 	 *   that there is a delimiting '\0' character by proper
 	 *   initialization. We ensure this also when growing the buffer.
 	 */

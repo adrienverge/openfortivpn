@@ -372,7 +372,7 @@ AC_ARG_ENABLE([resolvconf],
 	AS_HELP_STRING([--enable-resolvconf],
 		       [Enable usage of resolvconf at runtime by default. \
 			Use --disable-resolvconf for the opposite, note that \
-			resolvconf support will still be compliled in, but \
+			resolvconf support will still be compilled in, but \
 			disabled if not explicitly enabled at runtime.]))
 
 # Determine how resolvconf works at build-time if it is installed:
