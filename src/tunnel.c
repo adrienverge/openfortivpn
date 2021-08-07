@@ -447,7 +447,7 @@ static int pppd_terminate(struct tunnel *tunnel)
 		 */
 		log_debug("waitpid: %s exit status code %d\n",
 		          PPP_DAEMON, exit_status);
-		if (exit_status >= ARRAY_SIZE(ppp_message) || exit_status < 0) {
+		if (exit_status >= ARRAY_SIZE(ppp_message)) {
 			log_error("%s: Returned an unknown exit status code: %d\n",
 			          PPP_DAEMON, exit_status);
 		} else {
