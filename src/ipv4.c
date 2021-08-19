@@ -33,6 +33,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <assert.h>
 
 #define IPV4_GET_ROUTE_BUFFER_CHUNK_SIZE 65536
 #define SHOW_ROUTE_BUFFER_SIZE 128
@@ -835,7 +836,7 @@ int ipv4_add_split_vpn_route(struct tunnel *tunnel, char *dest, char *mask,
                              char *gateway)
 {
 	struct rtentry *route;
-	char env_var[24];
+	char env_var[24]; // strlen("VPN_ROUTE_GATEWAY_") + strlen("65535") + 1
 
 #if HAVE_USR_SBIN_PPPD
 	add_text_route(tunnel, dest, mask, gateway);
@@ -853,13 +854,14 @@ int ipv4_add_split_vpn_route(struct tunnel *tunnel, char *dest, char *mask,
 		tunnel->ipv4.split_rt = new_ptr;
 	}
 
+	assert(tunnel->ipv4.split_routes >= 0 &&
+	       tunnel->ipv4.split_routes < MAX_SPLIT_ROUTES);
 	sprintf(env_var, "VPN_ROUTE_DEST_%d", tunnel->ipv4.split_routes);
 	setenv(env_var, dest, 0);
 	sprintf(env_var, "VPN_ROUTE_MASK_%d", tunnel->ipv4.split_routes);
 	setenv(env_var, mask, 0);
 	if (gateway != NULL) {
-		sprintf(env_var, "VPN_ROUTE_GATEWAY_%d",
-		        tunnel->ipv4.split_routes);
+		sprintf(env_var, "VPN_ROUTE_GATEWAY_%d", tunnel->ipv4.split_routes);
 		setenv(env_var, gateway, 0);
 	}
 
