@@ -591,13 +591,16 @@ int main(int argc, char **argv)
 		host = argv[optind++];
 		port_str = strchr(host, ':');
 		if (port_str != NULL) {
+			long port;
+
 			port_str[0] = '\0';
 			port_str++;
-			cfg.gateway_port = strtol(port_str, NULL, 0);
-			if (cfg.gateway_port == 0 || cfg.gateway_port > 65535) {
+			port = strtol(port_str, NULL, 0);
+			if (port <= 0 || port > 65535) {
 				log_error("Specify a valid port.\n");
 				goto user_error;
 			}
+			cfg.gateway_port = (uint16_t)port;
 		}
 		strncpy(cfg.gateway_host, host, GATEWAY_HOST_SIZE);
 		cfg.gateway_host[GATEWAY_HOST_SIZE] = '\0';

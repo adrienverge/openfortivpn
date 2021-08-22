@@ -254,14 +254,14 @@ int load_config(struct vpn_config *cfg, const char *filename)
 			strncpy(cfg->gateway_host, val, GATEWAY_HOST_SIZE);
 			cfg->gateway_host[GATEWAY_HOST_SIZE] = '\0';
 		} else if (strcmp(key, "port") == 0) {
-			unsigned long port = strtoul(val, NULL, 0);
+			long port = strtol(val, NULL, 0);
 
-			if (port == 0 || port > 65535) {
-				log_warn("Bad port in configuration file: \"%lu\".\n",
+			if (port <= 0 || port > 65535) {
+				log_warn("Bad port in configuration file: \"%l\".\n",
 				         port);
 				continue;
 			}
-			cfg->gateway_port = port;
+			cfg->gateway_port = (uint16_t)port;
 		} else if (strcmp(key, "username") == 0) {
 			strncpy(cfg->username, val, USERNAME_SIZE);
 			cfg->username[USERNAME_SIZE] = '\0';
