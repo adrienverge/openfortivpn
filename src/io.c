@@ -462,9 +462,9 @@ static void *ssl_read(void *arg)
 			break;
 		}
 
-		total = (header[0] << 8) | header[1];
-		magic = (header[2] << 8) | header[3];
-		size = (header[4] << 8) | header[5];
+		total = (uint16_t)(header[0]) << 8 | header[1];
+		magic = (uint16_t)(header[2]) << 8 | header[3];
+		size = (uint16_t)(header[4]) << 8 | header[5];
 		if (magic != 0x5050 || total < 7 || total - 6 != size) {
 			log_error("Received bad header from gateway:\n");
 			debug_bad_packet(tunnel, header);
