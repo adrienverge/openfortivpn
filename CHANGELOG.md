@@ -14,6 +14,12 @@ Releases
 This high level changelog is usually updated when a release is tagged.
 On the master branch there may be changes that are not (yet) described here.
 
+### 1.17.1
+
+* [-] fix regression: enable OpenSSL engines by default
+* [-] fix typos found by codespell
+* [-] fix LGTM alerts
+
 ### 1.17.0
 
 * [-] make OpenSSL engines optional
