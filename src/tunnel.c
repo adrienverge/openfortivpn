@@ -35,7 +35,7 @@
 #endif
 
 #include <openssl/err.h>
-#ifdef OPENSSL_ENGINE
+#ifndef OPENSSL_NO_ENGINE
 #include <openssl/engine.h>
 #endif
 #include <openssl/ui.h>
@@ -1115,7 +1115,7 @@ int ssl_connect(struct tunnel *tunnel)
 #endif
 
 	/* Use engine for PIV if user-cert config starts with pkcs11 URI: */
-#ifdef OPENSSL_ENGINE
+#ifndef OPENSSL_NO_ENGINE
 	if (tunnel->config->use_engine > 0) {
 		ENGINE *e;
 
@@ -1204,9 +1204,9 @@ int ssl_connect(struct tunnel *tunnel)
 				goto err_ssl_context;
 			}
 		}
-#ifdef OPENSSL_ENGINE
+#ifndef OPENSSL_NO_ENGINE
 	}
-#endif /* PKCS11-engine */
+#endif
 
 	tunnel->ssl_handle = SSL_new(tunnel->ssl_context);
 	if (tunnel->ssl_handle == NULL) {
