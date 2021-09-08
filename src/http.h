@@ -15,10 +15,12 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _OPENFORTIVPN_HTTP_H
-#define _OPENFORTIVPN_HTTP_H
+#ifndef OPENFORTIVPN_HTTP_H
+#define OPENFORTIVPN_HTTP_H
 
 #include "tunnel.h"
+
+#include <stdint.h>
 
 #define ERR_HTTP_INVALID	-1
 #define ERR_HTTP_TOO_LONG	-2

@@ -26,13 +26,15 @@
  *  all source files in the program, then also delete it here.
  */
 
-#ifndef _OPENFORTIVPN_SSL_H
-#define _OPENFORTIVPN_SSL_H
+#ifndef OPENFORTIVPN_SSL_H
+#define OPENFORTIVPN_SSL_H
 
-#include <errno.h>
-#include <string.h>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
+
+#include <errno.h>
+#include <stdint.h>
+#include <string.h>
 
 #ifdef __clang__
 /*
@@ -76,7 +78,7 @@ static inline const char *err_ssl_str(int code)
 	else if (code == ERR_SSL_SEE_ERRNO)
 		return strerror(errno);
 	else if (code == ERR_SSL_SEE_SSLERR)
-		return ERR_error_string(ERR_peek_last_error(), NULL);
+		return ERR_reason_error_string(ERR_peek_last_error());
 	return "unknown";
 }
 
@@ -138,8 +140,10 @@ static inline int safe_ssl_read(SSL *ssl, uint8_t *buf, int bufsize)
 static inline int safe_ssl_read_all(SSL *ssl, uint8_t *buf, int bufsize)
 {
 	int n = 0;
+
 	while (n < bufsize) {
 		int ret;
+
 		ret = safe_ssl_read(ssl, &buf[n], bufsize - n);
 		if (ret == ERR_SSL_AGAIN)
 			continue;

@@ -19,39 +19,48 @@
 #include "userinput.h"
 #include "log.h"
 
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <termios.h>
 
 #include <ctype.h>
 #include <errno.h>
 #include <stdarg.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <termios.h>
-#include <unistd.h>
 
 static char *uri_escape(const char *string)
 {
 	char *escaped = NULL;
 	int allocated_len = 0;
 	int real_len = 0;
-	int i;
 
-	for (i = 0; string[i]; i++) {
-		if (allocated_len + 4 >= real_len) {
+	while (*string != '\0') {
+		if (allocated_len < real_len + 4) {
 			allocated_len += 16;
-			escaped = realloc(escaped, allocated_len);
+			char *tmp = realloc(escaped, allocated_len);
+
 			// bail out if realloc fails
-			if (escaped == NULL)
-				return NULL;
+			if (tmp == NULL) {
+				free(escaped);
+				escaped = NULL;
+				break;
+			}
+			escaped = tmp;
 		}
-		if (isalnum(string[i]))
-			escaped[real_len++] = string[i];
+		if (isalnum(*string) || *string == '-' || *string == '_' ||
+		    *string == '.' || *string == '~')
+			escaped[real_len++] = *string;
 		else
-			real_len += sprintf(&escaped[real_len], "%%%02X", string[i]);
+			real_len += sprintf(&escaped[real_len], "%%%02X",
+			                    (unsigned char)*string);
+		string++;
 	}
-	escaped[real_len] = '\0';
+	if (escaped)
+		escaped[real_len] = '\0';
 
 	return escaped;
 }
@@ -62,6 +71,10 @@ static char *uri_unescape(const char *string)
 	char *unescaped = malloc(escaped_len);
 	int real_len = 0;
 	int i = 0;
+
+	// bail out if malloc fails
+	if (unescaped == NULL)
+		return NULL;
 
 	while (string[i]) {
 		if (string[i] == '%' && isxdigit(string[i + 1])
@@ -86,7 +99,7 @@ static char *uri_unescape(const char *string)
 static int pinentry_read(int from, char **retstr)
 {
 	int bufsiz = 0;
-	char *buf = NULL;
+	char *buf = NULL, *saveptr = NULL;
 	int len = 0;
 	int ret;
 
@@ -124,6 +137,7 @@ static int pinentry_read(int from, char **retstr)
 	    || strncmp(buf, "D ", 2) == 0) {
 		if (retstr) {
 			*retstr = strchr(buf, ' ');
+			*retstr = *retstr ? strtok_r(*retstr, "\n", &saveptr) : NULL;
 			*retstr = *retstr ? uri_unescape(*retstr + 1) : NULL;
 		}
 		free(buf);
@@ -131,7 +145,7 @@ static int pinentry_read(int from, char **retstr)
 	}
 
 	if (strncmp(buf, "ERR ", 4) == 0 || strncmp(buf, "S ERROR", 7) == 0) {
-		ret = atoi(&buf[4]);
+		ret = strtol(&buf[4], NULL, 10);
 		if (!ret)
 			ret = -1;
 		if (retstr) {
@@ -201,20 +215,20 @@ static void pinentry_read_password(const char *pinentry, const char *hint,
 		close(to_pinentry[1]);
 		if (dup2(to_pinentry[0], STDIN_FILENO) == -1) {
 			perror("dup2");
-			exit(1);
+			exit(EXIT_FAILURE);
 		}
 		close(to_pinentry[0]);
 
 		close(from_pinentry[0]);
 		if (dup2(from_pinentry[1], STDOUT_FILENO) == -1) {
 			perror("dup2");
-			exit(1);
+			exit(EXIT_FAILURE);
 		}
 		close(from_pinentry[1]);
 
 		execlp(pinentry, pinentry, NULL);
 		perror(pinentry);
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
 	close(to_pinentry[0]);
@@ -310,6 +324,7 @@ void read_password(const char *pinentry, const char *hint,
 
 	for (i = 0; i < len; i++) {
 		int c = getchar();
+
 		if (c == '\n' || c == EOF)
 			break;
 		pass[i] = (char) c;

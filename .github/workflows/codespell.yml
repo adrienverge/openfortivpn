@@ -1,0 +1,21 @@
+---
+name: Codespell
+
+on:
+  push:
+
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  codespell:
+    name: Check for spelling errors
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: codespell-project/actions-codespell@master
+        with:
+          skip: checkpatch.pl,spelling.txt,LICENSE.OpenSSL
+          ignore_words_list: synopsys,parms

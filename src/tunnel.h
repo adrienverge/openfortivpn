@@ -26,18 +26,16 @@
  *  all source files in the program, then also delete it here.
  */
 
-#ifndef _OPENFORTIVPN_TUNNEL_H
-#define _OPENFORTIVPN_TUNNEL_H
+#ifndef OPENFORTIVPN_TUNNEL_H
+#define OPENFORTIVPN_TUNNEL_H
 
 #include "config.h"
 #include "io.h"
 #include "ipv4.h"
-#if HAVE_LIBUTIL_H
-#include "libutil.h"
-#endif
 
 #include <openssl/ssl.h>
 #include <openssl/x509v3.h>
+
 #include <sys/types.h>
 
 #ifdef __clang__

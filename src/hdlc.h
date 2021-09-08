@@ -15,13 +15,14 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _OPENFORTIVPN_HDLC_H
-#define _OPENFORTIVPN_HDLC_H
+#ifndef OPENFORTIVPN_HDLC_H
+#define OPENFORTIVPN_HDLC_H
 
+#include <sys/types.h>
+
+#include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <sys/types.h>
 
 #define ERR_HDLC_BUFFER_TOO_SMALL	-1
 #define ERR_HDLC_NO_FRAME_FOUND		-2
@@ -36,12 +37,14 @@
 #define estimated_encoded_size(ppp_pkt_len)	(9 + 2 * (ppp_pkt_len))
 #define estimated_decoded_size(hdlc_frm_len)	(hdlc_frm_len)
 
+void init_hdlc(void);
+
 ssize_t hdlc_encode(uint8_t *frame, size_t frmsize,
-                    uint8_t *packet, size_t pktsize);
+                    const uint8_t *packet, size_t pktsize);
 
-ssize_t hdlc_find_frame(uint8_t *buffer, size_t bufsize, off_t *start);
+ssize_t hdlc_find_frame(const uint8_t *buffer, size_t bufsize, off_t *start);
 
-ssize_t hdlc_decode(uint8_t *frame, size_t frmsize,
+ssize_t hdlc_decode(const uint8_t *frame, size_t frmsize,
                     uint8_t *packet, size_t pktsize);
 
 #endif

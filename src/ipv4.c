@@ -21,17 +21,18 @@
 #include "log.h"
 #include "xml.h"
 
+#include <unistd.h>
 #include <arpa/inet.h>
+#include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdint.h>
+
 #include <errno.h>
 #include <limits.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
 
 #define IPV4_GET_ROUTE_BUFFER_CHUNK_SIZE 65536
 #define SHOW_ROUTE_BUFFER_SIZE 128
@@ -122,6 +123,11 @@ static int ipv4_get_route(struct rtentry *route)
 	uint32_t rtdest, rtmask, rtgtw;
 	int rtfound = 0;
 
+	if (!buffer) {
+		err = ERR_IPV4_SEE_ERRNO;
+		goto end;
+	}
+
 	/*
 	 * initialize the buffer with zeroes, aiming to address the
 	 * coverity issue "TAINTED_SCALAR passed to a tainted sink"
@@ -137,7 +143,7 @@ static int ipv4_get_route(struct rtentry *route)
 	 * - the routing table is to some extent trusted input,
 	 * - it's not that large,
 	 * - and the loop in strtok_r increments the pointer in each
-	 *   interation until it reaches the area where we have ensured
+	 *   iteration until it reaches the area where we have ensured
 	 *   that there is a delimiting '\0' character by proper
 	 *   initialization. We ensure this also when growing the buffer.
 	 */
@@ -167,6 +173,7 @@ static int ipv4_get_route(struct rtentry *route)
 	}
 
 	int bytes_read;
+
 	while ((bytes_read = read(fd, buffer + total_bytes_read,
 	                          buffer_size - total_bytes_read - 1)) > 0) {
 		total_bytes_read += bytes_read;
@@ -186,7 +193,8 @@ static int ipv4_get_route(struct rtentry *route)
 	}
 
 cleanup:
-	close(fd);
+	if (close(fd))
+		log_warn("Could not close /proc/net/route (%s).\n", strerror(errno));
 	if (err)
 		goto end;
 
@@ -204,6 +212,7 @@ cleanup:
 	int have_use = 0;
 
 	static const char netstat_path[] = NETSTAT_PATH;
+
 	if (access(netstat_path, F_OK) != 0) {
 		log_error("%s: %s.\n", netstat_path, strerror(errno));
 		return 1;
@@ -211,7 +220,7 @@ cleanup:
 	log_debug("netstat_path: %s\n", netstat_path);
 
 	// Open the command for reading
-	fp = popen(NETSTAT_PATH" -f inet -rn", "r");
+	fp = popen(NETSTAT_PATH " -f inet -rn", "r");
 	if (fp == NULL) {
 		err = ERR_IPV4_SEE_ERRNO;
 		goto end;
@@ -221,6 +230,7 @@ cleanup:
 	// Read the output a line at a time
 	while (fgets(line, buffer_size - total_bytes_read - 1, fp) != NULL) {
 		uint32_t bytes_read = strlen(line);
+
 		total_bytes_read += bytes_read;
 
 		if (bytes_read > 0 && line[bytes_read - 1] != '\n') {
@@ -239,7 +249,8 @@ cleanup:
 	}
 
 cleanup:
-	pclose(fp);
+	if (pclose(fp))
+		log_warn("Could not close netstat pipe (%s).\n", strerror(errno));
 	if (err)
 		goto end;
 
@@ -340,7 +351,7 @@ cleanup:
 	buffer[total_bytes_read] = '\0';
 
 	// Skip first line
-	start = index(buffer, '\n');
+	start = strchr(buffer, '\n');
 	if (start == NULL) {
 		log_debug("routing table is malformed.\n");
 		err = ERR_IPV4_PROC_NET_ROUTE;
@@ -354,9 +365,9 @@ cleanup:
 	if (strstr(buffer, "Use") != NULL)
 		have_use = 1;
 	// Skip 3 more lines from netstat output on Mac OS X and on FreeBSD
-	start = index(start, '\n');
-	start = index(++start, '\n');
-	start = index(++start, '\n');
+	start = strchr(start, '\n');
+	start = strchr(++start, '\n');
+	start = strchr(++start, '\n');
 	if (start == NULL) {
 		log_debug("routing table is malformed.\n");
 		err = ERR_IPV4_PROC_NET_ROUTE;
@@ -364,7 +375,7 @@ cleanup:
 	}
 #endif
 
-	if (index(start, '\n') == NULL) {
+	if (strchr(start, '\n') == NULL) {
 		log_debug("routing table is malformed.\n");
 		err = ERR_IPV4_PROC_NET_ROUTE;
 		goto end;
@@ -421,7 +432,7 @@ cleanup:
 			char *tmp_position;
 			int dot_count = -1;
 
-			if (index(tmpstr, '/') != NULL) {
+			if (strchr(tmpstr, '/') != NULL) {
 				// 123.123.123.123/30 style
 				// 123.123.123/24 style
 				// 123.123/24 style
@@ -446,7 +457,7 @@ cleanup:
 			tmp_position = tmp_ip_string;
 			while (tmp_position != NULL) {
 				++dot_count;
-				tmp_position = index(++tmp_position, '.');
+				tmp_position = strchr(++tmp_position, '.');
 			}
 
 			for (int i = dot_count; i < 3; i++)
@@ -464,7 +475,6 @@ cleanup:
 			       | ((mask & 0xff0000) >> 8)
 			       | ((mask & 0xff00) << 8)
 			       | ((mask & 0xff) << 24);
-
 		}
 		log_debug_details("- Destination IP Hex: %x\n", dest);
 		log_debug_details("- Destination Mask Hex: %x\n", mask);
@@ -601,10 +611,14 @@ static int ipv4_set_route(struct rtentry *route)
 	if (sockfd < 0)
 		return ERR_IPV4_SEE_ERRNO;
 	if (ioctl(sockfd, SIOCADDRT, route) == -1) {
-		close(sockfd);
+		if (close(sockfd))
+			log_warn("Could not close socket for setting route (%s).\n",
+			         strerror(errno));
 		return ERR_IPV4_SEE_ERRNO;
 	}
-	close(sockfd);
+	if (close(sockfd))
+		log_warn("Could not close socket for setting route: %s\n",
+		         strerror(errno));
 #else
 	/* we have to use the route command as tool for route manipulation */
 	char cmd[SHOW_ROUTE_BUFFER_SIZE];
@@ -637,6 +651,7 @@ static int ipv4_set_route(struct rtentry *route)
 	log_debug("%s\n", cmd);
 
 	int res = system(cmd);
+
 	if (res == -1)
 		return ERR_IPV4_SEE_ERRNO;
 #endif
@@ -664,10 +679,14 @@ static int ipv4_del_route(struct rtentry *route)
 	if (sockfd < 0)
 		return ERR_IPV4_SEE_ERRNO;
 	if (ioctl(sockfd, SIOCDELRT, &tmp) == -1) {
-		close(sockfd);
+		if (close(sockfd))
+			log_warn("Could not close socket for deleting route (%s).\n",
+			         strerror(errno));
 		return ERR_IPV4_SEE_ERRNO;
 	}
-	close(sockfd);
+	if (close(sockfd))
+		log_warn("Could not close socket for deleting route (%s).\n",
+		         strerror(errno));
 #else
 	char cmd[SHOW_ROUTE_BUFFER_SIZE];
 
@@ -699,6 +718,7 @@ static int ipv4_del_route(struct rtentry *route)
 	log_debug("%s\n", cmd);
 
 	int res = system(cmd);
+
 	if (res == -1)
 		return ERR_IPV4_SEE_ERRNO;
 #endif
@@ -718,6 +738,10 @@ int ipv4_protect_tunnel_route(struct tunnel *tunnel)
 	route_dest(def_rt).s_addr = inet_addr("0.0.0.0");
 	route_mask(def_rt).s_addr = inet_addr("0.0.0.0");
 	route_iface(def_rt) = malloc(strlen(tunnel->ppp_iface) + 2);
+	if (!route_iface(def_rt)) {
+		log_error("malloc: %s\n", strerror(errno));
+		return ERR_IPV4_SEE_ERRNO;
+	}
 	sprintf(route_iface(def_rt), "!%s", tunnel->ppp_iface);
 
 	ret = ipv4_get_route(def_rt);
@@ -725,13 +749,17 @@ int ipv4_protect_tunnel_route(struct tunnel *tunnel)
 		log_warn("Could not get current default route (%s).\n",
 		         err_ipv4_str(ret));
 		log_warn("Protecting tunnel route has failed. But this can be working except for some cases.\n");
-		goto err_destroy;
+		goto err_destroy_def_rt;
 	}
 
 	// Set the up a route to the tunnel gateway
 	route_dest(gtw_rt).s_addr = tunnel->config->gateway_ip.s_addr;
 	route_mask(gtw_rt).s_addr = inet_addr("255.255.255.255");
 	route_iface(gtw_rt) = malloc(strlen(tunnel->ppp_iface) + 2);
+	if (!route_iface(gtw_rt)) {
+		log_error("malloc: %s\n", strerror(errno));
+		return ERR_IPV4_SEE_ERRNO;
+	}
 	sprintf(route_iface(gtw_rt), "%s", tunnel->ppp_iface);
 	ret = ipv4_get_route(gtw_rt);
 	if ((ret == 0)
@@ -747,7 +775,7 @@ int ipv4_protect_tunnel_route(struct tunnel *tunnel)
 		log_warn("Could not get route to gateway (%s).\n",
 		         err_ipv4_str(ret));
 		log_warn("Protecting tunnel route has failed. But this can be working except for some cases.\n");
-		goto err_destroy;
+		goto err_destroy_gtw_rt;
 	}
 	route_dest(gtw_rt).s_addr = tunnel->config->gateway_ip.s_addr;
 	route_mask(gtw_rt).s_addr = inet_addr("255.255.255.255");
@@ -768,7 +796,9 @@ int ipv4_protect_tunnel_route(struct tunnel *tunnel)
 
 	return 0;
 
-err_destroy:
+err_destroy_gtw_rt:
+	route_destroy(gtw_rt);
+err_destroy_def_rt:
 	route_destroy(def_rt);
 	tunnel->ipv4.route_to_vpn_is_added = 0;
 	return ret;
@@ -815,11 +845,9 @@ int ipv4_add_split_vpn_route(struct tunnel *tunnel, char *dest, char *mask,
 	if ((tunnel->ipv4.split_rt == NULL)
 	    || ((tunnel->ipv4.split_routes % STEP_SPLIT_ROUTES) == 0)) {
 		void *new_ptr
-		        = realloc(
-		                  tunnel->ipv4.split_rt,
+		        = realloc(tunnel->ipv4.split_rt,
 		                  (size_t) (tunnel->ipv4.split_routes + STEP_SPLIT_ROUTES)
-		                  * sizeof(*(tunnel->ipv4.split_rt))
-		          );
+		                  * sizeof(*(tunnel->ipv4.split_rt)));
 		if (new_ptr == NULL)
 			return ERR_IPV4_NO_MEM;
 		tunnel->ipv4.split_rt = new_ptr;
@@ -860,17 +888,23 @@ static int ipv4_set_split_routes(struct tunnel *tunnel)
 	for (i = 0; i < tunnel->ipv4.split_routes; i++) {
 		struct rtentry *route;
 		int ret;
+
 		route = &tunnel->ipv4.split_rt[i];
+		// check if the route to be added is not the one to the gateway itself
+		if (route_dest(route).s_addr == route_dest(&tunnel->ipv4.gtw_rt).s_addr) {
+			log_debug("Skipping route to tunnel gateway (%s).\n",
+			          ipv4_show_route(route));
+			continue;
+		}
+
 		free(route_iface(route));
 		route_iface(route) = strdup(tunnel->ppp_iface);
 		if (!route_iface(route))
 			return ERR_IPV4_NO_MEM;
-#ifndef HAVE_RT_ENTRY_WITH_RT_DST
 		if (route_gtw(route).s_addr == tunnel->ipv4.ip_addr.s_addr)
 			route_gtw(route).s_addr = 0;
 		if (route_gtw(route).s_addr == 0)
 			route->rt_flags &= ~RTF_GATEWAY;
-#endif
 		if (route_gtw(route).s_addr != 0)
 			route->rt_flags |= RTF_GATEWAY;
 		ret = ipv4_set_route(route);
@@ -911,7 +945,12 @@ static int ipv4_set_default_routes(struct tunnel *tunnel)
 		route_iface(ppp_rt) = strdup(tunnel->ppp_iface);
 		if (!route_iface(ppp_rt))
 			return ERR_IPV4_NO_MEM;
-
+		if (route_gtw(ppp_rt).s_addr == tunnel->ipv4.ip_addr.s_addr)
+			route_gtw(ppp_rt).s_addr = 0;
+		if (route_gtw(ppp_rt).s_addr == 0)
+			ppp_rt->rt_flags &= ~RTF_GATEWAY;
+		if (route_gtw(ppp_rt).s_addr != 0)
+			ppp_rt->rt_flags |= RTF_GATEWAY;
 		ret = ipv4_set_route(ppp_rt);
 		if (ret == ERR_IPV4_SEE_ERRNO && errno == EEXIST) {
 			log_warn("Default route exists already.\n");
@@ -932,7 +971,12 @@ static int ipv4_set_default_routes(struct tunnel *tunnel)
 		route_iface(ppp_rt) = strdup(tunnel->ppp_iface);
 		if (!route_iface(ppp_rt))
 			return ERR_IPV4_NO_MEM;
-
+		if (route_gtw(ppp_rt).s_addr == tunnel->ipv4.ip_addr.s_addr)
+			route_gtw(ppp_rt).s_addr = 0;
+		if (route_gtw(ppp_rt).s_addr == 0)
+			ppp_rt->rt_flags &= ~RTF_GATEWAY;
+		if (route_gtw(ppp_rt).s_addr != 0)
+			ppp_rt->rt_flags |= RTF_GATEWAY;
 		ret = ipv4_set_route(ppp_rt);
 		if (ret == ERR_IPV4_SEE_ERRNO && errno == EEXIST) {
 			log_warn("0.0.0.0/1 route exists already.\n");
@@ -961,11 +1005,10 @@ int ipv4_set_tunnel_routes(struct tunnel *tunnel)
 	if (tunnel->ipv4.split_routes)
 		// try even if ipv4_protect_tunnel_route has failed
 		return ipv4_set_split_routes(tunnel);
-	else if (ret == 0) {
+	else if (ret == 0)
 		return ipv4_set_default_routes(tunnel);
-	} else {
+	else
 		return ret;
-	}
 }
 
 int ipv4_restore_routes(struct tunnel *tunnel)
@@ -977,6 +1020,7 @@ int ipv4_restore_routes(struct tunnel *tunnel)
 
 	if (tunnel->ipv4.route_to_vpn_is_added) {
 		int ret;
+
 		ret = ipv4_del_route(gtw_rt);
 		if (ret != 0)
 			log_warn("Could not delete route to vpn server (%s).\n",
@@ -995,7 +1039,6 @@ int ipv4_restore_routes(struct tunnel *tunnel)
 				log_warn("Could not restore default route (%s). Already restored?\n",
 				         err_ipv4_str(ret));
 			}
-
 		}
 	} else {
 		log_debug("Route to vpn server was not added\n");
@@ -1022,10 +1065,16 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 	int ret = -1;
 	FILE *file;
 	struct stat stat;
-	char ns0[28], ns1[28], ns2[28]; // 11 + 15 + 1 + 1
-	char dns_suffix[MAX_DOMAIN_LENGTH+8];  // 7 + MAX_DOMAIN_LENGTH + 1
+#define NS_SIZE ARRAY_SIZE("nameserver xxx.xxx.xxx.xxx\n")
+	char ns0[NS_SIZE], ns1[NS_SIZE], ns2[NS_SIZE];
+#undef NS_SIZE
+#define DNS_SUFFIX_SIZE (ARRAY_SIZE("search \n") + MAX_DOMAIN_LENGTH)
+	char dns_suffix[DNS_SUFFIX_SIZE];
+#undef DNS_SUFFIX_SIZE
 	char *buffer = NULL;
+#if HAVE_RESOLVCONF
 	int use_resolvconf = 0;
+#endif
 
 	tunnel->ipv4.ns0_was_there = 0;
 	tunnel->ipv4.ns1_was_there = 0;
@@ -1041,12 +1090,16 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 	if (tunnel->ipv4.ns2_addr.s_addr == 0)
 		tunnel->ipv4.ns2_was_there = -1;
 
-	if (access(RESOLVCONF_PATH, F_OK) == 0) {
-		int resolvconf_call_len
-		        = strlen(RESOLVCONF_PATH)
-		          + 20
-		          + strlen(tunnel->ppp_iface);
-		char *resolvconf_call = malloc(resolvconf_call_len);
+#if HAVE_RESOLVCONF
+	if (tunnel->config->use_resolvconf
+	    && (access(RESOLVCONF_PATH, F_OK) == 0)) {
+		int resolvconf_call_len;
+		char *resolvconf_call;
+
+		log_debug("Attempting to run %s.\n", RESOLVCONF_PATH);
+		resolvconf_call_len = strlen(RESOLVCONF_PATH) + 20
+		                      + strlen(tunnel->ppp_iface);
+		resolvconf_call = malloc(resolvconf_call_len);
 		if (resolvconf_call == NULL) {
 			log_warn("Could not create command to run resolvconf (%s).\n",
 			         strerror(errno));
@@ -1061,14 +1114,17 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 		use_resolvconf = 1;
 		log_debug("resolvconf_call: %s\n", resolvconf_call);
 		file = popen(resolvconf_call, "w");
-		free(resolvconf_call);
 		if (file == NULL) {
 			log_warn("Could not open pipe %s (%s).\n",
 			         resolvconf_call,
 			         strerror(errno));
+			free(resolvconf_call);
 			return 1;
 		}
+		free(resolvconf_call);
 	} else {
+#endif
+		log_debug("Attempting to modify /etc/resolv.conf directly.\n");
 		file = fopen("/etc/resolv.conf", "r+");
 		if (file == NULL) {
 			log_warn("Could not open /etc/resolv.conf (%s).\n",
@@ -1102,14 +1158,15 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 		}
 
 		buffer[stat.st_size] = '\0';
+#if HAVE_RESOLVCONF
 	}
-
-	if (tunnel->ipv4.ns0_addr.s_addr != 0) {
-		strcpy(ns0, "nameserver ");
-		strncat(ns0, inet_ntoa(tunnel->ipv4.ns0_addr), 15);
-	} else {
-		ns0[0] = '\0';
-	}
+#endif
+    if (tunnel->ipv4.ns0_addr.s_addr != 0) {
+      strcpy(ns0, "nameserver ");
+      strncat(ns0, inet_ntoa(tunnel->ipv4.ns0_addr), 15);
+    } else {
+      ns0[0] = '\0';
+    }
 
 	if (tunnel->ipv4.ns1_addr.s_addr != 0) {
 		strcpy(ns1, "nameserver ");
@@ -1133,23 +1190,26 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 		dns_suffix[0] = '\0';
 	}
 
+#if HAVE_RESOLVCONF
 	if (use_resolvconf == 0) {
+#endif
+		char *saveptr = NULL;
 
-		for (const char *line = strtok(buffer, "\n");
+		for (const char *line = strtok_r(buffer, "\n", &saveptr);
+          line != NULL;
+          line = strtok_r(NULL, "\n", &saveptr)) {
+          if (strcmp(line, ns0) == 0) {
+            tunnel->ipv4.ns0_was_there = 1;
+        	log_debug("ns0 already present in /etc/resolv.conf.\n");
+          }
+       	}
+
+        if (tunnel->ipv4.ns0_was_there == 0)
+          log_debug("Adding \"%s\", to /etc/resolv.conf.\n", ns0);
+
+		for (const char *line = strtok_r(buffer, "\n", &saveptr);
 		     line != NULL;
-		     line = strtok(NULL, "\n")) {
-			if (strcmp(line, ns0) == 0) {
-				tunnel->ipv4.ns0_was_there = 1;
-				log_debug("ns0 already present in /etc/resolv.conf.\n");
-			}
-		}
-
-		if (tunnel->ipv4.ns0_was_there == 0)
-			log_debug("Adding \"%s\", to /etc/resolv.conf.\n", ns0);
-
-		for (const char *line = strtok(buffer, "\n");
-		     line != NULL;
-		     line = strtok(NULL, "\n")) {
+		     line = strtok_r(NULL, "\n", &saveptr)) {
 			if (strcmp(line, ns1) == 0) {
 				tunnel->ipv4.ns1_was_there = 1;
 				log_debug("ns1 already present in /etc/resolv.conf.\n");
@@ -1159,9 +1219,9 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 		if (tunnel->ipv4.ns1_was_there == 0)
 			log_debug("Adding \"%s\", to /etc/resolv.conf.\n", ns1);
 
-		for (const char *line = strtok(buffer, "\n");
+		for (const char *line = strtok_r(buffer, "\n", &saveptr);
 		     line != NULL;
-		     line = strtok(NULL, "\n")) {
+		     line = strtok_r(NULL, "\n", &saveptr)) {
 			if (strcmp(line, ns2) == 0) {
 				tunnel->ipv4.ns2_was_there = 1;
 				log_debug("ns2 already present in /etc/resolv.conf.\n");
@@ -1174,9 +1234,9 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 		if (dns_suffix[0] == '\0') {
 			tunnel->ipv4.dns_suffix_was_there = -1;
 		} else {
-			for (const char *line = strtok(buffer, "\n");
+			for (const char *line = strtok_r(buffer, "\n", &saveptr);
 			     line != NULL;
-			     line = strtok(NULL, "\n")) {
+			     line = strtok_r(NULL, "\n", &saveptr)) {
 				if (dns_suffix[0] != '\0'
 				    && strcmp(line, dns_suffix) == 0) {
 					tunnel->ipv4.dns_suffix_was_there = 1;
@@ -1197,11 +1257,13 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 		buffer[stat.st_size] = '\0';
 
 		rewind(file);
+#if HAVE_RESOLVCONF
 	}
-	if (tunnel->ipv4.ns0_was_there == 0) {
-		strcat(ns0, "\n");
-		fputs(ns0, file);
-	}
+#endif
+    if (tunnel->ipv4.ns0_was_there == 0) {
+      strcat(ns0, "\n");
+      fputs(ns0, file);
+    }
 	if (tunnel->ipv4.ns1_was_there == 0) {
 		strcat(ns1, "\n");
 		fputs(ns1, file);
@@ -1214,7 +1276,9 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 		strcat(dns_suffix, "\n");
 		fputs(dns_suffix, file);
 	}
+#if HAVE_RESOLVCONF
 	if (use_resolvconf == 0)
+#endif
 		fwrite(buffer, stat.st_size, 1, file);
 
 	ret = 0;
@@ -1222,10 +1286,19 @@ int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel)
 err_free:
 	free(buffer);
 err_close:
-	if (use_resolvconf == 0)
-		fclose(file);
-	else
-		pclose(file);
+#if HAVE_RESOLVCONF
+	if (use_resolvconf == 0) {
+#endif
+		if (fclose(file))
+			log_warn("Could not close /etc/resolv.conf: %s\n",
+			         strerror(errno));
+#if HAVE_RESOLVCONF
+	} else {
+		if (pclose(file) == -1)
+			log_warn("Could not close resolvconf pipe: %s\n",
+			         strerror(errno));
+	}
+#endif
 
 	return ret;
 }
@@ -1235,17 +1308,24 @@ int ipv4_del_nameservers_from_resolv_conf(struct tunnel *tunnel)
 	int ret = -1;
 	FILE *file;
 	struct stat stat;
-	char ns0[27], ns1[27], ns2[27]; // 11 + 15 + 1
-	char dns_suffix[MAX_DOMAIN_LENGTH+8];  // 7 + MAX_DOMAIN_LENGTH + 1
+#define NS_SIZE ARRAY_SIZE("nameserver xxx.xxx.xxx.xxx")
+	char ns0[NS_SIZE], ns1[NS_SIZE], ns2[NS_SIZE];
+#undef NS_SIZE
+#define DNS_SUFFIX_SIZE (ARRAY_SIZE("search ") + MAX_DOMAIN_LENGTH)
+	char dns_suffix[DNS_SUFFIX_SIZE];
+#undef DNS_SUFFIX_SIZE
 	char *buffer = NULL;
+	char *saveptr = NULL;
 
+#if HAVE_RESOLVCONF
+	if (tunnel->config->use_resolvconf
+	    && (access(RESOLVCONF_PATH, F_OK) == 0)) {
+		int resolvconf_call_len;
+		char *resolvconf_call;
 
-	if (access(RESOLVCONF_PATH, F_OK) == 0) {
-		int resolvconf_call_len
-		        = strlen(RESOLVCONF_PATH)
-		          + 20
-		          + strlen(tunnel->ppp_iface);
-		char *resolvconf_call = malloc(resolvconf_call_len);
+		resolvconf_call_len = strlen(RESOLVCONF_PATH) + 20
+		                      + strlen(tunnel->ppp_iface);
+		resolvconf_call = malloc(resolvconf_call_len);
 		if (resolvconf_call == NULL) {
 			log_warn("Could not create command to run resolvconf (%s).\n",
 			         strerror(errno));
@@ -1266,6 +1346,7 @@ int ipv4_del_nameservers_from_resolv_conf(struct tunnel *tunnel)
 			return ERR_IPV4_SEE_ERRNO;
 		return 0;
 	}
+#endif
 
 	file = fopen("/etc/resolv.conf", "r+");
 	if (file == NULL) {
@@ -1323,14 +1404,14 @@ int ipv4_del_nameservers_from_resolv_conf(struct tunnel *tunnel)
 		goto err_free;
 	}
 
-	for (const char *line = strtok(buffer, "\n");
+	for (const char *line = strtok_r(buffer, "\n", &saveptr);
 	     line != NULL;
-	     line = strtok(NULL, "\n")) {
+	     line = strtok_r(NULL, "\n", &saveptr)) {
 		if (ns0[0] != '\0' && strcmp(line, ns0) == 0
-		    && (tunnel->ipv4.ns0_was_there == 0)) {
-			log_debug("Deleting \"%s\" from /etc/resolv.conf.\n", ns0);
+        	&& (tunnel->ipv4.ns0_was_there == 0)) {
+        	log_debug("Deleting \"%s\" from /etc/resolv.conf.\n", ns0);
 		} else if (ns1[0] != '\0' && strcmp(line, ns1) == 0
-		           && (tunnel->ipv4.ns1_was_there == 0)) {
+		    && (tunnel->ipv4.ns1_was_there == 0)) {
 			log_debug("Deleting \"%s\" from /etc/resolv.conf.\n", ns1);
 		} else if (ns2[0] != '\0' && strcmp(line, ns2) == 0
 		           && (tunnel->ipv4.ns2_was_there == 0)) {
@@ -1349,8 +1430,8 @@ int ipv4_del_nameservers_from_resolv_conf(struct tunnel *tunnel)
 err_free:
 	free(buffer);
 err_close:
-	if (file)
-		fclose(file);
-
+	if (file && fclose(file))
+		log_warn("Could not close /etc/resolv.conf (%s).\n",
+		         strerror(errno));
 	return ret;
 }

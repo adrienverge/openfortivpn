@@ -13,33 +13,52 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ *  In addition, as a special exception, the copyright holders give permission
+ *  to link the code of portions of this program with the OpenSSL library under
+ *  certain conditions as described in each individual source file, and
+ *  distribute linked combinations including the two.
+ *  You must obey the GNU General Public License in all respects for all of the
+ *  code used other than OpenSSL.  If you modify file(s) with this exception,
+ *  you may extend this exception to your version of the file(s), but you are
+ *  not obligated to do so.  If you do not wish to do so, delete this exception
+ *  statement from your version.  If you delete this exception statement from
+ *  all source files in the program, then also delete it here.
  */
 
 #include "config.h"
 #include "log.h"
 
+#include <openssl/x509.h>  /* work around OpenSSL bug: missing definition of STACK_OF */
+#include <openssl/tls1.h>
+
+#include <sys/stat.h>
+
+#include <ctype.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
-#include <sys/stat.h>
-#include <limits.h>
-#include <openssl/x509.h>  /* work around OpenSSL bug: missing definition of STACK_OF */
-#include <openssl/tls1.h>
 
 const struct vpn_config invalid_cfg = {
 	.gateway_host = {'\0'},
 	.gateway_port = 0,
 	.username = {'\0'},
-	.password = NULL,
+	.password = {'\0'},
+	.password_set = 0,
 	.otp = {'\0'},
 	.otp_prompt = NULL,
 	.otp_delay = -1,
+	.no_ftm_push = -1,
 	.pinentry = NULL,
 	.realm = {'\0'},
+	.iface_name = {'\0'},
 	.set_routes = -1,
 	.set_dns = -1,
 	.pppd_use_peerdns = -1,
+#if HAVE_RESOLVCONF
+	.use_resolvconf = -1,
+#endif
 	.use_syslog = -1,
 	.half_internet_routes = -1,
 	.persistent = -1,
@@ -56,12 +75,17 @@ const struct vpn_config invalid_cfg = {
 	.ca_file = NULL,
 	.user_cert = NULL,
 	.user_key = NULL,
+	.pem_passphrase = {'\0'},
+	.pem_passphrase_set = 0,
 	.insecure_ssl = -1,
 	.cipher_list = NULL,
 	.min_tls = -1,
 	.seclevel_1 = -1,
 	.cert_whitelist = NULL,
-	.use_engine = -1
+	.use_engine = -1,
+	.user_agent = NULL,
+	.hostcheck = NULL,
+	.check_virtual_desktop = NULL,
 };
 
 /*
@@ -109,6 +133,7 @@ int strtob(const char *str)
 		return -1;
 
 	long i = strtol(str, NULL, 0);
+
 	if (i < 0 || i > 1)
 		return -1;
 	return i;
@@ -125,21 +150,21 @@ int parse_min_tls(const char *str)
 	if (str[0] != '1' || str[1] != '.' || str[2] == 0 || str[3] != 0)
 		return -1;
 	switch (str[2]) {
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+#ifdef TLS1_VERSION
 	case '0':
 		return TLS1_VERSION;
+#endif
+#ifdef TLS1_1_VERSION
 	case '1':
 		return TLS1_1_VERSION;
+#endif
+#ifdef TLS1_2_VERSION
 	case '2':
 		return TLS1_2_VERSION;
+#endif
 #ifdef TLS1_3_VERSION
-	/*
-	 * libressl uses version numbers starting with major version 2
-	 * but does not yet support TLS 1.3
-	 */
 	case '3':
 		return TLS1_3_VERSION;
-#endif
 #endif
 	default:
 		return -1;
@@ -158,7 +183,7 @@ int load_config(struct vpn_config *cfg, const char *filename)
 	int ret = ERR_CFG_UNKNOWN;
 	FILE *file;
 	struct stat stat;
-	char *buffer, *line;
+	char *buffer, *line, *saveptr = NULL;
 
 	file = fopen(filename, "r");
 	if (file == NULL)
@@ -188,8 +213,8 @@ int load_config(struct vpn_config *cfg, const char *filename)
 	buffer[stat.st_size] = '\0';
 
 	// Read line by line
-	for (line = strtok(buffer, "\n"); line != NULL;
-	     line = strtok(NULL, "\n")) {
+	for (line = strtok_r(buffer, "\n", &saveptr); line != NULL;
+	     line = strtok_r(NULL, "\n", &saveptr)) {
 		char *key, *equals, *val;
 		int i;
 
@@ -199,7 +224,7 @@ int load_config(struct vpn_config *cfg, const char *filename)
 		// Expect something like: "key = value"
 		equals = strchr(line, '=');
 		if (equals == NULL) {
-			log_warn("Bad line in config file: \"%s\".\n", line);
+			log_warn("Bad line in configuration file: \"%s\".\n", line);
 			continue;
 		}
 		equals[0] = '\0';
@@ -226,72 +251,89 @@ int load_config(struct vpn_config *cfg, const char *filename)
 		}
 
 		if (strcmp(key, "host") == 0) {
-			strncpy(cfg->gateway_host, val, FIELD_SIZE);
-			cfg->gateway_host[FIELD_SIZE] = '\0';
+			strncpy(cfg->gateway_host, val, GATEWAY_HOST_SIZE);
+			cfg->gateway_host[GATEWAY_HOST_SIZE] = '\0';
 		} else if (strcmp(key, "port") == 0) {
 			unsigned long port = strtoul(val, NULL, 0);
+
 			if (port == 0 || port > 65535) {
-				log_warn("Bad port in config file: \"%lu\".\n",
+				log_warn("Bad port in configuration file: \"%lu\".\n",
 				         port);
 				continue;
 			}
 			cfg->gateway_port = port;
 		} else if (strcmp(key, "username") == 0) {
-			strncpy(cfg->username, val, FIELD_SIZE - 1);
-			cfg->username[FIELD_SIZE] = '\0';
+			strncpy(cfg->username, val, USERNAME_SIZE);
+			cfg->username[USERNAME_SIZE] = '\0';
 		} else if (strcmp(key, "password") == 0) {
-			cfg->password = strdup(val);
+			strncpy(cfg->password, val, PASSWORD_SIZE);
+			cfg->password[PASSWORD_SIZE] = '\0';
+			cfg->password_set = 1;
 		} else if (strcmp(key, "otp") == 0) {
-			strncpy(cfg->otp, val, FIELD_SIZE - 1);
-			cfg->otp[FIELD_SIZE] = '\0';
+			strncpy(cfg->otp, val, OTP_SIZE);
+			cfg->otp[OTP_SIZE] = '\0';
 		} else if (strcmp(key, "otp-prompt") == 0) {
 			free(cfg->otp_prompt);
 			cfg->otp_prompt = strdup(val);
 		} else if (strcmp(key, "otp-delay") == 0) {
 			long otp_delay = strtol(val, NULL, 0);
+
 			if (otp_delay < 0 || otp_delay > UINT_MAX) {
-				log_warn("Bad value for otp-delay in config file: \"%s\".\n",
+				log_warn("Bad value for otp-delay in configuration file: \"%s\".\n",
 				         val);
 				continue;
 			}
 			cfg->otp_delay = otp_delay;
+		} else if (strcmp(key, "no-ftm-push") == 0) {
+			int no_ftm_push = strtob(val);
+
+			if (no_ftm_push < 0) {
+				log_warn("Bad no-ftm-push in configuration file: \"%s\".\n",
+				         val);
+				continue;
+			}
+			cfg->no_ftm_push = no_ftm_push;
 		} else if (strcmp(key, "pinentry") == 0) {
 			free(cfg->pinentry);
 			cfg->pinentry = strdup(val);
 		} else if (strcmp(key, "realm") == 0) {
-			strncpy(cfg->realm, val, FIELD_SIZE - 1);
-			cfg->realm[FIELD_SIZE] = '\0';
+			strncpy(cfg->realm, val, REALM_SIZE);
+			cfg->realm[REALM_SIZE] = '\0';
 		} else if (strcmp(key, "use-dnsServer") == 0) {
-			strncpy(cfg->use_dnsServer, val, FIELD_SIZE - 1);
-			cfg->use_dnsServer[FIELD_SIZE] = '\0';
+        	strncpy(cfg->use_dnsServer, val, DNS_SERVER_SIZE - 1);
+        	cfg->use_dnsServer[DNS_SERVER_SIZE] = '\0';
 		} else if (strcmp(key, "set-dns") == 0) {
 			int set_dns = strtob(val);
+
 			if (set_dns < 0) {
-				log_warn("Bad set-dns in config file: \"%s\".\n",
+				log_warn("Bad set-dns in configuration file: \"%s\".\n",
 				         val);
 				continue;
 			}
 			cfg->set_dns = set_dns;
 		} else if (strcmp(key, "set-routes") == 0) {
 			int set_routes = strtob(val);
+
 			if (set_routes < 0) {
-				log_warn("Bad set-routes in config file: \"%s\".\n",
+				log_warn("Bad set-routes in configuration file: \"%s\".\n",
 				         val);
 				continue;
 			}
 			cfg->set_routes = set_routes;
 		} else if (strcmp(key, "half-internet-routes") == 0) {
 			int half_internet_routes = strtob(val);
+
 			if (half_internet_routes < 0) {
-				log_warn("Bad half-internet-routes in config file: \"%s\".\n",
+				log_warn("Bad half-internet-routes in configuration file: \"%s\".\n",
 				         val);
 				continue;
 			}
 			cfg->half_internet_routes = half_internet_routes;
 		} else if (strcmp(key, "persistent") == 0) {
 			unsigned long persistent = strtoul(val, NULL, 0);
+
 			if (persistent > UINT_MAX) {
-				log_warn("Bad value for persistent in config file: \"%s\".\n",
+				log_warn("Bad value for persistent in configuration file: \"%s\".\n",
 				         val);
 				continue;
 			}
@@ -299,8 +341,9 @@ int load_config(struct vpn_config *cfg, const char *filename)
 #if HAVE_USR_SBIN_PPPD
 		} else if (strcmp(key, "pppd-use-peerdns") == 0) {
 			int pppd_use_peerdns = strtob(val);
+
 			if (pppd_use_peerdns < 0) {
-				log_warn("Bad pppd-use-peerdns in config file: \"%s\".\n",
+				log_warn("Bad pppd-use-peerdns in configuration file: \"%s\".\n",
 				         val);
 				continue;
 			}
@@ -330,17 +373,31 @@ int load_config(struct vpn_config *cfg, const char *filename)
 #else
 			log_warn("Ignoring option \"%s\".\n", key);
 #endif
+		} else if (strcmp(key, "use-resolvconf") == 0) {
+#if HAVE_RESOLVCONF
+			int use_resolvconf = strtob(val);
+
+			if (use_resolvconf < 0) {
+				log_warn("Bad use-resolvconf value in configuration file: \"%s\".\n",
+				         val);
+				continue;
+			}
+			cfg->use_resolvconf = use_resolvconf;
+#else
+			log_warn("Ignoring option \"%s\".\n", key);
+#endif
 		} else if (strcmp(key, "use-syslog") == 0) {
 			int use_syslog = strtob(val);
+
 			if (use_syslog < 0) {
-				log_warn("Bad use-syslog in config file: \"%s\".\n",
+				log_warn("Bad use-syslog in configuration file: \"%s\".\n",
 				         val);
 				continue;
 			}
 			cfg->use_syslog = use_syslog;
 		} else if (strcmp(key, "trusted-cert") == 0) {
 			if (strlen(val) != SHA256STRLEN - 1) {
-				log_warn("Bad certificate sha256 digest in config file: \"%s\".\n",
+				log_warn("Bad certificate sha256 digest in configuration file: \"%s\".\n",
 				         val);
 				continue;
 			}
@@ -358,10 +415,15 @@ int load_config(struct vpn_config *cfg, const char *filename)
 		} else if (strcmp(key, "user-key") == 0) {
 			free(cfg->user_key);
 			cfg->user_key = strdup(val);
+		} else if (strcmp(key, "pem-passphrase") == 0) {
+			strncpy(cfg->pem_passphrase, val, PEM_PASSPHRASE_SIZE);
+			cfg->pem_passphrase[PEM_PASSPHRASE_SIZE] = '\0';
+			cfg->pem_passphrase_set = 1;
 		} else if (strcmp(key, "insecure-ssl") == 0) {
 			int insecure_ssl = strtob(val);
+
 			if (insecure_ssl < 0) {
-				log_warn("Bad insecure-ssl in config file: \"%s\".\n",
+				log_warn("Bad insecure-ssl in configuration file: \"%s\".\n",
 				         val);
 				continue;
 			}
@@ -372,8 +434,9 @@ int load_config(struct vpn_config *cfg, const char *filename)
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
 		} else if (strcmp(key, "min-tls") == 0) {
 			int min_tls = parse_min_tls(val);
+
 			if (min_tls == -1) {
-				log_warn("Bad min-tls in config file: \"%s\".\n",
+				log_warn("Bad min-tls in configuration file: \"%s\".\n",
 				         val);
 				continue;
 			} else {
@@ -382,14 +445,24 @@ int load_config(struct vpn_config *cfg, const char *filename)
 #endif
 		} else if (strcmp(key, "seclevel-1") == 0) {
 			int seclevel_1 = strtob(val);
+
 			if (seclevel_1 < 0) {
-				log_warn("Bad seclevel-1 in config file: \"%s\".\n",
+				log_warn("Bad seclevel-1 in configuration file: \"%s\".\n",
 				         val);
 				continue;
 			}
 			cfg->seclevel_1 = seclevel_1;
+		} else if (strcmp(key, "user-agent") == 0) {
+			free(cfg->user_agent);
+			cfg->user_agent = strdup(val);
+		} else if (strcmp(key, "hostcheck") == 0) {
+			free(cfg->hostcheck);
+			cfg->hostcheck = strdup(val);
+		} else if (strcmp(key, "check-virtual-desktop") == 0) {
+			free(cfg->check_virtual_desktop);
+			cfg->check_virtual_desktop = strdup(val);
 		} else {
-			log_warn("Bad key in config file: \"%s\".\n", key);
+			log_warn("Bad key in configuration file: \"%s\".\n", key);
 			goto err_free;
 		}
 	}
@@ -399,14 +472,14 @@ int load_config(struct vpn_config *cfg, const char *filename)
 err_free:
 	free(buffer);
 err_close:
-	fclose(file);
+	if (fclose(file))
+		log_warn("Could not close %s (%s).\n", filename, strerror(errno));
 
 	return ret;
 }
 
 void destroy_vpn_config(struct vpn_config *cfg)
 {
-	free(cfg->password);
 	free(cfg->otp_prompt);
 	free(cfg->pinentry);
 #if HAVE_USR_SBIN_PPPD
@@ -423,8 +496,12 @@ void destroy_vpn_config(struct vpn_config *cfg)
 	free(cfg->user_cert);
 	free(cfg->user_key);
 	free(cfg->cipher_list);
+	free(cfg->user_agent);
+	free(cfg->hostcheck);
+	free(cfg->check_virtual_desktop);
 	while (cfg->cert_whitelist != NULL) {
 		struct x509_digest *tmp = cfg->cert_whitelist->next;
+
 		free(cfg->cert_whitelist);
 		cfg->cert_whitelist = tmp;
 	}
@@ -438,26 +515,36 @@ void merge_config(struct vpn_config *dst, struct vpn_config *src)
 		dst->gateway_port = src->gateway_port;
 	if (src->username[0])
 		strcpy(dst->username, src->username);
-	if (src->password != NULL && src->password[0])
-		dst->password = strdup(src->password);
+	if (src->password_set) {
+		strcpy(dst->password, src->password);
+		dst->password_set = src->password_set;
+	}
 	if (src->otp[0])
 		strcpy(dst->otp, src->otp);
 	if (src->otp_delay != invalid_cfg.otp_delay)
 		dst->otp_delay = src->otp_delay;
+	if (src->no_ftm_push != invalid_cfg.no_ftm_push)
+		dst->no_ftm_push = src->no_ftm_push;
 	if (src->pinentry) {
 		free(dst->pinentry);
 		dst->pinentry = src->pinentry;
 	}
 	if (src->realm[0])
 		strcpy(dst->realm, src->realm);
+	if (src->iface_name[0])
+		strcpy(dst->iface_name, src->iface_name);
 	if (src->use_dnsServer[0])
-		strcpy(dst->use_dnsServer, src->use_dnsServer);
+    	strcpy(dst->use_dnsServer, src->use_dnsServer);
 	if (src->set_routes != invalid_cfg.set_routes)
 		dst->set_routes = src->set_routes;
 	if (src->set_dns != invalid_cfg.set_dns)
 		dst->set_dns = src->set_dns;
 	if (src->pppd_use_peerdns != invalid_cfg.pppd_use_peerdns)
 		dst->pppd_use_peerdns = src->pppd_use_peerdns;
+#if HAVE_RESOLVCONF
+	if (src->use_resolvconf != invalid_cfg.use_resolvconf)
+		dst->use_resolvconf = src->use_resolvconf;
+#endif
 	if (src->use_syslog != invalid_cfg.use_syslog)
 		dst->use_syslog = src->use_syslog;
 	if (src->half_internet_routes != invalid_cfg.half_internet_routes)
@@ -506,6 +593,10 @@ void merge_config(struct vpn_config *dst, struct vpn_config *src)
 		free(dst->user_key);
 		dst->user_key = src->user_key;
 	}
+	if (src->pem_passphrase_set) {
+		strcpy(dst->pem_passphrase, src->pem_passphrase);
+		dst->pem_passphrase_set = src->pem_passphrase_set;
+	}
 	if (src->insecure_ssl != invalid_cfg.insecure_ssl)
 		dst->insecure_ssl = src->insecure_ssl;
 	if (src->cipher_list) {
@@ -519,9 +610,16 @@ void merge_config(struct vpn_config *dst, struct vpn_config *src)
 	if (src->cert_whitelist) {
 		while (dst->cert_whitelist != NULL) {
 			struct x509_digest *tmp = dst->cert_whitelist->next;
+
 			free(dst->cert_whitelist);
 			dst->cert_whitelist = tmp;
 		}
 		dst->cert_whitelist = src->cert_whitelist;
 	}
+	if (src->user_agent != invalid_cfg.user_agent)
+		dst->user_agent = src->user_agent;
+	if (src->hostcheck != invalid_cfg.hostcheck)
+		dst->hostcheck = src->hostcheck;
+	if (src->check_virtual_desktop != invalid_cfg.check_virtual_desktop)
+		dst->check_virtual_desktop = src->check_virtual_desktop;
 }

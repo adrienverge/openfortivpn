@@ -17,13 +17,23 @@
 
 #include "hdlc.h"
 
+/*
+ * Encode and decode PPP packets from and into HDLC frames.
+ *
+ * RFC 1622 describes the use of HDLC-like framing for PPP encapsulated packets:
+ * https://www.rfc-editor.org/info/rfc1662
+ */
+
 #define in_sending_accm(byte) \
 	((byte) < 0x20 || ((byte) & 0x7f) == 0x7d || ((byte) & 0x7f) == 0x7e)
 
 #define in_receiving_accm(byte) \
 	((byte) < 0x20)
 
-static uint16_t fcs_tab[] = {
+/*
+ * Lookup table used to calculate the FCS, as generated in RFC 1662.
+ */
+static const uint16_t fcs_tab[] = {
 	0x0000, 0x1189, 0x2312, 0x329b, 0x4624, 0x57ad, 0x6536, 0x74bf,
 	0x8c48, 0x9dc1, 0xaf5a, 0xbed3, 0xca6c, 0xdbe5, 0xe97e, 0xf8f7,
 	0x1081, 0x0108, 0x3393, 0x221a, 0x56a5, 0x472c, 0x75b7, 0x643e,
@@ -59,53 +69,80 @@ static uint16_t fcs_tab[] = {
 };
 
 /*
- * 16-bit frame check sequence from RFC1662.
+ * Calculates a new FCS from the current FCS and new data.
+ *
+ * @param[in] sum      Current FCS value.
+ * @param[in] seq      Array of new data.
+ * @param[in] length   Length of the array of new data.
+ * @return             new FCS value.
  */
-static uint16_t frame_checksum_16bit(uint16_t sum, uint8_t *seq, size_t length)
+static uint16_t frame_checksum_16bit(uint16_t sum, const uint8_t *seq, size_t length)
 {
-	size_t i;
-
-	for (i = 0; i < length; i++)
-		sum = (sum >> 8) ^ fcs_tab[0xff & (sum ^ seq[i])];
+	while (length--)
+		sum = (sum >> 8) ^ fcs_tab[(sum ^ *seq++) & 0xff];
 
 	return sum;
 }
 
-static int need_flag_sequence = 1;
+/*
+ * Precalculated FCS for Address and Control fields.
+ *
+ *     address_control_checksum = frame_checksum_16bit(0xffff, { 0xff, 0x03 }, 2);
+ */
+static const uint16_t address_control_checksum = 0x3de3;
+
 
 /*
- * Wraps a PPP packet into a HDLC frame and write it to a buffer.
+ * Each frame begins with a Flag Sequence.
+ * Only one Flag Sequence is required between two frames.
+ * The first frame begins with a Flag Sequence.
+ * Subsequent frames rely on the Flag Sequence that ends the previous frame.
+ */
+static int need_flag_sequence;
+
+/*
+ * Upon connection, the first frame begins with a Flag Sequence.
+ */
+void init_hdlc(void)
+{
+	need_flag_sequence = 1;
+}
+
+
+/*
+ * Wraps a PPP packet into an HDLC frame and write it to a buffer.
  *
- * @param[out] frame    the buffer to store the encoded frame
- * @param[in]  frmsize  the output buffer size
- * @param[in]  packet   the buffer containing the packet
- * @param[in]  pktsize  the input packet size
+ * @param[out] frame    The buffer to store the encoded frame.
+ * @param[in]  frmsize  The output buffer size.
+ * @param[in]  packet   The buffer containing the packet.
+ * @param[in]  pktsize  The input packet size.
  * @return              the number of bytes written to the buffer (i.e. the
  *                      HDLC-encoded frame length) or ERR_HDLC_BUFFER_TOO_SMALL
  *                      if the output buffer is too small
  */
 ssize_t hdlc_encode(uint8_t *frame, size_t frmsize,
-                    uint8_t *packet, size_t pktsize)
+                    const uint8_t *packet, size_t pktsize)
 {
 	ssize_t written = 0;
 	uint16_t checksum;
-	uint8_t address_control_prefix[] = { 0xff, 0x03 };
+	const uint8_t address_control_fields[] = { 0xff, 0x03 };
 	int i;
 	uint8_t byte;
 
 	if (frmsize < 7)
 		return ERR_HDLC_BUFFER_TOO_SMALL;
 
+	// In theory each frame begins with a Flag Sequence, but it is omitted
+	// if the previous frame ends with a Flag Sequence.
 	if (need_flag_sequence)
-		frame[written++] = 0x7e; // FlagSequence
+		frame[written++] = 0x7e;
 
-	// Escape and write AddressControlPrefix (0xff 0x03)
-	frame[written++] = 0xff;
+	// Escape and write Frame Address and Control fields
+	frame[written++] = address_control_fields[0];
 	frame[written++] = 0x7d;
-	frame[written++] = 0x23;
+	frame[written++] = address_control_fields[1] ^ 0x20;
 
-	checksum = frame_checksum_16bit(0xffff, address_control_prefix, 2);
-	checksum = frame_checksum_16bit(checksum, packet, pktsize);
+	checksum = address_control_checksum; // Precalculated for Address Control
 
 	for (i = 0; i < pktsize; i++) {
 		byte = packet[i];
@@ -123,15 +160,18 @@ ssize_t hdlc_encode(uint8_t *frame, size_t frmsize,
 	if (frmsize < written + 3)
 		return ERR_HDLC_BUFFER_TOO_SMALL;
 
-	// Escape and write checksum
-	byte = (checksum ^ 0xffff) & 0xff;
+	checksum = frame_checksum_16bit(checksum, packet, pktsize);
+
+	// Escape and write Frame Check Sequence field
+	checksum ^= 0xffff;
+	byte = checksum & 0x00ff;
 	if (in_sending_accm(byte)) {
 		frame[written++] = 0x7d;
 		frame[written++] = byte ^ 0x20;
 	} else {
 		frame[written++] = byte;
 	}
-	byte = (checksum ^ 0xffff) >> 8;
+	byte = (checksum >> 8) & 0x00ff;
 	if (in_sending_accm(byte)) {
 		frame[written++] = 0x7d;
 		frame[written++] = byte ^ 0x20;
@@ -139,7 +179,8 @@ ssize_t hdlc_encode(uint8_t *frame, size_t frmsize,
 		frame[written++] = byte;
 	}
 
-	frame[written++] = 0x7e; // FlagSequence
+	// Each frame ends with a Flag Sequence
+	frame[written++] = 0x7e;
 	need_flag_sequence = 0;
 
 	return written;
@@ -148,16 +189,19 @@ ssize_t hdlc_encode(uint8_t *frame, size_t frmsize,
 /*
  * Finds the first frame in a buffer, starting search at start.
  *
- * Return ERR_HDLC_NO_FRAME_FOUND if no frame is found. Otherwise, returns the
- * first frame length and sets start to its beginning offset in the buffer.
+ * @param[in]     buffer   The input buffer.
+ * @param[in]     bufsize  The input buffer size.
+ * @param[in,out] start    Offset of the beginning of the first frame in the buffer.
+ * @return                 the length of the first frame or ERR_HDLC_NO_FRAME_FOUND
+ *                         if no frame is found.
  */
-ssize_t hdlc_find_frame(uint8_t *buffer, size_t bufsize, off_t *start)
+ssize_t hdlc_find_frame(const uint8_t *buffer, size_t bufsize, off_t *start)
 {
 	int i, s = -1, e = -1;
 
 	// Look for frame start
 	for (i = *start; i < bufsize - 2; i++) {
-		if (buffer[i] == 0x7e) { // FlagSequence
+		if (buffer[i] == 0x7e) { // Flag Sequence
 			s = i + 1;
 			break;
 		}
@@ -165,13 +209,13 @@ ssize_t hdlc_find_frame(uint8_t *buffer, size_t bufsize, off_t *start)
 	if (s == -1)
 		return ERR_HDLC_NO_FRAME_FOUND;
 
-	// Discard empty packets
-	while (s < bufsize - 2 && buffer[s] == 0x7e)
+	// Discard empty frames
+	while (s < bufsize - 2 && buffer[s] == 0x7e) // consecutive Flag Sequences
 		s++;
 
 	// Look for frame end
 	for (i = s; i < bufsize; i++) {
-		if (buffer[i] == 0x7e) { // FlagSequence
+		if (buffer[i] == 0x7e) { // Flag Sequence
 			e = i;
 			break;
 		}
@@ -186,21 +230,21 @@ ssize_t hdlc_find_frame(uint8_t *buffer, size_t bufsize, off_t *start)
 /*
  * Extracts the first PPP packet found in the input buffer.
  *
- * The frame should be passed without its surrounding 0x7e bytes.
+ * The frame should be passed without its surrounding Flag Sequence (0x7e) bytes.
  *
- * @param[in]  frame    the buffer containing the encoded frame
- * @param[in]  frmsize  the input buffer size
- * @param[out] packet   the buffer to store the decoded packet
- * @param[in]  pktsize  the output packet buffer size
+ * @param[in]  frame    The buffer containing the encoded frame.
+ * @param[in]  frmsize  The input buffer size.
+ * @param[out] packet   The buffer to store the decoded packet.
+ * @param[in]  pktsize  The output packet buffer size.
  * @return              the number of bytes written to the output packet
- *                      buffer, or < 0 in case of error
+ *                      buffer, or < 0 in case of error.
  */
-ssize_t hdlc_decode(uint8_t *frame, size_t frmsize,
+ssize_t hdlc_decode(const uint8_t *frame, size_t frmsize,
                     uint8_t *packet, size_t pktsize)
 {
 	off_t start = 0;
 	ssize_t written = 0;
-	int has_address_control_prefix = 0;
+	int has_address_control_fields = 0;
 	int i;
 	int in_escape;
 	uint16_t checksum;
@@ -208,23 +252,23 @@ ssize_t hdlc_decode(uint8_t *frame, size_t frmsize,
 	if (frmsize < 5)
 		return ERR_HDLC_INVALID_FRAME;
 
-	// Remove AddressControlPrefix (0xff 0x03, escaped)
-	if (frame[0] == 0xff && frame[1] == 0x7d && frame[2] == 0x23) {
+	// Remove Address and escaped Control fields
+	if (frame[0] == 0xff && frame[1] == 0x7d && frame[2] == (0x03 ^ 0x20)) {
 		start += 3;
-		has_address_control_prefix = 1;
+		has_address_control_fields = 1;
 	}
 
 	in_escape = 0;
 	for (i = start; i < frmsize; i++) {
 		uint8_t byte = frame[i];
 
-		if (byte == 0x7d) { // ControlEscape
+		if (byte == 0x7d) { // Control Escape
 			if (in_escape)
 				return ERR_HDLC_INVALID_FRAME;
 			in_escape = 1;
 			continue;
 		} else if (in_escape) {
-			byte ^= 0x20; // ControlModifier
+			byte ^= 0x20;
 			in_escape = 0;
 		} else if (in_receiving_accm(byte)) {
 			continue; // Drop characters possibly introduced by DCE
@@ -239,9 +283,9 @@ ssize_t hdlc_decode(uint8_t *frame, size_t frmsize,
 	if (written < 3)
 		return ERR_HDLC_INVALID_FRAME;
 
-	// Control checksum validity and remove it from packet
-	if (has_address_control_prefix)
-		checksum = 0x3de3; // Precomputed checksum for { 0xff, 0x03 }
+	// Control Frame Check Sequence field validity and remove it
+	if (has_address_control_fields)
+		checksum = address_control_checksum;
 	else
 		checksum = 0xffff;
 	checksum = frame_checksum_16bit(checksum, packet, written);

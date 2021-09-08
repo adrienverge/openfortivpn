@@ -15,22 +15,13 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _OPENFORTIVPN_IPV4_H
-#define _OPENFORTIVPN_IPV4_H
+#ifndef OPENFORTIVPN_IPV4_H
+#define OPENFORTIVPN_IPV4_H
 
 #include <sys/types.h>
 #include <sys/socket.h>
-#ifdef HAVE_SYS_MUTEX_H
-/* Mac OS X and BSD wants this explicit include */
-#include <sys/mutex.h>
-#endif
 #include <netinet/in.h>
 #include <net/route.h>
-#include <net/if.h>
-#ifdef HAVE_NET_IF_IF_VAR_H
-/* on FreeBSD we need this additional header */
-#include <net/if_var.h>
-#endif
 
 #if !HAVE_RT_ENTRY_WITH_RT_DST
 /*

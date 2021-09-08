@@ -29,36 +29,45 @@
 #include "tunnel.h"
 #include "http.h"
 #include "log.h"
+#include "userinput.h"
+#ifndef HAVE_X509_CHECK_HOST
+#include "openssl_hostname_validation.h"
+#endif
+
+#include <openssl/err.h>
+#ifndef OPENSSL_NO_ENGINE
+#include <openssl/engine.h>
+#endif
+#include <openssl/ui.h>
+#include <openssl/x509v3.h>
+#if HAVE_SYSTEMD
+#include <systemd/sd-daemon.h>
+#endif
 
 #include <unistd.h>
+#include <arpa/inet.h>
 #include <fcntl.h>
 #include <ifaddrs.h>
 #include <netdb.h>
-#include <errno.h>
-#include <string.h>
-#include <net/if.h>
-#include <arpa/inet.h>
-#include <sys/socket.h>
-#include <sys/ioctl.h>
-#include <openssl/err.h>
-#include <openssl/x509v3.h>
-#include <openssl/engine.h>
 #if HAVE_PTY_H
 #include <pty.h>
 #elif HAVE_UTIL_H
 #include <util.h>
 #endif
-#include <termios.h>
-#include <signal.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 #include <sys/wait.h>
-#if HAVE_SYSTEMD
-#include <systemd/sd-daemon.h>
+#include <sys/ioctl.h>
+#include <termios.h>
+#if HAVE_LIBUTIL_H
+#include <libutil.h>
 #endif
 
-// we use this constant in the source, so define a fallback if not defined
-#ifndef OPENSSL_API_COMPAT
-#define OPENSSL_API_COMPAT 0x0908000L
-#endif
+#include <errno.h>
+#include <signal.h>
+#include <string.h>
+#include <assert.h>
+
 
 struct ofv_varr {
 	unsigned int cap;	// current capacity
@@ -71,6 +80,7 @@ static int ofv_append_varr(struct ofv_varr *p, const char *x)
 	if (p->off + 1 >= p->cap) {
 		const char **ndata;
 		unsigned int ncap = (p->off + 1) * 2;
+
 		if (p->off + 1 >= ncap) {
 			log_error("%s: ncap exceeded\n", __func__);
 			return 1;
@@ -128,7 +138,11 @@ static int on_ppp_if_up(struct tunnel *tunnel)
 
 static int on_ppp_if_down(struct tunnel *tunnel)
 {
-	log_info("Setting ppp interface down.\n");
+#if HAVE_SYSTEMD
+	sd_notify(0, "STOPPING=1");
+#endif
+
+	log_info("Setting %s interface down.\n", tunnel->ppp_iface);
 
 	if (tunnel->config->set_routes) {
 		log_info("Restoring routes...\n");
@@ -158,6 +172,7 @@ static int pppd_run(struct tunnel *tunnel)
 #endif
 
 	static const char ppp_path[] = PPP_PATH;
+
 	if (access(ppp_path, F_OK) != 0) {
 		log_error("%s: %s.\n", ppp_path, strerror(errno));
 		return 1;
@@ -167,7 +182,7 @@ static int pppd_run(struct tunnel *tunnel)
 	slave_stderr = dup(STDERR_FILENO);
 
 	if (slave_stderr < 0) {
-		log_error("slave stderr %s\n", strerror(errno));
+		log_error("slave stderr: %s\n", strerror(errno));
 		return 1;
 	}
 
@@ -182,7 +197,8 @@ static int pppd_run(struct tunnel *tunnel)
 		struct ofv_varr pppd_args = { 0, 0, NULL };
 
 		dup2(slave_stderr, STDERR_FILENO);
-		close(slave_stderr);
+		if (close(slave_stderr))
+			log_warn("Could not close slave stderr (%s).\n", strerror(errno));
 
 #if HAVE_USR_SBIN_PPP
 		/*
@@ -196,22 +212,30 @@ static int pppd_run(struct tunnel *tunnel)
 			"-direct"
 		};
 		for (unsigned int i = 0; i < ARRAY_SIZE(v); i++)
-			if (ofv_append_varr(&pppd_args, v[i]))
+			if (ofv_append_varr(&pppd_args, v[i])) {
+				free(pppd_args.data);
 				return 1;
+			}
 #endif
 #if HAVE_USR_SBIN_PPPD
 		if (tunnel->config->pppd_call) {
-			if (ofv_append_varr(&pppd_args, ppp_path))
+			if (ofv_append_varr(&pppd_args, ppp_path)) {
+				free(pppd_args.data);
 				return 1;
-			if (ofv_append_varr(&pppd_args, "call"))
+			}
+			if (ofv_append_varr(&pppd_args, "call")) {
+				free(pppd_args.data);
 				return 1;
-			if (ofv_append_varr(&pppd_args, tunnel->config->pppd_call))
+			}
+			if (ofv_append_varr(&pppd_args, tunnel->config->pppd_call)) {
+				free(pppd_args.data);
 				return 1;
+			}
 		} else {
 			static const char *const v[] = {
 				ppp_path,
-				"115200", // speed
-				":192.0.2.1", // <local_IP_address>:<remote_IP_address>
+				"230400", // speed
+				":169.254.2.1", // <local_IP_address>:<remote_IP_address>
 				"noipdefault",
 				"noaccomp",
 				"noauth",
@@ -224,63 +248,95 @@ static int pppd_run(struct tunnel *tunnel)
 				"mru", "1354"
 			};
 			for (unsigned int i = 0; i < ARRAY_SIZE(v); i++)
-				if (ofv_append_varr(&pppd_args, v[i]))
+				if (ofv_append_varr(&pppd_args, v[i])) {
+					free(pppd_args.data);
 					return 1;
+				}
 		}
 		if (tunnel->config->pppd_use_peerdns)
-			if (ofv_append_varr(&pppd_args, "usepeerdns"))
+			if (ofv_append_varr(&pppd_args, "usepeerdns")) {
+				free(pppd_args.data);
 				return 1;
+			}
 		if (tunnel->config->pppd_log) {
-			if (ofv_append_varr(&pppd_args, "debug"))
+			if (ofv_append_varr(&pppd_args, "debug")) {
+				free(pppd_args.data);
 				return 1;
-			if (ofv_append_varr(&pppd_args, "logfile"))
+			}
+			if (ofv_append_varr(&pppd_args, "logfile")) {
+				free(pppd_args.data);
 				return 1;
-			if (ofv_append_varr(&pppd_args, tunnel->config->pppd_log))
+			}
+			if (ofv_append_varr(&pppd_args, tunnel->config->pppd_log)) {
+				free(pppd_args.data);
 				return 1;
+			}
 		} else {
 			/*
 			 * pppd defaults to logging to fd=1, clobbering the
 			 * actual PPP data
 			 */
-			if (ofv_append_varr(&pppd_args, "logfd"))
+			if (ofv_append_varr(&pppd_args, "logfd")) {
+				free(pppd_args.data);
 				return 1;
-			if (ofv_append_varr(&pppd_args, "2"))
+			}
+			if (ofv_append_varr(&pppd_args, "2")) {
+				free(pppd_args.data);
 				return 1;
+			}
 		}
 		if (tunnel->config->pppd_plugin) {
-			if (ofv_append_varr(&pppd_args, "plugin"))
+			if (ofv_append_varr(&pppd_args, "plugin")) {
+				free(pppd_args.data);
 				return 1;
-			if (ofv_append_varr(&pppd_args, tunnel->config->pppd_plugin))
+			}
+			if (ofv_append_varr(&pppd_args, tunnel->config->pppd_plugin)) {
+				free(pppd_args.data);
 				return 1;
+			}
 		}
 		if (tunnel->config->pppd_ipparam) {
-			if (ofv_append_varr(&pppd_args, "ipparam"))
+			if (ofv_append_varr(&pppd_args, "ipparam")) {
+				free(pppd_args.data);
 				return 1;
-			if (ofv_append_varr(&pppd_args, tunnel->config->pppd_ipparam))
+			}
+			if (ofv_append_varr(&pppd_args, tunnel->config->pppd_ipparam)) {
+				free(pppd_args.data);
 				return 1;
+			}
 		}
 		if (tunnel->config->pppd_ifname) {
-			if (ofv_append_varr(&pppd_args, "ifname"))
+			if (ofv_append_varr(&pppd_args, "ifname")) {
+				free(pppd_args.data);
 				return 1;
-			if (ofv_append_varr(&pppd_args, tunnel->config->pppd_ifname))
+			}
+			if (ofv_append_varr(&pppd_args, tunnel->config->pppd_ifname)) {
+				free(pppd_args.data);
 				return 1;
+			}
 		}
 #endif
 #if HAVE_USR_SBIN_PPP
 		if (tunnel->config->ppp_system) {
-			if (ofv_append_varr(&pppd_args, tunnel->config->ppp_system))
+			if (ofv_append_varr(&pppd_args, tunnel->config->ppp_system)) {
+				free(pppd_args.data);
 				return 1;
+			}
 		}
 #endif
 
-		close(tunnel->ssl_socket);
+		if (close(tunnel->ssl_socket))
+			log_warn("Could not close ssl socket (%s).\n", strerror(errno));
+		tunnel->ssl_socket = -1;
 		execv(pppd_args.data[0], (char *const *)pppd_args.data);
 		free(pppd_args.data);
 
-		fprintf(stderr, "execvp: %s\n", strerror(errno));
+		fprintf(stderr, "execv: %s\n", strerror(errno));
 		_exit(EXIT_FAILURE);
 	} else {
-		close(slave_stderr);
+		if (close(slave_stderr))
+			log_error("Could not close slave stderr (%s).\n",
+			          strerror(errno));
 		if (pid == -1) {
 			log_error("forkpty: %s\n", strerror(errno));
 			return 1;
@@ -289,6 +345,7 @@ static int pppd_run(struct tunnel *tunnel)
 
 	// Set non-blocking
 	int flags = fcntl(amaster, F_GETFL, 0);
+
 	if (flags == -1)
 		flags = 0;
 	if (fcntl(amaster, F_SETFL, flags | O_NONBLOCK) == -1) {
@@ -302,7 +359,8 @@ static int pppd_run(struct tunnel *tunnel)
 	return 0;
 }
 
-static const char * const pppd_message[] = {
+static const char * const ppp_message[] = {
+#if HAVE_USR_SBIN_PPPD // pppd(8) - https://ppp.samba.org/pppd.html
 	"Has detached, or otherwise the connection was successfully established and terminated at the peer's request.",
 	"An immediately fatal error of some kind occurred, such as an essential system call failing, or running out of virtual memory.",
 	"An error was detected in processing the options given, such as two mutually exclusive options being used.",
@@ -323,63 +381,115 @@ static const char * const pppd_message[] = {
 	"The PPP negotiation failed because serial loopback was detected.",
 	"The init script failed (returned a non-zero exit status).",
 	"We failed to authenticate ourselves to the peer."
+#else // sysexits(3) - https://www.freebsd.org/cgi/man.cgi?query=sysexits
+	// EX_NORMAL = EX_OK (0)
+	"Successful exit.",
+	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 1-9
+	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,	// 10-19
+	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 20-29
+	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 30-39
+	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 40-49
+	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 50-59
+	NULL, NULL, NULL, NULL, // 60-63
+	// EX_USAGE (64)
+	"The command was used incorrectly, e.g., with the wrong number of arguments, a bad flag, a bad syntax in a parameter, or whatever.",
+	NULL, NULL, NULL, NULL, // 65-68
+	// EX_UNAVAILABLE (69)
+	"A service is unavailable. This can occur if a support program or file does not exist.",
+	// EX_ERRDEAD = EX_SOFTWARE (70)
+	"An internal software error has been detected.",
+	NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 71-77
+	// EX_CONFIG (78)
+	"Something was found in an unconfigured or misconfigured state.",
+	NULL, // 79
+	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 80-89
+	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 90-98
+	NULL // EX_TERMINATE (99), PPP internal pseudo-code
+#endif
 };
 
 static int pppd_terminate(struct tunnel *tunnel)
 {
-	close(tunnel->pppd_pty);
+	if (close(tunnel->pppd_pty))
+		log_warn("Could not close pppd pty (%s).\n", strerror(errno));
 
 	log_debug("Waiting for %s to exit...\n", PPP_DAEMON);
 
 	int status;
+
+	/*
+	 * Errors outside of the PPP process are returned as negative integers.
+	 */
 	if (waitpid(tunnel->pppd_pid, &status, 0) == -1) {
 		log_error("waitpid: %s\n", strerror(errno));
-		return 1;
+		return -1;
 	}
+
+	/*
+	 * Errors in the PPP process are returned as positive integers.
+	 */
 	if (WIFEXITED(status)) {
 		int exit_status = WEXITSTATUS(status);
+
+		/*
+		 * PPP exit status codes are positive integers. The way we interpret
+		 * their value is not straightforward:
+		 * - in the case of "normal" exit, the PPP process may return 0,
+		 *   but also a strictly positive integer such as 16 in the case of
+		 *   pppd,
+		 * - in the case of failure, the PPP process will return a strictly
+		 *   positive integer.
+		 * For now we process PPP exit status codes as follows:
+		 * - exit status codes synonym of success are logged and then
+		 *   translated to 0 before they are returned to the calling function,
+		 * - other exit status codes are considered synonyms of failure and
+		 *   returned to the calling function as is.
+		 */
 		log_debug("waitpid: %s exit status code %d\n",
 		          PPP_DAEMON, exit_status);
-#if HAVE_USR_SBIN_PPPD
-		if (exit_status >= ARRAY_SIZE(pppd_message) || exit_status < 0) {
-			log_error("%s: Returned an unknown exit status: %d\n",
+		if (exit_status >= ARRAY_SIZE(ppp_message)) {
+			log_error("%s: Returned an unknown exit status code: %d\n",
 			          PPP_DAEMON, exit_status);
 		} else {
 			switch (exit_status) {
-			case 0: // success
+			/*
+			 * PPP exit status codes considered as success
+			 */
+			case 0:
 				log_debug("%s: %s\n",
-				          PPP_DAEMON, pppd_message[exit_status]);
+				          PPP_DAEMON, ppp_message[exit_status]);
 				break;
-			case 16: // emitted when exiting normally
-				log_info("%s: %s\n",
-				         PPP_DAEMON, pppd_message[exit_status]);
-				break;
+#if HAVE_USR_SBIN_PPPD
+			case 16: // emitted by Ctrl+C or "kill -15"
+				if (get_sig_received() == SIGINT
+				    || get_sig_received() == SIGTERM) {
+					log_info("%s: %s\n",
+					         PPP_DAEMON, ppp_message[exit_status]);
+					exit_status = 0;
+					break;
+				}
+#endif
+			/*
+			 * PPP exit status codes considered as failure
+			 */
 			default:
-				log_error("%s: %s\n",
-				          PPP_DAEMON, pppd_message[exit_status]);
+				if (ppp_message[exit_status])
+					log_error("%s: %s\n",
+					          PPP_DAEMON, ppp_message[exit_status]);
+				else
+					log_error("%s: Returned an unexpected exit status code: %d\n",
+					          PPP_DAEMON, exit_status);
 				break;
 			}
 		}
-#else
-		// ppp exit codes in the FreeBSD case
-		switch (exit_status) {
-		case 0: // success and EX_NORMAL as defined in ppp source directly
-			log_debug("%s: %s\n", PPP_DAEMON, pppd_message[exit_status]);
-			break;
-		case 1:
-		case 127:
-		case 255: // abnormal exit with hard-coded error codes in ppp
-			log_error("%s: exited with return value of %d\n",
-			          PPP_DAEMON, exit_status);
-			break;
-		default:
-			log_error("%s: %s (%d)\n", PPP_DAEMON, strerror(exit_status),
-			          exit_status);
-			break;
-		}
-#endif
+		return exit_status;
 	} else if (WIFSIGNALED(status)) {
 		int signal_number = WTERMSIG(status);
+
+		/*
+		 * For now we do not consider interruption of the PPP process by
+		 * a signal as a failure. Should we?
+		 */
 		log_debug("waitpid: %s terminated by signal %d\n",
 		          PPP_DAEMON, signal_number);
 		log_error("%s: terminated by signal: %s\n",
@@ -401,19 +511,17 @@ int ppp_interface_is_up(struct tunnel *tunnel)
 	}
 
 	for (ifa = ifap; ifa != NULL; ifa = ifa->ifa_next) {
-		if ((
+		if (
 #if HAVE_USR_SBIN_PPPD
-		            (tunnel->config->pppd_ifname
-		             && strstr(ifa->ifa_name, tunnel->config->pppd_ifname)
-		             != NULL)
-		            || strstr(ifa->ifa_name, "ppp") != NULL
+		        ((tunnel->config->pppd_ifname &&
+		          strstr(ifa->ifa_name, tunnel->config->pppd_ifname) != NULL) ||
+		         strstr(ifa->ifa_name, "ppp") != NULL) &&
 #endif
 #if HAVE_USR_SBIN_PPP
-		            strstr(ifa->ifa_name, "tun") != NULL
+		        strstr(ifa->ifa_name, "tun") != NULL &&
 #endif
-		    ) && ifa->ifa_flags & IFF_UP) {
-			if (&(ifa->ifa_addr->sa_family) != NULL
-			    && ifa->ifa_addr->sa_family == AF_INET) {
+		        ifa->ifa_flags & IFF_UP) {
+			if (ifa->ifa_addr && ifa->ifa_addr->sa_family == AF_INET) {
 				struct in_addr if_ip_addr =
 				        cast_addr(ifa->ifa_addr)->sin_addr;
 
@@ -458,6 +566,18 @@ static int get_gateway_host_ip(struct tunnel *tunnel)
 	return 0;
 }
 
+static int tcp_getsockopt(int sockfd, int optname)
+{
+	int optval;
+	socklen_t optlen = sizeof(optval);
+
+	if (getsockopt(sockfd, IPPROTO_TCP, optname,
+	               (void *)&optval, &optlen))
+		return -1;
+	assert(optlen == sizeof(optval));
+	return optval;
+}
+
 /*
  * Establish a regular TCP connection.
  */
@@ -466,12 +586,104 @@ static int tcp_connect(struct tunnel *tunnel)
 	int ret, handle;
 	struct sockaddr_in server;
 	char *env_proxy;
+	const int iface_len = strnlen(tunnel->config->iface_name, IF_NAMESIZE);
 
 	handle = socket(AF_INET, SOCK_STREAM, 0);
+
 	if (handle == -1) {
 		log_error("socket: %s\n", strerror(errno));
 		goto err_socket;
 	}
+
+	/*
+	 * Attempt to find default TCP socket options on different platforms.
+	 */
+#ifdef SO_KEEPALIVE
+	ret = tcp_getsockopt(handle, SO_KEEPALIVE);
+	if (ret < 0)
+		log_warn("getsockopt: %s: %s\n", "SO_KEEPALIVE", strerror(errno));
+	else
+		log_debug("SO_KEEPALIVE: %d\n", ret);
+#endif
+#ifdef TCP_KEEPIDLE
+	ret = tcp_getsockopt(handle, TCP_KEEPIDLE);
+	if (ret < 0)
+		log_warn("getsockopt: %s: %s\n", "TCP_KEEPIDLE", strerror(errno));
+	else
+		log_debug("TCP_KEEPIDLE: %d\n", ret);
+#endif
+#ifdef TCP_KEEPALIVE
+	ret = tcp_getsockopt(handle, TCP_KEEPALIVE);
+	if (ret < 0)
+		log_warn("getsockopt: %s: %s\n", "TCP_KEEPALIVE", strerror(errno));
+	else
+		log_debug("TCP_KEEPALIVE: %d\n", ret);
+#endif
+#ifdef TCP_KEEPINTVL
+	ret = tcp_getsockopt(handle, TCP_KEEPINTVL);
+	if (ret < 0)
+		log_warn("getsockopt: %s: %s\n", "TCP_KEEPINTVL", strerror(errno));
+	else
+		log_debug("TCP_KEEPINTVL: %d\n", ret);
+#endif
+#ifdef TCP_KEEPCNT
+	ret = tcp_getsockopt(handle, TCP_KEEPCNT);
+	if (ret < 0)
+		log_warn("getsockopt: %s: %s\n", "TCP_KEEPCNT", strerror(errno));
+	else
+		log_debug("TCP_KEEPCNT: %d\n", ret);
+#endif
+#ifdef SO_SNDBUF
+	ret = tcp_getsockopt(handle, SO_SNDBUF);
+	if (ret < 0)
+#ifndef __APPLE__
+		log_warn("getsockopt: %s: %s\n", "SO_SNDBUF", strerror(errno));
+	else
+#endif
+		log_debug("SO_SNDBUF: %d\n", ret);
+#endif
+#ifdef SO_RCVBUF
+	ret = tcp_getsockopt(handle, SO_RCVBUF);
+	if (ret < 0)
+#ifndef __APPLE__
+		log_warn("getsockopt: %s: %s\n", "SO_RCVBUF", strerror(errno));
+	else
+#endif
+		log_debug("SO_RCVBUF: %d\n", ret);
+#endif
+
+	if (iface_len == IF_NAMESIZE) {
+		log_error("socket: Too long iface name\n");
+		goto err_post_socket;
+	}
+	if (iface_len > 0) {
+#if HAVE_SO_BINDTODEVICE
+		ret = setsockopt(handle, SOL_SOCKET, SO_BINDTODEVICE,
+		                 tunnel->config->iface_name, iface_len);
+#else
+		struct ifreq ifr;
+
+		memset(&ifr, 0, sizeof(ifr));
+		if (strlcpy(ifr.ifr_name, tunnel->config->iface_name, IF_NAMESIZE)
+		    >= IF_NAMESIZE) {
+			log_error("interface name too long\n");
+			goto err_post_socket;
+		}
+		ifr.ifr_addr.sa_family = AF_INET;
+		if (ioctl(handle, SIOCGIFADDR, &ifr) == -1) {
+			log_error("ioctl(%d,SIOCGIFADDR,\"%s\") failed\n", handle,
+			          ifr.ifr_name);
+			goto err_post_socket;
+		}
+		ret = bind(handle, &ifr.ifr_addr, ifr.ifr_addr.sa_len);
+#endif
+		if (ret) {
+			log_error("socket: setting interface name failed with error: %d\n",
+			          errno);
+			goto err_post_socket;
+		}
+	}
+
 	env_proxy = getenv("https_proxy");
 	if (env_proxy == NULL)
 		env_proxy = getenv("HTTPS_PROXY");
@@ -497,7 +709,7 @@ static int tcp_connect(struct tunnel *tunnel)
 		else
 			proxy_host += 3;
 		// split host and port
-		proxy_port = index(proxy_host, ':');
+		proxy_port = strchr(proxy_host, ':');
 		if (proxy_port != NULL) {
 			proxy_port[0] = '\0';
 			proxy_port++;
@@ -556,7 +768,9 @@ static int tcp_connect(struct tunnel *tunnel)
 		        tunnel->config->gateway_port,
 		        inet_ntoa(tunnel->config->gateway_ip),
 		        tunnel->config->gateway_port);
+
 		ssize_t bytes_written = write(handle, request, strlen(request));
+
 		if (bytes_written != strlen(request)) {
 			log_error("write error while talking to proxy: %s\n",
 			          strerror(errno));
@@ -569,61 +783,55 @@ static int tcp_connect(struct tunnel *tunnel)
 
 		memset(&(request), '\0', sizeof(request));
 		for (int j = 0; response == NULL; j++) {
-			/*
-			 * Coverity detected a defect:
-			 *  CID 200508: String not null terminated (STRING_NULL)
-			 *
-			 * It is actually a false positive:
-			 * • Function memset() initializes 'request' with '\0'
-			 * • Function read() gets a single char into: request[j]
-			 * • The final '\0' cannot be overwritten because:
-			 *   	j < ARRAY_SIZE(request) - 1
-			 */
-			ssize_t bytes_read = read(handle, &(request[j]), 1);
-			if (bytes_read < 1) {
+			if (j >= ARRAY_SIZE(request) - 1) {
 				log_error("Proxy response is unexpectedly large and cannot fit in the %lu-bytes buffer.\n",
 				          ARRAY_SIZE(request));
 				goto err_proxy_response;
 			}
 
-			// detect "200"
+			ssize_t bytes_read = read(handle, &(request[j]), 1);
 			static const char HTTP_STATUS_200[] = "200";
+
+			// we have reached the end of the data sent by the proxy
+			// and have not seen HTTP status code 200
+			if (bytes_read < 1) {
+				log_error("Proxy response does not contain \"%s\" as expected.\n",
+				          HTTP_STATUS_200);
+				goto err_proxy_response;
+			}
+
+			// detect "200"
 			response = strstr(request, HTTP_STATUS_200);
 
 			// detect end-of-line after "200"
 			if (response != NULL) {
 				/*
-				 * RFC2616 states in section 2.2 Basic Rules:
-				 * 	CR     = <US-ASCII CR, carriage return (13)>
-				 * 	LF     = <US-ASCII LF, linefeed (10)>
-				 * 	HTTP/1.1 defines the sequence CR LF as the
-				 * 	end-of-line marker for all protocol elements
-				 * 	except the entity-body (see appendix 19.3
-				 * 	for tolerant applications).
-				 * 		CRLF   = CR LF
+				 * RFC 2616 states in section 2.2 Basic Rules:
+				 *      CR     = <US-ASCII CR, carriage return (13)>
+				 *      LF     = <US-ASCII LF, linefeed (10)>
+				 *      HTTP/1.1 defines the sequence CR LF as the
+				 *      end-of-line marker for all protocol elements
+				 *      except the entity-body (see appendix 19.3
+				 *      for tolerant applications).
+				 *              CRLF   = CR LF
 				 *
-				 * RFC2616 states in section 19.3 Tolerant Applications:
-				 * 	The line terminator for message-header fields
-				 * 	is the sequence CRLF. However, we recommend
-				 * 	that applications, when parsing such headers,
-				 * 	recognize a single LF as a line terminator
-				 * 	and ignore the leading CR.
+				 * RFC 2616 states in section 19.3 Tolerant Applications:
+				 *      The line terminator for message-header fields
+				 *      is the sequence CRLF. However, we recommend
+				 *      that applications, when parsing such headers,
+				 *      recognize a single LF as a line terminator
+				 *      and ignore the leading CR.
 				 */
 				static const char *const HTTP_EOL[] = {
 					"\r\n\r\n",
 					"\n\n"
 				};
 				const char *eol = NULL;
+
 				for (int i = 0; (i < ARRAY_SIZE(HTTP_EOL)) &&
 				     (eol == NULL); i++)
 					eol = strstr(response, HTTP_EOL[i]);
 				response = eol;
-			}
-
-			if (j > ARRAY_SIZE(request) - 2) {
-				log_error("Proxy response does not contain \"%s\" as expected.\n",
-				          HTTP_STATUS_200);
-				goto err_proxy_response;
 			}
 		}
 
@@ -636,7 +844,9 @@ err_proxy_response:
 err_connect:
 	free(env_proxy); // release memory allocated by strdup()
 err_strdup:
-	close(handle);
+err_post_socket:
+	if (close(handle))
+		log_warn("Could not close socket (%s).\n", strerror(errno));
 err_socket:
 	return -1;
 }
@@ -652,11 +862,12 @@ static int ssl_verify_cert(struct tunnel *tunnel)
 	char *line;
 	int i;
 	X509_NAME *subj;
-	char common_name[FIELD_SIZE + 1];
+	char *saveptr = NULL;
 
 	SSL_set_verify(tunnel->ssl_handle, SSL_VERIFY_PEER, NULL);
 
 	X509 *cert = SSL_get_peer_certificate(tunnel->ssl_handle);
+
 	if (cert == NULL) {
 		log_error("Unable to get gateway certificate.\n");
 		return 1;
@@ -666,16 +877,15 @@ static int ssl_verify_cert(struct tunnel *tunnel)
 
 #ifdef HAVE_X509_CHECK_HOST
 	// Use OpenSSL native host validation if v >= 1.0.2.
-	if (X509_check_host(cert, common_name, FIELD_SIZE, 0, NULL))
+	// compare against gateway_host and correctly check return value
+	// to fix prior incorrect use of X509_check_host
+	if (X509_check_host(cert, tunnel->config->gateway_host,
+	                    0, 0, NULL) == 1)
 		cert_valid = 1;
 #else
-	// Use explicit Common Name check if native validation not available.
-	// Note: this will ignore Subject Alternative Name fields.
-	if (subj
-	    && X509_NAME_get_text_by_NID(subj, NID_commonName, common_name,
-	                                 FIELD_SIZE) > 0
-	    && strncasecmp(common_name, tunnel->config->gateway_host,
-	                   FIELD_SIZE) == 0)
+	// Use validate_hostname form iSECPartners if native validation not available
+	// in order to avoid TLS Certificate CommonName NULL Byte Vulnerability
+	if (validate_hostname(tunnel->config->gateway_host, cert) == MatchFound)
 		cert_valid = 1;
 #endif
 
@@ -709,22 +919,27 @@ static int ssl_verify_cert(struct tunnel *tunnel)
 		goto free_cert;
 	}
 
-	subject = X509_NAME_oneline(subj, NULL, 0);
-	issuer = X509_NAME_oneline(X509_get_issuer_name(cert), NULL, 0);
-
-	log_error("Gateway certificate validation failed, and the certificate digest in not in the local whitelist. If you trust it, rerun with:\n");
+	log_error("Gateway certificate validation failed, and the certificate digest is not in the local whitelist. If you trust it, rerun with:\n");
 	log_error("    --trusted-cert %s\n", digest_str);
-	log_error("or add this line to your config file:\n");
+	log_error("or add this line to your configuration file:\n");
 	log_error("    trusted-cert = %s\n", digest_str);
 	log_error("Gateway certificate:\n");
 	log_error("    subject:\n");
-	for (line = strtok(subject, "/"); line != NULL;
-	     line = strtok(NULL, "/"))
-		log_error("        %s\n", line);
+	subject = X509_NAME_oneline(subj, NULL, 0);
+	if (subject) {
+		for (line = strtok_r(subject, "/", &saveptr); line != NULL;
+		     line = strtok_r(NULL, "/", &saveptr))
+			log_error("        %s\n", line);
+		free(subject);
+	}
 	log_error("    issuer:\n");
-	for (line = strtok(issuer, "/"); line != NULL;
-	     line = strtok(NULL, "/"))
-		log_error("        %s\n", line);
+	issuer = X509_NAME_oneline(X509_get_issuer_name(cert), NULL, 0);
+	if (issuer) {
+		for (line = strtok_r(issuer, "/", &saveptr); line != NULL;
+		     line = strtok_r(NULL, "/", &saveptr))
+			log_error("        %s\n", line);
+		free(issuer);
+	}
 	log_error("    sha256 digest:\n");
 	log_error("        %s\n", digest_str);
 
@@ -743,11 +958,49 @@ static void ssl_disconnect(struct tunnel *tunnel)
 
 	SSL_shutdown(tunnel->ssl_handle);
 	SSL_free(tunnel->ssl_handle);
-	SSL_CTX_free(tunnel->ssl_context);
-	close(tunnel->ssl_socket);
-
 	tunnel->ssl_handle = NULL;
+
+	SSL_CTX_free(tunnel->ssl_context);
 	tunnel->ssl_context = NULL;
+
+	if (close(tunnel->ssl_socket))
+		log_warn("Could not close ssl socket (%s).\n", strerror(errno));
+	tunnel->ssl_socket = -1;
+}
+
+/*
+ * Query for the pass phrase used for encrypted PEM structures
+ * (normally only private keys).
+ */
+static int pem_passphrase_cb(char *buf, int size, int rwflag, void *u)
+{
+	struct vpn_config *cfg = (struct vpn_config *)u;
+
+	/* We expect to only read PEM pass phrases, not write them. */
+	if (rwflag == 0) {
+		if (!cfg->pem_passphrase_set) {
+			if (size > PEM_PASSPHRASE_SIZE) {
+				read_password(NULL, NULL,
+				              "Enter PEM pass phrase: ",
+				              cfg->pem_passphrase,
+				              PEM_PASSPHRASE_SIZE + 1);
+				cfg->pem_passphrase_set =  1;
+			} else {
+				log_error("Buffer too small for PEM pass phrase: %d.",
+				          size);
+			}
+		}
+		if (cfg->pem_passphrase_set) {
+			assert(strlen(cfg->pem_passphrase) < size);
+			strncpy(buf, cfg->pem_passphrase, size);
+			buf[size - 1] = '\0';
+			return strlen(buf);
+		}
+	} else {
+		log_error("We refuse to write PEM pass phrases!");
+	}
+
+	return -1;
 }
 
 /*
@@ -759,53 +1012,125 @@ int ssl_connect(struct tunnel *tunnel)
 
 	tunnel->ssl_socket = tcp_connect(tunnel);
 	if (tunnel->ssl_socket == -1)
-		return 1;
+		goto err_tcp_connect;
 
-	// registration is deprecated from OpenSSL 1.1.0 onward
-#if OPENSSL_API_COMPAT < 0x10100000L
+	// https://wiki.openssl.org/index.php/Library_Initialization
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
 	// Register the error strings for libcrypto & libssl
 	SSL_load_error_strings();
 	// Register the available ciphers and digests
 	SSL_library_init();
-#endif
 
 	tunnel->ssl_context = SSL_CTX_new(SSLv23_client_method());
+#else
+	tunnel->ssl_context = SSL_CTX_new(TLS_client_method());
+#endif
 	if (tunnel->ssl_context == NULL) {
 		log_error("SSL_CTX_new: %s\n",
 		          ERR_error_string(ERR_peek_last_error(), NULL));
-		return 1;
+		goto err_ssl_socket;
 	}
 
-	// Load the OS default CA files
+	/* Load the OS default CA files */
 	if (!SSL_CTX_set_default_verify_paths(tunnel->ssl_context))
 		log_error("Could not load OS OpenSSL files.\n");
 
 	if (tunnel->config->ca_file) {
-		if (!SSL_CTX_load_verify_locations(
-		            tunnel->ssl_context,
-		            tunnel->config->ca_file, NULL)) {
+		if (!SSL_CTX_load_verify_locations(tunnel->ssl_context,
+		                                   tunnel->config->ca_file, NULL)) {
 			log_error("SSL_CTX_load_verify_locations: %s\n",
 			          ERR_error_string(ERR_peek_last_error(), NULL));
-			return 1;
+			goto err_ssl_context;
 		}
 	}
 
-	/* Use engine for PIV if user-cert config starts with pkcs11 URI: */
-	if (tunnel->config->use_engine > 0) {
+	/* Disable vulnerable TLS protocols and ciphers by default*/
+	if (!tunnel->config->cipher_list) {
+		if (!tunnel->config->insecure_ssl) {
+			const char *cipher_list;
 
+			if (tunnel->config->seclevel_1)
+				cipher_list = "HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4@SECLEVEL=1";
+			else
+				cipher_list = "HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4";
+			tunnel->config->cipher_list = strdup(cipher_list);
+		} else if (tunnel->config->seclevel_1) {
+			const char *cipher_list = "DEFAULT@SECLEVEL=1";
+
+			tunnel->config->cipher_list = strdup(cipher_list);
+		}
+	}
+
+	/* Set the password callback for PEM certificates with encryption. */
+	SSL_CTX_set_default_passwd_cb(tunnel->ssl_context, &pem_passphrase_cb);
+	SSL_CTX_set_default_passwd_cb_userdata(tunnel->ssl_context, tunnel->config);
+
+	if (tunnel->config->cipher_list) {
+		log_debug("Setting cipher list to: %s\n", tunnel->config->cipher_list);
+		if (!SSL_CTX_set_cipher_list(tunnel->ssl_context,
+		                             tunnel->config->cipher_list)) {
+			log_error("SSL_CTX_set_cipher_list failed: %s\n",
+			          ERR_error_string(ERR_peek_last_error(), NULL));
+			goto err_ssl_context;
+		}
+	}
+
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+	if (tunnel->config->min_tls > 0) {
+		log_debug("Setting minimum protocol version to: 0x%x.\n",
+		          tunnel->config->min_tls);
+		if (!SSL_CTX_set_min_proto_version(tunnel->ssl_context,
+		                                   tunnel->config->min_tls)) {
+			log_error("Cannot set minimum protocol version (%s).\n",
+			          ERR_error_string(ERR_peek_last_error(), NULL));
+			goto err_ssl_context;
+		}
+	}
+#else
+	if (!tunnel->config->insecure_ssl || tunnel->config->min_tls > 0) {
+		long sslctxopt = 0;
+		long checkopt;
+
+		if (!tunnel->config->insecure_ssl)
+			sslctxopt |= SSL_OP_NO_SSLv3 | SSL_OP_NO_COMPRESSION;
+#ifdef TLS1_VERSION
+		if (tunnel->config->min_tls > TLS1_VERSION)
+			sslctxopt |= SSL_OP_NO_TLSv1;
+#endif
+#ifdef TLS1_1_VERSION
+		if (tunnel->config->min_tls > TLS1_1_VERSION)
+			sslctxopt |= SSL_OP_NO_TLSv1_1;
+#endif
+#ifdef TLS1_2_VERSION
+		if (tunnel->config->min_tls > TLS1_2_VERSION)
+			sslctxopt |= SSL_OP_NO_TLSv1_2;
+#endif
+		checkopt = SSL_CTX_set_options(tunnel->ssl_context, sslctxopt);
+		if ((checkopt & sslctxopt) != sslctxopt) {
+			log_error("SSL_CTX_set_options didn't set opt: %s\n",
+			          ERR_error_string(ERR_peek_last_error(), NULL));
+			goto err_ssl_context;
+		}
+	}
+#endif
+
+	/* Use engine for PIV if user-cert config starts with pkcs11 URI: */
+#ifndef OPENSSL_NO_ENGINE
+	if (tunnel->config->use_engine > 0) {
 		ENGINE *e;
+
 		ENGINE_load_builtin_engines();
 		e = ENGINE_by_id("pkcs11");
 		if (!e) {
 			log_error("Could not load pkcs11 Engine: %s\n",
 			          ERR_error_string(ERR_peek_last_error(), NULL));
-			return 1;
+			goto err_ssl_context;
 		}
 		if (!ENGINE_init(e)) {
 			log_error("Could not init pkcs11 Engine: %s\n",
 			          ERR_error_string(ERR_peek_last_error(), NULL));
 			ENGINE_free(e);
-			return 1;
+			goto err_ssl_context;
 		}
 		if (!ENGINE_set_default_RSA(e))
 			abort();
@@ -814,19 +1139,20 @@ int ssl_connect(struct tunnel *tunnel)
 		ENGINE_free(e);
 
 		struct token parms;
+
 		parms.uri = tunnel->config->user_cert;
 		parms.cert = NULL;
 
 		if (!ENGINE_ctrl_cmd(e, "LOAD_CERT_CTRL", 0, &parms, NULL, 1)) {
 			log_error("PKCS11 ENGINE_ctrl_cmd: %s\n",
 			          ERR_error_string(ERR_peek_last_error(), NULL));
-			return 1;
+			goto err_ssl_context;
 		}
 
 		if (!SSL_CTX_use_certificate(tunnel->ssl_context, parms.cert)) {
 			log_error("PKCS11 SSL_CTX_use_certificate: %s\n",
 			          ERR_error_string(ERR_peek_last_error(), NULL));
-			return 1;
+			goto err_ssl_context;
 		}
 
 		EVP_PKEY * privkey = ENGINE_load_private_key(
@@ -834,40 +1160,40 @@ int ssl_connect(struct tunnel *tunnel)
 		if (!privkey) {
 			log_error("PKCS11 ENGINE_load_private_key: %s\n",
 			          ERR_error_string(ERR_peek_last_error(), NULL));
-			return 1;
+			goto err_ssl_context;
 		}
 
 		if (!SSL_CTX_use_PrivateKey(tunnel->ssl_context, privkey)) {
 			log_error("PKCS11 SSL_CTX_use_PrivateKey_file: %s\n",
 			          ERR_error_string(ERR_peek_last_error(), NULL));
-			return 1;
+			goto err_ssl_context;
 		}
 
 		if (!SSL_CTX_check_private_key(tunnel->ssl_context)) {
 			log_error("PKCS11 SSL_CTX_check_private_key: %s\n",
 			          ERR_error_string(ERR_peek_last_error(), NULL));
-			return 1;
+			goto err_ssl_context;
 		}
 
 	} else {        /* end PKCS11-engine */
+#endif
 
 		if (tunnel->config->user_cert) {
-			if (!SSL_CTX_use_certificate_file(
-			            tunnel->ssl_context, tunnel->config->user_cert,
-			            SSL_FILETYPE_PEM)) {
-				log_error("SSL_CTX_use_certificate_file: %s\n",
+			if (!SSL_CTX_use_certificate_chain_file(
+			            tunnel->ssl_context, tunnel->config->user_cert)) {
+				log_error("SSL_CTX_use_certificate_chain_file: %s\n",
 				          ERR_error_string(ERR_peek_last_error(), NULL));
-				return 1;
+				goto err_ssl_context;
 			}
 		}
 
 		if (tunnel->config->user_key) {
-			if (!SSL_CTX_use_PrivateKey_file(
-			            tunnel->ssl_context, tunnel->config->user_key,
-			            SSL_FILETYPE_PEM)) {
+			if (!SSL_CTX_use_PrivateKey_file(tunnel->ssl_context,
+			                                 tunnel->config->user_key,
+			                                 SSL_FILETYPE_PEM)) {
 				log_error("SSL_CTX_use_PrivateKey_file: %s\n",
 				          ERR_error_string(ERR_peek_last_error(), NULL));
-				return 1;
+				goto err_ssl_context;
 			}
 		}
 
@@ -875,77 +1201,24 @@ int ssl_connect(struct tunnel *tunnel)
 			if (!SSL_CTX_check_private_key(tunnel->ssl_context)) {
 				log_error("SSL_CTX_check_private_key: %s\n",
 				          ERR_error_string(ERR_peek_last_error(), NULL));
-				return 1;
+				goto err_ssl_context;
 			}
 		}
+#ifndef OPENSSL_NO_ENGINE
 	}
-
-	if (!tunnel->config->insecure_ssl) {
-		long sslctxopt = SSL_OP_NO_SSLv3 | SSL_OP_NO_COMPRESSION;
-		long checkopt;
-
-		checkopt = SSL_CTX_set_options(tunnel->ssl_context, sslctxopt);
-		if ((checkopt & sslctxopt) != sslctxopt) {
-			log_error("SSL_CTX_set_options didn't set opt: %s\n",
-			          ERR_error_string(ERR_peek_last_error(), NULL));
-			return 1;
-		}
-	}
+#endif
 
 	tunnel->ssl_handle = SSL_new(tunnel->ssl_context);
 	if (tunnel->ssl_handle == NULL) {
 		log_error("SSL_new: %s\n",
 		          ERR_error_string(ERR_peek_last_error(), NULL));
-		return 1;
+		goto err_ssl_context;
 	}
-
-	if (!tunnel->config->insecure_ssl) {
-		if (!tunnel->config->cipher_list) {
-			const char *cipher_list;
-			if (tunnel->config->seclevel_1)
-				cipher_list = "HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4@SECLEVEL=1";
-			else
-				cipher_list = "HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4";
-			tunnel->config->cipher_list = strdup(cipher_list);
-		}
-	} else {
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L
-		if (tunnel->config->min_tls <= 0)
-			tunnel->config->min_tls = TLS1_VERSION;
-#endif
-		if (!tunnel->config->cipher_list && tunnel->config->seclevel_1) {
-			const char *cipher_list = "DEFAULT@SECLEVEL=1";
-			tunnel->config->cipher_list = strdup(cipher_list);
-		}
-	}
-
-	if (tunnel->config->cipher_list) {
-		log_debug("Setting cipher list to: %s\n", tunnel->config->cipher_list);
-		if (!SSL_set_cipher_list(tunnel->ssl_handle,
-		                         tunnel->config->cipher_list)) {
-			log_error("SSL_set_cipher_list failed: %s\n",
-			          ERR_error_string(ERR_peek_last_error(), NULL));
-			return 1;
-		}
-	}
-
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L
-	if (tunnel->config->min_tls > 0) {
-		log_debug("Setting min proto version to: 0x%x\n",
-		          tunnel->config->min_tls);
-		if (!SSL_set_min_proto_version(tunnel->ssl_handle,
-		                               tunnel->config->min_tls)) {
-			log_error("SSL_set_min_proto_version failed: %s\n",
-			          ERR_error_string(ERR_peek_last_error(), NULL));
-			return 1;
-		}
-	}
-#endif
 
 	if (!SSL_set_fd(tunnel->ssl_handle, tunnel->ssl_socket)) {
 		log_error("SSL_set_fd: %s\n",
 		          ERR_error_string(ERR_peek_last_error(), NULL));
-		return 1;
+		goto err_ssl_handle;
 	}
 	SSL_set_mode(tunnel->ssl_handle, SSL_MODE_AUTO_RETRY);
 
@@ -954,18 +1227,32 @@ int ssl_connect(struct tunnel *tunnel)
 		log_error("SSL_connect: %s\n"
 		          "You might want to try --insecure-ssl or specify a different --cipher-list\n",
 		          ERR_error_string(ERR_peek_last_error(), NULL));
-		return 1;
+		goto err_ssl_handle;
 	}
 	SSL_set_mode(tunnel->ssl_handle, SSL_MODE_AUTO_RETRY);
 
 	if (ssl_verify_cert(tunnel))
-		return 1;
+		goto err_ssl_handle;
 
 	// Disable SIGPIPE (occurs when trying to write to an already-closed
 	// socket).
 	signal(SIGPIPE, SIG_IGN);
 
 	return 0;
+
+err_ssl_handle:
+	SSL_shutdown(tunnel->ssl_handle);
+	SSL_free(tunnel->ssl_handle);
+	tunnel->ssl_handle = NULL;
+err_ssl_context:
+	SSL_CTX_free(tunnel->ssl_context);
+	tunnel->ssl_context = NULL;
+err_ssl_socket:
+	if (close(tunnel->ssl_socket))
+		log_warn("Could not close ssl socket (%s).\n", strerror(errno));
+	tunnel->ssl_socket = -1;
+err_tcp_connect:
+	return 1;
 }
 
 int run_tunnel(struct vpn_config *config)
@@ -974,6 +1261,7 @@ int run_tunnel(struct vpn_config *config)
 	struct tunnel tunnel = {
 		.config = config,
 		.state = STATE_DOWN,
+		.ssl_socket = -1,
 		.ssl_context = NULL,
 		.ssl_handle = NULL,
 		.ipv4.ns0_addr.s_addr = 0,
@@ -1007,7 +1295,7 @@ int run_tunnel(struct vpn_config *config)
 	ret = auth_log_in(&tunnel);
 	if (ret != 1) {
 		log_error("Could not authenticate to gateway. Please check the password, client certificate, etc.\n");
-		log_debug("%s %d\n", err_http_str(ret), ret);
+		log_debug("%s (%d)\n", err_http_str(ret), ret);
 		ret = 1;
 		goto err_tunnel;
 	}
@@ -1052,12 +1340,10 @@ int run_tunnel(struct vpn_config *config)
 	                tunnel.cookie);
 	if (ret != 1) {
 		log_error("Could not start tunnel (%s).\n", err_http_str(ret));
-		ret = 1;
 		goto err_start_tunnel;
 	}
 
 	tunnel.state = STATE_CONNECTING;
-	ret = 0;
 
 	// Step 6: perform io between pppd and the gateway, while tunnel is up
 	log_debug("Starting IO through the tunnel\n");
@@ -1071,7 +1357,7 @@ int run_tunnel(struct vpn_config *config)
 	tunnel.state = STATE_DISCONNECTING;
 
 err_start_tunnel:
-	pppd_terminate(&tunnel);
+	ret = pppd_terminate(&tunnel);
 	log_info("Terminated %s.\n", PPP_DAEMON);
 err_tunnel:
 	log_info("Closed connection to gateway.\n");
@@ -1084,7 +1370,7 @@ err_tunnel:
 		log_info("Logged out.\n");
 	}
 
-	// explicitly free the buffer allocated for split routes of the ipv4 config
+	// explicitly free the buffer allocated for split routes of the ipv4 configuration
 	if (tunnel.ipv4.split_rt != NULL) {
 		free(tunnel.ipv4.split_rt);
 		tunnel.ipv4.split_rt = NULL;

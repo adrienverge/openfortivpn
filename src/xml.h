@@ -15,12 +15,8 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _OPENFORTIVPN_XML_H
-#define _OPENFORTIVPN_XML_H
-
-#define MAX_DOMAIN_LENGTH 256
-// see https://unix.stackexchange.com/questions/245849
-// ... /resolv-conf-limited-to-six-domains-with-a-total-of-256-characters
+#ifndef OPENFORTIVPN_XML_H
+#define OPENFORTIVPN_XML_H
 
 const char *xml_find(char t, const char *tag, const char *buf, int nest);
 char *xml_get(const char *buf);

@@ -15,13 +15,15 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _OPENFORTIVPN_CONFIG_H
-#define _OPENFORTIVPN_CONFIG_H
+#ifndef OPENFORTIVPN_CONFIG_H
+#define OPENFORTIVPN_CONFIG_H
+
+#include <netinet/in.h>
+#include <net/if.h>
 
 #include <errno.h>
+#include <stdint.h>
 #include <string.h>
-#include <sys/types.h>
-#include <netinet/in.h>
 
 #define ERR_CFG_UNKNOWN		-1
 #define ERR_CFG_SEE_ERRNO	-2
@@ -56,26 +58,54 @@ struct x509_digest {
 	char data[SHA256STRLEN];
 };
 
-#define FIELD_SIZE	64
+#define GATEWAY_HOST_SIZE	253
+#define USERNAME_SIZE	64
+#define PASSWORD_SIZE	256
+#define OTP_SIZE	64
+#define REALM_SIZE	63
+#define DNS_SERVER_SIZE 15
+#define PEM_PASSPHRASE_SIZE	31
+
+/*
+ * RFC 6265 does not limit the size of cookies:
+ * https://www.rfc-editor.org/info/rfc6265
+ *
+ * Yet browsers typically limit themselves to ~4K so we are on the safe side:
+ * http://browsercookielimits.squawky.net/
+ */
 #define COOKIE_SIZE	4096
 
+/*
+ * GNU libc used to limit the search list to 256 characters:
+ * https://unix.stackexchange.com/questions/245849
+ *
+ * We believe we are on the safe side using this value.
+ */
+#define MAX_DOMAIN_LENGTH 256
+
 struct vpn_config {
-	char		gateway_host[FIELD_SIZE + 1];
+	char		gateway_host[GATEWAY_HOST_SIZE + 1];
 	struct in_addr	gateway_ip;
 	uint16_t	gateway_port;
-	char		username[FIELD_SIZE + 1];
-	char		*password;
-	char		otp[FIELD_SIZE + 1];
+	char		username[USERNAME_SIZE + 1];
+	char		password[PASSWORD_SIZE + 1];
+	int		password_set;
+	char		otp[OTP_SIZE + 1];
 	char		*otp_prompt;
-	unsigned int  otp_delay;
+	unsigned int	otp_delay;
+	int		no_ftm_push;
 	char		*pinentry;
-	char		realm[FIELD_SIZE + 1];
-	char        use_dnsServer[FIELD_SIZE + 1];
+	char		iface_name[IF_NAMESIZE];
+	char		realm[REALM_SIZE + 1];
+	char        use_dnsServer[DNS_SERVER_SIZE + 1];
 
 	int	set_routes;
 	int	set_dns;
 	int	pppd_use_peerdns;
 	int	use_syslog;
+#if HAVE_RESOLVCONF
+	int	use_resolvconf;
+#endif
 	int	half_internet_routes;
 
 	unsigned int	persistent;
@@ -90,16 +120,20 @@ struct vpn_config {
 #if HAVE_USR_SBIN_PPP
 	char	*ppp_system;
 #endif
-
 	char			*ca_file;
 	char			*user_cert;
 	char			*user_key;
+	char			pem_passphrase[PEM_PASSPHRASE_SIZE + 1];
+	int			pem_passphrase_set;
 	int			insecure_ssl;
 	int			min_tls;
 	int			seclevel_1;
 	char			*cipher_list;
 	struct x509_digest	*cert_whitelist;
-	int                     use_engine;
+	int			use_engine;
+	char			*user_agent;
+	char			*hostcheck;
+	char			*check_virtual_desktop;
 };
 
 int add_trusted_cert(struct vpn_config *cfg, const char *digest);

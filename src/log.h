@@ -15,11 +15,11 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _OPENFORTIVPN_LOG_H
-#define _OPENFORTIVPN_LOG_H
+#ifndef OPENFORTIVPN_LOG_H
+#define OPENFORTIVPN_LOG_H
 
+#include <stddef.h>
 #include <stdint.h>
-#include <sys/types.h>
 
 // Assign enum values explicitly, we're using them in a lookup
 enum log_verbosity {

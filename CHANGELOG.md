@@ -14,6 +14,87 @@ Releases
 This high level changelog is usually updated when a release is tagged.
 On the master branch there may be changes that are not (yet) described here.
 
+### 1.17.0
+
+* [-] make OpenSSL engines optional
+* [+] document and favor --pinentry over plain text password in configuration file
+* [-] fix buffer overflow and other errors in URI espcaping for --pinentry
+* [~] use different --pinentry hints for different hosts, usernames and realms
+* [-] fix memory management errors related to --user-agent option
+
+### 1.16.0
+
+* [+] support for user key pass phrase
+* [~] add a space at the end of the OTP prompt
+* [-] improve tunnel speed on macOS
+* [-] modify memory allocation in the tunnel configuration structure
+* [+] openfortivpn returns the PPP exit status
+* [+] print SSL socket options in log
+
+### 1.15.0
+
+* [-] fix issue sending pin codes
+* [+] add command line option to bind to specific interface
+* [+] use different hints for OTP and 2FA
+* [+] remove password from /proc/#/cmd
+* [+] extend OTP to allow FTM push
+* [+] add preliminary support for host checks
+* [-] don't accept route to the vpn gateway
+* [-] fix byte counter in pppd_write
+
+### 1.14.1
+
+* [-] fix out of bounds array access
+
+### 1.14.0
+
+* [+] add git commit id in debug output
+* [-] do not use interface ip for routing on linux
+* [-] avoid extra hop on interface for default route
+* [+] clean up, updates and improvements in the build system
+* [+] increase the inbound HTTP buffer capacity when needed
+* [+] print domain search list to output
+* [+] add systemd service file
+* [+] add systemd notification when stopping
+* [+] allow logging with both smartcard and username
+* [+] fix GCC 9 and clang warnings
+* [+] bump default minimal TLS version from TLSv1.0 to TLSv1.2
+* [-] fix a couple coverity warnings
+
+### 1.13.3
+
+* [-] fix a coverity warning
+* [-] cross-compile: do not check resolvconf on the host system
+
+### 1.13.2
+
+* [-] properly build on FreeBSD, even if ppp is not installed at configure time
+
+### 1.13.1
+
+* [-] build in the absence of resolvconf
+
+### 1.13.0
+
+* [-] avoid unsupported versions of resolvconf
+* [~] add configure and command line option for resolvconf
+* [-] increase BUFSIZ
+* [-] reinitialize static variables with the --persistent option
+* [-] fix Makefile incompatibility with BSD sed
+* [-] fix a memory leak in ipv4_add_nameservers_to_resolv_conf
+
+### 1.12.0
+
+* [-] fix CVE-2020-7043: TLS Certificate CommonName NULL Byte Vulnerability
+* [-] fix CVE-2020-7042: use of uninitialized memory in X509_check_host
+* [-] fix CVE-2020-7041: incorrect use of X509_check_host (regarding return value).
+* [-] always hide cleartest password in -vv output
+* [+] add a clear warning about sensitive information in the debug output
+* [+] add a hint in debug output when password is read from configuration file
+* [-] fix segfault when connecting with empty password
+* [+] use resolvconf if available to update resolv.conf file
+* [~] replace semicolon by space in dns-suffix string
+
 ### 1.11.0
 
 * [+] allow to connect with empty password (and with smartcard instead of username)
@@ -73,7 +154,7 @@ On the master branch there may be changes that are not (yet) described here.
 * [~] Invert order of ssl libraries (this may help linking on some platforms)
 * [+] Add FreeBSD support and redesigned the autoconf mechanism
 * [+] Support building with gcc 8
-* [-] Prioritize command line arguments over config file parameters
+* [-] Prioritize command line arguments over configuration file parameters
 * [~] Dynamically allocate routing buffer and therefore allow larger routing table
 * [+] Support systemd notification upon tunnel up
 * [+] Support building in a separate directory
@@ -83,7 +164,7 @@ On the master branch there may be changes that are not (yet) described here.
 
 ### 1.7.1
 
-* [~] Be more tolerant about white space in config file
+* [~] Be more tolerant about white space in configuration file
 * [~] Make better usage of pkg-config
 * [~] Rework linking against OpenSSL
 * [-] Build again on Mac OSX where pthread_mutexattr_setrobust is not available
@@ -91,7 +172,7 @@ On the master branch there may be changes that are not (yet) described here.
 ### 1.7.0
 
 * [~] Correctly set up route to vpn gateway (add support for some particular situations)
-* [+] Support two factor authentication with config file (for NM-plugin)
+* [+] Support two factor authentication with configuration file (for NM-plugin)
 * [~] Change the ip address in the pppd call parameters by a rfc3330 test-net address
 * [-] Correctly report the exit status codes of pppd
 * [+] Add --pppd-call option
@@ -108,19 +189,19 @@ On the master branch there may be changes that are not (yet) described here.
 * [+] Support pppd ifname option
 * [+] Print a clear error message at runtime if pppd does not exist
 * [+] Print clear text error messages of pppd upon failure
-* [~] Existing config file is not overwritten anymore at installation time
+* [~] Existing configuration file is not overwritten anymore at installation time
 * [~] Increase the accepted cookie size and align the error behavior according to RFCs
-* [-] More gracefully handle unexcpected content of resolv.conf
+* [-] More gracefully handle unexpected content of resolv.conf
 * [~] Dynamically allocate memory for split routes and thus support larger numbers of routes
 
 ### 1.5.0
 
 * [~] Improve error handling around the call of pppd
 * [+] Add half-internet-routes option
-* [-] realm was not recognized in the config file
+* [-] realm was not recognized in the configuration file
 * [~] Switch from no-routes and no-dns to set-routes and set-dns option
 * [+] Add pppd-no-peerdns and pppd-log option
-* [~] Allow passing the otp via the config file for use with NetworkManager plugin
+* [~] Allow passing the otp via the configuration file for use with NetworkManager plugin
 * [-] Fix issues initializing memory and with build system
 * [+] Support building against Openssl 1.1
 * [~] use pkg-config for configuration of openssl instead of configure option
@@ -163,7 +244,7 @@ On the master branch there may be changes that are not (yet) described here.
 
 ### 1.2.0
 
-* [+] Support login with client certificate, key, and ca-file specified in config file
+* [+] Support login with client certificate, key, and ca-file specified in configuration file
 * [~] Use more meaningful error codes when loading config fails
 * [-] Correctly report errors of hostname lookup
 * [+] Add an option not to ask ppp peer for dns servers
@@ -182,7 +263,7 @@ On the master branch there may be changes that are not (yet) described here.
 
 ### 1.1.3
 
-* [~] Support set-dns and set-routes flag from config file as well
+* [~] Support set-dns and set-routes flag from configuration file as well
 * [-] Properly URL-encode values sent in http requests
 * [+] Add support for realm authentication
 * [+] Add support for two factor authentication
@@ -205,8 +286,8 @@ On the master branch there may be changes that are not (yet) described here.
 * [+] Add support for client keys and certificates
 * [~] Extend the split VPN support with older FortiOS servers
 * [+] Add a config parser to handle received non-xml content
-* [~] Allow ommitting the gateway for split routes
-* [~] Allow ommitting DNS servers
+* [~] Allow omitting the gateway for split routes
+* [~] Allow omitting DNS servers
 * [-] Fix a memory leak in auth_get_config
 * [+] Support split routes
 * [+] Export the configuration of routes and gateway to environment
@@ -222,13 +303,13 @@ On the master branch there may be changes that are not (yet) described here.
 
 * [~] Better error messages in /etc/resolv.conf helpers
 * [~] Use better colors for warnings and error messages and only if output is a tty
-* [-] Fix parsing of "trusted-cert" in config file
+* [-] Fix parsing of "trusted-cert" in configuration file
 * [~] Add --pedantic to CFLAGS
 * [+] Add ability to type password interactively
 * [+] Verify gateway's X509 certificate
 * [-] Don't delete nameservers at tear down if they were here before
 * [~] Set /etc/openfortivpn/config not readable by other users
-* [+] Add ability to use a config file
+* [+] Add ability to use a configuration file
 
 ### 1.0.0
 

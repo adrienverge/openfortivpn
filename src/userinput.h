@@ -15,10 +15,10 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _OPENFORTIVPN_USERINPUT_H
-#define _OPENFORTIVPN_USERINPUT_H
+#ifndef OPENFORTIVPN_USERINPUT_H
+#define OPENFORTIVPN_USERINPUT_H
 
-#include <sys/types.h>
+#include <stddef.h>
 
 void read_password(const char *pinentry, const char *hint,
                    const char *prompt, char *pass, size_t len);

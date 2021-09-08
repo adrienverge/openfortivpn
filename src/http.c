@@ -22,15 +22,22 @@
 #include "userinput.h"
 #include "log.h"
 
-#include <ctype.h>
-#include <string.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <unistd.h>
 #include <arpa/inet.h>
 
-#define BUFSZ 0x8000
+#include <assert.h>
+#include <ctype.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+/*
+ * Fixed size of the buffer for outgoing HTTP requests.
+ * Initial size of the buffer for incoming HTTP responses.
+ */
+#define HTTP_BUFFER_SIZE 0x8000
+
 
 /*
  * URL-encodes a string for HTTP requests.
@@ -43,10 +50,10 @@
 static void url_encode(char *dest, const char *str)
 {
 	while (*str != '\0') {
-		if (isalnum(*str) || *str == '-' || *str == '_'
-		    || *str == '.' || *str == '~')
+		if (isalnum(*str) || *str == '-' || *str == '_' ||
+		    *str == '.' || *str == '~') {
 			*dest++ = *str;
-		else {
+		} else {
 			static const char hex[] = "0123456789ABCDEF";
 
 			*dest++ = '%';
@@ -58,6 +65,7 @@ static void url_encode(char *dest, const char *str)
 	*dest = '\0';
 }
 
+
 /*
  * Sends data to the HTTP server.
  *
@@ -68,24 +76,25 @@ static void url_encode(char *dest, const char *str)
 int http_send(struct tunnel *tunnel, const char *request, ...)
 {
 	va_list args;
-	char buffer[BUFSZ];
-	char logbuffer[BUFSZ];
+	char buffer[HTTP_BUFFER_SIZE];
+	char logbuffer[HTTP_BUFFER_SIZE];
 	int length;
 	int n = 0;
 
 	va_start(args, request);
-	length = vsnprintf(buffer, BUFSZ, request, args);
+	length = vsnprintf(buffer, HTTP_BUFFER_SIZE, request, args);
 	va_end(args);
 	strcpy(logbuffer, buffer);
 	if (loglevel <= OFV_LOG_DEBUG_DETAILS && tunnel->config->password[0] != '\0') {
 		char *pwstart;
-		char password[3 * FIELD_SIZE + 1];
+		char password[3 * PASSWORD_SIZE + 1];
 
 		url_encode(password, tunnel->config->password);
 		pwstart = strstr(logbuffer, password);
 
 		if (pwstart != NULL) {
 			int pos, pwlen, i;
+
 			pos = pwstart - logbuffer;
 			pwlen = strlen(tunnel->config->password);
 			for (i = pos; i < pos + pwlen; i++)
@@ -95,7 +104,7 @@ int http_send(struct tunnel *tunnel, const char *request, ...)
 
 	if (length < 0)
 		return ERR_HTTP_INVALID;
-	else if (length >= BUFSZ)
+	else if (length >= HTTP_BUFFER_SIZE)
 		return ERR_HTTP_TOO_LONG;
 
 	log_debug_details("%s:\n%s\n", __func__, logbuffer);
@@ -112,11 +121,9 @@ int http_send(struct tunnel *tunnel, const char *request, ...)
 	return 1;
 }
 
-static const char *find_header(
-        const char *res,
-        const char *header,
-        uint32_t response_size
-)
+
+static const char *find_header(const char *res, const char *header,
+                               uint32_t response_size)
 {
 	const char *line = res;
 
@@ -134,6 +141,7 @@ static const char *find_header(
 	return NULL;
 }
 
+
 /*
  * Receives data from the HTTP server.
  *
@@ -143,81 +151,94 @@ static const char *find_header(
  * @return     1         in case of success
  *             < 0       in case of error
  */
-int http_receive(
-        struct tunnel *tunnel,
-        char **response,
-        uint32_t *response_size
-)
+int http_receive(struct tunnel *tunnel,
+                 char **response, uint32_t *response_size)
 {
-	uint32_t res_size = BUFSZ;
-	char *buffer, *res;
-	int n = 0;
-	int bytes_read = 0;
-	int header_size = 0;
-	int content_size = 0;
+	uint32_t capacity = HTTP_BUFFER_SIZE;
+	char *buffer;
+	uint32_t bytes_read = 0;
+	uint32_t header_size = 0;
+	uint32_t content_size = 0;
 	int chunked = 0;
 
-	buffer = malloc(res_size);
+	buffer = malloc(capacity + 1); // room for terminal '\0'
 	if (buffer == NULL)
 		return ERR_HTTP_NO_MEM;
 
-	do {
-		n = safe_ssl_read(tunnel->ssl_handle,
-		                  (uint8_t *) buffer + bytes_read,
-		                  BUFSZ - 1 - bytes_read);
-		if (n > 0) {
-			log_debug_details("%s:\n%s\n", __func__, buffer);
-			const char *eoh;
+	while (1) {
+		int n;
 
-			bytes_read += n;
+		while ((n = safe_ssl_read(tunnel->ssl_handle,
+		                          (uint8_t *) buffer + bytes_read,
+		                          capacity - bytes_read)) == ERR_SSL_AGAIN)
+			;
+		if (n < 0) {
+			log_debug("Error reading from SSL connection (%s).\n",
+			          err_ssl_str(n));
+			free(buffer);
+			return ERR_HTTP_SSL;
+		}
+		bytes_read += n;
 
-			if (!header_size) {
-				/* Did we see the header end? Then get the body size. */
-				eoh = memmem(buffer, bytes_read, "\r\n\r\n", 4);
-				if (eoh) {
-					const char *header;
+		log_debug_details("%s:\n%s\n", __func__, buffer);
 
-					header = find_header(
-					                 buffer,
-					                 "Content-Length: ", BUFSZ);
-					header_size = eoh - buffer + 4;
-					if (header)
-						content_size = atoi(header);
+		if (!header_size) {
+			/* Have we reached the end of the HTTP header? */
+			static const char EOH[4] = "\r\n\r\n";
+			const char *eoh = memmem(buffer, bytes_read,
+			                         EOH, sizeof(EOH));
 
-					if (find_header(buffer,
-					                "Transfer-Encoding: chunked",
-					                BUFSZ))
-						chunked = 1;
-				}
-			}
+			if (eoh) {
+				header_size = eoh - buffer + sizeof(EOH);
 
-			if (header_size) {
-				/* We saw the whole header, is the body done as well? */
-				if (chunked) {
-					/* Last chunk terminator. Done naively. */
-					if (bytes_read >= 7 &&
-					    !memcmp(&buffer[bytes_read - 7],
-					            "\r\n0\r\n\r\n", 7))
-						break;
-				} else {
-					if (bytes_read >= header_size + content_size)
-						break;
-				}
-			}
+				/* Get the body size. */
+				const char *header = find_header(buffer,
+				                                 "Content-Length: ",
+				                                 header_size);
 
-			if (bytes_read == BUFSZ - 1) {
-				log_warn("Response too big\n");
-				free(buffer);
-				return ERR_HTTP_SSL;
+				if (header)
+					content_size = strtol(header, NULL, 10);
+
+				if (find_header(buffer,
+				                "Transfer-Encoding: chunked",
+				                header_size))
+					chunked = 1;
 			}
 		}
-	} while (n >= 0);
 
-	if (!header_size) {
-		log_debug("Error reading from SSL connection (%s).\n",
-		          err_ssl_str(n));
-		free(buffer);
-		return ERR_HTTP_SSL;
+		if (header_size) {
+			/* Have we reached the end of the HTTP body? */
+			if (chunked) {
+				static const char EOB[7] = "\r\n0\r\n\r\n";
+
+				/* Last chunk terminator. Done naively. */
+				if (bytes_read >= sizeof(EOB) &&
+				    !memcmp(&buffer[bytes_read - sizeof(EOB)],
+				            EOB, sizeof(EOB)))
+					break;
+			} else {
+				if (bytes_read >= header_size + content_size)
+					break;
+			}
+		}
+
+		/* expand the buffer if necessary */
+		if (bytes_read == capacity) {
+			char *new_buffer;
+
+			if ((UINT32_MAX - 1) / capacity < 2) {
+				free(buffer);
+				return ERR_HTTP_TOO_LONG;
+			}
+			capacity *= 2;
+
+			new_buffer = realloc(buffer, capacity + 1);
+			if (new_buffer == NULL) {
+				free(buffer);
+				return ERR_HTTP_NO_MEM;
+			}
+			buffer = new_buffer;
+		}
 	}
 
 	if (memmem(&buffer[header_size], bytes_read - header_size,
@@ -230,22 +251,17 @@ int http_receive(
 
 	if (response == NULL) {
 		free(buffer);
-		return 1;
-	}
+	} else {
+		assert(bytes_read < capacity);
+		buffer[bytes_read] = '\0';
+		*response = buffer;
 
-	res_size = bytes_read + 1;
-	res = realloc(buffer, res_size);
-	if (res == NULL) {
-		free(buffer);
-		return ERR_HTTP_NO_MEM;
+		if (response_size != NULL)
+			*response_size = bytes_read + 1;
 	}
-	res[bytes_read] = '\0';
-
-	*response = res;
-	if (response_size != NULL)
-		*response_size = res_size;
 	return 1;
 }
+
 
 static int do_http_request(struct tunnel *tunnel,
                            const char *method,
@@ -258,23 +274,28 @@ static int do_http_request(struct tunnel *tunnel,
 	int ret;
 	const char *template = ("%s %s HTTP/1.1\r\n"
 	                        "Host: %s:%d\r\n"
-	                        "User-Agent: Mozilla/5.0 SV1\r\n"
-	                        "Accept: text/plain\r\n"
-	                        "Accept-Encoding: identity\r\n"
+	                        "User-Agent: %s\r\n"
+	                        "Accept: */*\r\n"
+	                        "Accept-Encoding: gzip, deflate, br\r\n"
+	                        "Pragma: no-cache\r\n"
+	                        "Cache-Control: no-store, no-cache, must-revalidate\r\n"
+	                        "If-Modified-Since: Sat, 1 Jan 2000 00:00:00 GMT\r\n"
 	                        "Content-Type: application/x-www-form-urlencoded\r\n"
 	                        "Cookie: %s\r\n"
 	                        "Content-Length: %d\r\n"
 	                        "\r\n%s");
 
 	ret = http_send(tunnel, template, method, uri,
-	                tunnel->config->gateway_host,
-	                tunnel->config->gateway_port, tunnel->cookie,
+	                tunnel->config->gateway_host, tunnel->config->gateway_port,
+	                tunnel->config->user_agent, tunnel->cookie,
 	                strlen(data), data);
 	if (ret != 1)
 		return ret;
 
 	return http_receive(tunnel, response, response_size);
 }
+
+
 /*
  * Sends and receives data from the HTTP server.
  *
@@ -291,20 +312,21 @@ static int http_request(struct tunnel *tunnel, const char *method,
                         uint32_t *response_size
                        )
 {
-	int ret = do_http_request(tunnel, method, uri, data,
-	                          response, response_size);
+	int ret;
 
+	ret = do_http_request(tunnel, method, uri, data,
+	                      response, response_size);
 	if (ret == ERR_HTTP_SSL) {
 		ssl_connect(tunnel);
 		ret = do_http_request(tunnel, method, uri, data,
 		                      response, response_size);
 	}
-
 	if (ret != 1)
-		log_warn("Error issuing %s request\n", uri);
+		log_debug("Error issuing %s request\n", uri);
 
 	return ret;
 }
+
 
 /*
  * Read value for key from a string like "key1=value1&key2=value2".
@@ -321,6 +343,7 @@ static int get_value_from_response(const char *buf, const char *key,
 	int ret = -1;
 	char *tokens;
 	size_t keylen = strlen(key);
+	char *saveptr = NULL;
 
 	tokens = strdup(buf);
 	if (tokens == NULL) {
@@ -328,9 +351,9 @@ static int get_value_from_response(const char *buf, const char *key,
 		goto end;
 	}
 
-	for (const char *kv_pair = strtok(tokens, "&,\r\n");
+	for (const char *kv_pair = strtok_r(tokens, "&,\r\n", &saveptr);
 	     kv_pair != NULL;
-	     kv_pair = strtok(NULL, "&,\r\n")) {
+	     kv_pair = strtok_r(NULL, "&,\r\n", &saveptr)) {
 		if (strncmp(key, kv_pair, keylen) == 0) {
 			const char *val = &kv_pair[keylen];
 
@@ -349,11 +372,43 @@ end:
 	return ret;
 }
 
-static int get_auth_cookie(
-        struct tunnel *tunnel,
-        char *buf,
-        uint32_t buffer_size
-)
+static int get_action_url(const char *buf, const char *key,
+                          char *retbuf, size_t retbuflen)
+{
+
+	int ret = -1;
+	char *tokens;
+	size_t keylen = strlen(key);
+	char *saveptr = NULL;
+
+	tokens = strdup(buf);
+	if (tokens == NULL) {
+		ret = -3;
+		goto end;
+	}
+
+	for (const char *kv_pair = strtok_r(tokens, " \"\r\n", &saveptr);
+	     kv_pair != NULL;
+	     kv_pair = strtok_r(NULL, " \"\r\n", &saveptr)) {
+		if (strncmp(key, kv_pair, keylen) == 0) {
+			const char *val = strtok_r(NULL, "\"\r\n", &saveptr);
+
+			if (strlen(val) > retbuflen - 1) {  // value too long
+				ret = -2;
+			} else {
+				strcpy(retbuf, val);
+				ret = 1;
+			}
+			break;
+		}
+	}
+
+	free(tokens);
+end:
+	return ret;
+}
+
+static int get_auth_cookie(struct tunnel *tunnel, char *buf, uint32_t buffer_size)
 {
 	int ret = 0;
 	const char *line;
@@ -366,12 +421,21 @@ static int get_auth_cookie(
 			if (line[11] == ';' || line[11] == '\0') {
 				log_debug("Empty cookie.\n");
 			} else {
-				char *end;
-				end = strstr(line, "\r");
-				end[0] = '\0';
-				end = strstr(line, ";");
-				if (end != NULL)
-					end[0] = '\0';
+				char *end1;
+				char *end2;
+				char end1_save = '\0';
+				char end2_save = '\0';
+
+				end1 = strstr(line, "\r");
+				if (end1 != NULL) {
+					end1_save = *end1;
+					end1[0] = '\0';
+				}
+				end2 = strstr(line, ";");
+				if (end2 != NULL) {
+					end2_save = *end2;
+					end2[0] = '\0';
+				}
 				log_debug("Cookie: %s\n", line);
 				strncpy(tunnel->cookie, line, COOKIE_SIZE);
 				tunnel->cookie[COOKIE_SIZE] = '\0';
@@ -381,11 +445,16 @@ static int get_auth_cookie(
 				} else {
 					ret = 1; // success
 				}
+				if (end1 != NULL)
+					end1[0] = end1_save;
+				if (end2 != NULL)
+					end2[0] = end2_save;
 			}
 		}
 	}
 	return ret;
 }
+
 
 static void delay_otp(struct tunnel *tunnel)
 {
@@ -395,13 +464,9 @@ static void delay_otp(struct tunnel *tunnel)
 	}
 }
 
-static
-int try_otp_auth(
-        struct tunnel *tunnel,
-        const char *buffer,
-        char **res,
-        uint32_t *response_size
-)
+
+static int try_otp_auth(struct tunnel *tunnel, const char *buffer,
+                        char **res, uint32_t *response_size)
 {
 	char data[256];
 	char path[40];
@@ -450,7 +515,7 @@ int try_otp_auth(
 		}
 	}
 	if (p == NULL)
-		p = "Please enter one-time password:";
+		p = "Please enter one-time password: ";
 	/* Search for all inputs */
 	while ((s = strcasestr(s, "<INPUT"))) {
 		s += 6;
@@ -515,10 +580,16 @@ int try_otp_auth(
 		} else if (strncmp(t, "password", 8) == 0) {
 			struct vpn_config *cfg = tunnel->config;
 			size_t l;
+
 			v = NULL;
 			if (cfg->otp[0] == '\0') {
-				read_password(cfg->pinentry, "otp",
-				              p, cfg->otp, FIELD_SIZE);
+				// Interactively ask user for OTP
+				char hint[USERNAME_SIZE + 1 + REALM_SIZE + 1 + GATEWAY_HOST_SIZE + 5];
+
+				sprintf(hint, "%s_%s_%s_otp",
+				        cfg->username, cfg->realm, cfg->gateway_host);
+				read_password(cfg->pinentry, hint,
+				              p, cfg->otp, OTP_SIZE);
 				if (cfg->otp[0] == '\0') {
 					log_error("No OTP specified\n");
 					return 0;
@@ -551,6 +622,7 @@ int try_otp_auth(
 #undef SPACE_AVAILABLE
 }
 
+
 /*
  * Authenticates to gateway by sending username and password.
  *
@@ -560,13 +632,18 @@ int try_otp_auth(
 int auth_log_in(struct tunnel *tunnel)
 {
 	int ret;
-	char username[3 * FIELD_SIZE + 1];
-	char password[3 * FIELD_SIZE + 1];
-	char realm[3 * FIELD_SIZE + 1];
+	char username[3 * USERNAME_SIZE + 1];
+	char password[3 * PASSWORD_SIZE + 1];
+	char realm[3 * REALM_SIZE + 1];
 	char reqid[32] = { '\0' };
 	char polid[32] = { '\0' };
 	char group[128] = { '\0' };
-	char data[1024], token[128], tokenresponse[256];
+	char portal[64] = { '\0' };
+	char magic[32] = {'\0' };
+	char peer[32]  = { '\0' };
+	char data[9 + 3 * USERNAME_SIZE + 12 + 3 * PASSWORD_SIZE + 7 + 3 * REALM_SIZE + 7 + 1];
+	char token[128], tokenresponse[256], tokenparams[320];
+	char action_url[1024] = { '\0' };
 	char *res = NULL;
 	uint32_t response_size;
 
@@ -575,8 +652,7 @@ int auth_log_in(struct tunnel *tunnel)
 
 	tunnel->cookie[0] = '\0';
 
-	if (tunnel->config->use_engine
-	    || (username[0] == '\0' && tunnel->config->password[0] == '\0')) {
+	if (username[0] == '\0' && tunnel->config->password[0] == '\0') {
 		snprintf(data, sizeof(data), "cert=&nup=1");
 		ret = http_request(tunnel, "GET", "/remote/login",
 		                   data, &res, &response_size);
@@ -588,7 +664,7 @@ int auth_log_in(struct tunnel *tunnel)
 		} else {
 			url_encode(password, tunnel->config->password);
 			snprintf(data, sizeof(data),
-			         "username=%s&credential=%s&realm=%s&ajax=1&redir=%%2Fremote%%2Findex&just_logged_in=1",
+			         "username=%s&credential=%s&realm=%s&ajax=1",
 			         username, password, realm);
 		}
 		ret = http_request(tunnel, "POST", "/remote/logincheck",
@@ -641,26 +717,50 @@ int auth_log_in(struct tunnel *tunnel)
 		get_value_from_response(res, "grp=", group, 128);
 		get_value_from_response(res, "reqid=", reqid, 32);
 		get_value_from_response(res, "polid=", polid, 32);
+		get_value_from_response(res, "portal=", portal, 64);
+		get_value_from_response(res, "magic=", magic, 32);
+		get_value_from_response(res, "peer=", peer, 32);
 
-		if (cfg->otp[0] == '\0') {
-			read_password(cfg->pinentry, "otp",
-			              "Two-factor authentication token: ",
-			              cfg->otp, FIELD_SIZE);
+		if (cfg->otp[0] == '\0' &&
+		    strncmp(token, "ftm_push", 8) == 0 &&
+		    cfg->no_ftm_push == 0) {
+			/*
+			 * The server supports FTM push if `tokeninfo` is `ftm_push`,
+			 * but only try this if the OTP is not provided by the config
+			 * file or command line.
+			 */
+			snprintf(tokenparams, sizeof(tokenparams), "ftmpush=1");
+		} else {
 			if (cfg->otp[0] == '\0') {
-				log_error("No token specified\n");
-				return 0;
+				// Interactively ask user for 2FA token
+				char hint[USERNAME_SIZE + 1 + REALM_SIZE + 1 + GATEWAY_HOST_SIZE + 5];
+
+				sprintf(hint, "%s_%s_%s_2fa",
+				        cfg->username, cfg->realm, cfg->gateway_host);
+				read_password(cfg->pinentry, hint,
+				              "Two-factor authentication token: ",
+				              cfg->otp, OTP_SIZE);
+
+				if (cfg->otp[0] == '\0') {
+					log_error("No token specified\n");
+					return 0;
+				}
 			}
+
+			url_encode(tokenresponse, cfg->otp);
+			snprintf(tokenparams, sizeof(tokenparams),
+			         "code=%s&code2=&magic=%s",
+			         tokenresponse, magic);
 		}
 
-		url_encode(tokenresponse, cfg->otp);
 		snprintf(data, sizeof(data),
-		         "username=%s&realm=%s&reqid=%s&polid=%s&grp=%s&code=%s&code2=&redir=%%2Fremote%%2Findex&just_logged_in=1",
-		         username, realm, reqid, polid, group, tokenresponse);
+		         "username=%s&realm=%s&reqid=%s&polid=%s&grp=%s&portal=%s&peer=%s&%s",
+		         username, realm, reqid, polid, group, portal, peer,
+		         tokenparams);
 
 		delay_otp(tunnel);
-		ret = http_request(
-		              tunnel, "POST", "/remote/logincheck",
-		              data, &res, &response_size);
+		ret = http_request(tunnel, "POST", "/remote/logincheck",
+		                   data, &res, &response_size);
 		if (ret != 1)
 			goto end;
 
@@ -675,24 +775,40 @@ int auth_log_in(struct tunnel *tunnel)
 		ret = get_auth_cookie(tunnel, res, response_size);
 	}
 
+	/*
+	 * If hostchecking enabled, get action url
+	 */
+	get_action_url(res, "action=", action_url, 1024);
+	if (strlen(action_url) != 0) {
+		snprintf(data, sizeof(data), "hostcheck=%s&check_virtual_desktop=%s",
+		         tunnel->config->hostcheck,
+		         tunnel->config->check_virtual_desktop);
+		ret = http_request(tunnel, "POST", action_url,
+		                   data, &res, &response_size);
+	}
+
 end:
 	free(res);
 	return ret;
 }
+
 
 int auth_log_out(struct tunnel *tunnel)
 {
 	return http_request(tunnel, "GET", "/remote/logout", "", NULL, NULL);
 }
 
+
 int auth_request_vpn_allocation(struct tunnel *tunnel)
 {
 	int ret = http_request(tunnel, "GET", "/remote/index", "", NULL, NULL);
+
 	if (ret != 1)
 		return ret;
 
 	return http_request(tunnel, "GET", "/remote/fortisslvpn", "", NULL, NULL);
 }
+
 
 static int parse_xml_config(struct tunnel *tunnel, const char *buffer)
 {
@@ -748,6 +864,7 @@ static int parse_xml_config(struct tunnel *tunnel, const char *buffer)
 	val = xml_find('<', "split-tunnel-info", buffer, 1);
 	while ((val = xml_find('<', "addr", val, 2))) {
 		char *dest, *mask;
+
 		dest = xml_get(xml_find(' ', "ip=", val, 1));
 		if (!dest) {
 			log_warn("No ip address for a route\n");
@@ -772,8 +889,9 @@ static int parse_xml_config(struct tunnel *tunnel, const char *buffer)
 	return 1;
 }
 
-static
-int parse_config(struct tunnel *tunnel, const char *buffer)
+
+#ifdef SUPPORT_OBSOLETE_CODE
+static int parse_config(struct tunnel *tunnel, const char *buffer)
 {
 	const char *c, *end;
 
@@ -821,6 +939,8 @@ int parse_config(struct tunnel *tunnel, const char *buffer)
 
 	return 1;
 }
+#endif
+
 
 int auth_get_config(struct tunnel *tunnel)
 {
@@ -832,14 +952,19 @@ int auth_get_config(struct tunnel *tunnel)
 		ret = parse_xml_config(tunnel, buffer);
 		free(buffer);
 	}
+
+#ifdef SUPPORT_OBSOLETE_CODE
 	if (ret == 1)
 		return ret;
+
+	log_warn("Configuration cannot be retrieved in XML format. This VPN-SSL portal might be outdated and vulnerable, you might not be able to connect from systems with recent OpenSSL libraries.\n");
 
 	ret = http_request(tunnel, "GET", "/remote/fortisslvpn", "", &buffer, NULL);
 	if (ret == 1) {
 		ret = parse_config(tunnel, buffer);
 		free(buffer);
 	}
+#endif
 
 	return ret;
 }
