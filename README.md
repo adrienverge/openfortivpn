@@ -32,10 +32,16 @@ Examples
   openfortivpn vpn-gateway:8443 --username=foo --pinentry=pinentry-mac
   ```
 
+* Connect with a user certificate and no password:
+  ```
+  openfortivpn vpn-gateway:8443 --username= --password= --user-cert=cert.pem --user-key=key.pem
+  ```
+
 * Don't set IP routes and don't add VPN nameservers to `/etc/resolv.conf`:
   ```
   openfortivpn vpn-gateway:8443 -u foo --no-routes --no-dns --pppd-no-peerdns
   ```
+
 * Using a configuration file:
   ```
   openfortivpn -c /etc/openfortivpn/my-config
