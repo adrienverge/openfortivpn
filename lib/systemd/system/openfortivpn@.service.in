@@ -4,7 +4,7 @@ After=network-online.target
 Documentation=man:openfortivpn(1)
 
 [Service]
-Type=simple
+Type=notify
 PrivateTmp=true
 ExecStart=@BINDIR@/openfortivpn -c @SYSCONFDIR@/openfortivpn/%I.conf
 OOMScoreAdjust=-100
