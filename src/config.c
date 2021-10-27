@@ -454,13 +454,20 @@ int load_config(struct vpn_config *cfg, const char *filename)
 		}
 	}
 
-	ret = 0;
+	if (errno != 0) // From getline
+		ret = ERR_CFG_SEE_ERRNO;
+	else
+		ret = 0;
 
 err_close:
-	if (fclose(file))
+	if (fclose(file)) {
 		log_warn("Could not close %s (%s).\n", filename, strerror(errno));
-	if (line)
-		free(line);
+		if (ret == ERR_CFG_SEE_ERRNO) {
+			// fclose just ruined the errno, so don't rely on it anymore.
+			ret = ERR_CFG_UNKNOWN;
+		}
+	}
+	free(line);
 	return ret;
 }
 
