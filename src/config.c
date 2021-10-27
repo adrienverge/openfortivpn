@@ -183,7 +183,9 @@ int load_config(struct vpn_config *cfg, const char *filename)
 	int ret = ERR_CFG_UNKNOWN;
 	FILE *file;
 	struct stat stat;
-	char *buffer, *line, *saveptr = NULL;
+	char *line = NULL;
+	size_t len = 0;
+	ssize_t read;
 
 	file = fopen(filename, "r");
 	if (file == NULL)
@@ -193,30 +195,18 @@ int load_config(struct vpn_config *cfg, const char *filename)
 		ret = ERR_CFG_SEE_ERRNO;
 		goto err_close;
 	}
-	if (stat.st_size == 0) {
-		ret = ERR_CFG_EMPTY_FILE;
-		goto err_close;
-	}
-
-	buffer = malloc(stat.st_size + 1);
-	if (buffer == NULL) {
-		ret = ERR_CFG_NO_MEM;
-		goto err_close;
-	}
-
-	// Copy all file contents at once
-	if (fread(buffer, stat.st_size, 1, file) != 1) {
-		ret = ERR_CFG_CANNOT_READ;
-		goto err_free;
-	}
-
-	buffer[stat.st_size] = '\0';
 
 	// Read line by line
-	for (line = strtok_r(buffer, "\n", &saveptr); line != NULL;
-	     line = strtok_r(NULL, "\n", &saveptr)) {
+	while ((read = getline(&line, &len, file)) != -1) {
 		char *key, *equals, *val;
 		int i;
+
+		// Ignore blank lines. We could argue that the string must be at least
+		// 3 chars to be valid, eg. 'x=\n' but let the rest of the function
+		// logic handle that. NOTE: getline includes the '\n' in the string,
+		// which is removed later on.
+		if (read < 2)
+			continue;
 
 		if (line[0] == '#')
 			continue;
@@ -460,18 +450,17 @@ int load_config(struct vpn_config *cfg, const char *filename)
 			cfg->check_virtual_desktop = strdup(val);
 		} else {
 			log_warn("Bad key in configuration file: \"%s\".\n", key);
-			goto err_free;
+			goto err_close;
 		}
 	}
 
 	ret = 0;
 
-err_free:
-	free(buffer);
 err_close:
 	if (fclose(file))
 		log_warn("Could not close %s (%s).\n", filename, strerror(errno));
-
+	if (line)
+		free(line);
 	return ret;
 }
 
