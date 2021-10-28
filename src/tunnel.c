@@ -56,11 +56,7 @@
 #endif
 #include <sys/types.h>
 #include <sys/socket.h>
-#if HAVE_NETINET_TCP_H
 #include <netinet/tcp.h>
-#elif HAVE_LINUX_TCP_H
-#include <linux/tcp.h>
-#endif
 #include <sys/wait.h>
 #include <sys/ioctl.h>
 #include <termios.h>
