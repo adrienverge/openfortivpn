@@ -607,7 +607,7 @@ static int tcp_connect(struct tunnel *tunnel)
 	if (ret < 0)
 		log_warn("getsockopt: %s: %s\n", "SO_KEEPALIVE", strerror(errno));
 	else
-		log_debug("SO_KEEPALIVE: %d\n", ret);
+		log_debug("SO_KEEPALIVE: %s\n", (ret ? "ON" : "OFF"));
 #endif
 #ifdef TCP_KEEPIDLE
 	ret = get_socket_option(handle, IPPROTO_TCP, TCP_KEEPIDLE);
