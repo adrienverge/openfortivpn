@@ -647,7 +647,7 @@ int io_loop(struct tunnel *tunnel)
 	 */
 	if (setsockopt(tunnel->ssl_socket, IPPROTO_TCP, TCP_NODELAY,
 	               (const char *) &tcp_nodelay_flag, sizeof(int))) {
-		log_error("setsockopt: %s\n", strerror(errno));
+		log_error("setsockopt TCP_NODELAY: %s\n", strerror(errno));
 		goto err_sockopt;
 	}
 
