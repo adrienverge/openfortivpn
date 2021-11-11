@@ -631,7 +631,7 @@ int auth_log_in_stdin(struct tunnel *tunnel)
 		return 0;
 	}
 	fgets(tunnel->cookie, sizeof(tunnel->cookie), pipe);
-	tunnel->cookie[COOKIE_SIZE+1] = '\0';
+	tunnel->cookie[strcspn(tunnel->cookie, "\r\n")] = 0;
 	pclose(pipe);
 	return 1;
 }
