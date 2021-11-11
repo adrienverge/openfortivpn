@@ -55,7 +55,7 @@ int http_send(struct tunnel *tunnel, const char *request, ...);
 int http_receive(struct tunnel *tunnel, char **response, uint32_t *response_size);
 
 int auth_log_in(struct tunnel *tunnel);
-int auth_log_in_stdin(struct tunnel *tunnel);
+int auth_log_in_popen(struct tunnel *tunnel);
 int auth_log_out(struct tunnel *tunnel);
 int auth_request_vpn_allocation(struct tunnel *tunnel);
 int auth_get_config(struct tunnel *tunnel);

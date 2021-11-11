@@ -623,7 +623,7 @@ static int try_otp_auth(struct tunnel *tunnel, const char *buffer,
 #undef SPACE_AVAILABLE
 }
 
-int auth_log_in_stdin(struct tunnel *tunnel)
+int auth_log_in_popen(struct tunnel *tunnel)
 {
 	FILE *pipe;
 	pipe = popen(tunnel->config->password, "r");
