@@ -623,6 +623,18 @@ static int try_otp_auth(struct tunnel *tunnel, const char *buffer,
 #undef SPACE_AVAILABLE
 }
 
+int auth_log_in_stdin(struct tunnel *tunnel)
+{
+	FILE *pipe;
+	pipe = popen(tunnel->config->password, "r");
+	if (NULL == pipe) {
+		return 0;
+	}
+	fgets(tunnel->cookie, sizeof(tunnel->cookie), pipe);
+	tunnel->cookie[COOKIE_SIZE+1] = '\0';
+	pclose(pipe);
+	return 1;
+}
 
 /*
  * Authenticates to gateway by sending username and password.
@@ -802,12 +814,10 @@ int auth_log_out(struct tunnel *tunnel)
 
 int auth_request_vpn_allocation(struct tunnel *tunnel)
 {
-	int ret = http_request(tunnel, "GET", "/remote/index", "", NULL, NULL);
+	char *res = NULL;
+	int ret = http_request(tunnel, "GET", "/sslvpn/portal.html", "", &res, NULL);
 
-	if (ret != 1)
-		return ret;
-
-	return http_request(tunnel, "GET", "/remote/fortisslvpn", "", NULL, NULL);
+	return ret;
 }
 
 
