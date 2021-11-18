@@ -188,7 +188,7 @@ On the master branch there may be changes that are not (yet) described here.
 
 ### 1.6.0
 
-* [-] Fix possible buffer overflow in in long requests
+* [-] Fix possible buffer overflow in long requests
 * [~] Code improvements in terms of header inclusion and some other coverity warnings
 * [+] Add proxy support
 * [~] Use the compiled-in fixed full path to pppd
