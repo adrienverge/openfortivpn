@@ -1055,7 +1055,7 @@ int ssl_connect(struct tunnel *tunnel)
 				cipher_list = "HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4";
 			tunnel->config->cipher_list = strdup(cipher_list);
 		} else if (tunnel->config->seclevel_1) {
-			const char *cipher_list = "DEFAULT@SECLEVEL=1";
+			static const char cipher_list[] = "DEFAULT@SECLEVEL=1";
 
 			tunnel->config->cipher_list = strdup(cipher_list);
 		}
