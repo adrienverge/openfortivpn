@@ -14,6 +14,14 @@ Releases
 This high level changelog is usually updated when a release is tagged.
 On the master branch there may be changes that are not (yet) described here.
 
+### 1.17.2
+
+* [-] fix memory leak when reading user input
+* [-] improve calls to getsockopt() and associated debug output
+* [+] allow reading config from process substitution
+* [-] work around CodeQL false positives, improving code at the same time
+* [~] change type of systemd.service from simple to notify
+
 ### 1.17.1
 
 * [-] fix regression: enable OpenSSL engines by default
