@@ -106,12 +106,16 @@ static int pinentry_read(int from, char **retstr)
 	do {
 		if (bufsiz - len < 64) {
 			bufsiz += 64;
-			buf = realloc(buf, bufsiz);
-			if (buf == NULL) {
+			char *tmp = realloc(buf, bufsiz);
+
+			// bail out if realloc fails
+			if (tmp == NULL) {
 				if (retstr)
 					*retstr = strdup(strerror(errno));
+				free(buf);
 				return -1;
 			}
+			buf = tmp;
 			buf[bufsiz-1] = '\0';
 		}
 
