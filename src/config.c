@@ -246,7 +246,7 @@ int load_config(struct vpn_config *cfg, const char *filename)
 		} else if (strcmp(key, "port") == 0) {
 			long port = strtol(val, NULL, 0);
 
-			if (port <= 0 || port > 65535) {
+			if (port < 1 || port > 65535) {
 				log_warn("Bad port in configuration file: \"%ld\".\n",
 				         port);
 				continue;

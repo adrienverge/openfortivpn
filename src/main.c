@@ -596,7 +596,7 @@ int main(int argc, char **argv)
 			port_str[0] = '\0';
 			port_str++;
 			port = strtol(port_str, NULL, 0);
-			if (port <= 0 || port > 65535) {
+			if (port < 1 || port > 65535) {
 				log_error("Specify a valid port.\n");
 				goto user_error;
 			}
