@@ -340,3 +340,26 @@ void read_password(const char *pinentry, const char *hint,
 
 	printf("\n");
 }
+
+char *read_from_stdin(size_t count)
+{
+	char *buf;
+	char *output;
+	int bytes_read;
+
+	buf = malloc(count + 1);
+	if (buf == NULL)
+		return NULL;
+
+	bytes_read = read(STDIN_FILENO, buf, count);
+	if (bytes_read == -1) {
+		free(buf);
+		return NULL;
+	}
+
+	buf[bytes_read] = '\0';
+	output = realloc(buf, bytes_read + 1);
+
+	// Just keep using the larger buffer if realloc() fails.
+	return output ? output : buf;
+}

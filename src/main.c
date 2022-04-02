@@ -75,6 +75,7 @@
 
 #define usage \
 "Usage: openfortivpn [<host>[:<port>]] [-u <user>] [-p <pass>]\n" \
+"                    [--cookie=<cookie>] [--cookie-on-stdin]\n" \
 "                    [--otp=<otp>] [--otp-delay=<delay>] [--otp-prompt=<prompt>]\n" \
 "                    [--pinentry=<program>] [--realm=<realm>]\n" \
 "                    [--ifname=<ifname>] [--set-routes=<0|1>]\n" \
@@ -112,6 +113,8 @@ PPPD_USAGE \
 "                                " SYSCONFDIR "/openfortivpn/config).\n" \
 "  -u <user>, --username=<user>  VPN account username.\n" \
 "  -p <pass>, --password=<pass>  VPN account password.\n" \
+"  --cookie=<cookie>             A valid session cookie (SVPNCOOKIE).\n" \
+"  --cookie-on-stdin             Read the cookie (SVPNCOOKIE) from standard input.\n" \
 "  -o <otp>, --otp=<otp>         One-Time-Password.\n" \
 "  --otp-prompt=<prompt>         Search for the OTP prompt starting with this string.\n" \
 "  --otp-delay=<delay>           Wait <delay> seconds before sending the OTP.\n" \
@@ -196,6 +199,7 @@ int main(int argc, char **argv)
 		.username = {'\0'},
 		.password = {'\0'},
 		.password_set = 0,
+		.cookie = NULL,
 		.otp = {'\0'},
 		.otp_prompt = NULL,
 		.otp_delay = 0,
@@ -249,6 +253,8 @@ int main(int argc, char **argv)
 		{"realm",                required_argument, NULL, 0},
 		{"username",             required_argument, NULL, 'u'},
 		{"password",             required_argument, NULL, 'p'},
+		{"cookie",               required_argument, NULL, 0},
+		{"cookie-on-stdin",      no_argument, NULL, 0},
 		{"otp",                  required_argument, NULL, 'o'},
 		{"otp-prompt",           required_argument, NULL, 0},
 		{"otp-delay",            required_argument, NULL, 0},
@@ -509,6 +515,23 @@ int main(int argc, char **argv)
 				cli_cfg.set_dns = set_dns;
 				break;
 			}
+			if (strcmp(long_options[option_index].name,
+			           "cookie") == 0) {
+				cli_cfg.cookie = strdup(optarg);
+				break;
+			}
+			if (strcmp(long_options[option_index].name,
+			           "cookie-on-stdin") == 0) {
+				char *cookie = read_from_stdin(COOKIE_SIZE);
+
+				if (cookie == NULL) {
+					log_warn("Could not read the cookie from stdin");
+					break;
+				}
+				free(cli_cfg.cookie);
+				cli_cfg.cookie = cookie;
+				break;
+			}
 			goto user_error;
 		case 'h':
 			printf("%s%s%s%s%s%s%s", usage, summary,
@@ -612,14 +635,14 @@ int main(int argc, char **argv)
 		goto user_error;
 	}
 	// Check username
-	if (cfg.username[0] == '\0')
+	if (cfg.username[0] == '\0' && !cfg.cookie)
 		// Need either username or cert
 		if (cfg.user_cert == NULL) {
 			log_error("Specify a username.\n");
 			goto user_error;
 		}
 	// If username but no password given, interactively ask user
-	if (!cfg.password_set && cfg.username[0] != '\0') {
+	if (!cfg.password_set && cfg.username[0] != '\0' && !cfg.cookie) {
 		char hint[USERNAME_SIZE + 1 + REALM_SIZE + 1 + GATEWAY_HOST_SIZE + 10];
 
 		sprintf(hint, "%s_%s_%s_password",
