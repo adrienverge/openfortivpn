@@ -58,5 +58,6 @@ int auth_log_in(struct tunnel *tunnel);
 int auth_log_out(struct tunnel *tunnel);
 int auth_request_vpn_allocation(struct tunnel *tunnel);
 int auth_get_config(struct tunnel *tunnel);
+int auth_set_cookie(struct tunnel *tunnel, const char *line);
 
 #endif

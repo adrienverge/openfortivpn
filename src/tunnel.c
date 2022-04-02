@@ -1286,7 +1286,10 @@ int run_tunnel(struct vpn_config *config)
 
 	// Step 2: connect to the HTTP interface and authenticate to get a
 	// cookie
-	ret = auth_log_in(&tunnel);
+	if (config->cookie)
+		ret = auth_set_cookie(&tunnel, config->cookie);
+	else
+		ret = auth_log_in(&tunnel);
 	if (ret != 1) {
 		log_error("Could not authenticate to gateway. Please check the password, client certificate, etc.\n");
 		log_debug("%s (%d)\n", err_http_str(ret), ret);
