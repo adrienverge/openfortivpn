@@ -180,7 +180,7 @@ int parse_min_tls(const char *str)
  */
 int load_config(struct vpn_config *cfg, const char *filename)
 {
-	int ret = ERR_CFG_UNKNOWN;
+	int ret = 0, cache_errno;
 	FILE *file;
 	struct stat stat;
 	char *line = NULL;
@@ -188,8 +188,10 @@ int load_config(struct vpn_config *cfg, const char *filename)
 	ssize_t read;
 
 	file = fopen(filename, "r");
-	if (file == NULL)
-		return ERR_CFG_SEE_ERRNO;
+	if (file == NULL) {
+		ret = ERR_CFG_SEE_ERRNO;
+		goto err_return;
+	}
 
 	if (fstat(fileno(file), &stat) == -1) {
 		ret = ERR_CFG_SEE_ERRNO;
@@ -450,24 +452,25 @@ int load_config(struct vpn_config *cfg, const char *filename)
 			cfg->check_virtual_desktop = strdup(val);
 		} else {
 			log_warn("Bad key in configuration file: \"%s\".\n", key);
-			goto err_close;
+			goto err_free;
 		}
 	}
-
-	if (errno != 0) // From getline
+	// Function getline() return -1 on failure to read a line (including
+	// end-of-file condition). In the event of an error, errno is set to
+	// indicate the cause.
+	if (errno)
 		ret = ERR_CFG_SEE_ERRNO;
-	else
-		ret = 0;
 
+err_free:
+	free(line);
 err_close:
+	cache_errno = errno;
 	if (fclose(file)) {
 		log_warn("Could not close %s (%s).\n", filename, strerror(errno));
-		if (ret == ERR_CFG_SEE_ERRNO) {
-			// fclose just ruined the errno, so don't rely on it anymore.
-			ret = ERR_CFG_UNKNOWN;
-		}
+		if (ret == ERR_CFG_SEE_ERRNO)
+			errno = cache_errno; // restore errno modified by fclose()
 	}
-	free(line);
+err_return:
 	return ret;
 }
 
