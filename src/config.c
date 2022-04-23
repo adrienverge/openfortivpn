@@ -32,8 +32,6 @@
 #include <openssl/x509.h>  /* work around OpenSSL bug: missing definition of STACK_OF */
 #include <openssl/tls1.h>
 
-#include <sys/stat.h>
-
 #include <ctype.h>
 #include <limits.h>
 #include <stdio.h>
@@ -182,7 +180,6 @@ int load_config(struct vpn_config *cfg, const char *filename)
 {
 	int ret = 0, cache_errno;
 	FILE *file;
-	struct stat stat;
 	char *line = NULL;
 	size_t len = 0;
 	ssize_t read;
@@ -191,11 +188,6 @@ int load_config(struct vpn_config *cfg, const char *filename)
 	if (file == NULL) {
 		ret = ERR_CFG_SEE_ERRNO;
 		goto err_return;
-	}
-
-	if (fstat(fileno(file), &stat) == -1) {
-		ret = ERR_CFG_SEE_ERRNO;
-		goto err_close;
 	}
 
 	// Read line by line
@@ -463,12 +455,10 @@ int load_config(struct vpn_config *cfg, const char *filename)
 
 err_free:
 	free(line);
-err_close:
 	cache_errno = errno;
 	if (fclose(file)) {
 		log_warn("Could not close %s (%s).\n", filename, strerror(errno));
-		if (ret == ERR_CFG_SEE_ERRNO)
-			errno = cache_errno; // restore errno modified by fclose()
+		errno = cache_errno; // restore errno modified by fclose()
 	}
 err_return:
 	return ret;
