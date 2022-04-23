@@ -14,6 +14,10 @@ Releases
 This high level changelog is usually updated when a release is tagged.
 On the master branch there may be changes that are not (yet) described here.
 
+### 1.17.3
+
+* [-] fix regression: spurious warning message after reading config
+
 ### 1.17.2
 
 * [-] fix memory leak when reading user input
