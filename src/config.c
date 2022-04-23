@@ -178,7 +178,7 @@ int parse_min_tls(const char *str)
  */
 int load_config(struct vpn_config *cfg, const char *filename)
 {
-	int ret = 0, cache_errno;
+	int ret = 0;
 	FILE *file;
 	char *line = NULL;
 	size_t len = 0;
@@ -447,19 +447,13 @@ int load_config(struct vpn_config *cfg, const char *filename)
 			goto err_free;
 		}
 	}
-	// Function getline() return -1 on failure to read a line (including
-	// end-of-file condition). In the event of an error, errno is set to
-	// indicate the cause.
-	if (errno)
+	if (ferror(file))
 		ret = ERR_CFG_SEE_ERRNO;
 
 err_free:
 	free(line);
-	cache_errno = errno;
-	if (fclose(file)) {
+	if (fclose(file))
 		log_warn("Could not close %s (%s).\n", filename, strerror(errno));
-		errno = cache_errno; // restore errno modified by fclose()
-	}
 err_return:
 	return ret;
 }
