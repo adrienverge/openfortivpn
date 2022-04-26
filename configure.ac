@@ -448,4 +448,5 @@ AS_IF([test "x$enable_obsolete" = "xyes"], [AC_DEFINE([SUPPORT_OBSOLETE_CODE])])
 
 
 AC_CONFIG_COMMANDS([timestamp], [touch src/.dirstamp])
-AC_OUTPUT(Makefile)
+AC_CONFIG_FILES([Makefile])
+AC_OUTPUT
