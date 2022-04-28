@@ -83,7 +83,8 @@ PPPD_USAGE \
 "                    " RESOLVCONF_USAGE "[--ca-file=<file>]\n" \
 "                    [--user-cert=<file>] [--user-key=<file>]\n" \
 "                    [--use-syslog] [--trusted-cert=<digest>]\n" \
-"                    [--persistent=<interval>] [-c <file>] [-v|-q]\n" \
+"                    [--persistent=<interval>] [--up-hook=<file>]\n"\
+"                    [--down-hook=<file>] [-c <file>] [-v|-q]\n" \
 "       openfortivpn --help\n" \
 "       openfortivpn --version\n" \
 "\n"
@@ -143,7 +144,11 @@ PPPD_USAGE \
 "                                certificate will be matched against this value.\n" \
 "                                <digest> is the X509 certificate's sha256 sum.\n" \
 "                                This option can be used multiple times to trust\n" \
-"                                several certificates.\n"
+"                                several certificates.\n" \
+"  --up-hook=<file>              Run this script when the link goes up, and wait for\n" \
+"                                completion.\n" \
+"  --down-hook=<file>            Run this script when the link goes down, and wait\n" \
+"                                for completion.\n"
 
 #define help_options_part2 \
 "  --insecure-ssl                Do not disable insecure SSL protocols/ciphers.\n" \
@@ -238,6 +243,8 @@ int main(int argc, char **argv)
 		.cert_whitelist = NULL,
 		.use_engine = 0,
 		.user_agent = NULL,
+		.up_hook = NULL,
+		.down_hook = NULL,
 	};
 	struct vpn_config cli_cfg = invalid_cfg;
 
@@ -270,6 +277,8 @@ int main(int argc, char **argv)
 		{"cipher-list",          required_argument, NULL, 0},
 		{"min-tls",              required_argument, NULL, 0},
 		{"seclevel-1",           no_argument, &cli_cfg.seclevel_1, 1},
+		{"up-hook",              required_argument, NULL, 0},
+		{"down-hook",            required_argument, NULL, 0},
 #if HAVE_USR_SBIN_PPPD
 		{"pppd-use-peerdns",     required_argument, NULL, 0},
 		{"pppd-no-peerdns",      no_argument, &cli_cfg.pppd_use_peerdns, 0},
@@ -507,6 +516,16 @@ int main(int argc, char **argv)
 					break;
 				}
 				cli_cfg.set_dns = set_dns;
+				break;
+			}
+			if (strcmp(long_options[option_index].name,
+			           "up-hook") == 0) {
+				cli_cfg.up_hook = strdup(optarg);
+				break;
+			}
+			if (strcmp(long_options[option_index].name,
+			           "down-hook") == 0) {
+				cli_cfg.down_hook = strdup(optarg);
 				break;
 			}
 			goto user_error;

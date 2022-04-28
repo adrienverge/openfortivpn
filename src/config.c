@@ -442,6 +442,12 @@ int load_config(struct vpn_config *cfg, const char *filename)
 		} else if (strcmp(key, "check-virtual-desktop") == 0) {
 			free(cfg->check_virtual_desktop);
 			cfg->check_virtual_desktop = strdup(val);
+		} else if (strcmp(key, "up-hook") == 0) {
+			free(cfg->up_hook);
+			cfg->up_hook = strdup(val);
+		} else if (strcmp(key, "down-hook") == 0) {
+			free(cfg->down_hook);
+			cfg->down_hook = strdup(val);
 		} else {
 			log_warn("Bad key in configuration file: \"%s\".\n", key);
 			goto err_free;
@@ -600,4 +606,12 @@ void merge_config(struct vpn_config *dst, struct vpn_config *src)
 		dst->hostcheck = src->hostcheck;
 	if (src->check_virtual_desktop != invalid_cfg.check_virtual_desktop)
 		dst->check_virtual_desktop = src->check_virtual_desktop;
+	if (src->up_hook) {
+		free(dst->up_hook);
+		dst->up_hook = src->up_hook;
+	}
+	if (src->down_hook) {
+		free(dst->down_hook);
+		dst->down_hook = src->down_hook;
+	}
 }

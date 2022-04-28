@@ -108,6 +108,11 @@ static int ofv_append_varr(struct ofv_varr *p, const char *x)
 	return 0;
 }
 
+static void run_hook(const char* hook) {
+	log_info("Running hook %s.\n", hook);
+	system(hook);
+}
+
 static int on_ppp_if_up(struct tunnel *tunnel)
 {
 	log_info("Interface %s is UP.\n", tunnel->ppp_iface);
@@ -133,6 +138,9 @@ static int on_ppp_if_up(struct tunnel *tunnel)
 #if HAVE_SYSTEMD
 	sd_notify(0, "READY=1");
 #endif
+	if (tunnel->config->up_hook) {
+		run_hook(tunnel->config->up_hook);
+	}
 
 	return 0;
 }
@@ -153,6 +161,10 @@ static int on_ppp_if_down(struct tunnel *tunnel)
 	if (tunnel->config->set_dns) {
 		log_info("Removing VPN nameservers...\n");
 		ipv4_del_nameservers_from_resolv_conf(tunnel);
+	}
+
+	if (tunnel->config->down_hook) {
+		run_hook(tunnel->config->down_hook);
 	}
 
 	return 0;

@@ -132,6 +132,8 @@ struct vpn_config {
 	char			*user_agent;
 	char			*hostcheck;
 	char			*check_virtual_desktop;
+	char	*up_hook;
+	char	*down_hook;
 };
 
 int add_trusted_cert(struct vpn_config *cfg, const char *digest);
