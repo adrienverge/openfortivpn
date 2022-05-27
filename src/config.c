@@ -60,6 +60,7 @@ const struct vpn_config invalid_cfg = {
 	.use_syslog = -1,
 	.half_internet_routes = -1,
 	.persistent = -1,
+	.retries = -1,
 #if HAVE_USR_SBIN_PPPD
 	.pppd_log = NULL,
 	.pppd_plugin = NULL,
@@ -310,6 +311,15 @@ int load_config(struct vpn_config *cfg, const char *filename)
 				continue;
 			}
 			cfg->half_internet_routes = half_internet_routes;
+		} else if (strcmp(key, "retries") == 0) {
+			unsigned long retries = strtoul(val, NULL, 0);
+
+			if (retries > UINT_MAX) {
+				log_warn("Bad value for retries in configuration file: \"%s\".\n",
+				         val);
+				continue;
+			}
+			cfg->retries = retries;
 		} else if (strcmp(key, "persistent") == 0) {
 			unsigned long persistent = strtoul(val, NULL, 0);
 
@@ -527,6 +537,8 @@ void merge_config(struct vpn_config *dst, struct vpn_config *src)
 		dst->use_syslog = src->use_syslog;
 	if (src->half_internet_routes != invalid_cfg.half_internet_routes)
 		dst->half_internet_routes = src->half_internet_routes;
+	if (src->retries != invalid_cfg.retries)
+		dst->retries = src->retries;
 	if (src->persistent != invalid_cfg.persistent)
 		dst->persistent = src->persistent;
 #if HAVE_USR_SBIN_PPPD

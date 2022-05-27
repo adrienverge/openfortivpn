@@ -84,6 +84,7 @@ PPPD_USAGE \
 "                    [--user-cert=<file>] [--user-key=<file>]\n" \
 "                    [--use-syslog] [--trusted-cert=<digest>]\n" \
 "                    [--persistent=<interval>] [-c <file>] [-v|-q]\n" \
+"                    [--persistent=<interval>] [--retries=<count>] [-c <file>] [-v|-q]\n" \
 "       openfortivpn --help\n" \
 "       openfortivpn --version\n" \
 "\n"
@@ -161,6 +162,7 @@ PPPD_USAGE \
 "                                dh key." help_seclevel_1 "\n" \
 "  --persistent=<interval>       Run the vpn persistently in a loop and try to re-\n" \
 "                                connect every <interval> seconds when dropping out.\n" \
+"  --retries=<count>             Limit persistent retries to <count> cycles.\n" \
 "  -v                            Increase verbosity. Can be used multiple times\n" \
 "                                to be even more verbose.\n" \
 "  -q                            Decrease verbosity. Can be used multiple times\n" \
@@ -208,6 +210,7 @@ int main(int argc, char **argv)
 		.use_syslog = 0,
 		.half_internet_routes = 0,
 		.persistent = 0,
+		.retries = 0,
 #if HAVE_RESOLVCONF
 		.use_resolvconf = USE_RESOLVCONF,
 #endif
@@ -261,6 +264,7 @@ int main(int argc, char **argv)
 		{"no-dns",               no_argument, &cli_cfg.set_dns, 0},
 		{"use-syslog",           no_argument, &cli_cfg.use_syslog, 1},
 		{"persistent",           required_argument, NULL, 0},
+		{"retries",              required_argument, NULL, 0},
 		{"ca-file",              required_argument, NULL, 0},
 		{"user-cert",            required_argument, NULL, 0},
 		{"user-key",             required_argument, NULL, 0},
@@ -499,6 +503,18 @@ int main(int argc, char **argv)
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
+			           "retries") == 0) {
+				long retries = strtol(optarg, NULL, 0);
+
+				if (retries < 0 || retries > UINT_MAX) {
+					log_warn("Bad retries option: \"%s\"\n",
+					         optarg);
+					break;
+				}
+				cli_cfg.retries = retries;
+				break;
+			}
+			if (strcmp(long_options[option_index].name,
 			           "set-dns") == 0) {
 				int set_dns = strtob(optarg);
 
@@ -648,6 +664,8 @@ int main(int argc, char **argv)
 			ret = EXIT_FAILURE;
 		else
 			ret = EXIT_SUCCESS;
+		if (cfg.retries-- == 0)
+			cfg.persistent = 0;
 		if ((cfg.persistent > 0) && (get_sig_received() == 0))
 			sleep(cfg.persistent);
 	} while ((get_sig_received() == 0) && (cfg.persistent != 0));
