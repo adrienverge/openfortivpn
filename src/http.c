@@ -426,7 +426,7 @@ int auth_set_cookie(struct tunnel *tunnel, const char *line)
 		cookie_start = strstr(line, "SVPNCOOKIE=");
 		if (cookie_start != NULL) {
 			const char *cookie_end;
-			int cookie_len;
+			size_t cookie_len;
 
 			cookie_end = strpbrk(cookie_start, "\r\n;");
 			if (cookie_end)
