@@ -408,7 +408,7 @@ end:
 	return ret;
 }
 
-static int get_auth_cookie(struct tunnel *tunnel, char *buf, uint32_t buffer_size)
+static int auth_get_cookie(struct tunnel *tunnel, char *buf, uint32_t buffer_size)
 {
 	const char *line;
 
@@ -690,7 +690,7 @@ int auth_log_in(struct tunnel *tunnel)
 			ret = ERR_HTTP_BAD_RES_CODE;
 		goto end;
 	}
-	ret = get_auth_cookie(tunnel, res, response_size);
+	ret = auth_get_cookie(tunnel, res, response_size);
 	if (ret == ERR_HTTP_NO_COOKIE) {
 		struct vpn_config *cfg = tunnel->config;
 
@@ -772,7 +772,7 @@ int auth_log_in(struct tunnel *tunnel)
 			goto end;
 		}
 
-		ret = get_auth_cookie(tunnel, res, response_size);
+		ret = auth_get_cookie(tunnel, res, response_size);
 	}
 
 	/*
