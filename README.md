@@ -96,7 +96,7 @@ Installing
 ### Installing existing packages
 
 Some Linux distributions provide `openfortivpn` packages:
-* [Fedora / CentOS](https://apps.fedoraproject.org/packages/openfortivpn)
+* [Fedora / CentOS](https://packages.fedoraproject.org/pkgs/openfortivpn)
 * [openSUSE / SLE](https://software.opensuse.org/package/openfortivpn)
 * [Gentoo](https://packages.gentoo.org/packages/net-vpn/openfortivpn)
 * [NixOS](https://github.com/NixOS/nixpkgs/tree/master/pkgs/tools/networking/openfortivpn)
