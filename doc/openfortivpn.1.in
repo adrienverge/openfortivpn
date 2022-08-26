@@ -197,7 +197,7 @@ ciphers. This lowers limits on dh key.
 
 \fBApplies to TLS v1.2 or lower only.\fR
 .TP
-\fB\-\-use\-peer\-dns=\fI<bool>\fR, \fB\-\-pppd\-no\-peerdns\fR
+\fB\-\-pppd\-use\-peerdns=\fI<bool>\fR, \fB\-\-pppd\-no\-peerdns\fR
 Whether to ask peer ppp server for DNS server addresses and let pppd
 rewrite /etc/resolv.conf. There is no mechanism to tell the dns\-suffix
 to pppd. If the DNS server addresses are requested,
