@@ -270,9 +270,9 @@ int load_config(struct vpn_config *cfg, const char *filename)
 			}
 			cfg->otp_delay = otp_delay;
 		} else if (strcmp(key, "cookie") == 0) {
-			log_warn("Ignoring option \"%s\".\n", key);
+			log_warn("Ignoring option \"%s\" in the config file.\n", key);
 		} else if (strcmp(key, "cookie-on-stdin") == 0) {
-			log_warn("Ignoring option \"%s\".\n", key);
+			log_warn("Ignoring option \"%s\" in the config file.\n", key);
 		} else if (strcmp(key, "no-ftm-push") == 0) {
 			int no_ftm_push = strtob(val);
 
@@ -351,13 +351,15 @@ int load_config(struct vpn_config *cfg, const char *filename)
 			cfg->pppd_call = strdup(val);
 #else
 		} else if (strcmp(key, "pppd") == 0) {
-			log_warn("Ignoring pppd option \"%s\".\n", key);
+			log_warn("Ignoring pppd option \"%s\" in the config file.\n",
+			         key);
 #endif
 		} else if (strcmp(key, "ppp-system") == 0) {
 #if HAVE_USR_SBIN_PPP
 			cfg->ppp_system = strdup(val);
 #else
-			log_warn("Ignoring option \"%s\".\n", key);
+			log_warn("Ignoring option \"%s\" in the config file.\n",
+			         key);
 #endif
 		} else if (strcmp(key, "use-resolvconf") == 0) {
 #if HAVE_RESOLVCONF
@@ -370,7 +372,8 @@ int load_config(struct vpn_config *cfg, const char *filename)
 			}
 			cfg->use_resolvconf = use_resolvconf;
 #else
-			log_warn("Ignoring option \"%s\".\n", key);
+			log_warn("Ignoring option \"%s\" in the config file.\n",
+			         key);
 #endif
 		} else if (strcmp(key, "use-syslog") == 0) {
 			int use_syslog = strtob(val);
