@@ -436,17 +436,6 @@ int main(int argc, char **argv){
 ])
 
 
-# prepare to get rid of obsolete code (FortiOS 4)
-AC_ARG_ENABLE([obsolete],
-	[AS_HELP_STRING([--enable-obsolete], [enable support for FortiOS 4])],,
-	[enable_obsolete=no])
-AS_CASE(["$enable_obsolete"],
-	[yes], [],
-	[no], [],
-	[AC_MSG_ERROR([unknown option '$enable_obsolete' for --enable-obsolete])])
-AS_IF([test "x$enable_obsolete" = "xyes"], [AC_DEFINE([SUPPORT_OBSOLETE_CODE])])
-
-
 AC_CONFIG_COMMANDS([timestamp], [touch src/.dirstamp])
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT

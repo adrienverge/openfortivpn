@@ -890,58 +890,6 @@ static int parse_xml_config(struct tunnel *tunnel, const char *buffer)
 }
 
 
-#ifdef SUPPORT_OBSOLETE_CODE
-static int parse_config(struct tunnel *tunnel, const char *buffer)
-{
-	const char *c, *end;
-
-	buffer = strcasestr(buffer, "NAME=\"text6\"");
-	if (!buffer)
-		return 1;
-	buffer = strcasestr(buffer, "VALUE=\"");
-	if (!buffer)
-		return 1;
-	buffer += 7;
-
-	end = strchr(buffer, '"');
-	if (end == NULL || end == buffer) {
-		log_info("No split VPN route\n");
-		return 1;
-	}
-
-	do {
-		char dest[16], mask[16];
-
-		c = strchr(buffer, '/');
-		if (c == NULL || c >= end || c - buffer > 15) {
-			log_warn("Wrong addresses in split VPN route: expected <dest>/<mask>\n");
-			return 1;
-		}
-		memcpy(dest, buffer, c - buffer);
-		dest[c - buffer] = '\0';
-		buffer = c + 1;
-
-		c = strchr(buffer, ',');
-		if (c == NULL || c > end)
-			c = end;
-
-		if (c - buffer > 15) {
-			log_warn("Wrong addresses in split VPN route: expected <dest>/<mask>\n");
-			return 1;
-		}
-		memcpy(mask, buffer, c - buffer);
-		mask[c - buffer] = '\0';
-		buffer = c + 1;
-
-		ipv4_add_split_vpn_route(tunnel, dest, mask, NULL);
-
-	} while (c < end && *c == ',');
-
-	return 1;
-}
-#endif
-
-
 int auth_get_config(struct tunnel *tunnel)
 {
 	char *buffer;
@@ -952,19 +900,6 @@ int auth_get_config(struct tunnel *tunnel)
 		ret = parse_xml_config(tunnel, buffer);
 		free(buffer);
 	}
-
-#ifdef SUPPORT_OBSOLETE_CODE
-	if (ret == 1)
-		return ret;
-
-	log_warn("Configuration cannot be retrieved in XML format. This VPN-SSL portal might be outdated and vulnerable, you might not be able to connect from systems with recent OpenSSL libraries.\n");
-
-	ret = http_request(tunnel, "GET", "/remote/fortisslvpn", "", &buffer, NULL);
-	if (ret == 1) {
-		ret = parse_config(tunnel, buffer);
-		free(buffer);
-	}
-#endif
 
 	return ret;
 }
