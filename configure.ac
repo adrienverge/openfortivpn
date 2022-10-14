@@ -175,9 +175,6 @@ save_openssl_CPPFLAGS="${CPPFLAGS}"
 save_openssl_LIBS="${LIBS}"
 CPPFLAGS="${OPENSSL_CFLAGS} ${CPPFLAGS}"
 LIBS="${OPENSSL_LIBS} ${LIBS}"
-AC_CHECK_FUNCS([ \
-X509_check_host \
-], [], AC_MSG_ERROR([Required function not found]))
 CPPFLAGS="${save_openssl_CPPFLAGS}"
 LIBS="${save_openssl_LIBS}"
 
