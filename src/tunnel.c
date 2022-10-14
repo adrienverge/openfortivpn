@@ -30,9 +30,6 @@
 #include "http.h"
 #include "log.h"
 #include "userinput.h"
-#ifndef HAVE_X509_CHECK_HOST
-#include "openssl_hostname_validation.h"
-#endif
 
 #include <openssl/err.h>
 #ifndef OPENSSL_NO_ENGINE
@@ -876,19 +873,11 @@ static int ssl_verify_cert(struct tunnel *tunnel)
 
 	subj = X509_get_subject_name(cert);
 
-#ifdef HAVE_X509_CHECK_HOST
-	// Use OpenSSL native host validation if v >= 1.0.2.
 	// compare against gateway_host and correctly check return value
 	// to fix prior incorrect use of X509_check_host
 	if (X509_check_host(cert, tunnel->config->gateway_host,
 	                    0, 0, NULL) == 1)
 		cert_valid = 1;
-#else
-	// Use validate_hostname form iSECPartners if native validation not available
-	// in order to avoid TLS Certificate CommonName NULL Byte Vulnerability
-	if (validate_hostname(tunnel->config->gateway_host, cert) == MatchFound)
-		cert_valid = 1;
-#endif
 
 	// Try to validate certificate using local PKI
 	if (cert_valid
