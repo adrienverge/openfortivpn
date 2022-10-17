@@ -1,12 +1,16 @@
 [Unit]
 Description=OpenFortiVPN for %I
-After=network-online.target
+After=syslog.target network-online.target
+Wants=network-online.target
 Documentation=man:openfortivpn(1)
+Documentation=https://github.com/adrienverge/openfortivpn#readme
+Documentation=https://github.com/adrienverge/openfortivpn/wiki
 
 [Service]
 Type=notify
 PrivateTmp=true
 ExecStart=@BINDIR@/openfortivpn -c @SYSCONFDIR@/openfortivpn/%I.conf
+Restart=on-failure
 OOMScoreAdjust=-100
 
 [Install]
