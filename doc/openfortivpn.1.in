@@ -8,6 +8,8 @@ openfortivpn \- Client for PPP+SSL VPN tunnel services
 [\fI<host>\fR[:\fI<port>\fR]]
 [\fB\-u\fR \fI<user>\fR]
 [\fB\-p\fR \fI<pass>\fR]
+[\fB\-\-cookie=\fI<cookie>\fR]
+[\fB\-\-cookie\-on\-stdin\fR]
 [\fB\-\-pinentry=\fI<name>\fR]
 [\fB\-\-otp=\fI<otp>\fR]
 [\fB\-\-otp\-prompt=\fI<prompt>\fR]
@@ -71,6 +73,12 @@ VPN account username.
 \fB\-p \fI<pass>\fR, \fB\-\-password=\fI<pass>\fR
 VPN account password in plain text.
 For a secure alternative, use pinentry or let openfortivpn prompt for the password.
+.TP
+\fB\-\-cookie=\fI<cookie>\fR
+A valid cookie (SVPNCOOKIE) to use in place of username and password.
+.TP
+\fB\-\-cookie\-on\-stdin\fR
+Read the cookie (SVPNCOOKIE) from standard input.
 .TP
 \fB\-\-pinentry=\fI<name>\fR
 The pinentry program to use. Allows supplying the password in a secure manner.
@@ -189,7 +197,7 @@ ciphers. This lowers limits on dh key.
 
 \fBApplies to TLS v1.2 or lower only.\fR
 .TP
-\fB\-\-use\-peer\-dns=\fI<bool>\fR, \fB\-\-pppd\-no\-peerdns\fR
+\fB\-\-pppd\-use\-peerdns=\fI<bool>\fR, \fB\-\-pppd\-no\-peerdns\fR
 Whether to ask peer ppp server for DNS server addresses and let pppd
 rewrite /etc/resolv.conf. There is no mechanism to tell the dns\-suffix
 to pppd. If the DNS server addresses are requested,

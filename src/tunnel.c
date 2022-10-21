@@ -30,9 +30,6 @@
 #include "http.h"
 #include "log.h"
 #include "userinput.h"
-#ifndef HAVE_X509_CHECK_HOST
-#include "openssl_hostname_validation.h"
-#endif
 
 #include <openssl/err.h>
 #ifndef OPENSSL_NO_ENGINE
@@ -238,6 +235,7 @@ static int pppd_run(struct tunnel *tunnel)
 				"230400", // speed
 				":169.254.2.1", // <local_IP_address>:<remote_IP_address>
 				"noipdefault",
+				"ipcp-accept-local",
 				"noaccomp",
 				"noauth",
 				"default-asyncmap",
@@ -854,7 +852,6 @@ err_socket:
 static int ssl_verify_cert(struct tunnel *tunnel)
 {
 	int ret = -1;
-	int cert_valid = 0;
 	unsigned char digest[SHA256LEN];
 	unsigned int len;
 	struct x509_digest *elem;
@@ -873,25 +870,13 @@ static int ssl_verify_cert(struct tunnel *tunnel)
 		return 1;
 	}
 
-	subj = X509_get_subject_name(cert);
-
-#ifdef HAVE_X509_CHECK_HOST
-	// Use OpenSSL native host validation if v >= 1.0.2.
-	// compare against gateway_host and correctly check return value
-	// to fix prior incorrect use of X509_check_host
-	if (X509_check_host(cert, tunnel->config->gateway_host,
-	                    0, 0, NULL) == 1)
-		cert_valid = 1;
-#else
-	// Use validate_hostname form iSECPartners if native validation not available
-	// in order to avoid TLS Certificate CommonName NULL Byte Vulnerability
-	if (validate_hostname(tunnel->config->gateway_host, cert) == MatchFound)
-		cert_valid = 1;
-#endif
-
-	// Try to validate certificate using local PKI
-	if (cert_valid
-	    && SSL_get_verify_result(tunnel->ssl_handle) == X509_V_OK) {
+	// Validate certificate:
+	// 1. Validate using local PKI
+	// 2. Compare against gateway_host and correctly check return value
+	//    to fix prior incorrect use of X509_check_host
+	if (SSL_get_verify_result(tunnel->ssl_handle) == X509_V_OK
+	    && X509_check_host(cert, tunnel->config->gateway_host,
+	                       0, 0, NULL) == 1) {
 		log_debug("Gateway certificate validation succeeded.\n");
 		ret = 0;
 		goto free_cert;
@@ -918,6 +903,8 @@ static int ssl_verify_cert(struct tunnel *tunnel)
 		ret = 0;
 		goto free_cert;
 	}
+
+	subj = X509_get_subject_name(cert);
 
 	log_error("Gateway certificate validation failed, and the certificate digest is not in the local whitelist. If you trust it, rerun with:\n");
 	log_error("    --trusted-cert %s\n", digest_str);
@@ -1286,7 +1273,10 @@ int run_tunnel(struct vpn_config *config)
 
 	// Step 2: connect to the HTTP interface and authenticate to get a
 	// cookie
-	ret = auth_log_in(&tunnel);
+	if (config->cookie)
+		ret = auth_set_cookie(&tunnel, config->cookie);
+	else
+		ret = auth_log_in(&tunnel);
 	if (ret != 1) {
 		log_error("Could not authenticate to gateway. Please check the password, client certificate, etc.\n");
 		log_debug("%s (%d)\n", err_http_str(ret), ret);

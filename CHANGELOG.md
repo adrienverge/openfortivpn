@@ -14,6 +14,18 @@ Releases
 This high level changelog is usually updated when a release is tagged.
 On the master branch there may be changes that are not (yet) described here.
 
+### 1.19.0
+
+* [-] fix "Peer refused to agree to our IP address" message
+* [+] avoid setting duplicate routes
+* [~] remove obsolete code that reads non-XML config from FortiOS 4
+* [-] improve warning message when reading options from config file
+
+### 1.18.0
+
+* [+] add new options to delegate the authentication to external programs
+* [-] minor fixes in documentation
+
 ### 1.17.3
 
 * [-] fix regression: spurious warning message after reading config
