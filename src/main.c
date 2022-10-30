@@ -186,6 +186,35 @@ PPPD_USAGE \
 "      trusted-cert = othercertificatedigest6631bf...\n" \
 "  For a full-featured configuration see man openfortivpn(1).\n"
 
+/**
+ * This function returns 0 if it could add the prefix to the given cookie
+ * or if the given cookie already had the prefix.
+ * If cookie_with_prefix is NULL, then the given cookie already had the prefix,
+ * otherwise it will be a dynamically allocated string.
+ * If the return value is not 0, then the given cookie did not have the prefix
+ * and it was not possible to create the string with the prefix.
+ */
+static int get_cookie_with_prefix(const char *cookie, char **cookie_with_prefix)
+{
+	char *buf;
+	int len;
+
+	*cookie_with_prefix = NULL;
+
+	if (strstr(cookie, "SVPNCOOKIE=") != NULL)
+		return 0;
+
+	len = strlen(cookie) + strlen("SVPNCOOKIE=") + 1;
+	buf = malloc(len);
+	if (buf == NULL)
+		return 1;
+
+	snprintf(buf, len, "%s%s", "SVPNCOOKIE=", cookie);
+	*cookie_with_prefix = buf;
+
+	return 0;
+}
+
 int main(int argc, char **argv)
 {
 	int ret = EXIT_FAILURE;
@@ -517,19 +546,39 @@ int main(int argc, char **argv)
 			}
 			if (strcmp(long_options[option_index].name,
 			           "cookie") == 0) {
-				cli_cfg.cookie = strdup(optarg);
+				char *cookie_with_prefix;
+
+				if (get_cookie_with_prefix(optarg, &cookie_with_prefix))
+					log_error("Could not add the prefix to the cookie\n");
+
+				if (cookie_with_prefix != NULL)
+					cli_cfg.cookie = cookie_with_prefix;
+				else
+					cli_cfg.cookie = strdup(optarg);
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
 			           "cookie-on-stdin") == 0) {
-				char *cookie = read_from_stdin(COOKIE_SIZE);
+				char *cookie;
+				char *cookie_with_prefix;
 
+				cookie = read_from_stdin(COOKIE_SIZE);
 				if (cookie == NULL) {
 					log_warn("Could not read the cookie from stdin");
 					break;
 				}
+
 				free(cli_cfg.cookie);
-				cli_cfg.cookie = cookie;
+
+				if (get_cookie_with_prefix(cookie, &cookie_with_prefix))
+					log_error("Could not add the prefix to the cookie\n");
+
+				if (cookie_with_prefix != NULL) {
+					free(cookie);
+					cli_cfg.cookie = cookie_with_prefix;
+				} else {
+					cli_cfg.cookie = cookie;
+				}
 				break;
 			}
 			goto user_error;
