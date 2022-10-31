@@ -187,12 +187,14 @@ PPPD_USAGE \
 "  For a full-featured configuration see man openfortivpn(1).\n"
 
 /**
- * This function returns 0 if it could add the prefix to the given cookie
- * or if the given cookie already had the prefix.
- * If cookie_with_prefix is NULL, then the given cookie already had the prefix,
- * otherwise it will be a dynamically allocated string.
+ * This function returns 0 if it could add the "SVPNCOOKIE=" prefix to the given
+ * cookie or if the given cookie already had the prefix. If cookie_with_prefix
+ * is NULL, then the given cookie already had the prefix, otherwise it will be
+ * a dynamically allocated string containing the cookie with the prefix.
+ *
  * If the return value is not 0, then the given cookie did not have the prefix
  * and it was not possible to create the string with the prefix.
+ * cookie_with_prefix will be NULL in this case.
  */
 static int get_cookie_with_prefix(const char *cookie, char **cookie_with_prefix)
 {
