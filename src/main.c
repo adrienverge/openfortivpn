@@ -550,8 +550,10 @@ int main(int argc, char **argv)
 			           "cookie") == 0) {
 				char *cookie_with_prefix;
 
-				if (get_cookie_with_prefix(optarg, &cookie_with_prefix))
-					log_error("Could not add the prefix to the cookie\n");
+				if (get_cookie_with_prefix(optarg, &cookie_with_prefix)) {
+					log_error("Could not prepend \"SVPNCOOKIE=\" to the cookie.\n");
+					goto exit;
+				}
 
 				if (cookie_with_prefix != NULL)
 					cli_cfg.cookie = cookie_with_prefix;
@@ -572,8 +574,10 @@ int main(int argc, char **argv)
 
 				free(cli_cfg.cookie);
 
-				if (get_cookie_with_prefix(cookie, &cookie_with_prefix))
-					log_error("Could not add the prefix to the cookie\n");
+				if (get_cookie_with_prefix(cookie, &cookie_with_prefix)) {
+					log_error("Could not prepend \"SVPNCOOKIE=\" to the cookie.\n");
+					goto exit;
+				}
 
 				if (cookie_with_prefix != NULL) {
 					free(cookie);
