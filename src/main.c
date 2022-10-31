@@ -555,6 +555,7 @@ int main(int argc, char **argv)
 					goto exit;
 				}
 
+				free(cli_cfg.cookie);
 				if (cookie_with_prefix != NULL)
 					cli_cfg.cookie = cookie_with_prefix;
 				else
@@ -572,13 +573,12 @@ int main(int argc, char **argv)
 					break;
 				}
 
-				free(cli_cfg.cookie);
-
 				if (get_cookie_with_prefix(cookie, &cookie_with_prefix)) {
 					log_error("Could not prepend \"SVPNCOOKIE=\" to the cookie.\n");
 					goto exit;
 				}
 
+				free(cli_cfg.cookie);
 				if (cookie_with_prefix != NULL) {
 					free(cookie);
 					cli_cfg.cookie = cookie_with_prefix;
