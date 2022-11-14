@@ -1037,12 +1037,12 @@ int ssl_connect(struct tunnel *tunnel)
 			const char *cipher_list;
 
 			if (tunnel->config->seclevel_1)
-				cipher_list = "HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4@SECLEVEL=1";
+				cipher_list = "HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4@SECLEVEL=0";
 			else
 				cipher_list = "HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4";
 			tunnel->config->cipher_list = strdup(cipher_list);
 		} else if (tunnel->config->seclevel_1) {
-			static const char cipher_list[] = "DEFAULT@SECLEVEL=1";
+			static const char cipher_list[] = "DEFAULT@SECLEVEL=0";
 
 			tunnel->config->cipher_list = strdup(cipher_list);
 		}
