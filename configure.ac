@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT([openfortivpn], [1.18.0])
+AC_INIT([openfortivpn], [1.19.0])
 AC_CONFIG_SRCDIR([src/main.c])
 AM_INIT_AUTOMAKE([foreign subdir-objects])
 
@@ -31,7 +31,7 @@ AC_SUBST(REVISION)
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 # Checks for libraries.
-PKG_CHECK_MODULES(OPENSSL, [libssl >= 0.9.8 libcrypto >= 0.9.8], [], [AC_MSG_ERROR([Cannot find OpenSSL 0.9.8 or higher.])])
+PKG_CHECK_MODULES(OPENSSL, [libssl >= 1.0.2 libcrypto >= 1.0.2], [], [AC_MSG_ERROR([Cannot find OpenSSL 1.0.2 or higher.])])
 AC_CHECK_LIB([pthread], [pthread_create], [], [AC_MSG_ERROR([Cannot find libpthread.])])
 AC_CHECK_LIB([util], [forkpty], [], [AC_MSG_ERROR([Cannot find libutil.])])
 PKG_CHECK_MODULES(LIBSYSTEMD, [libsystemd], [AC_DEFINE(HAVE_SYSTEMD)], [AC_MSG_RESULT([libsystemd not present])])
@@ -177,7 +177,6 @@ save_openssl_CPPFLAGS="${CPPFLAGS}"
 save_openssl_LIBS="${LIBS}"
 CPPFLAGS="${OPENSSL_CFLAGS} ${CPPFLAGS}"
 LIBS="${OPENSSL_LIBS} ${LIBS}"
-AC_CHECK_FUNCS([X509_check_host])
 CPPFLAGS="${save_openssl_CPPFLAGS}"
 LIBS="${save_openssl_LIBS}"
 
