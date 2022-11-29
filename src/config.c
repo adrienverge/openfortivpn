@@ -77,6 +77,7 @@ const struct vpn_config invalid_cfg = {
 	.pem_passphrase = {'\0'},
 	.pem_passphrase_set = 0,
 	.insecure_ssl = -1,
+	.saml = -1,
 	.cipher_list = NULL,
 	.min_tls = -1,
 	.seclevel_1 = -1,
@@ -282,6 +283,15 @@ int load_config(struct vpn_config *cfg, const char *filename)
 				continue;
 			}
 			cfg->no_ftm_push = no_ftm_push;
+		} else if (strcmp(key, "saml") == 0) {
+			int saml = strtob(val);
+
+			if (saml < 0) {
+				log_warn("Bad saml in configuration file: \"%s\".\n",
+				         val);
+				continue;
+			}
+			cfg->saml = saml;
 		} else if (strcmp(key, "pinentry") == 0) {
 			free(cfg->pinentry);
 			cfg->pinentry = strdup(val);
@@ -590,6 +600,10 @@ void merge_config(struct vpn_config *dst, struct vpn_config *src)
 	}
 	if (src->insecure_ssl != invalid_cfg.insecure_ssl)
 		dst->insecure_ssl = src->insecure_ssl;
+
+	if (src->saml != invalid_cfg.saml)
+		dst->saml = src->saml;
+
 	if (src->cipher_list) {
 		free(dst->cipher_list);
 		dst->cipher_list = src->cipher_list;
