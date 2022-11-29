@@ -357,26 +357,31 @@ int main(int argc, char **argv)
 			}
 			if (strcmp(long_options[option_index].name,
 			           "pppd-log") == 0) {
+				free(cli_cfg.pppd_log);
 				cli_cfg.pppd_log = strdup(optarg);
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
 			           "pppd-plugin") == 0) {
+				free(cli_cfg.pppd_plugin);
 				cli_cfg.pppd_plugin = strdup(optarg);
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
 			           "pppd-ifname") == 0) {
+				free(cli_cfg.pppd_ifname);
 				cli_cfg.pppd_ifname = strdup(optarg);
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
 			           "pppd-ipparam") == 0) {
+				free(cli_cfg.pppd_ipparam);
 				cli_cfg.pppd_ipparam = strdup(optarg);
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
 			           "pppd-call") == 0) {
+				free(cli_cfg.pppd_call);
 				cli_cfg.pppd_call = strdup(optarg);
 				break;
 			}
@@ -384,6 +389,7 @@ int main(int argc, char **argv)
 			if (cli_cfg.pppd_plugin == NULL &&
 			    strcmp(long_options[option_index].name,
 			           "plugin") == 0) {
+				free(cli_cfg.pppd_plugin);
 				cli_cfg.pppd_plugin = strdup(optarg);
 				break;
 			}
@@ -391,6 +397,7 @@ int main(int argc, char **argv)
 #if HAVE_USR_SBIN_PPP
 			if (strcmp(long_options[option_index].name,
 			           "ppp-system") == 0) {
+				free(cli_cfg.ppp_system);
 				cfg.ppp_system = strdup(optarg);
 				break;
 			}
@@ -411,16 +418,19 @@ int main(int argc, char **argv)
 #endif
 			if (strcmp(long_options[option_index].name,
 			           "ca-file") == 0) {
+				free(cli_cfg.ca_file);
 				cli_cfg.ca_file = strdup(optarg);
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
 			           "user-cert") == 0) {
+				free(cli_cfg.user_cert);
 				cli_cfg.user_cert = strdup(optarg);
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
 			           "user-key") == 0) {
+				free(cli_cfg.user_key);
 				cli_cfg.user_key = strdup(optarg);
 				break;
 			}
@@ -434,6 +444,7 @@ int main(int argc, char **argv)
 			}
 			if (strcmp(long_options[option_index].name,
 			           "pinentry") == 0) {
+				free(cli_cfg.pinentry);
 				cli_cfg.pinentry = strdup(optarg);
 				break;
 			}
@@ -451,6 +462,7 @@ int main(int argc, char **argv)
 			}
 			if (strcmp(long_options[option_index].name,
 			           "cipher-list") == 0) {
+				free(cli_cfg.cipher_list);
 				cli_cfg.cipher_list = strdup(optarg);
 				break;
 			}
@@ -468,6 +480,7 @@ int main(int argc, char **argv)
 			}
 			if (strcmp(long_options[option_index].name,
 			           "otp-prompt") == 0) {
+				free(cli_cfg.otp_prompt);
 				cli_cfg.otp_prompt = strdup(optarg);
 				break;
 			}
@@ -538,6 +551,7 @@ int main(int argc, char **argv)
 			}
 			if (strcmp(long_options[option_index].name,
 			           "cookie") == 0) {
+				free(cli_cfg.cookie);
 				cli_cfg.cookie = strdup_with_prefix(optarg, "SVPNCOOKIE=");
 				break;
 			}
