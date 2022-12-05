@@ -187,15 +187,21 @@ int saml_get_cookie(char *vpn_domain, char *realm, char **dst_cookie,
 
 	if (fork() == 0) {
 		char *home_dir = get_under_home_dir("");
+		char *xdg_runtime_dir = malloc(strlen("/run/user/XXXXXXXXXX") + 1);
+		sprintf(xdg_runtime_dir, "/run/user/%d", browser_uid);
 
 		clearenv();
 		setenv("HOME", home_dir, 1);
 		setenv("DISPLAY", ":0", 1);
 
+		// Needed for wayland
+		setenv("XDG_RUNTIME_DIR", xdg_runtime_dir, 1);
+
 		setuid(browser_uid);
 		webkit_get_cookie(vpn_domain, realm, website_cert);
 
 		free(home_dir);
+		free(xdg_runtime_dir);
 		exit(EXIT_SUCCESS);
 	}
 
