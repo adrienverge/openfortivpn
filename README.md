@@ -27,6 +27,11 @@ Examples
   openfortivpn vpn-gateway:8443 --username=foo --realm=bar
   ```
 
+* Connect using saml:
+  ```
+  openfortivpn vpn-gateway:8443 --saml
+  ```
+
 * Store password securely with a pinentry program:
   ```
   openfortivpn vpn-gateway:8443 --username=foo --pinentry=pinentry-mac
