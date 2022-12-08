@@ -96,7 +96,8 @@ static char *get_under_home_dir(char *dir)
 	return result;
 }
 
-static int webkit_get_cookie(char *host, char *realm, char *website_cert)
+static int webkit_get_cookie(char *gateway_host, uint16_t gateway_port,
+		             char *realm, char *website_cert)
 {
 	char *cookie_file = get_under_home_dir(".openfortivpncookies");
 
@@ -124,22 +125,23 @@ static int webkit_get_cookie(char *host, char *realm, char *website_cert)
 	g_signal_connect(web_view, "close", G_CALLBACK(close_web_view_cb),
 			 main_window);
 	g_signal_connect(cookie_mgr, "changed", G_CALLBACK(cookie_changed_cb),
-			 host);
+			 gateway_host);
 
 	GTlsCertificate *cert =
 		g_tls_certificate_new_from_pem(website_cert, -1, NULL);
 
 	webkit_web_context_allow_tls_certificate_for_host(web_context, cert,
-							  host);
+							  gateway_host);
 
-	char saml_url[strlen("https:///remote/saml/start") + strlen(host) +
+	// Maximum possible port length is 5 (65536/XXXXX)
+	char saml_url[strlen("https://XXXXX/remote/saml/start") + strlen(gateway_host) +
 		      strlen("?realm=") + strlen(realm) + 1];
 
 	if (realm) {
-		sprintf(saml_url, "https://%s/remote/saml/start?realm=%s", host,
-			realm);
+		sprintf(saml_url, "https://%s:%d/remote/saml/start?realm=%s", gateway_host,
+			gateway_port, realm);
 	} else {
-		sprintf(saml_url, "https://%s/remote/saml/start", host);
+		sprintf(saml_url, "https://%s:%d/remote/saml/start", gateway_host, gateway_port);
 	}
 
 	webkit_web_view_load_uri(web_view, saml_url);
@@ -157,8 +159,8 @@ static int webkit_get_cookie(char *host, char *realm, char *website_cert)
 }
 
 /* Returns 0 if the cookie was set successfully. -1 if there was an error. */
-int saml_get_cookie(char *vpn_domain, char *realm, char **dst_cookie,
-		    char *website_cert)
+int saml_get_cookie(char *gateway_host, uint16_t gateway_port, char *realm,
+		    char **dst_cookie, char *cert)
 {
 	svpncookie_size = sizeof(char) * (COOKIE_SIZE + 1);
 
@@ -198,7 +200,7 @@ int saml_get_cookie(char *vpn_domain, char *realm, char **dst_cookie,
 		setenv("XDG_RUNTIME_DIR", xdg_runtime_dir, 1);
 
 		setuid(browser_uid);
-		webkit_get_cookie(vpn_domain, realm, website_cert);
+		webkit_get_cookie(gateway_host, gateway_port, realm, cert);
 
 		free(home_dir);
 		free(xdg_runtime_dir);

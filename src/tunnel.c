@@ -1288,8 +1288,8 @@ int run_tunnel(struct vpn_config *config)
 		BIO_free(b);
 		X509_free(cert);
 
-		saml_get_cookie(config->gateway_host, config->realm,
-				&config->cookie, cert_buffer);
+		saml_get_cookie(config->gateway_host, config->gateway_port,
+				config->realm, &config->cookie, cert_buffer);
 
 		free(cert_buffer);
 	}
