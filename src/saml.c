@@ -152,7 +152,7 @@ static int webkit_get_cookie(char *gateway_host, uint16_t gateway_port,
 	gtk_main();
 
 	// Don't allow other users to read the cookies.
-	chmod("/home/lorenz/.openfortivpncookies", 0600);
+	chmod(cookie_file, 0600);
 
 	free(cookie_file);
 	return 0;
