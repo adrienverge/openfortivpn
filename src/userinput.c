@@ -363,31 +363,3 @@ char *read_from_stdin(size_t count)
 	// Just keep using the larger buffer if realloc() fails.
 	return output ? output : buf;
 }
-
-/**
- * Returns the given "input" prefixed with "prefix" in a dynamically
- * allocated string. This behaves exactly like "strdup" if "input" already
- * starts with "prefix".
- */
-char *strdup_with_prefix(const char *input, const char *prefix)
-{
-	int input_len;
-	int prefix_len;
-	char *buf;
-
-	input_len = strlen(input);
-	prefix_len = strlen(prefix);
-
-	if (input_len >= prefix_len && memcmp(prefix, input, prefix_len) == 0)
-		return strdup(input);
-
-	buf = malloc(input_len + prefix_len);
-	if (buf == NULL)
-		return NULL;
-
-	memcpy(buf, prefix, prefix_len);
-	memcpy(buf + prefix_len, input, input_len);
-	buf[input_len + prefix_len] = '\0';
-
-	return buf;
-}
