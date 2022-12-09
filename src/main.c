@@ -558,6 +558,7 @@ int main(int argc, char **argv)
 				}
 				free(cli_cfg.cookie);
 				cli_cfg.cookie = strdup_with_prefix(cookie, "SVPNCOOKIE=");
+				free(cookie);
 				break;
 			}
 			goto user_error;
