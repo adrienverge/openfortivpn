@@ -378,9 +378,8 @@ char *strdup_with_prefix(const char *input, const char *prefix)
 	input_len = strlen(input);
 	prefix_len = strlen(prefix);
 
-	if (input_len >= prefix_len && memcmp(prefix, input, prefix_len) == 0) {
+	if (input_len >= prefix_len && memcmp(prefix, input, prefix_len) == 0)
 		return strdup(input);
-	}
 
 	buf = malloc(input_len + prefix_len);
 	if (buf == NULL)
