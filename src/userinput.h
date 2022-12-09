@@ -25,4 +25,6 @@ void read_password(const char *pinentry, const char *hint,
 
 char *read_from_stdin(size_t count);
 
+char *strdup_with_prefix(const char *input, const char *prefix);
+
 #endif
