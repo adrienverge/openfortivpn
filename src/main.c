@@ -545,37 +545,19 @@ int main(int argc, char **argv)
 			}
 			if (strcmp(long_options[option_index].name,
 			           "cookie") == 0) {
-				char *cookie_with_prefix;
-
-				cookie_with_prefix = strdup_with_prefix(optarg, "SVPNCOOKIE=");
-				if (cookie_with_prefix == NULL) {
-					log_error("Could not prepend \"SVPNCOOKIE=\" to the cookie.\n");
-					goto exit;
-				}
-				free(cli_cfg.cookie);
-				cli_cfg.cookie = cookie_with_prefix;
+				cli_cfg.cookie = strdup_with_prefix(optarg, "SVPNCOOKIE=");
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
 			           "cookie-on-stdin") == 0) {
-				char *cookie;
-				char *cookie_with_prefix;
+				char *cookie = read_from_stdin(COOKIE_SIZE);
 
-				cookie = read_from_stdin(COOKIE_SIZE);
 				if (cookie == NULL) {
-					log_error("Could not read the cookie from stdin\n");
-					goto exit;
+					log_warn("Could not read the cookie from stdin");
+					break;
 				}
-
-				cookie_with_prefix = strdup_with_prefix(cookie, "SVPNCOOKIE=");
-				free(cookie);
-				if (cookie_with_prefix == NULL) {
-					log_error("Could not prepend \"SVPNCOOKIE=\" to the cookie.\n");
-					goto exit;
-				}
-
 				free(cli_cfg.cookie);
-				cli_cfg.cookie = cookie_with_prefix;
+				cli_cfg.cookie = strdup_with_prefix(cookie, "SVPNCOOKIE=");
 				break;
 			}
 			goto user_error;
