@@ -560,7 +560,7 @@ int main(int argc, char **argv)
 				char *cookie = read_from_stdin(COOKIE_SIZE);
 
 				if (cookie == NULL) {
-					log_warn("Could not read the cookie from stdin\n");
+					log_error("Could not read the cookie from stdin\n");
 					break;
 				}
 				free(cli_cfg.cookie);
