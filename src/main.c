@@ -186,6 +186,27 @@ PPPD_USAGE \
 "      trusted-cert = othercertificatedigest6631bf...\n" \
 "  For a full-featured configuration see man openfortivpn(1).\n"
 
+/**
+ * Returns the given "input" prefixed with "prefix" in a dynamically
+ * allocated string. This behaves exactly like "strdup" if "input" already
+ * starts with "prefix".
+ */
+static char *strdup_with_prefix(const char *input, const char *prefix)
+{
+	size_t prefix_len = strlen(prefix);
+	char *output;
+
+	if (memcmp(prefix, input, prefix_len) == 0)
+		return strdup(input);
+
+	output = malloc(prefix_len + strlen(input));
+	if (output) {
+		strcpy(output, prefix);
+		strcpy(output + prefix_len, input);
+	}
+	return output;
+}
+
 int main(int argc, char **argv)
 {
 	int ret = EXIT_FAILURE;
@@ -517,7 +538,7 @@ int main(int argc, char **argv)
 			}
 			if (strcmp(long_options[option_index].name,
 			           "cookie") == 0) {
-				cli_cfg.cookie = strdup(optarg);
+				cli_cfg.cookie = strdup_with_prefix(optarg, "SVPNCOOKIE=");
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
@@ -529,7 +550,8 @@ int main(int argc, char **argv)
 					break;
 				}
 				free(cli_cfg.cookie);
-				cli_cfg.cookie = cookie;
+				cli_cfg.cookie = strdup_with_prefix(cookie, "SVPNCOOKIE=");
+				free(cookie);
 				break;
 			}
 			goto user_error;
