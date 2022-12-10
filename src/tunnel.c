@@ -973,7 +973,7 @@ static int pem_passphrase_cb(char *buf, int size, int rwflag, void *u)
 				              PEM_PASSPHRASE_SIZE + 1);
 				cfg->pem_passphrase_set =  1;
 			} else {
-				log_error("Buffer too small for PEM pass phrase: %d.",
+				log_error("Buffer too small for PEM pass phrase: %d.\n",
 				          size);
 			}
 		}
@@ -984,7 +984,7 @@ static int pem_passphrase_cb(char *buf, int size, int rwflag, void *u)
 			return strlen(buf);
 		}
 	} else {
-		log_error("We refuse to write PEM pass phrases!");
+		log_error("We refuse to write PEM pass phrases!\n");
 	}
 
 	return -1;
