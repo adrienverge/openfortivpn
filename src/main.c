@@ -196,10 +196,10 @@ static char *strdup_with_prefix(const char *input, const char *prefix)
 	size_t prefix_len = strlen(prefix);
 	char *output;
 
-	if (memcmp(prefix, input, prefix_len) == 0)
+	if (strncmp(prefix, input, prefix_len) == 0)
 		return strdup(input);
 
-	output = malloc(prefix_len + strlen(input));
+	output = malloc(prefix_len + strlen(input) + 1);
 	if (output) {
 		strcpy(output, prefix);
 		strcpy(output + prefix_len, input);
