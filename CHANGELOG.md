@@ -14,6 +14,15 @@ Releases
 This high level changelog is usually updated when a release is tagged.
 On the master branch there may be changes that are not (yet) described here.
 
+### 1.20.0
+
+* [-] fix incorrect empty HDLC frame detection causing connection drops
+* [+] increase the inbound HTTP buffer capacity
+* [-] fix a few log messages
+* [-] fix innocuous memory leaks when parsing options
+* [+] prepend "SVPNCOOKIE=" to the cookie if missing
+* [~] drop support for openssl < 1.0.2
+
 ### 1.19.0
 
 * [-] fix "Peer refused to agree to our IP address" message
