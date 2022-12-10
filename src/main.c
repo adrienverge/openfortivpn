@@ -193,25 +193,18 @@ PPPD_USAGE \
  */
 static char *strdup_with_prefix(const char *input, const char *prefix)
 {
-	int input_len;
-	int prefix_len;
-	char *buf;
+	size_t prefix_len = strlen(prefix);
+	char *output;
 
-	input_len = strlen(input);
-	prefix_len = strlen(prefix);
-
-	if (input_len >= prefix_len && memcmp(prefix, input, prefix_len) == 0)
+	if (memcmp(prefix, input, prefix_len) == 0)
 		return strdup(input);
 
-	buf = malloc(input_len + prefix_len);
-	if (buf == NULL)
-		return NULL;
-
-	memcpy(buf, prefix, prefix_len);
-	memcpy(buf + prefix_len, input, input_len);
-	buf[input_len + prefix_len] = '\0';
-
-	return buf;
+	output = malloc(prefix_len + strlen(input));
+	if (output) {
+		strcpy(output, prefix);
+		strcpy(output + prefix_len, input);
+	}
+	return output;
 }
 
 int main(int argc, char **argv)
