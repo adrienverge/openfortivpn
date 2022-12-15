@@ -1467,8 +1467,10 @@ int run_tunnel(struct vpn_config *config)
 	tunnel.state = STATE_DISCONNECTING;
 
 err_start_tunnel:
-	ret = pppd_terminate(&tunnel);
-	log_info("Terminated %s.\n", PPP_DAEMON);
+	if (!tunnel.use_tun) {
+		ret = pppd_terminate(&tunnel);
+		log_info("Terminated %s.\n", PPP_DAEMON);
+	}
 err_tunnel:
 	log_info("Closed connection to gateway.\n");
 	tunnel.state = STATE_DOWN;
