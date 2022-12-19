@@ -205,7 +205,7 @@ cleanup:
 	}
 
 #else
-	FILE * fp;
+	FILE *fp;
 	uint32_t total_bytes_read = 0;
 
 	char *saveptr3 = NULL;
