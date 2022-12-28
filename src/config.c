@@ -420,7 +420,6 @@ int load_config(struct vpn_config *cfg, const char *filename)
 		} else if (strcmp(key, "cipher-list") == 0) {
 			free(cfg->cipher_list);
 			cfg->cipher_list = strdup(val);
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L
 		} else if (strcmp(key, "min-tls") == 0) {
 			int min_tls = parse_min_tls(val);
 
@@ -431,7 +430,6 @@ int load_config(struct vpn_config *cfg, const char *filename)
 			} else {
 				cfg->min_tls = min_tls;
 			}
-#endif
 		} else if (strcmp(key, "seclevel-1") == 0) {
 			int seclevel_1 = strtob(val);
 

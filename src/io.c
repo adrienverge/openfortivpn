@@ -68,53 +68,6 @@ typedef sem_t os_semaphore_t;
 
 #define PKT_BUF_SZ 0x1000
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-static pthread_mutex_t *lockarray;
-
-static void lock_callback(int mode, int type, const char *file, int line)
-{
-	if (mode & CRYPTO_LOCK)
-		pthread_mutex_lock(&lockarray[type]);
-	else
-		pthread_mutex_unlock(&lockarray[type]);
-}
-
-static unsigned long thread_id(void)
-{
-	return (unsigned long) pthread_self();
-}
-
-static void init_ssl_locks(void)
-{
-	int i;
-
-	lockarray = (pthread_mutex_t *) OPENSSL_malloc(CRYPTO_num_locks() *
-	                sizeof(pthread_mutex_t));
-	for (i = 0; i < CRYPTO_num_locks(); i++)
-		pthread_mutex_init(&lockarray[i], NULL);
-	CRYPTO_set_id_callback((unsigned long (*)()) thread_id);
-	CRYPTO_set_locking_callback((void (*)()) lock_callback);
-}
-
-static void destroy_ssl_locks(void)
-{
-	int i;
-
-	CRYPTO_set_locking_callback(NULL);
-	for (i = 0; i < CRYPTO_num_locks(); i++)
-		pthread_mutex_destroy(&lockarray[i]);
-	OPENSSL_free(lockarray);
-}
-#else
-static void init_ssl_locks(void)
-{
-}
-
-static void destroy_ssl_locks(void)
-{
-}
-#endif
-
 // global variable to pass signal out of its handler
 volatile sig_atomic_t sig_received; //static variables are initialized to zero in C99
 
@@ -630,8 +583,6 @@ int io_loop(struct tunnel *tunnel)
 	init_ppp_packet_pool(&tunnel->ssl_to_pty_pool);
 	init_ppp_packet_pool(&tunnel->pty_to_ssl_pool);
 
-	init_ssl_locks();
-
 	init_hdlc();
 
 	/*
@@ -763,8 +714,6 @@ int io_loop(struct tunnel *tunnel)
 		log_debug("Error joining pty_read_thread: %s\n", strerror(ret));
 		fatal = 1;
 	}
-
-	destroy_ssl_locks();
 
 	destroy_ppp_packet_pool(&tunnel->pty_to_ssl_pool);
 	destroy_ppp_packet_pool(&tunnel->ssl_to_pty_pool);

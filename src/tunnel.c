@@ -1001,17 +1001,7 @@ int ssl_connect(struct tunnel *tunnel)
 	if (tunnel->ssl_socket == -1)
 		goto err_tcp_connect;
 
-	// https://wiki.openssl.org/index.php/Library_Initialization
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-	// Register the error strings for libcrypto & libssl
-	SSL_load_error_strings();
-	// Register the available ciphers and digests
-	SSL_library_init();
-
-	tunnel->ssl_context = SSL_CTX_new(SSLv23_client_method());
-#else
 	tunnel->ssl_context = SSL_CTX_new(TLS_client_method());
-#endif
 	if (tunnel->ssl_context == NULL) {
 		log_error("SSL_CTX_new: %s\n",
 		          ERR_error_string(ERR_peek_last_error(), NULL));
@@ -1062,7 +1052,6 @@ int ssl_connect(struct tunnel *tunnel)
 		}
 	}
 
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L
 	if (tunnel->config->min_tls > 0) {
 		log_debug("Setting minimum protocol version to: 0x%x.\n",
 		          tunnel->config->min_tls);
@@ -1073,33 +1062,6 @@ int ssl_connect(struct tunnel *tunnel)
 			goto err_ssl_context;
 		}
 	}
-#else
-	if (!tunnel->config->insecure_ssl || tunnel->config->min_tls > 0) {
-		long sslctxopt = 0;
-		long checkopt;
-
-		if (!tunnel->config->insecure_ssl)
-			sslctxopt |= SSL_OP_NO_SSLv3 | SSL_OP_NO_COMPRESSION;
-#ifdef TLS1_VERSION
-		if (tunnel->config->min_tls > TLS1_VERSION)
-			sslctxopt |= SSL_OP_NO_TLSv1;
-#endif
-#ifdef TLS1_1_VERSION
-		if (tunnel->config->min_tls > TLS1_1_VERSION)
-			sslctxopt |= SSL_OP_NO_TLSv1_1;
-#endif
-#ifdef TLS1_2_VERSION
-		if (tunnel->config->min_tls > TLS1_2_VERSION)
-			sslctxopt |= SSL_OP_NO_TLSv1_2;
-#endif
-		checkopt = SSL_CTX_set_options(tunnel->ssl_context, sslctxopt);
-		if ((checkopt & sslctxopt) != sslctxopt) {
-			log_error("SSL_CTX_set_options didn't set opt: %s\n",
-			          ERR_error_string(ERR_peek_last_error(), NULL));
-			goto err_ssl_context;
-		}
-	}
-#endif
 
 	/* Use engine for PIV if user-cert config starts with pkcs11 URI: */
 #ifndef OPENSSL_NO_ENGINE
