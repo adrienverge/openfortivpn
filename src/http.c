@@ -36,7 +36,7 @@
  * Fixed size of the buffer for outgoing HTTP requests.
  * Initial size of the buffer for incoming HTTP responses.
  */
-#define HTTP_BUFFER_SIZE 0x8000
+#define HTTP_BUFFER_SIZE 0x10000
 
 
 /*
