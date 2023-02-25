@@ -14,6 +14,10 @@ Releases
 This high level changelog is usually updated when a release is tagged.
 On the master branch there may be changes that are not (yet) described here.
 
+### 1.20.1
+
+* [-] fix version string in configure.ac
+
 ### 1.20.0
 
 * [-] fix incorrect empty HDLC frame detection causing connection drops
