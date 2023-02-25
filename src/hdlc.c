@@ -200,7 +200,7 @@ ssize_t hdlc_find_frame(const uint8_t *buffer, size_t bufsize, off_t *start)
 	int i, s = -1, e = -1;
 
 	// Look for frame start
-	for (i = *start; i < bufsize - 2; i++) {
+	for (i = *start; i < bufsize; i++) {
 		if (buffer[i] == 0x7e) { // Flag Sequence
 			s = i + 1;
 			break;
@@ -210,7 +210,7 @@ ssize_t hdlc_find_frame(const uint8_t *buffer, size_t bufsize, off_t *start)
 		return ERR_HDLC_NO_FRAME_FOUND;
 
 	// Discard empty frames
-	while (s < bufsize - 2 && buffer[s] == 0x7e) // consecutive Flag Sequences
+	while (s < bufsize && buffer[s] == 0x7e) // consecutive Flag Sequences
 		s++;
 
 	// Look for frame end
