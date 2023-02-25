@@ -173,7 +173,7 @@ On the master branch there may be changes that are not (yet) described here.
 
 ### 1.8.1
 
-* [~] Support longer passowrds by allocation of a larger buffer
+* [~] Support longer passwords by allocation of a larger buffer
 * [-] With version 1.8.0 /etc/resolv.conf was not updated anymore in some situations.
   To avoid this regression the change "Rationalize DNS options" has been reverted again
   to restore the behavior of versions up to 1.7.1.
