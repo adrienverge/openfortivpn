@@ -338,7 +338,7 @@ int main(int argc, char **argv)
 			           "version") == 0) {
 				printf(VERSION "\n");
 				if (strcmp(&REVISION[1], VERSION))
-					log_debug("revision " REVISION "\n");
+					log_debug("Revision " REVISION "\n");
 				ret = EXIT_SUCCESS;
 				goto exit;
 			}
