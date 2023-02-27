@@ -607,7 +607,7 @@ static int ipv4_set_route(struct rtentry *route)
 	/* we can copy rtentry struct directly between openfortivpn and kernel */
 	log_debug("ip route add %s\n", ipv4_show_route(route));
 
-	int sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
+	int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
 
 	if (sockfd < 0)
 		return ERR_IPV4_SEE_ERRNO;
@@ -676,7 +676,7 @@ static int ipv4_del_route(struct rtentry *route)
 	tmp.rt_window = 0;
 	tmp.rt_irtt = 0;
 
-	sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
+	sockfd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (sockfd < 0)
 		return ERR_IPV4_SEE_ERRNO;
 	if (ioctl(sockfd, SIOCDELRT, &tmp) == -1) {
