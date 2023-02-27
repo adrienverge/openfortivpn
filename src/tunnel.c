@@ -1333,7 +1333,7 @@ int run_tunnel(struct vpn_config *config)
 	log_debug("Starting IO through the tunnel\n");
 	io_loop(&tunnel);
 
-	log_debug("disconnecting\n");
+	log_debug("Disconnecting\n");
 	if (tunnel.state == STATE_UP)
 		if (tunnel.on_ppp_if_down != NULL)
 			tunnel.on_ppp_if_down(&tunnel);

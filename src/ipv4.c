@@ -345,7 +345,7 @@ cleanup:
 #endif
 
 	if (total_bytes_read == 0) {
-		log_debug("routing table is empty.\n");
+		log_debug("Routing table is empty.\n");
 		err = ERR_IPV4_PROC_NET_ROUTE;
 		goto end;
 	}
@@ -354,7 +354,7 @@ cleanup:
 	// Skip first line
 	start = strchr(buffer, '\n');
 	if (start == NULL) {
-		log_debug("routing table is malformed.\n");
+		log_debug("Routing table is malformed.\n");
 		err = ERR_IPV4_PROC_NET_ROUTE;
 		goto end;
 	}
@@ -370,14 +370,14 @@ cleanup:
 	start = strchr(++start, '\n');
 	start = strchr(++start, '\n');
 	if (start == NULL) {
-		log_debug("routing table is malformed.\n");
+		log_debug("Routing table is malformed.\n");
 		err = ERR_IPV4_PROC_NET_ROUTE;
 		goto end;
 	}
 #endif
 
 	if (strchr(start, '\n') == NULL) {
-		log_debug("routing table is malformed.\n");
+		log_debug("Routing table is malformed.\n");
 		err = ERR_IPV4_PROC_NET_ROUTE;
 		goto end;
 	}
@@ -766,7 +766,7 @@ int ipv4_protect_tunnel_route(struct tunnel *tunnel)
 	if ((ret == 0)
 	    && (route_dest(gtw_rt).s_addr == tunnel->config->gateway_ip.s_addr)
 	    && (route_mask(gtw_rt).s_addr == inet_addr("255.255.255.255"))) {
-		log_debug("removing wrong route to vpn server...\n");
+		log_debug("Removing wrong route to vpn server...\n");
 		log_debug("ip route show %s\n", ipv4_show_route(gtw_rt));
 		ipv4_del_route(gtw_rt);
 	}
