@@ -1,18 +1,18 @@
-FROM alpine
+FROM debian:bullseye-20230208-slim
 
 WORKDIR /opt
 
-RUN apk update
+RUN apt update
 
-RUN apk add --update-cache \
-    git autoconf automake pkgconfig gcc g++ libressl-dev make ppp-pppoe
+RUN apt install -y \
+    git autoconf automake pkg-config gcc g++ libssl-dev make ppp-dev
 
 COPY . ./
 
+
 RUN ./autogen.sh && \
-    ./configure --prefix=/usr/local --sysconfdir=/etc --disable-dependency-tracking && \
-    make && \
-    make install
+        ./configure --prefix=/usr/local --sysconfdir=/etc --disable-dependency-tracking && \
+    make && make install
 
 ENTRYPOINT ["/usr/local/bin/openfortivpn"]
 
