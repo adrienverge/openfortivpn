@@ -5,7 +5,7 @@ WORKDIR /opt
 RUN apt update
 
 RUN apt install -y \
-    git autoconf automake pkg-config gcc g++ libssl-dev make ppp-dev
+    git autoconf automake pkg-config gcc g++ libssl-dev make ppp-dev pppoe
 
 COPY . ./
 
