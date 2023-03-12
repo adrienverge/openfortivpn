@@ -18,4 +18,4 @@ jobs:
       - uses: codespell-project/actions-codespell@master
         with:
           skip: .git,checkpatch.pl,spelling.txt,LICENSE.OpenSSL
-          ignore_words_list: synopsys,parms
+          ignore_words_list: anull,caf,synopsys,parms
