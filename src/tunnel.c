@@ -748,7 +748,7 @@ static int tcp_connect(struct tunnel *tunnel)
 	log_debug("server_port: %u\n", ntohs(server.sin_port));
 	server.sin_family = AF_INET;
 	memset(&(server.sin_zero), '\0', 8);
-	log_debug("gateway_addr: %s\n", inet_ntoa(tunnel->config->gateway_ip));
+	log_debug("gateway_ip: %s\n", inet_ntoa(tunnel->config->gateway_ip));
 	log_debug("gateway_port: %u\n", tunnel->config->gateway_port);
 
 	ret = connect(handle, (struct sockaddr *) &server, sizeof(server));
