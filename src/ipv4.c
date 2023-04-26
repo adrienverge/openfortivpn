@@ -911,7 +911,7 @@ static int ipv4_set_split_routes(struct tunnel *tunnel)
 			route->rt_flags |= RTF_GATEWAY;
 		ret = ipv4_set_route(route);
 		if (ret == ERR_IPV4_SEE_ERRNO && errno == EEXIST)
-			log_warn("Route to gateway exists already.\n");
+			log_info("Route to gateway exists already.\n");
 		else if (ret != 0)
 			log_warn("Could not set route to tunnel gateway (%s).\n",
 			         err_ipv4_str(ret));
