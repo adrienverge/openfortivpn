@@ -888,20 +888,10 @@ static int ipv4_set_split_routes(struct tunnel *tunnel)
 	int i;
 
 	for (i = 0; i < tunnel->ipv4.split_routes; i++) {
-		int j, ret;
-		struct rtentry *route = &tunnel->ipv4.split_rt[i];
+		struct rtentry *route;
+		int ret;
 
-		for (j = 0; j < i ; j++) {
-			struct rtentry *other_route = &tunnel->ipv4.split_rt[j];
-
-			if (route_dest(route).s_addr == route_dest(other_route).s_addr)
-				break;
-		}
-
-		// skip duplicate routes
-		if (i != j)
-			continue;
-
+		route = &tunnel->ipv4.split_rt[i];
 		// check if the route to be added is not the one to the gateway itself
 		if (route_dest(route).s_addr == route_dest(&tunnel->ipv4.gtw_rt).s_addr) {
 			log_debug("Skipping route to tunnel gateway (%s).\n",
@@ -921,7 +911,7 @@ static int ipv4_set_split_routes(struct tunnel *tunnel)
 			route->rt_flags |= RTF_GATEWAY;
 		ret = ipv4_set_route(route);
 		if (ret == ERR_IPV4_SEE_ERRNO && errno == EEXIST)
-			log_warn("Route to gateway exists already.\n");
+			log_info("Route to gateway exists already.\n");
 		else if (ret != 0)
 			log_warn("Could not set route to tunnel gateway (%s).\n",
 			         err_ipv4_str(ret));
