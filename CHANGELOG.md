@@ -14,6 +14,11 @@ Releases
 This high level changelog is usually updated when a release is tagged.
 On the master branch there may be changes that are not (yet) described here.
 
+### 1.20.2
+
+* [-] fix regression: do attempt to apply duplicate routes, log INFO instead of WARN
+* [-] minor changes in log messages
+
 ### 1.20.1
 
 * [-] fix version string in configure.ac
