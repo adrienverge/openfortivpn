@@ -202,6 +202,21 @@ As described in [#54](https://github.com/adrienverge/openfortivpn/issues/54),
 a malicious user could use `--pppd-plugin` and `--pppd-log` options to divert
 the program's behaviour.
 
+SSO/SAML/2FA
+------------
+
+In some cases, the server may require the VPN client to load and interact
+with a web page containing JavaScript. Depending on the complexity of the
+web page, interpreting the web page might be beyond the reach of a command
+line program such as openfortivpn.
+
+In such cases, you may use an external program spawning a full-fledged
+web browser such as
+[openfortivpn-webview](https://github.com/gm-vm/openfortivpn-webview)
+to authenticate and retrieve a session cookie. This cookie can be fed
+to openfortivpn using option `--cookie-on-stdin`. Obviously, such a
+solution requires a graphic session.
+
 Contributing
 ------------
 
