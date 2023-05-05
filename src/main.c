@@ -221,6 +221,7 @@ int main(int argc, char **argv)
 		.password = {'\0'},
 		.password_set = 0,
 		.cookie = NULL,
+		.cookie_on_stdin = 0,
 		.otp = {'\0'},
 		.otp_prompt = NULL,
 		.otp_delay = 0,
@@ -557,15 +558,7 @@ int main(int argc, char **argv)
 			}
 			if (strcmp(long_options[option_index].name,
 			           "cookie-on-stdin") == 0) {
-				char *cookie = read_from_stdin(COOKIE_SIZE);
-
-				if (cookie == NULL) {
-					log_error("Could not read the cookie from stdin\n");
-					break;
-				}
-				free(cli_cfg.cookie);
-				cli_cfg.cookie = strdup_with_prefix(cookie, "SVPNCOOKIE=");
-				free(cookie);
+				cli_cfg.cookie_on_stdin = 1;
 				break;
 			}
 			goto user_error;
@@ -693,6 +686,22 @@ int main(int argc, char **argv)
 	if (cfg.username[0] != '\0')
 		log_debug("Configuration username = \"%s\"\n", cfg.username);
 	log_debug_all("Configuration password = \"%s\"\n", cfg.password);
+
+	if (cli_cfg.cookie_on_stdin == 1) {
+		printf("\nLogin at https://%s:%d/remote/saml/start\n", cfg.gateway_host, cfg.gateway_port);
+		printf("Copy 'SVPNCOOKIE' and paste it here, including or not 'SVPNCOOKIE='\n");
+
+		char *cookie = read_from_stdin(COOKIE_SIZE);
+
+		if (cookie == NULL) {
+			log_error("Could not read the cookie from stdin\n");
+		} else {
+			free(cfg.cookie);
+			cfg.cookie = strdup_with_prefix(cookie, "SVPNCOOKIE=");
+			free(cookie);
+		}
+	}
+
 	if (cfg.otp[0] != '\0')
 		log_debug("One-time password = \"%s\"\n", cfg.otp);
 
