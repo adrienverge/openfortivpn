@@ -108,6 +108,7 @@ struct vpn_config {
 	int	half_internet_routes;
 
 	unsigned int	persistent;
+	unsigned int	retries;
 
 #if HAVE_USR_SBIN_PPPD
 	char	*pppd_log;
