@@ -375,7 +375,6 @@ end:
 static int get_action_url(const char *buf, const char *key,
                           char *retbuf, size_t retbuflen)
 {
-
 	int ret = -1;
 	char *tokens;
 	size_t keylen = strlen(key);

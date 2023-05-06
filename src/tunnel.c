@@ -1101,8 +1101,8 @@ int ssl_connect(struct tunnel *tunnel)
 	}
 #endif
 
-	/* Use engine for PIV if user-cert config starts with pkcs11 URI: */
 #ifndef OPENSSL_NO_ENGINE
+	/* Use PKCS11 engine for PIV if user-cert config starts with pkcs11 URI: */
 	if (tunnel->config->use_engine > 0) {
 		ENGINE *e;
 
@@ -1161,10 +1161,8 @@ int ssl_connect(struct tunnel *tunnel)
 			          ERR_error_string(ERR_peek_last_error(), NULL));
 			goto err_ssl_context;
 		}
-
-	} else {        /* end PKCS11-engine */
+	} else { /* end PKCS11 engine */
 #endif
-
 		if (tunnel->config->user_cert) {
 			if (!SSL_CTX_use_certificate_chain_file(
 			            tunnel->ssl_context, tunnel->config->user_cert)) {
