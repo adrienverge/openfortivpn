@@ -4,7 +4,7 @@
 # Check that astyle is installed
 if ! command -v astyle &>/dev/null; then
   echo "error: astyle is not installed" >&2
-  exit -1
+  exit 255
 fi
 
 rc=0
