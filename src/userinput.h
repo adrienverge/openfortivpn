@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2015 Davíð Steinn Geirsson
+ *  Copyright (c) 2015 Davíð Steinn Geirsson
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
