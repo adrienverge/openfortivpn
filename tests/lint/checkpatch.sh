@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (C) 2020 Dimitri Papadopoulos
+# Copyright (c) 2020 Dimitri Papadopoulos
 
 # Path to checkpatch.pl
 script_dir=$(dirname "${BASH_SOURCE[0]}")

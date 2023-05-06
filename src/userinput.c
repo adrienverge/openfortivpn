@@ -1,6 +1,6 @@
 /*
- *  Copyright (C) 2015 Davíð Steinn Geirsson
- *  Copyright (C) 2019 Lubomir Rintel <lkundrak@v3.sk>
+ *  Copyright (c) 2015 Davíð Steinn Geirsson
+ *  Copyright (c) 2019 Lubomir Rintel <lkundrak@v3.sk>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by

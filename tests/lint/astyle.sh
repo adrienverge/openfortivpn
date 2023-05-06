@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (C) 2015 Adrien Vergé
+# Copyright (c) 2015 Adrien Vergé
 
 # Check that astyle is installed
 if ! command -v astyle &>/dev/null; then

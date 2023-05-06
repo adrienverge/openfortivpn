@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-# Copyright (C) 2015 Adrien Vergé
+# Copyright (c) 2015 Adrien Vergé
 
 """Enforce maximum line length in openfortivpn C source code.
 
