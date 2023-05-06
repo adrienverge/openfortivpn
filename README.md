@@ -10,7 +10,7 @@ It is compatible with Fortinet VPNs.
 Usage
 --------
 
-```
+```shell
 man openfortivpn
 ```
 
@@ -18,37 +18,37 @@ Examples
 --------
 
 * Simply connect to a VPN:
-  ```
+  ```shell
   openfortivpn vpn-gateway:8443 --username=foo
   ```
 
 * Connect to a VPN using an authentication realm:
-  ```
+  ```shell
   openfortivpn vpn-gateway:8443 --username=foo --realm=bar
   ```
 
 * Store password securely with a pinentry program:
-  ```
+  ```shell
   openfortivpn vpn-gateway:8443 --username=foo --pinentry=pinentry-mac
   ```
 
 * Connect with a user certificate and no password:
-  ```
+  ```shell
   openfortivpn vpn-gateway:8443 --username= --password= --user-cert=cert.pem --user-key=key.pem
   ```
 
 * Don't set IP routes and don't add VPN nameservers to `/etc/resolv.conf`:
-  ```
+  ```shell
   openfortivpn vpn-gateway:8443 -u foo --no-routes --no-dns --pppd-no-peerdns
   ```
 
 * Using a configuration file:
-  ```
+  ```shell
   openfortivpn -c /etc/openfortivpn/my-config
   ```
 
   With `/etc/openfortivpn/my-config` containing:
-  ```
+  ```ini
   host = vpn-gateway
   port = 8443
   username = foo
@@ -59,7 +59,7 @@ Examples
   ```
 
 * For the full list of config options, see the `CONFIGURATION` section of
-  ```
+  ```shell
   man openfortivpn
   ```
 
@@ -74,7 +74,7 @@ of known issues in this area.
 To make use of your smartcard put at least `pkcs11:` to the user-cert config or commandline
 option. It takes the full or a partial PKCS#11 token URI.
 
-```
+```ini
 user-cert = pkcs11:
 user-cert = pkcs11:token=someuser
 user-cert = pkcs11:model=PKCS%2315%20emulated;manufacturer=piv_II;serial=012345678;token=someuser
@@ -140,7 +140,7 @@ For other distros, you'll need to build and install from source:
     * FreeBSD: `automake` `autoconf` `libressl` `pkgconf`
 
     On Linux, if you manage your kernel yourself, ensure to compile those modules:
-    ```
+    ```text
     CONFIG_PPP=m
     CONFIG_PPP_ASYNC=m
     ```
@@ -188,8 +188,10 @@ If you need it to be usable by non-sudoer users, you might consider adding an
 entry in `/etc/sudoers` or a file under `/etc/sudoers.d`.
 
 For example:
-`visudo -f /etc/sudoers.d/openfortivpn`
+```shell
+visudo -f /etc/sudoers.d/openfortivpn
 ```
+```text
 Cmnd_Alias  OPENFORTIVPN = /usr/bin/openfortivpn
 
 %adm       ALL = (ALL) OPENFORTIVPN
@@ -223,4 +225,4 @@ Contributing
 Feel free to make pull requests!
 
 C coding style should follow the
-[Linux kernel Documentation/CodingStyle](http://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/tree/Documentation/process/coding-style.rst?id=refs/heads/master).
+[Linux kernel coding style](https://www.kernel.org/doc/html/latest/process/coding-style.html).
