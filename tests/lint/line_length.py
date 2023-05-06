@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-# -*- coding: utf-8 -*-
 # Copyright (C) 2015 Adrien Vergé
 
 """Enforce maximum line length in openfortivpn C source code.
@@ -39,10 +38,8 @@ def endswithstring(line):
         True if line ends with string, False otherwise.
 
     """
-    for end in ('"', '",', '");', '";', '" \\', '];'):
-        if line.endswith(end):
-            return True
-    return False
+    return any(line.endswith(end)
+               for end in ('"', '",', '");', '";', '" \\', '];'))
 
 
 def main():
@@ -67,8 +64,7 @@ def main():
                 line = line.replace("\t", "        ")
                 # Lines longer than MAX are reported as an error
                 if len(line) > MAX:
-                    print("{}: {}: line too long ({} characters)"
-                          .format(arg, i, len(line)))
+                    print(f"{arg}: {i}: line too long ({len(line)} characters)")
                     exit_status = 1
 
     sys.exit(exit_status)
