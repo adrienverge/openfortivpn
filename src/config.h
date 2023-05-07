@@ -83,41 +83,41 @@ struct x509_digest {
 #define MAX_DOMAIN_LENGTH 256
 
 struct vpn_config {
-	char		gateway_host[GATEWAY_HOST_SIZE + 1];
-	struct in_addr	gateway_ip;
-	uint16_t	gateway_port;
-	char		username[USERNAME_SIZE + 1];
-	char		password[PASSWORD_SIZE + 1];
-	int		password_set;
-	char		otp[OTP_SIZE + 1];
-	char		*cookie;
-	char		*otp_prompt;
-	unsigned int	otp_delay;
-	int		no_ftm_push;
-	char		*pinentry;
-	char		iface_name[IF_NAMESIZE];
-	char		realm[REALM_SIZE + 1];
+	char			gateway_host[GATEWAY_HOST_SIZE + 1];
+	struct in_addr		gateway_ip;
+	uint16_t		gateway_port;
+	char			username[USERNAME_SIZE + 1];
+	char			password[PASSWORD_SIZE + 1];
+	int			password_set;
+	char			otp[OTP_SIZE + 1];
+	char			*cookie;
+	char			*otp_prompt;
+	unsigned int		otp_delay;
+	int			no_ftm_push;
+	char			*pinentry;
+	char			iface_name[IF_NAMESIZE];
+	char			realm[REALM_SIZE + 1];
 
-	int	set_routes;
-	int	set_dns;
-	int	pppd_use_peerdns;
-	int	use_syslog;
+	int			set_routes;
+	int			set_dns;
+	int			pppd_use_peerdns;
+	int			use_syslog;
 #if HAVE_RESOLVCONF
-	int	use_resolvconf;
+	int			use_resolvconf;
 #endif
-	int	half_internet_routes;
+	int			half_internet_routes;
 
-	unsigned int	persistent;
+	unsigned int		persistent;
 
 #if HAVE_USR_SBIN_PPPD
-	char	*pppd_log;
-	char	*pppd_plugin;
-	char	*pppd_ipparam;
-	char	*pppd_ifname;
-	char	*pppd_call;
+	char			*pppd_log;
+	char			*pppd_plugin;
+	char			*pppd_ipparam;
+	char			*pppd_ifname;
+	char			*pppd_call;
 #endif
 #if HAVE_USR_SBIN_PPP
-	char	*ppp_system;
+	char			*ppp_system;
 #endif
 	char			*ca_file;
 	char			*user_cert;
