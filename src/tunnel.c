@@ -380,7 +380,8 @@ static const char * const ppp_message[] = {
 	"The PPP negotiation failed because serial loopback was detected.",
 	"The init script failed (returned a non-zero exit status).",
 	"We failed to authenticate ourselves to the peer."
-#else // sysexits(3) - https://www.freebsd.org/cgi/man.cgi?query=sysexits
+#endif
+#if HAVE_USR_SBIN_PPP // sysexits(3) - https://www.freebsd.org/cgi/man.cgi?query=sysexits
 	// EX_NORMAL = EX_OK (0)
 	"Successful exit.",
 	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 1-9
