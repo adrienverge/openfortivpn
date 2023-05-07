@@ -366,7 +366,7 @@ int load_config(struct vpn_config *cfg, const char *filename)
 			int use_resolvconf = strtob(val);
 
 			if (use_resolvconf < 0) {
-				log_warn("Bad use-resolvconf value in configuration file: \"%s\".\n",
+				log_warn("Bad value for use-resolvconf in configuration file: \"%s\".\n",
 				         val);
 				continue;
 			}
