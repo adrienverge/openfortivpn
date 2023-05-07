@@ -14,6 +14,12 @@ Releases
 This high level changelog is usually updated when a release is tagged.
 On the master branch there may be changes that are not (yet) described here.
 
+### 1.20.3
+
+* [~] minor change in a warning message
+* [+] documentation improvement
+* [+] minor changes in build and test files
+
 ### 1.20.2
 
 * [-] fix regression: do attempt to apply duplicate routes, log INFO instead of WARN
