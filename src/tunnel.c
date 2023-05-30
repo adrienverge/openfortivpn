@@ -236,6 +236,7 @@ static int pppd_run(struct tunnel *tunnel)
 				":169.254.2.1", // <local_IP_address>:<remote_IP_address>
 				"noipdefault",
 				"ipcp-accept-local",
+				"ipcp-accept-remote",
 				"noaccomp",
 				"noauth",
 				"default-asyncmap",
