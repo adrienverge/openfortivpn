@@ -81,7 +81,7 @@
 "                    [--cookie=<cookie>] [--cookie-on-stdin] [--saml-login]\n" \
 "                    [--otp=<otp>] [--otp-delay=<delay>] [--otp-prompt=<prompt>]\n" \
 "                    [--pinentry=<program>] [--realm=<realm>]\n" \
-"                    [--ifname=<ifname>] [--set-routes=<0|1>]\n" \
+"                    [--tun=<0|1>] [--ifname=<ifname>] [--set-routes=<0|1>]\n" \
 "                    [--half-internet-routes=<0|1>] [--set-dns=<0|1>]\n" \
 PPPD_USAGE \
 "                    " RESOLVCONF_USAGE "[--ca-file=<file>]\n" \
@@ -125,6 +125,7 @@ PPPD_USAGE \
 "  --no-ftm-push                 Do not use FTM push if the server provides the option.\n" \
 "  --pinentry=<program>          Use the program to supply a secret instead of asking for it.\n" \
 "  --realm=<realm>               Use specified authentication realm.\n" \
+"  --tun=[01]                    Create a TUN device and use internal PPP code (experimental).\n" \
 "  --ifname=<interface>          Bind to interface.\n" \
 "  --set-routes=[01]             Set if openfortivpn should configure routes\n" \
 "                                when tunnel is up.\n"               \
@@ -295,6 +296,7 @@ int main(int argc, char *argv[])
 		{"otp-prompt",           required_argument, NULL, 0},
 		{"otp-delay",            required_argument, NULL, 0},
 		{"no-ftm-push",          no_argument, &cli_cfg.no_ftm_push, 1},
+		{"tun",                  required_argument, NULL, 0},
 		{"ifname",               required_argument, NULL, 0},
 		{"set-routes",	         required_argument, NULL, 0},
 		{"sni",                  required_argument, NULL, 0},
@@ -509,6 +511,18 @@ int main(int argc, char *argv[])
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
+			           "tun") == 0) {
+				int tun = strtob(optarg);
+
+				if (tun < 0) {
+					log_warn("Bad tun option: \"%s\"\n",
+					         optarg);
+					break;
+				}
+				cli_cfg.tun = tun;
+				break;
+			}
+			if (strcmp(long_options[option_index].name,
 			           "ifname") == 0) {
 				strncpy(cli_cfg.iface_name, optarg, IF_NAMESIZE - 1);
 				cli_cfg.iface_name[IF_NAMESIZE - 1] = '\0';
@@ -685,6 +699,41 @@ int main(int argc, char *argv[])
 	// Then apply CLI configuration
 	merge_config(&cfg, &cli_cfg);
 	set_syslog(cfg.use_syslog);
+
+	if (cfg.tun) {
+#if HAVE_USR_SBIN_PPPD
+		if (cfg.pppd_use_peerdns) {
+			log_error("Option pppd_use_peerdns is not compatible with option tun\n");
+			exit(EXIT_FAILURE);
+		}
+		if (cfg.pppd_plugin) {
+			log_error("Option pppd_plugin is not compatible with option tun\n");
+			exit(EXIT_FAILURE);
+		}
+		if (cfg.pppd_ifname) {
+			log_error("Option pppd_ifname is not compatible with option tun\n");
+			exit(EXIT_FAILURE);
+		}
+		if (cfg.pppd_ipparam) {
+			log_error("Option pppd_ipparam is not compatible with option tun\n");
+			exit(EXIT_FAILURE);
+		}
+		if (cfg.pppd_call) {
+			log_error("Option pppd_call is not compatible with option tun\n");
+			exit(EXIT_FAILURE);
+		}
+		if (cfg.pppd_plugin) {
+			log_error("Option pppd_plugin is not compatible with option tun\n");
+			exit(EXIT_FAILURE);
+		}
+#endif
+#if HAVE_USR_SBIN_PPP
+		if (cfg.ppp_system) {
+			log_error("Option ppp_system is not compatible with option tun\n");
+			exit(EXIT_FAILURE);
+		}
+#endif
+	}
 
 	// Set default UA
 	if (cfg.user_agent == NULL)
