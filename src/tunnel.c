@@ -1527,7 +1527,6 @@ int run_tunnel(struct vpn_config *config)
 		goto err_tunnel;
 
 	// Step 3: get configuration
-	tunnel.use_tun = 1;
 	log_info("Retrieving configuration\n");
 	ret = auth_get_config(&tunnel);
 	if (ret != 1) {
@@ -1539,7 +1538,7 @@ int run_tunnel(struct vpn_config *config)
 
 	// Step 4: run a pppd process
 	log_info("Establishing the tunnel\n");
-	if (tunnel.use_tun)
+	if (config->tun)
 		ret = tun_setup(&tunnel);
 	else
 		ret = pppd_run(&tunnel);
@@ -1572,7 +1571,7 @@ int run_tunnel(struct vpn_config *config)
 	tunnel.state = STATE_DISCONNECTING;
 
 err_start_tunnel:
-	if (!tunnel.use_tun) {
+	if (!config->tun) {
 		ret = pppd_terminate(&tunnel);
 		log_info("Terminated %s.\n", PPP_DAEMON);
 	}
