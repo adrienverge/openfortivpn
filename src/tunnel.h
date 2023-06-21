@@ -72,7 +72,6 @@ struct tunnel {
 
 	pid_t	pppd_pid;
 	pid_t	pppd_pty;
-	int	use_tun;
 	char	tun_iface[ROUTE_IFACE_LEN];
 	char	ppp_iface[ROUTE_IFACE_LEN];
 

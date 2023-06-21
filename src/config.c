@@ -53,6 +53,7 @@ const struct vpn_config invalid_cfg = {
 	.no_ftm_push = -1,
 	.pinentry = NULL,
 	.realm = {'\0'},
+	.tun = -1,
 	.iface_name = {'\0'},
 	.sni = {'\0'},
 	.set_routes = -1,

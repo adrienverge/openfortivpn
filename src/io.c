@@ -1083,7 +1083,7 @@ static void *pppd_read(void *arg)
 
 	log_debug("%s thread\n", __func__);
 
-	if (tunnel->use_tun) {
+	if (tunnel->config->tun) {
 		switch (tunnel->tun_state) {
 		case TUN_PPP_LCP:
 			conf_request(tunnel);
@@ -1120,7 +1120,7 @@ static void *pppd_read(void *arg)
 			SEM_POST(&sem_pppd_ready);
 			first_time = 0;
 		}
-		if (tunnel->use_tun) {
+		if (tunnel->config->tun) {
 			ssize_t pktsize = n + 2;
 			struct ppp_packet *packet = NULL;
 
@@ -1233,7 +1233,7 @@ static void *pppd_write(void *arg)
 		// This waits until a packet has arrived from the gateway
 		packet = pool_pop(&tunnel->ssl_to_pty_pool);
 
-		if (tunnel->use_tun) {
+		if (tunnel->config->tun) {
 			void *pkt_type = pkt_data(packet);
 
 			hdlc_bufsize = len = packet->len;
@@ -1451,7 +1451,7 @@ static void *ssl_read(void *arg)
 
 				set_tunnel_ips(tunnel, packet);
 
-				if (tunnel->use_tun)
+				if (tunnel->config->tun)
 					tun_ifup(tunnel->tun_iface,
 					         tunnel->ipv4.ip_addr.s_addr, 0);
 				strcpy(line, "[");
