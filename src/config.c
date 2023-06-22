@@ -67,6 +67,7 @@ const struct vpn_config invalid_cfg = {
 	.pppd_ipparam = NULL,
 	.pppd_ifname = NULL,
 	.pppd_call = NULL,
+	.pppd_accept_remote = -1,
 #endif
 #if HAVE_USR_SBIN_PPP
 	.ppp_system = NULL,
@@ -563,6 +564,8 @@ void merge_config(struct vpn_config *dst, struct vpn_config *src)
 		free(dst->pppd_call);
 		dst->pppd_call = src->pppd_call;
 	}
+	if (src->pppd_accept_remote != invalid_cfg.pppd_accept_remote)
+		dst->pppd_accept_remote = src->pppd_accept_remote;
 #endif
 #if HAVE_USR_SBIN_PPP
 	if (src->ppp_system) {
