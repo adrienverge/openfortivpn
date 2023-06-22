@@ -115,6 +115,7 @@ struct vpn_config {
 	char			*pppd_ipparam;
 	char			*pppd_ifname;
 	char			*pppd_call;
+	int                     pppd_accept_remote;
 #endif
 #if HAVE_USR_SBIN_PPP
 	char			*ppp_system;

@@ -36,7 +36,8 @@
 #define PPPD_USAGE \
 "                    [--pppd-use-peerdns=<0|1>] [--pppd-log=<file>]\n" \
 "                    [--pppd-ifname=<string>] [--pppd-ipparam=<string>]\n" \
-"                    [--pppd-call=<name>] [--pppd-plugin=<file>]\n"
+"                    [--pppd-call=<name>] [--pppd-plugin=<file>]\n" \
+"                    [--pppd-accept-remote]\n"
 
 #define PPPD_HELP \
 "  --pppd-use-peerdns=[01]       Whether to ask peer ppp server for DNS server\n" \
@@ -52,7 +53,9 @@
 "                                and ip-down scripts. See man (8) pppd.\n" \
 "  --pppd-call=<name>            Move most pppd options from pppd cmdline to\n" \
 "                                /etc/ppp/peers/<name> and invoke pppd with\n" \
-"                                'call <name>'.\n"
+"                                'call <name>'.\n" \
+"  --pppd-accept-remote          Invoke pppd with option 'ipcp-accept-remote'." \
+"                                It might help avoid errors with PPP 2.5.0.\n"
 #elif HAVE_USR_SBIN_PPP
 #define PPPD_USAGE \
 "                    [--ppp-system=<system>]\n"
@@ -243,6 +246,7 @@ int main(int argc, char **argv)
 		.pppd_ipparam = NULL,
 		.pppd_ifname = NULL,
 		.pppd_call = NULL,
+		.pppd_accept_remote = 0,
 #endif
 #if HAVE_USR_SBIN_PPP
 		.ppp_system = NULL,
@@ -305,6 +309,7 @@ int main(int argc, char **argv)
 		{"pppd-ipparam",         required_argument, NULL, 0},
 		{"pppd-ifname",          required_argument, NULL, 0},
 		{"pppd-call",            required_argument, NULL, 0},
+		{"pppd-accept-remote",   no_argument, &cli_cfg.pppd_accept_remote, 1},
 		{"plugin",               required_argument, NULL, 0}, // deprecated
 #endif
 #if HAVE_USR_SBIN_PPP

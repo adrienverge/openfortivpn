@@ -232,11 +232,51 @@ static int pppd_run(struct tunnel *tunnel)
 		} else {
 			static const char *const v[] = {
 				ppp_path,
-				"230400", // speed
-				":169.254.2.1", // <local_IP_address>:<remote_IP_address>
+				/*
+				 * On systems such as 4.4BSD and NetBSD, any speed can
+				 * be specified. Other systems (e.g. Linux, SunOS) only
+				 * support the  commonly-used baud rates.
+				 */
+				"230400",
+				/*
+				 * Set the local and/or remote interface IP addresses.
+				 * Either one may be omitted. The IP addresses can be
+				 * specified with a host name or in decimal dot notation
+				 * (e.g. 150.234.56.78). The default local address is
+				 * the (first) IP address of the system (unless the
+				 * noipdefault option is given). The remote address will
+				 * be obtained from the peer if not specified in any
+				 * option.
+				 * Thus, in simple cases, this option is not required.
+				 * If a local and/or remote IP address is specified with
+				 * this option, pppd will not accept a different value
+				 * from the peer in the IPCP negotiation, unless the
+				 * ipcp-accept-local and/or ipcp-accept-remote options
+				 * are given, respectively.
+				 */
+				":169.254.2.1",
+				/*
+				 * Disables the default behaviour when no local
+				 * IP address is specified, which is to determine
+				 * (if possible) the local IP address from the hostname.
+				 * With this option, the peer will have to supply the
+				 * local IP address during IPCP negotiation (unless
+				 * it specified explicitly on the command line or in
+				 * an options file).
+				 */
 				"noipdefault",
+				/*
+				 * With this option, pppd will accept the peer's idea
+				 * of our local IP address, even if the local IP address
+				 * was specified in an option.
+				 *
+				 * This option attempts to fix this:
+				 *     Peer refused to agree to our IP address
+				 *
+				 * Yet, this doesn't make sense: we do not specify
+				 * a local IP address, and we use noipdefault.
+				 */
 				"ipcp-accept-local",
-				"ipcp-accept-remote",
 				"noaccomp",
 				"noauth",
 				"default-asyncmap",
@@ -315,6 +355,25 @@ static int pppd_run(struct tunnel *tunnel)
 				return 1;
 			}
 		}
+		if (tunnel->config->pppd_accept_remote)
+			/*
+			 * With this option, pppd will accept the peer's idea of
+			 * its (remote) IP address, even if the remote IP address
+			 * was specified in an option.
+			 *
+			 * This option attempts to fix this with PPP 2.5.0:
+			 *     Peer refused to agree to his IP address
+			 *
+			 * Currently (always?) breaks on macOS with:
+			 *     Could not get current default route
+			 *     (Parsing /proc/net/route failed).
+			 *     Protecting tunnel route has failed.
+			 *     But this can be working except for some cases.
+			 */
+			if (ofv_append_varr(&pppd_args, "ipcp-accept-remote")) {
+				free(pppd_args.data);
+				return 1;
+			}
 #endif
 #if HAVE_USR_SBIN_PPP
 		if (tunnel->config->ppp_system) {
