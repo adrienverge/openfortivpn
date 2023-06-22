@@ -390,7 +390,7 @@ int main(int argc, char **argv)
 				cli_cfg.pppd_call = strdup(optarg);
 				break;
 			}
-			// --plugin is deprecated, --pppd-plugin should be used
+			// --plugin is deprecated, use --pppd-plugin
 			if (cli_cfg.pppd_plugin == NULL &&
 			    strcmp(long_options[option_index].name,
 			           "plugin") == 0) {
