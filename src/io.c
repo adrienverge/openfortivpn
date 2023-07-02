@@ -212,7 +212,7 @@ static void *pppd_read(void *arg)
 			break;
 		} else if (n == 0) {
 			log_warn("read returned %ld\n", n);
-			continue;
+			break;
 		} else if (first_time) {
 			// pppd did talk, now we can write to it if we want
 			SEM_POST(&sem_pppd_ready);
