@@ -116,18 +116,13 @@ static inline void route_destroy(struct rtentry *route)
 static int ipv4_get_route(struct rtentry *route)
 {
 	size_t buffer_size = IPV4_GET_ROUTE_BUFFER_CHUNK_SIZE;
-	char *buffer = malloc(buffer_size);
+	char *buffer;
 	char *realloc_buffer;
 	int err = 0;
 	char *start, *line;
 	char *saveptr1 = NULL, *saveptr2 = NULL;
 	uint32_t rtdest, rtmask, rtgtw;
 	int rtfound = 0;
-
-	if (!buffer) {
-		err = ERR_IPV4_SEE_ERRNO;
-		goto end;
-	}
 
 	/*
 	 * initialize the buffer with zeroes, aiming to address the
@@ -148,7 +143,12 @@ static int ipv4_get_route(struct rtentry *route)
 	 *   that there is a delimiting '\0' character by proper
 	 *   initialization. We ensure this also when growing the buffer.
 	 */
-	memset(buffer, '\0', IPV4_GET_ROUTE_BUFFER_CHUNK_SIZE);
+	buffer = calloc(1, buffer_size);
+	if (!buffer) {
+		err = ERR_IPV4_SEE_ERRNO;
+		goto end;
+	}
+
 	log_debug("ip route show %s\n", ipv4_show_route(route));
 
 	// store what we are looking for
