@@ -104,6 +104,7 @@ static void destroy_ssl_locks(void)
 	for (i = 0; i < CRYPTO_num_locks(); i++)
 		pthread_mutex_destroy(&lockarray[i]);
 	OPENSSL_free(lockarray);
+	lockarray = NULL;
 }
 #else
 static void init_ssl_locks(void)
