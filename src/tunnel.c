@@ -808,7 +808,7 @@ static int tcp_connect(struct tunnel *tunnel)
 	log_debug("server_addr: %s\n", inet_ntoa(server.sin_addr));
 	log_debug("server_port: %u\n", ntohs(server.sin_port));
 	server.sin_family = AF_INET;
-	memset(&(server.sin_zero), '\0', 8);
+	memset(&(server.sin_zero), 0, sizeof(server.sin_zero));
 	log_debug("gateway_ip: %s\n", inet_ntoa(tunnel->config->gateway_ip));
 	log_debug("gateway_port: %u\n", tunnel->config->gateway_port);
 
@@ -840,7 +840,7 @@ static int tcp_connect(struct tunnel *tunnel)
 		// be careful not to fetch too many bytes at once
 		const char *response = NULL;
 
-		memset(&(request), '\0', sizeof(request));
+		memset(&(request), 0, sizeof(request));
 		for (int j = 0; response == NULL; j++) {
 			if (j >= ARRAY_SIZE(request) - 1) {
 				log_error("Proxy response is unexpectedly large and cannot fit in the %lu-bytes buffer.\n",
