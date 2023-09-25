@@ -551,6 +551,8 @@ void merge_config(struct vpn_config *dst, struct vpn_config *src)
 		free(dst->pinentry);
 		dst->pinentry = src->pinentry;
 	}
+	if (src->tun != invalid_cfg.tun)
+		dst->tun = src->tun;
 	if (src->realm[0])
 		strcpy(dst->realm, src->realm);
 	if (src->iface_name[0])
