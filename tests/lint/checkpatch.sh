@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Copyright (c) 2020 Dimitri Papadopoulos
 
 # Path to checkpatch.pl
