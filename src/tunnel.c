@@ -1269,14 +1269,14 @@ int ssl_connect(struct tunnel *tunnel)
 	SSL_set_mode(tunnel->ssl_handle, SSL_MODE_AUTO_RETRY);
 
 
-    // Set SNI for the session
-    if(tunnel->config->use_sni) {
-        log_debug("SNI set: %s", tunnel->config->gateway_host);
+        // Set SNI for the session
+        if(tunnel->config->use_sni) {
+            log_debug("SNI set: %s", tunnel->config->gateway_host);
 
-        if(SSL_set_tlsext_host_name(tunnel->ssl_handle, tunnel->config->gateway_host) != 1) {
-            log_error("SSL_set_tlsext_host_name(%s): %s\n", ERR_error_string(ERR_peek_last_error(), NULL));
+            if(SSL_set_tlsext_host_name(tunnel->ssl_handle, tunnel->config->gateway_host) != 1) {
+                log_error("SSL_set_tlsext_host_name(%s): %s\n", ERR_error_string(ERR_peek_last_error(), NULL));
+            }
         }
-    }
 
 	// Initiate SSL handshake
 	if (SSL_connect(tunnel->ssl_handle) != 1) {

@@ -291,7 +291,7 @@ int main(int argc, char **argv)
 		{"no-ftm-push",          no_argument, &cli_cfg.no_ftm_push, 1},
 		{"ifname",               required_argument, NULL, 0},
 		{"set-routes",	         required_argument, NULL, 0},
-        {"no-sni",               no_argument, &cli_cfg.use_sni, 0},
+                {"no-sni",               no_argument, &cli_cfg.use_sni, 0},
 		{"no-routes",            no_argument, &cli_cfg.set_routes, 0},
 		{"half-internet-routes", required_argument, NULL, 0},
 		{"set-dns",              required_argument, NULL, 0},
@@ -519,18 +519,18 @@ int main(int argc, char **argv)
 				cli_cfg.iface_name[IF_NAMESIZE - 1] = '\0';
 				break;
 			}
-            if (strcmp(long_options[option_index].name,
-                       "use-sni") == 0) {
-                int use_sni = strtob(optarg);
+                       if (strcmp(long_options[option_index].name,
+                                   "use-sni") == 0) {
+                                int use_sni = strtob(optarg);
 
-                if (use_sni < 0) {
-                    log_warn("Bad use-sni option: \"%s\"\n",
-                             optarg);
-                    break;
-                }
-                cli_cfg.use_sni = use_sni;
-                break;
-            }
+                                if (use_sni < 0) {
+                                    log_warn("Bad use-sni option: \"%s\"\n",
+                                             optarg);
+                                    break;
+                                }
+                                cli_cfg.use_sni = use_sni;
+                                break;
+                        } 
 			if (strcmp(long_options[option_index].name,
 			           "set-routes") == 0) {
 				int set_routes = strtob(optarg);
