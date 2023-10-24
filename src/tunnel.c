@@ -270,13 +270,33 @@ static int pppd_run(struct tunnel *tunnel)
 				 * of our local IP address, even if the local IP address
 				 * was specified in an option.
 				 *
-				 * This option attempts to fix this:
+				 * pppd < 2.5.0 requires this option to avoid this error:
 				 *     Peer refused to agree to our IP address
+				 * This doesn't make sense to me. I feel it should be the
+				 * default because:
+				 * 1. we do not specify a local IP address,
+				 * 2. we use option noipdefault to specifically ask the
+				 *    peer to supply the local IP address.
 				 *
-				 * Yet, this doesn't make sense: we do not specify
-				 * a local IP address, and we use noipdefault.
+				 * pppd ≥ 2.5.0 might not require it, but I don't dare
+				 * removing it.
 				 */
 				"ipcp-accept-local",
+#ifndef LEGACY_PPPD
+				/*
+				 * With this option, pppd accepts the peer's idea of its
+				 * (remote) IP address, even if the remote IP address was
+				 * specified in an option.
+				 *
+				 * pppd ≥ 2.5.0 requires this option to avoid this error:
+				 *     Peer refused to agree to his IP address
+				 * This makes perfect sense.
+				 *
+				 * Unfortunately, pppd < 2.5.0 does not like this option.
+				 * Again, this doesn't make sense to me.
+				 */
+				"ipcp-accept-remote",
+#endif
 				"noaccomp",
 				"noauth",
 				"default-asyncmap",

@@ -228,6 +228,10 @@ AC_ARG_WITH([pppd],
 		with_ppp="no"
 	])
 )
+# this is specifically for pppd < 2.5.0
+AC_ARG_ENABLE([legacy_pppd],
+	AS_HELP_STRING([--enable-legacy-pppd],
+	               [work around pppd < 2.5.0 issues]))
 # and this is for the ppp user space client on FreeBSD
 AC_ARG_WITH([ppp],
 	AS_HELP_STRING([--with-ppp],
@@ -323,6 +327,13 @@ AS_IF([test "x$with_pppd" = "xyes"], [
 ],[
 	AC_DEFINE(HAVE_USR_SBIN_PPPD, 0)
 	AC_MSG_NOTICE([HAVE_USR_SBIN_PPPD... 0])
+])
+AS_IF([test "x$enable_legacy_pppd" = "xyes"], [
+	AC_DEFINE(LEGACY_PPPD, 1)
+	AC_MSG_NOTICE([LEGACY_PPPD... 1])
+],[
+	AC_DEFINE(LEGACY_PPPD, 0)
+	AC_MSG_NOTICE([LEGACY_PPPD... 0])
 ])
 AS_IF([test "x$enable_proc" = "xyes"], [
 	AC_DEFINE(HAVE_PROC_NET_ROUTE, 1)
