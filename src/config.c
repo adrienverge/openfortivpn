@@ -52,6 +52,7 @@ const struct vpn_config invalid_cfg = {
 	.pinentry = NULL,
 	.realm = {'\0'},
 	.iface_name = {'\0'},
+    .use_sni = -1,
 	.set_routes = -1,
 	.set_dns = -1,
 	.pppd_use_peerdns = -1,
@@ -298,7 +299,16 @@ int load_config(struct vpn_config *cfg, const char *filename)
 				continue;
 			}
 			cfg->set_dns = set_dns;
-		} else if (strcmp(key, "set-routes") == 0) {
+        } else if (strcmp(key, "use-sni") == 0) {
+            int use_sni = strtob(val);
+
+            if (use_sni < 0) {
+                log_warn("Bad use-sni in configuration file: \"%s\".\n",
+                         val);
+                continue;
+            }
+            cfg->use_sni = use_sni;
+        } else if (strcmp(key, "set-routes") == 0) {
 			int set_routes = strtob(val);
 
 			if (set_routes < 0) {
@@ -536,6 +546,8 @@ void merge_config(struct vpn_config *dst, struct vpn_config *src)
 		strcpy(dst->realm, src->realm);
 	if (src->iface_name[0])
 		strcpy(dst->iface_name, src->iface_name);
+    if (src->use_sni != invalid_cfg.use_sni)
+        dst->use_sni = src->use_sni;
 	if (src->set_routes != invalid_cfg.set_routes)
 		dst->set_routes = src->set_routes;
 	if (src->set_dns != invalid_cfg.set_dns)

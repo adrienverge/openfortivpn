@@ -98,6 +98,7 @@ struct vpn_config {
 	char			iface_name[IF_NAMESIZE];
 	char			realm[REALM_SIZE + 1];
 
+    int         use_sni;
 	int			set_routes;
 	int			set_dns;
 	int			pppd_use_peerdns;

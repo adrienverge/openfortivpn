@@ -125,7 +125,8 @@ PPPD_USAGE \
 "  --realm=<realm>               Use specified authentication realm.\n" \
 "  --ifname=<interface>          Bind to interface.\n" \
 "  --set-routes=[01]             Set if openfortivpn should configure routes\n" \
-"                                when tunnel is up.\n" \
+"                                when tunnel is up.\n"               \
+"  --no-sni                      Do not send SNI in ClientHello, same as --use-sni=0.\n" \
 "  --no-routes                   Do not configure routes, same as --set-routes=0.\n" \
 "  --half-internet-routes=[01]   Add two 0.0.0.0/1 and 128.0.0.0/1 routes with higher\n" \
 "                                priority instead of replacing the default route.\n" \
@@ -230,6 +231,7 @@ int main(int argc, char **argv)
 		.pinentry = NULL,
 		.realm = {'\0'},
 		.iface_name = {'\0'},
+		.use_sni = 1,
 		.set_routes = 1,
 		.set_dns = 1,
 		.use_syslog = 0,
@@ -289,6 +291,7 @@ int main(int argc, char **argv)
 		{"no-ftm-push",          no_argument, &cli_cfg.no_ftm_push, 1},
 		{"ifname",               required_argument, NULL, 0},
 		{"set-routes",	         required_argument, NULL, 0},
+        {"no-sni",               no_argument, &cli_cfg.use_sni, 0},
 		{"no-routes",            no_argument, &cli_cfg.set_routes, 0},
 		{"half-internet-routes", required_argument, NULL, 0},
 		{"set-dns",              required_argument, NULL, 0},
@@ -516,6 +519,18 @@ int main(int argc, char **argv)
 				cli_cfg.iface_name[IF_NAMESIZE - 1] = '\0';
 				break;
 			}
+            if (strcmp(long_options[option_index].name,
+                       "use-sni") == 0) {
+                int use_sni = strtob(optarg);
+
+                if (use_sni < 0) {
+                    log_warn("Bad use-sni option: \"%s\"\n",
+                             optarg);
+                    break;
+                }
+                cli_cfg.use_sni = use_sni;
+                break;
+            }
 			if (strcmp(long_options[option_index].name,
 			           "set-routes") == 0) {
 				int set_routes = strtob(optarg);
