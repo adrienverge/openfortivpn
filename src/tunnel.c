@@ -1274,7 +1274,9 @@ int ssl_connect(struct tunnel *tunnel)
             log_debug("SNI set: %s", tunnel->config->gateway_host);
 
             if (SSL_set_tlsext_host_name(tunnel->ssl_handle, tunnel->config->gateway_host) != 1) {
-                log_warn("SSL_set_tlsext_host_name('%s'): %s\n", ERR_error_string(ERR_peek_last_error(), NULL));
+                log_warn("SSL_set_tlsext_host_name('%s'): %s\n",
+                         tunnel->config->gateway_host,
+                         ERR_error_string(ERR_peek_last_error(), NULL));
             }
         }
 
