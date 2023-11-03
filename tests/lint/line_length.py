@@ -43,7 +43,7 @@ def endswithstring(line):
 
 
 def main():
-    """Check each file provided as a command line parameter
+    """Check each file provided as a command line parameter.
 
     Returns
     -------
