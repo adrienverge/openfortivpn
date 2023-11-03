@@ -38,8 +38,7 @@ def endswithstring(line):
         True if line ends with string, False otherwise.
 
     """
-    return any(line.endswith(end)
-               for end in ('"', '",', '");', '";', '" \\', '];'))
+    return any(line.endswith(end) for end in ('"', '",', '");', '";', '" \\', '];'))
 
 
 def main():
