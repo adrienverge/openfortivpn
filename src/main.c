@@ -37,8 +37,7 @@
 "                    [--pppd-use-peerdns=<0|1>] [--pppd-log=<file>]\n" \
 "                    [--pppd-ifname=<string>] [--pppd-ipparam=<string>]\n" \
 "                    [--pppd-call=<name>] [--pppd-plugin=<file>]\n" \
-"                    [--pppd-accept-remote]\n"
-
+"                    [--pppd-accept-remote=<0|1>]\n"
 #define PPPD_HELP \
 "  --pppd-use-peerdns=[01]       Whether to ask peer ppp server for DNS server\n" \
 "                                addresses and make pppd rewrite /etc/resolv.conf.\n" \
@@ -54,8 +53,8 @@
 "  --pppd-call=<name>            Move most pppd options from pppd cmdline to\n" \
 "                                /etc/ppp/peers/<name> and invoke pppd with\n" \
 "                                'call <name>'.\n" \
-"  --pppd-accept-remote          Invoke pppd with option 'ipcp-accept-remote'." \
-"                                It might help avoid errors with PPP 2.5.0.\n"
+"  --pppd-accept-remote=[01]     Whether to invoke pppd with 'ipcp-accept-remote'.\n" \
+"                                Disable for pppd < 2.5.0.\n"
 #elif HAVE_USR_SBIN_PPP
 #define PPPD_USAGE \
 "                    [--ppp-system=<system>]\n"
@@ -246,7 +245,11 @@ int main(int argc, char **argv)
 		.pppd_ipparam = NULL,
 		.pppd_ifname = NULL,
 		.pppd_call = NULL,
+#if LEGACY_PPPD
 		.pppd_accept_remote = 0,
+#else
+		.pppd_accept_remote = 1,
+#endif
 #endif
 #if HAVE_USR_SBIN_PPP
 		.ppp_system = NULL,
@@ -309,7 +312,7 @@ int main(int argc, char **argv)
 		{"pppd-ipparam",         required_argument, NULL, 0},
 		{"pppd-ifname",          required_argument, NULL, 0},
 		{"pppd-call",            required_argument, NULL, 0},
-		{"pppd-accept-remote",   no_argument, &cli_cfg.pppd_accept_remote, 1},
+		{"pppd-accept-remote",   optional_argument, NULL, 0},
 		{"plugin",               required_argument, NULL, 0}, // deprecated
 #endif
 #if HAVE_USR_SBIN_PPP
@@ -388,6 +391,22 @@ int main(int argc, char **argv)
 			           "pppd-call") == 0) {
 				free(cli_cfg.pppd_call);
 				cli_cfg.pppd_call = strdup(optarg);
+				break;
+			}
+			if (strcmp(long_options[option_index].name,
+			           "pppd-accept-remote") == 0) {
+				if (optarg) {
+					int pppd_accept_remote = strtob(optarg);
+
+					if (pppd_accept_remote < 0) {
+						log_warn("Bad pppd-accept-remote option: \"%s\"\n",
+						         optarg);
+						break;
+					}
+					cli_cfg.pppd_accept_remote = pppd_accept_remote;
+				} else {
+					cli_cfg.pppd_accept_remote = 1;
+				}
 				break;
 			}
 			// --plugin is deprecated, use --pppd-plugin

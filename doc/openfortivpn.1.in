@@ -39,6 +39,7 @@ openfortivpn \- Client for PPP+SSL VPN tunnel services
 [\fB\-\-pppd\-ipparam=\fI<string>\fR]
 [\fB\-\-pppd\-ifname=\fI<string>\fR]
 [\fB\-\-pppd\-call=\fI<name>\fR]
+[\fB\-\-pppd\-accept\-remote=\fI<bool>\fR]
 [\fB\-\-ppp\-system=\fI<string>\fR]
 [\fB\-\-use\-resolvconf=\fI<bool>\fR]
 [\fB\-\-persistent=\fI<interval>\fR]
@@ -226,6 +227,10 @@ Drop usual arguments from pppd command line and add `call <name>' instead.
 This can be useful on Debian and Ubuntu, where unprivileged users in
 group `dip' can invoke `pppd call <name>' to make pppd read and apply
 options from /etc/ppp/peers/<name> (including privileged ones).
+.TP
+\fB\-\-pppd\-accept\-remote=\fI<bool>\fR
+Whether to invoke pppd with `ipcp-accept-remote'. Enabling this option breaks
+pppd < 2.5.0 but is required by newer pppd versions.
 .TP
 \fB\-\-ppp\-system=\fI<string>\fR
 Only available if compiled for ppp user space client (e.g. on FreeBSD).
