@@ -350,6 +350,15 @@ int load_config(struct vpn_config *cfg, const char *filename)
 		} else if (strcmp(key, "pppd-call") == 0) {
 			free(cfg->pppd_call);
 			cfg->pppd_call = strdup(val);
+		} else if (strcmp(key, "pppd-accept-remote") == 0) {
+			int pppd_accept_remote = strtob(val);
+
+			if (pppd_accept_remote < 0) {
+				log_warn("Bad pppd-accept-remote in configuration file: \"%s\".\n",
+				         val);
+				continue;
+			}
+			cfg->pppd_accept_remote = pppd_accept_remote;
 #else
 		} else if (strcmp(key, "pppd") == 0) {
 			log_warn("Ignoring pppd option \"%s\" in the config file.\n",

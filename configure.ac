@@ -228,11 +228,11 @@ AC_ARG_WITH([pppd],
 		with_ppp="no"
 	])
 )
-# this is specifically for pppd < 2.5.0
+# support pppd < 2.5.0 by default instead of pppd >= 2.5.0
 AC_ARG_ENABLE([legacy_pppd],
 	AS_HELP_STRING([--enable-legacy-pppd],
-	               [work around pppd < 2.5.0 issues]))
-# and this is for the ppp user space client on FreeBSD
+	               [support pppd < 2.5.0 by default instead of pppd >= 2.5.0]))
+# this is for the ppp user space client on FreeBSD
 AC_ARG_WITH([ppp],
 	AS_HELP_STRING([--with-ppp],
 		       [set the path to the ppp userspace client on FreeBSD]),
