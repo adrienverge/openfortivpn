@@ -271,16 +271,16 @@ int main(int argc, char **argv)
 	struct vpn_config cli_cfg = invalid_cfg;
 
 	const struct option long_options[] = {
-		{"help",                 no_argument,       NULL, 'h'},
+		{"help",                 no_argument,       NULL, 0},
 		{"version",              no_argument,       NULL, 0},
-		{"config",               required_argument, NULL, 'c'},
+		{"config",               required_argument, NULL, 0},
 		{"pinentry",             required_argument, NULL, 0},
 		{"realm",                required_argument, NULL, 0},
-		{"username",             required_argument, NULL, 'u'},
-		{"password",             required_argument, NULL, 'p'},
+		{"username",             required_argument, NULL, 0},
+		{"password",             required_argument, NULL, 0},
 		{"cookie",               required_argument, NULL, 0},
 		{"cookie-on-stdin",      no_argument, NULL, 0},
-		{"otp",                  required_argument, NULL, 'o'},
+		{"otp",                  required_argument, NULL, 0},
 		{"otp-prompt",           required_argument, NULL, 0},
 		{"otp-delay",            required_argument, NULL, 0},
 		{"no-ftm-push",          no_argument, &cli_cfg.no_ftm_push, 1},
@@ -313,10 +313,10 @@ int main(int argc, char **argv)
 		{"plugin",               required_argument, NULL, 0}, // deprecated
 #endif
 #if HAVE_USR_SBIN_PPP
-		{"ppp-system",      required_argument, NULL, 0},
+		{"ppp-system",           required_argument, NULL, 0},
 #endif
 #if HAVE_RESOLVCONF
-		{"use-resolvconf",  required_argument, NULL, 0},
+		{"use-resolvconf",       required_argument, NULL, 0},
 #endif
 		{NULL, 0, NULL, 0}
 	};
