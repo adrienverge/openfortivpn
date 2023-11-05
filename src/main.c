@@ -394,6 +394,8 @@ int main(int argc, char **argv)
 			if (cli_cfg.pppd_plugin == NULL &&
 			    strcmp(long_options[option_index].name,
 			           "plugin") == 0) {
+				log_warn("Option --%s is deprecated, use --pppd-plugin\n",
+				         long_options[option_index].name);
 				free(cli_cfg.pppd_plugin);
 				cli_cfg.pppd_plugin = strdup(optarg);
 				break;
