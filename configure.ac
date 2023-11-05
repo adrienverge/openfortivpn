@@ -215,7 +215,7 @@ RESOLVCONF_PATH=""
 # prepare possibility to override default locations
 AC_ARG_WITH([netstat],
 	AS_HELP_STRING([--with-netstat],
-		       [set the path to the netstat executable on MacOSX or FreeBSD]),
+		       [set the path to the netstat executable on MacOS or FreeBSD]),
 	NETSTAT_PATH="$withval"
 )
 # this is for the pppd daemon executable
@@ -357,10 +357,9 @@ AC_PATH_PROG(RESOLVCONF_PATH, [resolvconf], [DISABLED], "$PATH:/sbin:/usr/sbin")
 # allow override at configure time
 AC_ARG_WITH([resolvconf],
 	AS_HELP_STRING([--with-resolvconf],
-		       [Set the path to the resolvconf executable. \
-			Set this to "DISABLED" to fully disable resolvconf support. \
-			In that case it will not be compiled in and therefore be \
-			unavailable at runtime.]),
+	               [set the path to the resolvconf executable, \
+	                with special value "DISABLED" fully disabling \
+	                resolvconf support at build-time]),
 	RESOLVCONF_PATH="$withval"
 )
 
@@ -379,10 +378,10 @@ AS_IF([test "x$RESOLVCONF_PATH" = "xDISABLED"], [
 # the default for the --use-resolvconf runtime command line option
 AC_ARG_ENABLE([resolvconf],
 	AS_HELP_STRING([--enable-resolvconf],
-		       [Enable usage of resolvconf at runtime by default. \
-			Use --disable-resolvconf for the opposite, note that \
-			resolvconf support will still be compiled in, but \
-			disabled if not explicitly enabled at runtime.]))
+	               [enable usage of resolvconf at runtime by default \
+	                (please note that resolvconf support will still \
+	                 be compiled in with --disable-resolvconf but \
+	                 disabled unless explicitly enabled at runtime)]))
 
 # Determine how resolvconf works at build-time if it is installed:
 # * openresolv supports option -l that lists active configurations and returns 0
