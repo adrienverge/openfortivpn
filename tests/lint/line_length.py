@@ -54,7 +54,7 @@ def main():
 
     for arg in sys.argv[1:]:
         with open(arg, "r") as source_file:
-            for i, line in enumerate(source_file):
+            for i, line in enumerate(source_file, start=1):
                 line = line.rstrip()
                 # Lines that end with a string are exempted
                 if endswithstring(line):
@@ -63,7 +63,10 @@ def main():
                 line = line.replace("\t", "        ")
                 # Lines longer than MAX are reported as an error
                 if len(line) > MAX:
-                    print(f"{arg}: {i}: line too long ({len(line)} characters)")
+                    print(
+                        f"{arg}: {i}: line too long ({len(line)} characters)",
+                        file=sys.stderr,
+                    )
                     exit_status = 1
 
     sys.exit(exit_status)
