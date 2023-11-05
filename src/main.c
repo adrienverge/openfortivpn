@@ -271,16 +271,16 @@ int main(int argc, char **argv)
 	struct vpn_config cli_cfg = invalid_cfg;
 
 	const struct option long_options[] = {
-		{"help",                 no_argument,       NULL, 0},
+		{"help",                 no_argument,       NULL, 'h'},
 		{"version",              no_argument,       NULL, 0},
-		{"config",               required_argument, NULL, 0},
+		{"config",               required_argument, NULL, 'c'},
 		{"pinentry",             required_argument, NULL, 0},
 		{"realm",                required_argument, NULL, 0},
-		{"username",             required_argument, NULL, 0},
-		{"password",             required_argument, NULL, 0},
+		{"username",             required_argument, NULL, 'u'},
+		{"password",             required_argument, NULL, 'p'},
 		{"cookie",               required_argument, NULL, 0},
 		{"cookie-on-stdin",      no_argument, NULL, 0},
-		{"otp",                  required_argument, NULL, 0},
+		{"otp",                  required_argument, NULL, 'o'},
 		{"otp-prompt",           required_argument, NULL, 0},
 		{"otp-delay",            required_argument, NULL, 0},
 		{"no-ftm-push",          no_argument, &cli_cfg.no_ftm_push, 1},
