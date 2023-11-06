@@ -169,6 +169,16 @@ For other distros, you'll need to build and install from source:
     sudo make install
     ```
 
+    If targeting platforms with pppd < 2.5.0 such as current version of macOS,
+    we suggest you configure with option --enable-legacy-pppd:
+
+    ```shell
+    ./autogen.sh
+    ./configure --prefix=/usr/local --sysconfdir=/etc --enable-legacy-pppd
+    make
+    sudo make install
+    ```
+
     If you need to specify the openssl location you can set the `$PKG_CONFIG_PATH`
     environment variable. For fine-tuning check the available configure arguments
     with `./configure --help` especially when you are cross compiling.
