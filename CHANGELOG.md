@@ -14,6 +14,13 @@ Releases
 This high level changelog is usually updated when a release is tagged.
 On the master branch there may be changes that are not (yet) described here.
 
+### 1.21.0
+
+* [~] fix "Peer refused to agree to his IP address" message, again
+* [~] deprecate option --plugin
+* [-] better masking of password in logs
+* [-] break on reading 0 from ppp pty, for non-Linux systems
+
 ### 1.20.5
 
 * [-] revert previous fix from 1.20.4, make it optional
