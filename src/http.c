@@ -112,9 +112,9 @@ int http_send(struct tunnel *tunnel, const char *request, ...)
 		n = safe_ssl_write(tunnel->ssl_handle, (uint8_t *) buffer,
 		                   length);
 	if (n < 0) {
-		log_debug("Error writing to SSL connection (%s).\n",
+		log_debug("Error writing to TLS connection (%s).\n",
 		          err_ssl_str(n));
-		return ERR_HTTP_SSL;
+		return ERR_HTTP_TLS;
 	}
 
 	return 1;
@@ -169,13 +169,13 @@ int http_receive(struct tunnel *tunnel,
 
 		while ((n = safe_ssl_read(tunnel->ssl_handle,
 		                          (uint8_t *) buffer + bytes_read,
-		                          capacity - bytes_read)) == ERR_SSL_AGAIN)
+		                          capacity - bytes_read)) == ERR_TLS_AGAIN)
 			;
 		if (n < 0) {
-			log_debug("Error reading from SSL connection (%s).\n",
+			log_debug("Error reading from TLS connection (%s).\n",
 			          err_ssl_str(n));
 			free(buffer);
-			return ERR_HTTP_SSL;
+			return ERR_HTTP_TLS;
 		}
 		bytes_read += n;
 
@@ -315,7 +315,7 @@ static int http_request(struct tunnel *tunnel, const char *method,
 
 	ret = do_http_request(tunnel, method, uri, data,
 	                      response, response_size);
-	if (ret == ERR_HTTP_SSL) {
+	if (ret == ERR_HTTP_TLS) {
 		ssl_connect(tunnel);
 		ret = do_http_request(tunnel, method, uri, data,
 		                      response, response_size);

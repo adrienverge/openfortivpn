@@ -25,7 +25,8 @@
 #define ERR_HTTP_INVALID	-1
 #define ERR_HTTP_TOO_LONG	-2
 #define ERR_HTTP_NO_MEM		-3
-#define ERR_HTTP_SSL		-4
+#define ERR_HTTP_SSL		-4  // deprecated
+#define ERR_HTTP_TLS		-4
 #define ERR_HTTP_BAD_RES_CODE	-5
 #define ERR_HTTP_PERMISSION	-6
 #define ERR_HTTP_NO_COOKIE	-7
@@ -40,8 +41,8 @@ static inline const char *err_http_str(int code)
 		return "Request too long";
 	else if (code == ERR_HTTP_NO_MEM)
 		return "Not enough memory";
-	else if (code == ERR_HTTP_SSL)
-		return "SSL error";
+	else if (code == ERR_HTTP_TLS)
+		return "TLS error";
 	else if (code == ERR_HTTP_BAD_RES_CODE)
 		return "Bad HTTP response code";
 	else if (code == ERR_HTTP_PERMISSION)

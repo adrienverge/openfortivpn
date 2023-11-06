@@ -25,7 +25,7 @@
 #include <stdint.h>
 
 /*
- * For performance reasons, we store the 6-byte header used by the SSL
+ * For performance reasons, we store the 6-byte header used by the TLS
  * communication right in front of the real PPP packet data. This way,
  * SSL_write can be called directly on packet->content, instead of memcpy'ing
  * the header + data to a temporary buffer.

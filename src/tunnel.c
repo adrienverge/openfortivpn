@@ -385,7 +385,7 @@ static int pppd_run(struct tunnel *tunnel)
 #endif
 
 		if (close(tunnel->ssl_socket))
-			log_warn("Could not close ssl socket (%s).\n", strerror(errno));
+			log_warn("Could not close TLS socket (%s).\n", strerror(errno));
 		tunnel->ssl_socket = -1;
 		execv(pppd_args.data[0], (char *const *)pppd_args.data);
 		free(pppd_args.data);
@@ -997,7 +997,7 @@ free_cert:
 }
 
 /*
- * Destroy and free the SSL connection to the gateway.
+ * Destroy and free the TLS connection to the gateway.
  */
 static void ssl_disconnect(struct tunnel *tunnel)
 {
@@ -1012,7 +1012,7 @@ static void ssl_disconnect(struct tunnel *tunnel)
 	tunnel->ssl_context = NULL;
 
 	if (close(tunnel->ssl_socket))
-		log_warn("Could not close ssl socket (%s).\n", strerror(errno));
+		log_warn("Could not close TLS socket (%s).\n", strerror(errno));
 	tunnel->ssl_socket = -1;
 }
 
@@ -1052,7 +1052,7 @@ static int pem_passphrase_cb(char *buf, int size, int rwflag, void *u)
 }
 
 /*
- * Connects to the gateway and initiate an SSL session.
+ * Connects to the gateway and initiate a TLS session.
  */
 int ssl_connect(struct tunnel *tunnel)
 {
@@ -1295,7 +1295,7 @@ err_ssl_context:
 	tunnel->ssl_context = NULL;
 err_ssl_socket:
 	if (close(tunnel->ssl_socket))
-		log_warn("Could not close ssl socket (%s).\n", strerror(errno));
+		log_warn("Could not close TLS socket (%s).\n", strerror(errno));
 	tunnel->ssl_socket = -1;
 err_tcp_connect:
 	return 1;
@@ -1323,8 +1323,8 @@ int run_tunnel(struct vpn_config *config)
 	if (ret)
 		goto err_tunnel;
 
-	// Step 1: open a SSL connection to the gateway
-	log_debug("Establishing ssl connection\n");
+	// Step 1: open a TLS connection to the gateway
+	log_debug("Establishing TLS connection\n");
 	ret = ssl_connect(&tunnel);
 	if (ret)
 		goto err_tunnel;

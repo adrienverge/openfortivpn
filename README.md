@@ -1,7 +1,7 @@
 openfortivpn
 ============
 
-openfortivpn is a client for PPP+SSL VPN tunnel services.
+openfortivpn is a client for PPP+TLS VPN tunnel services.
 It spawns a pppd process and operates the communication between the gateway and
 this process.
 

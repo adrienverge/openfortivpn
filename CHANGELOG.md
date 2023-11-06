@@ -98,7 +98,7 @@ On the master branch there may be changes that are not (yet) described here.
 * [-] improve tunnel speed on macOS
 * [-] modify memory allocation in the tunnel configuration structure
 * [+] openfortivpn returns the PPP exit status
-* [+] print SSL socket options in log
+* [+] print TLS socket options in log
 
 ### 1.15.0
 
@@ -362,7 +362,7 @@ On the master branch there may be changes that are not (yet) described here.
 * [+] Export the configuration of routes and gateway to environment
 * [~] Several improvements around establishing the tunnel connection and http traffic
 * [+] Allow using a custom CA
-* [-] Turn on SSL verification, check the hostname at least for the CN
+* [-] Turn on TLS verification, check the hostname at least for the CN
 * [+] Add --plugin option
 * [-] Fix a format string warning in do_log_packet
 * [~] Improved debugging output

@@ -37,7 +37,7 @@ jobs:
             --form email=DimitriPapadopoulos@users.noreply.github.com \
             --form file=@openfortivpn.xz \
             --form version=coverity_scan \
-            --form description="Client for PPP+SSL VPN tunnel services" \
+            --form description="Client for PPP+TLS VPN tunnel services" \
             https://scan.coverity.com/builds?project=adrienverge%2Fopenfortivpn
         env:
           TOKEN: ${{ secrets.COVERITY_SCAN_TOKEN }}
