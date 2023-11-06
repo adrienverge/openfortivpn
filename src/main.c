@@ -92,7 +92,7 @@ PPPD_USAGE \
 "\n"
 
 #define summary \
-"Client for PPP+SSL VPN tunnel services.\n" \
+"Client for PPP+TLS VPN tunnel services.\n" \
 "openfortivpn connects to a VPN by setting up a tunnel to the gateway at\n" \
 "<host>:<port>. It spawns a pppd process and operates the communication between\n" \
 "the gateway and this process.\n" \
@@ -143,7 +143,7 @@ PPPD_USAGE \
 "                                authentication with a certificate.\n" \
 "  --pem-passphrase=<pass>       Pass phrase for the PEM-encoded key.\n" \
 "  --use-syslog                  Log to syslog instead of terminal.\n" \
-"  --trusted-cert=<digest>       Trust a given gateway. If classical SSL\n" \
+"  --trusted-cert=<digest>       Trust a given gateway. If classical TLS\n" \
 "                                certificate validation fails, the gateway\n" \
 "                                certificate will be matched against this value.\n" \
 "                                <digest> is the X509 certificate's sha256 sum.\n" \
@@ -151,7 +151,7 @@ PPPD_USAGE \
 "                                several certificates.\n"
 
 #define help_options_part2 \
-"  --insecure-ssl                Do not disable insecure SSL protocols/ciphers.\n" \
+"  --insecure-ssl                Do not disable insecure TLS protocols/ciphers.\n" \
 "                                Also enable TLS v1.0 if applicable.\n" \
 "                                If your server requires a specific cipher or protocol,\n" \
 "                                consider using --cipher-list and/or --min-tls instead.\n" \

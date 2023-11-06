@@ -427,7 +427,7 @@ static void debug_bad_packet(struct tunnel *tunnel, uint8_t *header)
 }
 
 /*
- * Thread to read bytes from the SSL socket, convert them to ppp packets and add
+ * Thread to read bytes from the TLS socket, convert them to ppp packets and add
  * them to the 'ssl_to_pty' pool.
  */
 static void *ssl_read(void *arg)
@@ -446,14 +446,14 @@ static void *ssl_read(void *arg)
 
 		ret = safe_ssl_read_all(tunnel->ssl_handle, header, 6);
 		if (ret < 0) {
-			log_debug("Error reading from SSL connection (%s).\n",
+			log_debug("Error reading from TLS connection (%s).\n",
 			          err_ssl_str(ret));
 			break;
 		}
 
 		if (memcmp(header, http_header, 6) == 0) {
 			/*
-			 * When the SSL-VPN portal has not been set up to allow
+			 * When the TLS-VPN portal has not been set up to allow
 			 * tunnel mode for VPN clients, while it allows web mode
 			 * for web browsers, it returns an HTTP error instead of
 			 * a PPP packet:
@@ -483,7 +483,7 @@ static void *ssl_read(void *arg)
 		ret = safe_ssl_read_all(tunnel->ssl_handle, pkt_data(packet),
 		                        size);
 		if (ret < 0) {
-			log_debug("Error reading from SSL connection (%s).\n",
+			log_debug("Error reading from TLS connection (%s).\n",
 			          err_ssl_str(ret));
 			free(packet);
 			break;
@@ -525,7 +525,7 @@ static void *ssl_read(void *arg)
 }
 
 /*
- * Thread to pop packets from the 'pty_to_ssl' pool, and write them to the SSL
+ * Thread to pop packets from the 'pty_to_ssl' pool, and write them to the TLS
  * socket.
  */
 static void *ssl_write(void *arg)
@@ -553,7 +553,7 @@ static void *ssl_write(void *arg)
 			                     packet->content, 6 + packet->len);
 		} while (ret == 0);
 		if (ret < 0) {
-			log_debug("Error writing to SSL connection (%s).\n",
+			log_debug("Error writing to TLS connection (%s).\n",
 			          err_ssl_str(ret));
 			free(packet);
 			break;
@@ -567,7 +567,7 @@ static void *ssl_write(void *arg)
 }
 
 /*
- * Thread to pop packets from the 'pty_to_ssl' pool, and write them to the SSL
+ * Thread to pop packets from the 'pty_to_ssl' pool, and write them to the TLS
  * socket.
  */
 static void *if_config(void *arg)

@@ -1,7 +1,7 @@
 .TH OPENFORTIVPN 1 "May 4, 2020" ""
 
 .SH NAME
-openfortivpn \- Client for PPP+SSL VPN tunnel services
+openfortivpn \- Client for PPP+TLS VPN tunnel services
 
 .SH SYNOPSIS
 .B openfortivpn
@@ -167,13 +167,13 @@ Pass phrase for the PEM-encoded key.
 Log to syslog instead of terminal.
 .TP
 \fB\-\-trusted\-cert=\fI<digest>\fR
-Trust a given gateway. If classical SSL certificate validation fails, the
+Trust a given gateway. If classical TLS certificate validation fails, the
 gateway certificate will be matched against this value. \fI<digest>\fR is the
 X509 certificate's sha256 sum. The certificate has to be encoded in DER form.
 This option can be used multiple times to trust several certificates.
 .TP
 \fB\-\-insecure\-ssl\fR
-Do not disable insecure SSL protocols/ciphers.
+Do not disable insecure TLS protocols/ciphers.
 If your server requires a specific cipher, consider using \fB\-\-cipher\-list\fR
 instead.
 .TP
