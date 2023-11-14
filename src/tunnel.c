@@ -1270,7 +1270,7 @@ int ssl_connect(struct tunnel *tunnel)
 
 
 	// Set SNI for the session
-	const char *sni = tunnel->config->sni ? tunnel->config->sni : \
+	const char *sni = tunnel->config->sni ? tunnel->config->sni :
 	                  tunnel->config->gateway_host;
 	if (SSL_set_tlsext_host_name(tunnel->ssl_handle, sni) != 1)
 		log_warn("SSL_set_tlsext_host_name('%s'): %s\n",
