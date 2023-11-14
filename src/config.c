@@ -52,6 +52,7 @@ const struct vpn_config invalid_cfg = {
 	.pinentry = NULL,
 	.realm = {'\0'},
 	.iface_name = {'\0'},
+	.sni = NULL,
 	.set_routes = -1,
 	.set_dns = -1,
 	.pppd_use_peerdns = -1,
@@ -298,6 +299,9 @@ int load_config(struct vpn_config *cfg, const char *filename)
 				continue;
 			}
 			cfg->set_dns = set_dns;
+		} else if (strcmp(key, "sni") == 0) {
+			free(cfg->sni);
+			cfg->sni = strdup(val);
 		} else if (strcmp(key, "set-routes") == 0) {
 			int set_routes = strtob(val);
 
@@ -536,6 +540,8 @@ void merge_config(struct vpn_config *dst, struct vpn_config *src)
 		strcpy(dst->realm, src->realm);
 	if (src->iface_name[0])
 		strcpy(dst->iface_name, src->iface_name);
+	if (src->sni[0])
+		strcpy(dst->sni, src->sni);
 	if (src->set_routes != invalid_cfg.set_routes)
 		dst->set_routes = src->set_routes;
 	if (src->set_dns != invalid_cfg.set_dns)

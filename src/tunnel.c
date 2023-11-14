@@ -1268,6 +1268,17 @@ int ssl_connect(struct tunnel *tunnel)
 	}
 	SSL_set_mode(tunnel->ssl_handle, SSL_MODE_AUTO_RETRY);
 
+
+	// Set SNI for the session
+	const char *sni = tunnel->config->sni ? tunnel->config->sni :
+	                  tunnel->config->gateway_host;
+	if (SSL_set_tlsext_host_name(tunnel->ssl_handle, sni) != 1)
+		log_warn("SSL_set_tlsext_host_name('%s'): %s\n",
+		         sni,
+		         ERR_error_string(ERR_peek_last_error(), NULL));
+	else
+		log_debug("Set SNU TLS handshake: %s\n", sni);
+
 	// Initiate SSL handshake
 	if (SSL_connect(tunnel->ssl_handle) != 1) {
 		log_error("SSL_connect: %s\n"
