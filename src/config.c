@@ -52,7 +52,7 @@ const struct vpn_config invalid_cfg = {
 	.pinentry = NULL,
 	.realm = {'\0'},
 	.iface_name = {'\0'},
-	.sni = NULL,
+	.sni = {'\0'},
 	.set_routes = -1,
 	.set_dns = -1,
 	.pppd_use_peerdns = -1,
@@ -300,8 +300,8 @@ int load_config(struct vpn_config *cfg, const char *filename)
 			}
 			cfg->set_dns = set_dns;
 		} else if (strcmp(key, "sni") == 0) {
-			free(cfg->sni);
-			cfg->sni = strdup(val);
+			strncpy(cfg->sni, val, GATEWAY_HOST_SIZE);
+			cfg->sni[GATEWAY_HOST_SIZE] = '\0';
 		} else if (strcmp(key, "set-routes") == 0) {
 			int set_routes = strtob(val);
 

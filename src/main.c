@@ -232,7 +232,7 @@ int main(int argc, char **argv)
 		.pinentry = NULL,
 		.realm = {'\0'},
 		.iface_name = {'\0'},
-		.sni = NULL,
+		.sni = {'\0'},
 		.set_routes = 1,
 		.set_dns = 1,
 		.use_syslog = 0,
@@ -522,7 +522,8 @@ int main(int argc, char **argv)
 			}
 			if (strcmp(long_options[option_index].name,
 			           "sni") == 0) {
-				cli_cfg.sni = strdup(optarg);
+				strncpy(cli_cfg.sni, optarg, GATEWAY_HOST_SIZE);
+				cli_cfg.sni[GATEWAY_HOST_SIZE] = '\0';
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
