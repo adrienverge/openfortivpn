@@ -53,7 +53,7 @@ def main():
     exit_status = 0
 
     for arg in sys.argv[1:]:
-        with open(arg, "r") as source_file:
+        with open(arg) as source_file:
             for i, line in enumerate(source_file, start=1):
                 line = line.rstrip()
                 # Lines that end with a string are exempted
