@@ -3,7 +3,7 @@
 
 rc=0
 
-./tests/lint/eol-at-eof.sh $(git ls-files) || rc=1
+./tests/lint/eol-at-eof.sh $(git ls-files | grep -v LICENSE.OpenSSL) || rc=1
 
 ./tests/lint/line_length.py $(git ls-files '*.[ch]') || rc=1
 
