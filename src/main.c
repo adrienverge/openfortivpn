@@ -126,8 +126,8 @@ PPPD_USAGE \
 "  --ifname=<interface>          Bind to interface.\n" \
 "  --set-routes=[01]             Set if openfortivpn should configure routes\n" \
 "                                when tunnel is up.\n"               \
-" --sni=<sni>                    Specify a different server name (SNI) than the host argument\n" \
-"                                during TLS handshake." \
+"  --sni=<sni>                   Specify a different server name (SNI) than the host argument\n" \
+"                                during TLS handshake.\n" \
 "  --no-routes                   Do not configure routes, same as --set-routes=0.\n" \
 "  --half-internet-routes=[01]   Add two 0.0.0.0/1 and 128.0.0.0/1 routes with higher\n" \
 "                                priority instead of replacing the default route.\n" \
