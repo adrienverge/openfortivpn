@@ -14,6 +14,12 @@ Releases
 This high level changelog is usually updated when a release is tagged.
 On the master branch there may be changes that are not (yet) described here.
 
+### unreleased
+
+* [~] do not print TLS socket options in log (revert change from 1.16.0)
+* [+] add option to specify SNI
+* [~] change most occurrences of "SSL" to "TLS" in user-visible text
+
 ### 1.21.0
 
 * [~] fix "Peer refused to agree to his IP address" message, again
