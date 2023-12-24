@@ -626,17 +626,6 @@ static int get_gateway_host_ip(struct tunnel *tunnel)
 	return 0;
 }
 
-static int get_socket_option(int sockfd, int level, int optname)
-{
-	int optval;
-	socklen_t optlen = sizeof(optval);
-
-	if (getsockopt(sockfd, level, optname, &optval, &optlen) < 0)
-		return -1;
-	assert(optlen == sizeof(optval));
-	return optval;
-}
-
 /*
  * Establish a regular TCP connection.
  */
@@ -653,63 +642,6 @@ static int tcp_connect(struct tunnel *tunnel)
 		log_error("socket: %s\n", strerror(errno));
 		goto err_socket;
 	}
-
-	/*
-	 * Attempt to find default TCP socket options on different platforms.
-	 */
-#ifdef SO_KEEPALIVE
-	ret = get_socket_option(handle, SOL_SOCKET, SO_KEEPALIVE);
-	if (ret < 0)
-		log_warn("getsockopt: %s: %s\n", "SO_KEEPALIVE", strerror(errno));
-	else
-		log_debug("SO_KEEPALIVE: %s\n", (ret ? "ON" : "OFF"));
-#endif
-#ifdef TCP_KEEPIDLE
-	ret = get_socket_option(handle, IPPROTO_TCP, TCP_KEEPIDLE);
-	if (ret < 0)
-		log_warn("getsockopt: %s: %s\n", "TCP_KEEPIDLE", strerror(errno));
-	else
-		log_debug("TCP_KEEPIDLE: %d\n", ret);
-#endif
-#ifdef TCP_KEEPALIVE
-	ret = get_socket_option(handle, IPPROTO_TCP, TCP_KEEPALIVE);
-	if (ret < 0)
-		log_warn("getsockopt: %s: %s\n", "TCP_KEEPALIVE", strerror(errno));
-	else
-		log_debug("TCP_KEEPALIVE: %d\n", ret);
-#endif
-#ifdef TCP_KEEPINTVL
-	ret = get_socket_option(handle, IPPROTO_TCP, TCP_KEEPINTVL);
-	if (ret < 0)
-		log_warn("getsockopt: %s: %s\n", "TCP_KEEPINTVL", strerror(errno));
-	else
-		log_debug("TCP_KEEPINTVL: %d\n", ret);
-#endif
-#ifdef TCP_KEEPCNT
-	ret = get_socket_option(handle, IPPROTO_TCP, TCP_KEEPCNT);
-	if (ret < 0)
-		log_warn("getsockopt: %s: %s\n", "TCP_KEEPCNT", strerror(errno));
-	else
-		log_debug("TCP_KEEPCNT: %d\n", ret);
-#endif
-#ifdef SO_SNDBUF
-	ret = get_socket_option(handle, SOL_SOCKET, SO_SNDBUF);
-	if (ret < 0)
-#ifndef __APPLE__
-		log_warn("getsockopt: %s: %s\n", "SO_SNDBUF", strerror(errno));
-	else
-#endif
-		log_debug("SO_SNDBUF: %d\n", ret);
-#endif
-#ifdef SO_RCVBUF
-	ret = get_socket_option(handle, SOL_SOCKET, SO_RCVBUF);
-	if (ret < 0)
-#ifndef __APPLE__
-		log_warn("getsockopt: %s: %s\n", "SO_RCVBUF", strerror(errno));
-	else
-#endif
-		log_debug("SO_RCVBUF: %d\n", ret);
-#endif
 
 	if (iface_len == IF_NAMESIZE) {
 		log_error("socket: Too long iface name\n");
