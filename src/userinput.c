@@ -242,6 +242,7 @@ static void pinentry_read_password(const char *pinentry, const char *hint,
 	if (ret)
 		log_error("Error: %s\n", retstr);
 	free(retstr);
+	retstr = NULL;
 	if (ret)
 		goto out;
 
@@ -250,6 +251,7 @@ static void pinentry_read_password(const char *pinentry, const char *hint,
 	if (ret)
 		log_error("Failed to set title: %s\n", retstr);
 	free(retstr);
+	retstr = NULL;
 	if (ret)
 		goto out;
 
@@ -258,6 +260,7 @@ static void pinentry_read_password(const char *pinentry, const char *hint,
 	if (ret)
 		log_error("Failed to set description: %s\n", retstr);
 	free(retstr);
+	retstr = NULL;
 	if (ret)
 		goto out;
 
@@ -267,6 +270,7 @@ static void pinentry_read_password(const char *pinentry, const char *hint,
 	if (ret)
 		log_error("Failed to set keyinfo\n");
 	free(escaped);
+	escaped = NULL;
 	if (ret)
 		goto out;
 
@@ -274,9 +278,11 @@ static void pinentry_read_password(const char *pinentry, const char *hint,
 	ret = pinentry_exchange(to_pinentry[1], from_pinentry[0], &retstr,
 	                        "SETPROMPT %s\n", escaped);
 	free(escaped);
+	escaped = NULL;
 	if (ret)
 		log_error("Failed to set prompt: %s\n", retstr);
 	free(retstr);
+	retstr = NULL;
 	if (ret)
 		goto out;
 
@@ -285,12 +291,14 @@ static void pinentry_read_password(const char *pinentry, const char *hint,
 	if (ret) {
 		log_error("Failed to get PIN: %s\n", retstr);
 		free(retstr);
+		retstr = NULL;
 		goto out;
 	}
 
 	if (retstr) {
 		strncpy(pass, retstr, len);
 		free(retstr);
+		retstr = NULL;
 	} else {
 		log_error("No password given\n");
 	}
