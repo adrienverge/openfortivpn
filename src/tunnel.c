@@ -561,7 +561,7 @@ static int pppd_terminate(struct tunnel *tunnel)
 
 int ppp_interface_is_up(struct tunnel *tunnel)
 {
-	struct ifaddrs *ifap, *ifa;
+	struct ifaddrs *ifap;
 
 	log_debug("Got Address: %s\n", inet_ntoa(tunnel->ipv4.ip_addr));
 
@@ -570,7 +570,7 @@ int ppp_interface_is_up(struct tunnel *tunnel)
 		return 0;
 	}
 
-	for (ifa = ifap; ifa != NULL; ifa = ifa->ifa_next) {
+	for (struct ifaddrs *ifa = ifap; ifa != NULL; ifa = ifa->ifa_next) {
 		if (
 #if HAVE_USR_SBIN_PPPD
 		        ((tunnel->config->pppd_ifname &&
@@ -849,8 +849,6 @@ static int ssl_verify_cert(struct tunnel *tunnel)
 	unsigned int len;
 	struct x509_digest *elem;
 	char digest_str[SHA256STRLEN], *subject, *issuer;
-	char *line;
-	int i;
 	X509_NAME *subj;
 	char *saveptr = NULL;
 
@@ -883,7 +881,7 @@ static int ssl_verify_cert(struct tunnel *tunnel)
 		goto free_cert;
 	}
 	// Encode digest in base16
-	for (i = 0; i < SHA256LEN; i++)
+	for (int i = 0; i < SHA256LEN; i++)
 		sprintf(&digest_str[2 * i], "%02x", digest[i]);
 	digest_str[SHA256STRLEN - 1] = '\0';
 	// Is it in whitelist?
@@ -907,7 +905,7 @@ static int ssl_verify_cert(struct tunnel *tunnel)
 	log_error("    subject:\n");
 	subject = X509_NAME_oneline(subj, NULL, 0);
 	if (subject) {
-		for (line = strtok_r(subject, "/", &saveptr); line != NULL;
+		for (char *line = strtok_r(subject, "/", &saveptr); line != NULL;
 		     line = strtok_r(NULL, "/", &saveptr))
 			log_error("        %s\n", line);
 		free(subject);
@@ -915,7 +913,7 @@ static int ssl_verify_cert(struct tunnel *tunnel)
 	log_error("    issuer:\n");
 	issuer = X509_NAME_oneline(X509_get_issuer_name(cert), NULL, 0);
 	if (issuer) {
-		for (line = strtok_r(issuer, "/", &saveptr); line != NULL;
+		for (char *line = strtok_r(issuer, "/", &saveptr); line != NULL;
 		     line = strtok_r(NULL, "/", &saveptr))
 			log_error("        %s\n", line);
 		free(issuer);

@@ -38,11 +38,9 @@
  */
 const char *xml_find(char t, const char *needle, const char *buf, int nest)
 {
-	int i;
-
 	if (!buf)
 		return NULL;
-	for (i = 0; buf[i]; i++) {
+	for (int i = 0; buf[i]; i++) {
 		if (buf[i] == '<' && buf[i + 1] != '/')
 			nest++;
 		if (buf[i] == '/')

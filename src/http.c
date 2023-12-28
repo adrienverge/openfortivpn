@@ -92,11 +92,11 @@ int http_send(struct tunnel *tunnel, const char *request, ...)
 		url_encode(password, tunnel->config->password);
 
 		while ((pwstart = strstr(logbuffer, password))) {
-			int pos, pwlen, i;
+			int pos, pwlen;
 
 			pos = pwstart - logbuffer;
 			pwlen = strlen(password);
-			for (i = pos; i < pos + pwlen; i++)
+			for (int i = pos; i < pos + pwlen; i++)
 				logbuffer[i] = '*';
 		}
 	}
