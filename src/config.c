@@ -94,7 +94,7 @@ const struct vpn_config invalid_cfg = {
  */
 int add_trusted_cert(struct vpn_config *cfg, const char *digest)
 {
-	struct x509_digest *last, *new;
+	struct x509_digest *new;
 
 	new = malloc(sizeof(struct x509_digest));
 	if (new == NULL)
@@ -107,7 +107,10 @@ int add_trusted_cert(struct vpn_config *cfg, const char *digest)
 	if (cfg->cert_whitelist == NULL) {
 		cfg->cert_whitelist = new;
 	} else {
-		for (last = cfg->cert_whitelist; last->next != NULL;
+		struct x509_digest *last;
+
+		for (last = cfg->cert_whitelist;
+		     last->next != NULL;
 		     last = last->next)
 			;
 		last->next = new;
@@ -196,7 +199,6 @@ int load_config(struct vpn_config *cfg, const char *filename)
 	// Read line by line
 	while ((read = getline(&line, &len, file)) != -1) {
 		char *key, *equals, *val;
-		int i;
 
 		// Ignore blank lines. We could argue that the string must be at least
 		// 3 chars to be valid, eg. 'x=\n' but let the rest of the function
@@ -224,13 +226,13 @@ int load_config(struct vpn_config *cfg, const char *filename)
 		while (isspace(val[0]))
 			val++;
 		// Remove trailing spaces
-		for (i = strlen(key) - 1; i > 0; i--) {
+		for (int i = strlen(key) - 1; i > 0; i--) {
 			if (isspace(key[i]))
 				key[i] = '\0';
 			else
 				break;
 		}
-		for (i = strlen(val) - 1; i > 0; i--) {
+		for (int i = strlen(val) - 1; i > 0; i--) {
 			if (isspace(val[i]))
 				val[i] = '\0';
 			else

@@ -126,7 +126,6 @@ ssize_t hdlc_encode(uint8_t *frame, size_t frmsize,
 	ssize_t written = 0;
 	uint16_t checksum;
 	const uint8_t address_control_fields[] = { 0xff, 0x03 };
-	int i;
 	uint8_t byte;
 
 	if (frmsize < 7)
@@ -144,7 +143,7 @@ ssize_t hdlc_encode(uint8_t *frame, size_t frmsize,
 
 	checksum = address_control_checksum; // Precalculated for Address Control
 
-	for (i = 0; i < pktsize; i++) {
+	for (int i = 0; i < pktsize; i++) {
 		byte = packet[i];
 
 		if (frmsize < written + 2)
@@ -197,10 +196,10 @@ ssize_t hdlc_encode(uint8_t *frame, size_t frmsize,
  */
 ssize_t hdlc_find_frame(const uint8_t *buffer, size_t bufsize, off_t *start)
 {
-	int i, s = -1, e = -1;
+	int s = -1, e = -1;
 
 	// Look for frame start
-	for (i = *start; i < bufsize; i++) {
+	for (int i = *start; i < bufsize; i++) {
 		if (buffer[i] == 0x7e) { // Flag Sequence
 			s = i + 1;
 			break;
@@ -214,7 +213,7 @@ ssize_t hdlc_find_frame(const uint8_t *buffer, size_t bufsize, off_t *start)
 		s++;
 
 	// Look for frame end
-	for (i = s; i < bufsize; i++) {
+	for (int i = s; i < bufsize; i++) {
 		if (buffer[i] == 0x7e) { // Flag Sequence
 			e = i;
 			break;
@@ -245,7 +244,6 @@ ssize_t hdlc_decode(const uint8_t *frame, size_t frmsize,
 	off_t start = 0;
 	ssize_t written = 0;
 	int has_address_control_fields = 0;
-	int i;
 	int in_escape;
 	uint16_t checksum;
 
@@ -259,7 +257,7 @@ ssize_t hdlc_decode(const uint8_t *frame, size_t frmsize,
 	}
 
 	in_escape = 0;
-	for (i = start; i < frmsize; i++) {
+	for (int i = start; i < frmsize; i++) {
 		uint8_t byte = frame[i];
 
 		if (byte == 0x7d) { // Control Escape

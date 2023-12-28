@@ -136,17 +136,17 @@ void do_log(int verbosity, const char *format, ...)
 void do_log_packet(const char *prefix, size_t len, const uint8_t *packet)
 {
 	char *str, *pos;
-	size_t i;
+	size_t len_prefix = strlen(prefix);
 
-	str = malloc(strlen(prefix) + 3 * len + 1 + 1);
+	str = malloc(len_prefix + 3 * len + 1 + 1);
 	if (str == NULL) {
 		log_error("malloc: %s\n", strerror(errno));
 		return;
 	}
 
 	pos = strcpy(str, prefix);
-	pos += strlen(str);
-	for (i = 0; i < len; i++)
+	pos += len_prefix;
+	for (size_t i = 0; i < len; i++)
 		pos += sprintf(pos, "%02x ", packet[i]);
 	strcpy(pos - 1, "\n");
 

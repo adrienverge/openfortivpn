@@ -86,11 +86,9 @@ static unsigned long thread_id(void)
 
 static void init_ssl_locks(void)
 {
-	int i;
-
 	lockarray = (pthread_mutex_t *) OPENSSL_malloc(CRYPTO_num_locks() *
 	                sizeof(pthread_mutex_t));
-	for (i = 0; i < CRYPTO_num_locks(); i++)
+	for (int i = 0; i < CRYPTO_num_locks(); i++)
 		pthread_mutex_init(&lockarray[i], NULL);
 	CRYPTO_set_id_callback((unsigned long (*)()) thread_id);
 	CRYPTO_set_locking_callback((void (*)()) lock_callback);
@@ -98,10 +96,8 @@ static void init_ssl_locks(void)
 
 static void destroy_ssl_locks(void)
 {
-	int i;
-
 	CRYPTO_set_locking_callback(NULL);
-	for (i = 0; i < CRYPTO_num_locks(); i++)
+	for (int i = 0; i < CRYPTO_num_locks(); i++)
 		pthread_mutex_destroy(&lockarray[i]);
 	OPENSSL_free(lockarray);
 	lockarray = NULL;
@@ -405,7 +401,7 @@ static inline void set_tunnel_ips(struct tunnel *tunnel,
 static void debug_bad_packet(struct tunnel *tunnel, uint8_t *header)
 {
 	uint8_t buffer[256];
-	int size, i;
+	int size;
 
 	memcpy(buffer, header, 6 * sizeof(uint8_t));
 
@@ -418,10 +414,10 @@ static void debug_bad_packet(struct tunnel *tunnel, uint8_t *header)
 	do_log_packet("  (hex) ", size, buffer);
 
 	// then print the raw string, after escaping non-displayable chars
-	for (i = 0; i < size; i++)
+	for (int i = 0; i < size; i++)
 		if (!printable_char((char) buffer[i]))
 			buffer[i] = '.';
-	buffer[i] = buffer[256 - 1] = '\0';
+	buffer[size] = buffer[256 - 1] = '\0';
 
 	printf("  (raw) %s\n", (const char *) buffer);
 }
