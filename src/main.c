@@ -211,7 +211,7 @@ static char *strdup_with_prefix(const char *input, const char *prefix)
 	return output;
 }
 
-int main(int argc, char **argv)
+int main(int argc, char *argv[])
 {
 	int ret = EXIT_FAILURE;
 	const char *config_file = SYSCONFDIR "/openfortivpn/config";
