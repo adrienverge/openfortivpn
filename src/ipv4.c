@@ -887,9 +887,7 @@ int ipv4_add_split_vpn_route(struct tunnel *tunnel, char *dest, char *mask,
 
 static int ipv4_set_split_routes(struct tunnel *tunnel)
 {
-	int i;
-
-	for (i = 0; i < tunnel->ipv4.split_routes; i++) {
+	for (int i = 0; i < tunnel->ipv4.split_routes; i++) {
 		struct rtentry *route;
 		int ret;
 
@@ -1056,9 +1054,7 @@ int ipv4_restore_routes(struct tunnel *tunnel)
 
 static inline char *replace_char(char *str, char find, char replace)
 {
-	int i;
-
-	for (i = 0; i < strlen(str); i++)
+	for (int i = 0; i < strlen(str); i++)
 		if (str[i] == find)
 			str[i] = replace;
 	return str;

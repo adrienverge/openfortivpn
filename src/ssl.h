@@ -130,13 +130,9 @@ static inline int handle_ssl_error(SSL *ssl, int ret)
  */
 static inline int safe_ssl_read(SSL *ssl, uint8_t *buf, int bufsize)
 {
-	int ret;
+	int ret = SSL_read(ssl, buf, bufsize);
 
-	ret = SSL_read(ssl, buf, bufsize);
-	if (ret > 0)
-		return ret;
-
-	return handle_ssl_error(ssl, ret);
+	return (ret > 0) ? ret : handle_ssl_error(ssl, ret);
 }
 
 /*
@@ -147,9 +143,7 @@ static inline int safe_ssl_read(SSL *ssl, uint8_t *buf, int bufsize)
  */
 static inline int safe_ssl_read_all(SSL *ssl, uint8_t *buf, int bufsize)
 {
-	int n = 0;
-
-	while (n < bufsize) {
+	for (int n = 0; n < bufsize; ) {
 		int ret;
 
 		ret = safe_ssl_read(ssl, &buf[n], bufsize - n);
@@ -175,13 +169,9 @@ static inline int safe_ssl_read_all(SSL *ssl, uint8_t *buf, int bufsize)
  */
 static inline int safe_ssl_write(SSL *ssl, const uint8_t *buf, int n)
 {
-	int ret;
+	int ret = SSL_write(ssl, buf, n);
 
-	ret = SSL_write(ssl, buf, n);
-	if (ret > 0)
-		return ret;
-
-	return handle_ssl_error(ssl, ret);
+	return (ret > 0) ? ret : handle_ssl_error(ssl, ret);
 }
 
 #endif
