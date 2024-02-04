@@ -1,7 +1,7 @@
 [Unit]
 Description=OpenFortiVPN for %I
 After=network-online.target
-Wants=network-online.target
+Wants=network-online.target systemd-networkd-wait-online.service
 Documentation=man:openfortivpn(1)
 Documentation=https://github.com/adrienverge/openfortivpn#readme
 Documentation=https://github.com/adrienverge/openfortivpn/wiki
