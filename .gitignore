@@ -3,8 +3,8 @@
 aclocal.m4
 autom4te.cache
 compile
-config.log
-config.status
+config.*
+config
 configure
 cscope.*
 depcomp
@@ -18,3 +18,4 @@ doc/*.1
 config.sub
 config.guess
 openfortivpn@.service
+.vscode

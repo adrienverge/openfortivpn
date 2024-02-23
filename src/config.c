@@ -44,7 +44,7 @@ const struct vpn_config invalid_cfg = {
 	.username = {'\0'},
 	.password = {'\0'},
 	.password_set = 0,
-	.cookie = NULL,
+	.cookie = {'\0'},
 	.otp = {'\0'},
 	.otp_prompt = NULL,
 	.otp_delay = -1,
@@ -274,7 +274,9 @@ int load_config(struct vpn_config *cfg, const char *filename)
 			}
 			cfg->otp_delay = otp_delay;
 		} else if (strcmp(key, "cookie") == 0) {
-			log_warn("Ignoring option \"%s\" in the config file.\n", key);
+			// log_warn("Ignoring option \"%s\" in the config file.\n", key);
+			strncpy(cfg->cookie, val, COOKIE_SIZE);
+			cfg->cookie[COOKIE_SIZE] = '\0';			
 		} else if (strcmp(key, "cookie-on-stdin") == 0) {
 			log_warn("Ignoring option \"%s\" in the config file.\n", key);
 		} else if (strcmp(key, "no-ftm-push") == 0) {
@@ -486,7 +488,7 @@ void destroy_vpn_config(struct vpn_config *cfg)
 {
 	free(cfg->otp_prompt);
 	free(cfg->pinentry);
-	free(cfg->cookie);
+	// free(cfg->cookie);
 #if HAVE_USR_SBIN_PPPD
 	free(cfg->pppd_log);
 	free(cfg->pppd_plugin);
@@ -530,10 +532,10 @@ void merge_config(struct vpn_config *dst, struct vpn_config *src)
 		dst->otp_delay = src->otp_delay;
 	if (src->no_ftm_push != invalid_cfg.no_ftm_push)
 		dst->no_ftm_push = src->no_ftm_push;
-	if (src->cookie != invalid_cfg.cookie) {
-		free(dst->cookie);
-		dst->cookie = src->cookie;
-	}
+	// if (src->cookie != invalid_cfg.cookie) {
+	// 	free(dst->cookie);
+	// 	dst->cookie = src->cookie;
+	// }
 	if (src->pinentry) {
 		free(dst->pinentry);
 		dst->pinentry = src->pinentry;

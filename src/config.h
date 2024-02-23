@@ -90,7 +90,7 @@ struct vpn_config {
 	char			password[PASSWORD_SIZE + 1];
 	int			password_set;
 	char			otp[OTP_SIZE + 1];
-	char			*cookie;
+	char			cookie[COOKIE_SIZE+1];
 	char			*otp_prompt;
 	unsigned int		otp_delay;
 	int			no_ftm_push;

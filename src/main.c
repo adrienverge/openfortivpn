@@ -224,7 +224,7 @@ int main(int argc, char *argv[])
 		.username = {'\0'},
 		.password = {'\0'},
 		.password_set = 0,
-		.cookie = NULL,
+		.cookie = {'\0'},
 		.otp = {'\0'},
 		.otp_prompt = NULL,
 		.otp_delay = 0,
@@ -585,25 +585,25 @@ int main(int argc, char *argv[])
 				cli_cfg.set_dns = set_dns;
 				break;
 			}
-			if (strcmp(long_options[option_index].name,
-			           "cookie") == 0) {
-				free(cli_cfg.cookie);
-				cli_cfg.cookie = strdup_with_prefix(optarg, "SVPNCOOKIE=");
-				break;
-			}
-			if (strcmp(long_options[option_index].name,
-			           "cookie-on-stdin") == 0) {
-				char *cookie = read_from_stdin(COOKIE_SIZE);
+			// if (strcmp(long_options[option_index].name,
+			//            "cookie") == 0) {
+			// 	free(cli_cfg.cookie);
+			// 	cli_cfg.cookie = strdup_with_prefix(optarg, "SVPNCOOKIE=");
+			// 	break;
+			// }
+			// if (strcmp(long_options[option_index].name,
+			//            "cookie-on-stdin") == 0) {
+			// 	char *cookie = read_from_stdin(COOKIE_SIZE);
 
-				if (cookie == NULL) {
-					log_error("Could not read the cookie from stdin\n");
-					break;
-				}
-				free(cli_cfg.cookie);
-				cli_cfg.cookie = strdup_with_prefix(cookie, "SVPNCOOKIE=");
-				free(cookie);
-				break;
-			}
+			// 	if (cookie == NULL) {
+			// 		log_error("Could not read the cookie from stdin\n");
+			// 		break;
+			// 	}
+			// 	free(cli_cfg.cookie);
+			// 	cli_cfg.cookie = strdup_with_prefix(cookie, "SVPNCOOKIE=");
+			// 	free(cookie);
+			// 	break;
+			// }
 			goto user_error;
 		case 'h':
 			printf("%s%s%s%s%s%s%s", usage, summary,
@@ -731,6 +731,8 @@ int main(int argc, char *argv[])
 	log_debug_all("Configuration password = \"%s\"\n", cfg.password);
 	if (cfg.otp[0] != '\0')
 		log_debug("One-time password = \"%s\"\n", cfg.otp);
+	if (cfg.cookie[0] != '\0')
+		log_debug("One-time password = \"%s\"\n", cfg.cookie);
 
 	if (geteuid() != 0) {
 		log_error("This process was not spawned with root privileges, which are required.\n");
