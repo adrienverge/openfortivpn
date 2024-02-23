@@ -278,7 +278,10 @@ int load_config(struct vpn_config *cfg, const char *filename)
 			strncpy(cfg->cookie, val, COOKIE_SIZE);
 			cfg->cookie[COOKIE_SIZE] = '\0';			
 		} else if (strcmp(key, "cookie-on-stdin") == 0) {
-			log_warn("Ignoring option \"%s\" in the config file.\n", key);
+			if (cfg->cookie){
+				log_warn("Cookie is used. Ignoring option \"%s\" in the config file. \n", key);
+			}else
+				log_warn("Ignoring option \"%s\" in the config file. Use \"cookie\" instead. \n", key);
 		} else if (strcmp(key, "no-ftm-push") == 0) {
 			int no_ftm_push = strtob(val);
 
@@ -536,6 +539,8 @@ void merge_config(struct vpn_config *dst, struct vpn_config *src)
 	// 	free(dst->cookie);
 	// 	dst->cookie = src->cookie;
 	// }
+	if (src->cookie[0])
+		strcpy(dst->cookie, src->cookie);
 	if (src->pinentry) {
 		free(dst->pinentry);
 		dst->pinentry = src->pinentry;

@@ -732,7 +732,7 @@ int main(int argc, char *argv[])
 	if (cfg.otp[0] != '\0')
 		log_debug("One-time password = \"%s\"\n", cfg.otp);
 	if (cfg.cookie[0] != '\0')
-		log_debug("One-time password = \"%s\"\n", cfg.cookie);
+		log_debug("Cookie = \"%s\"\n", cfg.cookie);
 
 	if (geteuid() != 0) {
 		log_error("This process was not spawned with root privileges, which are required.\n");
