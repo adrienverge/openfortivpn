@@ -27,13 +27,13 @@
 #include <sys/ioctl.h>
 #include <sys/stat.h>
 
-#include <assert.h>
 #include <errno.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <assert.h>
 
 #define IPV4_GET_ROUTE_BUFFER_CHUNK_SIZE 65536
 #define SHOW_ROUTE_BUFFER_SIZE 128
@@ -165,7 +165,6 @@ static int ipv4_get_route(struct rtentry *route)
 	/* this is not present on Mac OS X and FreeBSD */
 	int fd;
 	uint32_t total_bytes_read = 0;
-	ssize_t bytes_read;
 
 	// Cannot stat, mmap not lseek this special /proc file
 	fd = open("/proc/net/route", O_RDONLY);
@@ -174,10 +173,10 @@ static int ipv4_get_route(struct rtentry *route)
 		goto end;
 	}
 
+	int bytes_read;
+
 	while ((bytes_read = read(fd, buffer + total_bytes_read,
 	                          buffer_size - total_bytes_read - 1)) > 0) {
-		assert(bytes_read < UINT32_MAX &&
-		       total_bytes_read < UINT32_MAX - bytes_read);
 		total_bytes_read += bytes_read;
 
 		if ((buffer_size - total_bytes_read) < 1) {
@@ -233,7 +232,6 @@ cleanup:
 	while (fgets(line, buffer_size - total_bytes_read - 1, fp) != NULL) {
 		uint32_t bytes_read = strlen(line);
 
-		assert(total_bytes_read < UINT32_MAX - bytes_read);
 		total_bytes_read += bytes_read;
 
 		if (bytes_read > 0 && line[bytes_read - 1] != '\n') {
