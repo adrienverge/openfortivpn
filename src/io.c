@@ -35,13 +35,21 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <netinet/tcp.h>
-#include <net/if_ppp.h>
 #include <sys/ioctl.h>
-
 
 #include <errno.h>
 #include <signal.h>
 #include <string.h>
+
+#if !HAVE_NET_IF_PPP_H
+#include <net/if_ppp.h>
+#else
+#define PPP_IP		0x21	/* Internet Protocol */
+#define PPP_IPV6	0x57	/* Internet Protocol Version 6 */
+#define PPP_IPCP	0x8021	/* IP Control Protocol */
+#define PPP_LCP		0xc021	/* Link Control Protocol */
+#define PPP_CHAP	0xc223	/* Cryptographic Handshake Auth. Protocol */
+#endif
 
 #if HAVE_MACH_MACH_H
 /* this is typical for mach kernel used on Mac OS X */
