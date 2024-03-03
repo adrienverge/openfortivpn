@@ -24,7 +24,6 @@
 #include <sys/wait.h>
 #include <termios.h>
 
-#include <assert.h>
 #include <ctype.h>
 #include <errno.h>
 #include <stdarg.h>
@@ -99,14 +98,12 @@ static char *uri_unescape(const char *string)
 
 static int pinentry_read(int from, char **retstr)
 {
-	size_t bufsiz = 0;
+	int bufsiz = 0;
 	char *buf = NULL, *saveptr = NULL;
-	size_t len = 0;
+	int len = 0;
+	int ret;
 
 	do {
-		ssize_t ret;
-
-		assert(bufsiz >= len);
 		if (bufsiz - len < 64) {
 			bufsiz += 64;
 			char *tmp = realloc(buf, bufsiz);
@@ -135,7 +132,6 @@ static int pinentry_read(int from, char **retstr)
 				*retstr = strdup("Short read");
 			return -1;
 		}
-		assert(len < SIZE_MAX - ret);
 		len += ret;
 	} while (buf[len - 1] != '\n');
 	// overwrite the newline with a null character
@@ -153,8 +149,6 @@ static int pinentry_read(int from, char **retstr)
 	}
 
 	if (strncmp(buf, "ERR ", 4) == 0 || strncmp(buf, "S ERROR", 7) == 0) {
-		long ret;
-
 		ret = strtol(&buf[4], NULL, 10);
 		if (!ret)
 			ret = -1;
@@ -163,7 +157,7 @@ static int pinentry_read(int from, char **retstr)
 			*retstr = *retstr ? uri_unescape(*retstr + 1) : NULL;
 		}
 		free(buf);
-		return (int)ret;
+		return ret;
 	}
 
 	free(buf);
