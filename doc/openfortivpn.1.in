@@ -1,216 +1,400 @@
-<h1>NAME</h1>
-<p>openfortivpn - Client for PPP+TLS VPN tunnel services</p>
-<h1>SYNOPSIS</h1>
-<p><strong>openfortivpn</strong> [<em>&lt;host&gt;</em>[:<em>&lt;port&gt;</em>]] [<strong>-u</strong> <em>&lt;user&gt;</em>] [<strong>-p</strong> <em>&lt;pass&gt;</em>] [<strong>--cookie=</strong><em>&lt;cookie&gt;</em>] [<strong>--cookie-on-stdin</strong>] [<strong>--pinentry=</strong><em>&lt;name&gt;</em>] [<strong>--otp=</strong><em>&lt;otp&gt;</em>] [<strong>--otp-prompt=</strong><em>&lt;prompt&gt;</em>] [<strong>--otp-delay=</strong><em>&lt;delay&gt;</em>] [<strong>--no-ftm-push</strong>] [<strong>--realm=</strong><em>&lt;realm&gt;</em>] [<strong>--ifname=</strong><em>&lt;interface&gt;</em>] [<strong>--set-routes=</strong><em>&lt;bool&gt;</em>] [<strong>--no-routes</strong>] [<strong>--set-dns=</strong><em>&lt;bool&gt;</em>] [<strong>--no-dns</strong>] [<strong>--half-internet-routes=</strong><em>&lt;bool&gt;</em>] [<strong>--ca-file=</strong><em>&lt;file&gt;</em>] [<strong>--user-cert=</strong><em>&lt;file&gt;</em>] [<strong>--user-cert=</strong><em>pkcs11:</em>] [<strong>--user-key=</strong><em>&lt;file&gt;</em>] [<strong>--use-syslog</strong>] [<strong>--trusted-cert=</strong><em>&lt;digest&gt;</em>] [<strong>--insecure-ssl</strong>] [<strong>--cipher-list=</strong><em>&lt;ciphers&gt;</em>] [<strong>--min-tls=</strong><em>&lt;version&gt;</em>] [<strong>--seclevel-1</strong>] [<strong>--pppd-use-peerdns=</strong><em>&lt;bool&gt;</em>] [<strong>--pppd-no-peerdns</strong>] [<strong>--pppd-log=</strong><em>&lt;file&gt;</em>] [<strong>--pppd-plugin=</strong><em>&lt;file&gt;</em>] [<strong>--pppd-ipparam=</strong><em>&lt;string&gt;</em>] [<strong>--pppd-ifname=</strong><em>&lt;string&gt;</em>] [<strong>--pppd-call=</strong><em>&lt;name&gt;</em>] [<strong>--pppd-accept-remote=</strong><em>&lt;bool&gt;</em>] [<strong>--ppp-system=</strong><em>&lt;string&gt;</em>] [<strong>--use-resolvconf=</strong><em>&lt;bool&gt;</em>] [<strong>--persistent=</strong><em>&lt;interval&gt;</em>] [<strong>-c</strong> <em>&lt;file&gt;</em>] [<strong>-v|-q</strong>]<br />
-<strong>openfortivpn</strong> --help<br />
-<strong>openfortivpn</strong> --version</p>
-<h1>DESCRIPTION</h1>
-<p><strong>openfortivpn</strong> connects to a VPN by setting up a tunnel to the gateway at <em>&lt;host&gt;</em>:<em>&lt;port&gt;</em>.</p>
-<h1>OPTIONS</h1>
-<dl>
-<dt><strong>--help</strong></dt>
-<dd><p>Show the help message and exit.</p>
-</dd>
-<dt><strong>--version</strong></dt>
-<dd><p>Show version and exit.</p>
-</dd>
-<dt><strong>-c </strong><em>&lt;file&gt;</em>, <strong>--config=</strong><em>&lt;file&gt;</em></dt>
-<dd><p>Specify a custom configuration file (default: /volatile/local/openfortivpn/etc/openfortivpn/config).</p>
-</dd>
-<dt><strong>-u </strong><em>&lt;user&gt;</em>, <strong>--username=</strong><em>&lt;user&gt;</em></dt>
-<dd><p>VPN account username.</p>
-</dd>
-<dt><strong>-p </strong><em>&lt;pass&gt;</em>, <strong>--password=</strong><em>&lt;pass&gt;</em></dt>
-<dd><p>VPN account password in plain text. For a secure alternative, use pinentry or let openfortivpn prompt for the password.</p>
-</dd>
-<dt><strong>--cookie=</strong><em>&lt;cookie&gt;</em></dt>
-<dd><p>A valid cookie (SVPNCOOKIE) to use in place of username and password.</p>
-</dd>
-<dt><strong>--cookie-on-stdin</strong></dt>
-<dd><p>Read the cookie (SVPNCOOKIE) from standard input.</p>
-</dd>
-<dt><strong>--pinentry=</strong><em>&lt;name&gt;</em></dt>
-<dd><p>The pinentry program to use. Allows supplying the password in a secure manner. For example: pinentry-gnome3 on Linux, or pinentry-mac on macOS.</p>
-</dd>
-<dt><strong>-o </strong><em>&lt;otp&gt;</em>, <strong>--otp=</strong><em>&lt;otp&gt;</em></dt>
-<dd><p>One-Time-Password.</p>
-</dd>
-<dt><strong>--otp-prompt=</strong><em>&lt;prompt&gt;</em></dt>
-<dd><p>Search for the OTP password prompt starting with the string <em>&lt;prompt&gt;</em>.</p>
-</dd>
-<dt><strong>--otp-delay=</strong><em>&lt;delay&gt;</em></dt>
-<dd><p>Set the amount of time to wait before sending the One-Time-Password. The delay time must be specified in seconds, where 0 means no wait (this is the default).</p>
-</dd>
-<dt><strong>--no-ftm-push</strong></dt>
-<dd><p>Do not use FTM push if the server provides the option. The server may be configured to allow two factor authentication through a push notification to the mobile application. If this option is provided, authentication based on OTP will be used instead.</p>
-</dd>
-<dt><strong>--realm=</strong><em>&lt;realm&gt;</em></dt>
-<dd><p>Connect to the specified authentication realm. Defaults to empty, which is usually what you want.</p>
-</dd>
-<dt><strong>--ifname=</strong><em>&lt;interface&gt;</em></dt>
-<dd><p>Bind the connection to the specified network interface.</p>
-</dd>
-<dt><strong>--set-routes=</strong><em>&lt;bool&gt;</em>, <strong>--no-routes</strong></dt>
-<dd><p>Set if openfortivpn should try to configure IP routes through the VPN when tunnel is up. If used multiple times, the last one takes priority.</p>
-</dd>
-</dl>
-<p><strong>--no-routes</strong> is the same as <strong>--set-routes=</strong><em>0</em>.</p>
-<dl>
-<dt><strong>--half-internet-routes=</strong><em>&lt;bool&gt;</em></dt>
-<dd><p>Set if openfortivpn should add two 0.0.0.0/1 and 128.0.0.0/1 routes with higher priority instead of replacing the default route.</p>
-</dd>
-<dt><strong>--set-dns=</strong><em>&lt;bool&gt;</em>, <strong>--no-dns</strong></dt>
-<dd><p>Set if openfortivpn should add DNS name servers in /etc/resolv.conf when tunnel is up. Also a dns-suffix may be received from the peer and added to /etc/resolv.conf in the turn of adding the name servers. resolvconf is instructed to do the update of the resolv.conf file if it is installed and --use-resolvconf is activated, otherwise openfortivpn prepends its changes to the existing content of the resolv.conf file. Note that there may be other mechanisms to update /etc/resolv.conf, e.g., <strong>--pppd-use-peerdns</strong> in conjunction with an ip-up-script, which may require that openfortivpn is called with <strong>--no-dns</strong>. <strong>--no-dns</strong> is the same as <strong>--set-dns=</strong><em>0</em>.</p>
-</dd>
-<dt><strong>--use-resolvconf=</strong><em>&lt;bool&gt;</em></dt>
-<dd><p>Set if openfortivpn should use resolvconf to add DNS name servers in /etc/resolv.conf. If it is set to false, the builtin fallback mechanism is used even if resolvconf is available.</p>
-</dd>
-<dt><strong>--ca-file=</strong><em>&lt;file&gt;</em></dt>
-<dd><p>Use specified PEM-encoded certificate bundle instead of system-wide store to verify the gateway certificate.</p>
-</dd>
-<dt><strong>--user-cert=</strong><em>&lt;file&gt;</em></dt>
-<dd><p>Use specified PEM-encoded certificate if the server requires authentication with a certificate.</p>
-</dd>
-<dt><strong>--user-cert=</strong><em>pkcs11:</em></dt>
-<dd><p>Use at least the string pkcs11: for using a smartcard. It takes the full or a partial PKCS11-URI (p11tool --list-token-urls)</p>
-</dd>
-</dl>
-<p>--user-cert = pkcs11:</p>
-<p>--user-cert = pkcs11:token=someuser</p>
-<p>--user-cert = pkcs11:model=PKCS%2315%20emulated;manufacturer=piv_II;serial=012345678;token=someuser</p>
-<p><strong>This feature requires the OpenSSL PKCS engine!</strong></p>
-<dl>
-<dt><strong>--user-key=</strong><em>&lt;file&gt;</em></dt>
-<dd><p>Use specified PEM-encoded key if the server requires authentication with a certificate.</p>
-</dd>
-<dt><strong>--pem-passphrase=</strong><em>&lt;pass&gt;</em></dt>
-<dd><p>Pass phrase for the PEM-encoded key.</p>
-</dd>
-<dt><strong>--use-syslog</strong></dt>
-<dd><p>Log to syslog instead of terminal.</p>
-</dd>
-<dt><strong>--trusted-cert=</strong><em>&lt;digest&gt;</em></dt>
-<dd><p>Trust a given gateway. If classical TLS certificate validation fails, the gateway certificate will be matched against this value. <em>&lt;digest&gt;</em> is the X509 certificate's sha256 sum. The certificate has to be encoded in DER form. This option can be used multiple times to trust several certificates.</p>
-</dd>
-<dt><strong>--insecure-ssl</strong></dt>
-<dd><p>Do not disable insecure TLS protocols/ciphers. If your server requires a specific cipher, consider using <strong>--cipher-list</strong> instead.</p>
-</dd>
-<dt><strong>--cipher-list=</strong><em>&lt;ciphers&gt;</em></dt>
-<dd><p>OpenSSL ciphers to use. If default does not work, you can try alternatives such as HIGH:!MD5:!RC4 or as suggested by the Cipher: line in the output of <strong>openssl</strong>(1) (e.g. AES256-GCM-SHA384):</p>
-</dd>
-</dl>
-<p>$ openssl s_client -connect <em>&lt;host:port&gt;</em></p>
-<p>(default: HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4)</p>
-<p><strong>Applies to TLS v1.2 or lower only, not to be used with TLS v1.3 ciphers.</strong></p>
-<dl>
-<dt><strong>--min-tls=</strong><em>&lt;version&gt;</em></dt>
-<dd><p>Use minimum TLS version instead of system default. Valid values are 1.0, 1.1, 1.2, 1.3.</p>
-</dd>
-<dt><strong>--seclevel-1</strong></dt>
-<dd><p>If <strong>--cipher-list</strong> is not specified, add @SECLEVEL=1 to the list of ciphers. This lowers limits on dh key.</p>
-</dd>
-</dl>
-<p><strong>Applies to TLS v1.2 or lower only.</strong></p>
-<dl>
-<dt><strong>--pppd-use-peerdns=</strong><em>&lt;bool&gt;</em>, <strong>--pppd-no-peerdns</strong></dt>
-<dd><p>Whether to ask peer ppp server for DNS server addresses and let pppd rewrite /etc/resolv.conf. There is no mechanism to tell the dns-suffix to pppd. If the DNS server addresses are requested, also <strong>--set-dns=</strong><em>1</em> may race with the mechanisms in pppd.</p>
-</dd>
-</dl>
-<p><strong>--pppd-no-peerdns</strong> is the same as <strong>--pppd-use-peerdns=</strong><em>0</em>.</p>
-<dl>
-<dt><strong>--pppd-log=</strong><em>&lt;file&gt;</em></dt>
-<dd><p>Set pppd in debug mode and save its logs into <em>&lt;file&gt;</em>.</p>
-</dd>
-<dt><strong>--pppd-plugin=</strong><em>&lt;file&gt;</em></dt>
-<dd><p>Use specified pppd plugin instead of configuring the resolver and routes directly.</p>
-</dd>
-<dt><strong>--pppd-ipparam=</strong><em>&lt;string&gt;</em></dt>
-<dd><p>Provides an extra parameter to the ip-up, ip-pre-up and ip-down scripts. See man <strong>pppd(8)</strong> for further details</p>
-</dd>
-<dt><strong>--pppd-ifname=</strong><em>&lt;string&gt;</em></dt>
-<dd><p>Set the ppp interface name. Only if supported by pppd. Patched versions of pppd implement this option but may not be available on your platform.</p>
-</dd>
-<dt><strong>--pppd-call=</strong><em>&lt;name&gt;</em></dt>
-<dd><p>Drop usual arguments from pppd command line and add `call &lt;name&gt;' instead. This can be useful on Debian and Ubuntu, where unprivileged users in group `dip' can invoke `pppd call &lt;name&gt;' to make pppd read and apply options from /etc/ppp/peers/&lt;name&gt; (including privileged ones).</p>
-</dd>
-<dt><strong>--pppd-accept-remote=</strong><em>&lt;bool&gt;</em></dt>
-<dd><p>Whether to invoke pppd with `ipcp-accept-remote'. Enabling this option breaks pppd &lt; 2.5.0 but is required by newer pppd versions.</p>
-</dd>
-<dt><strong>--ppp-system=</strong><em>&lt;string&gt;</em></dt>
-<dd><p>Only available if compiled for ppp user space client (e.g. on FreeBSD). Connect to the specified system as defined in /etc/ppp/ppp.conf</p>
-</dd>
-<dt><strong>--persistent=</strong><em>&lt;interval&gt;</em></dt>
-<dd><p>Run the VPN persistently in an endless loop and try to reconnect forever. The reconnect interval may be specified in seconds, where 0 means no reconnect is done (this is the default).</p>
-</dd>
-<dt><strong>-v</strong></dt>
-<dd><p>Increase verbosity. Can be used multiple times to be even more verbose.</p>
-</dd>
-<dt><strong>-q</strong></dt>
-<dd><p>Decrease verbosity. Can be used multiple times to be even less verbose.</p>
-</dd>
-</dl>
-<h1>ENVIRONMENT and proxy support</h1>
-<p><strong>openfortivpn</strong> can be run behind an HTTP proxy that supports the HTTP connect command. It checks if one of the environment variables <strong>https_proxy HTTPS_PROXY all_proxy ALL_PROXY</strong> is set which are supposed to contain a string of the format<br />
-<strong>http://[host]:[port]</strong><br />
-where <strong>[host]</strong> is the ip or the fully qualified host name of the proxy server <strong>[port]</strong> is the TCP port number where the proxy is listening for incoming connections. If one of these variables is defined, <strong>openfortivpn</strong> tries to first establish a TCP connection to this proxy (plain HTTP, not encrypted), and then makes a request to connect to the VPN host as given on the command line or in the configuration file. The proxy is supposed to forward any subsequent packets transparently to the VPN host, so that the TLS layer of the connection effectively is established between the client and the VPN host, and the proxy just acts as a forwarding instance on the lower level of the TCP connection.</p>
-<p>The following environment variables are set by <strong>openfortivpn</strong> and <strong>pppd(8)</strong> or its scripts can obtain information this way:<br />
-VPN_GATEWAY the ip of the gateway host<br />
-and for each route three variables are set up, where an integer number is appended to the variable names, denoting the number of the current route:<br />
-VPN_ROUTE_DEST_... the destination network of the route<br />
-VPN_ROUTE_MASK_... the network mask for this route<br />
-VPN_ROUTE_GATEWAY_... the gateway for the current route entry</p>
-<p>If not compiled for pppd the pppd options and features that rely on them are not available. On FreeBSD <strong>--ppp-system</strong> is available instead.</p>
-<h1>CONFIGURATION</h1>
-<p>Options can be taken from a configuration file. Options passed in the command line will override those from the configuration file, though. The default configuration file is /volatile/local/openfortivpn/etc/openfortivpn/config, but this can be set using the <strong>-c</strong> option. An empty template for the configuration file is installed to /volatile/local/openfortivpn/share/openfortivpn/config.template</p>
-<dl>
-<dt>A configuration file looks like:</dt>
-<dd><p># this is a comment<br />
-host = vpn-gateway<br />
-port = 443<br />
-username = foo<br />
-# Password in plain text.<br />
-# For a secure alternative, use pinentry or let openfortivpn prompt for the password.<br />
-# password = bar<br />
-# The pinentry program to use. Allows supplying the password in a secure manner.<br />
-# pinentry = pinentry-mac<br />
-# realm = some-realm<br />
-# useful for a gui that passes a configuration file to openfortivpn<br />
-# otp = 123456<br />
-# otp-delay = 0<br />
-# otp-prompt = Please<br />
-# This would disable FTM push notification support, and use OTP instead<br />
-# no-ftm-push = 1<br />
-user-cert = /volatile/local/openfortivpn/etc/openfortivpn/user-cert.pem<br />
-# user-cert = pkcs1: # use smartcard as client certificate<br />
-user-key = /volatile/local/openfortivpn/etc/openfortivpn/user-key.pem<br />
-pem-passphrase = baz<br />
-# the sha256 digest of the trusted host certs obtained by<br />
-# openssl dgst -sha256 server-cert.crt:<br />
-trusted-cert = certificatedigest4daa8c5fe6c...<br />
-trusted-cert = othercertificatedigest6631bf...<br />
-# This would specify a ca bundle instead of system-wide store<br />
-# ca-file = /volatile/local/openfortivpn/etc/openfortivpn/ca-bundle.pem<br />
-set-dns = 0<br />
-use-resolvconf = 1<br />
-set-routes = 1<br />
-half-internet-routes = 0<br />
-pppd-use-peerdns = 1<br />
-# alternatively, use a specific pppd plugin instead<br />
-# pppd-plugin = /usr/lib/pppd/default/some-plugin.so<br />
-# for debugging pppd write logs here<br />
-# pppd-log = /var/log/pppd.log<br />
-# pass ppp interface name to pppd (if supported by a patched pppd)<br />
-# pppd-ifname = ppp1<br />
-# pass an ipparam string to pppd, e.g. the device name (a similar use case)<br />
-# pppd-ipparam = 'device=$DEVICE'<br />
-# instruct pppd to call a script instead of passing arguments (if pppd supports it)<br />
-# pppd-call = script<br />
-# use-syslog = 0<br />
-insecure-ssl = 0<br />
-cipher-list = HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4<br />
-persistent = 0<br />
-seclevel-1 = 0</p>
-</dd>
-</dl>
-<h1>SEE ALSO</h1>
-<p>The <strong>openfortivpn</strong> home page (<em>https://github.com/adrienverge/openfortivpn</em>) provides a short introduction in the <strong>README</strong> file and additional information under the <strong>Wiki</strong> tab.</p>
+.TH OPENFORTIVPN 1 "May 4, 2020" ""
+
+.SH NAME
+openfortivpn \- Client for PPP+TLS VPN tunnel services
+
+.SH SYNOPSIS
+.B openfortivpn
+[\fI<host>\fR[:\fI<port>\fR]]
+[\fB\-u\fR \fI<user>\fR]
+[\fB\-p\fR \fI<pass>\fR]
+[\fB\-\-cookie=\fI<cookie>\fR]
+[\fB\-\-cookie\-on\-stdin\fR]
+[\fB\-\-pinentry=\fI<name>\fR]
+[\fB\-\-otp=\fI<otp>\fR]
+[\fB\-\-otp\-prompt=\fI<prompt>\fR]
+[\fB\-\-otp\-delay=\fI<delay>\fR]
+[\fB\-\-no\-ftm\-push\fR]
+[\fB\-\-realm=\fI<realm>\fR]
+[\fB\-\-ifname=\fI<interface>\fR]
+[\fB\-\-set\-routes=\fI<bool>\fR]
+[\fB\-\-no\-routes\fR]
+[\fB\-\-set\-dns=\fI<bool>\fR]
+[\fB\-\-no\-dns\fR]
+[\fB\-\-half\-internet\-routes=\fI<bool>\fR]
+[\fB\-\-ca\-file=\fI<file>\fR]
+[\fB\-\-user\-cert=\fI<file>\fR]
+[\fB\-\-user-cert=\fIpkcs11:\fR]
+[\fB\-\-user\-key=\fI<file>\fR]
+[\fB\-\-use\-syslog\fR]
+[\fB\-\-trusted\-cert=\fI<digest>\fR]
+[\fB\-\-insecure\-ssl\fR]
+[\fB\-\-cipher\-list=\fI<ciphers>\fR]
+[\fB\-\-min\-tls=\fI<version>\fR]
+[\fB\-\-seclevel\-1\fR]
+[\fB\-\-pppd\-use\-peerdns=\fI<bool>\fR]
+[\fB\-\-pppd\-no\-peerdns\fR]
+[\fB\-\-pppd\-log=\fI<file>\fR]
+[\fB\-\-pppd\-plugin=\fI<file>\fR]
+[\fB\-\-pppd\-ipparam=\fI<string>\fR]
+[\fB\-\-pppd\-ifname=\fI<string>\fR]
+[\fB\-\-pppd\-call=\fI<name>\fR]
+[\fB\-\-pppd\-accept\-remote=\fI<bool>\fR]
+[\fB\-\-ppp\-system=\fI<string>\fR]
+[\fB\-\-use\-resolvconf=\fI<bool>\fR]
+[\fB\-\-persistent=\fI<interval>\fR]
+[\fB\-c\fR \fI<file>\fR]
+[\fB\-v|\-q\fR]
+.br
+.B openfortivpn
+\-\-help
+.br
+.B openfortivpn
+\-\-version
+
+.SH DESCRIPTION
+.B openfortivpn
+connects to a VPN by setting up a tunnel to the gateway at
+\fI<host>\fR:\fI<port>\fR.
+
+.SH OPTIONS
+.TP
+\fB\-\-help\fR
+Show the help message and exit.
+.TP
+\fB\-\-version\fR
+Show version and exit.
+.TP
+\fB\-c \fI<file>\fR, \fB\-\-config=\fI<file>\fR
+Specify a custom configuration file (default: @SYSCONFDIR@/openfortivpn/config).
+.TP
+\fB\-u \fI<user>\fR, \fB\-\-username=\fI<user>\fR
+VPN account username.
+.TP
+\fB\-p \fI<pass>\fR, \fB\-\-password=\fI<pass>\fR
+VPN account password in plain text.
+For a secure alternative, use pinentry or let openfortivpn prompt for the password.
+.TP
+\fB\-\-cookie=\fI<cookie>\fR
+A valid cookie (SVPNCOOKIE) to use in place of username and password.
+.TP
+\fB\-\-cookie\-on\-stdin\fR
+Read the cookie (SVPNCOOKIE) from standard input.
+.TP
+\fB\-\-pinentry=\fI<name>\fR
+The pinentry program to use. Allows supplying the password in a secure manner.
+For example: pinentry-gnome3 on Linux, or pinentry-mac on macOS.
+.TP
+\fB\-o \fI<otp>\fR, \fB\-\-otp=\fI<otp>\fR
+One-Time-Password.
+.TP
+\fB\-\-otp\-prompt=\fI<prompt>\fR
+Search for the OTP password prompt starting with the string \fI<prompt>\fR.
+.TP
+\fB\-\-otp\-delay\=\fI<delay>\fR
+Set the amount of time to wait before sending the One-Time-Password.
+The delay time must be specified in seconds, where 0 means
+no wait (this is the default).
+.TP
+\fB\-\-no\-ftm\-push\fR
+Do not use FTM push if the server provides the option.
+The server may be configured to allow two factor authentication through a
+push notification to the mobile application. If this option is provided,
+authentication based on OTP will be used instead.
+.TP
+\fB\-\-realm=\fI<realm>\fR
+Connect to the specified authentication realm. Defaults to empty, which
+is usually what you want.
+.TP
+\fB\-\-ifname=\fI<interface>\fR
+Bind the connection to the specified network interface.
+.TP
+\fB\-\-set\-routes=\fI<bool>\fR, \fB\-\-no-routes\fR
+Set if openfortivpn should try to configure IP routes through the VPN when
+tunnel is up. If used multiple times, the last one takes priority.
+
+\fB\-\-no\-routes\fR is the same as \fB\-\-set-routes=\fI0\fR.
+.TP
+\fB\-\-half\-internet\-routes=\fI<bool>\fR
+Set if openfortivpn should add two 0.0.0.0/1 and 128.0.0.0/1 routes with
+higher priority instead of replacing the default route.
+.TP
+\fB\-\-set\-dns=\fI<bool>\fR, \fB\-\-no\-dns\fR
+Set if openfortivpn should add DNS name servers in /etc/resolv.conf when
+tunnel is up. Also a dns\-suffix may be received from the peer and added
+to /etc/resolv.conf in the turn of adding the name servers.
+resolvconf is instructed to do the update of the resolv.conf file
+if it is installed and \-\-use\-resolvconf is activated, otherwise openfortivpn
+prepends its changes to the existing content of the resolv.conf file.
+Note that there may be other mechanisms to update /etc/resolv.conf,
+e.g., \fB\-\-pppd\-use\-peerdns\fR in conjunction with an ip-up-script,
+which may require that openfortivpn is called with \fB\-\-no\-dns\fR.
+\fB\-\-no\-dns\fR is the same as \fB\-\-set\-dns=\fI0\fR.
+.TP
+\fB\-\-use\-resolvconf=\fI<bool>\fR
+Set if openfortivpn should use resolvconf to add DNS name servers
+in /etc/resolv.conf. If it is set to false, the builtin fallback
+mechanism is used even if resolvconf is available.
+.TP
+\fB\-\-ca\-file=\fI<file>\fR
+Use specified PEM-encoded certificate bundle instead of system-wide store to
+verify the gateway certificate.
+.TP
+\fB\-\-user\-cert=\fI<file>\fR
+Use specified PEM-encoded certificate if the server requires authentication
+with a certificate.
+.TP
+\fB\-\-user-cert=\fIpkcs11:\fR
+Use at least the string pkcs11: for using a smartcard. It takes the full
+or a partial PKCS11-URI (p11tool --list-token-urls)
+
+  --user-cert = pkcs11:
+
+  --user-cert = pkcs11:token=someuser
+
+  --user-cert = pkcs11:model=PKCS%2315%20emulated;manufacturer=piv_II;serial=012345678;token=someuser
+
+\fBThis feature requires the OpenSSL PKCS engine!
+.TP
+\fB\-\-user\-key=\fI<file>\fR
+Use specified PEM-encoded key if the server requires authentication with
+a certificate.
+.TP
+\fB\-\-pem-passphrase=\fI<pass>\fR
+Pass phrase for the PEM-encoded key.
+.TP
+\fB\-\-use\-syslog\fR
+Log to syslog instead of terminal.
+.TP
+\fB\-\-trusted\-cert=\fI<digest>\fR
+Trust a given gateway. If classical TLS certificate validation fails, the
+gateway certificate will be matched against this value. \fI<digest>\fR is the
+X509 certificate's sha256 sum. The certificate has to be encoded in DER form.
+This option can be used multiple times to trust several certificates.
+.TP
+\fB\-\-insecure\-ssl\fR
+Do not disable insecure TLS protocols/ciphers.
+If your server requires a specific cipher, consider using \fB\-\-cipher\-list\fR
+instead.
+.TP
+\fB\-\-cipher\-list=\fI<ciphers>\fR
+OpenSSL ciphers to use. If default does not work, you can try alternatives
+such as HIGH:!MD5:!RC4 or as suggested by the Cipher: line in the output of
+\fBopenssl\fP(1) (e.g. AES256-GCM-SHA384):
+
+$ openssl s_client -connect \fI<host:port>\fR
+
+(default: HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4)
+
+\fBApplies to TLS v1.2 or lower only, not to be used with TLS v1.3 ciphers.\fR
+.TP
+\fB\-\-min\-tls=\fI<version>\fR
+Use minimum TLS version instead of system default. Valid values are 1.0,
+1.1, 1.2, 1.3.
+.TP
+\fB\-\-seclevel\-1\fR
+If \fB\-\-cipher-list\fR is not specified, add @SECLEVEL=1 to the list of
+ciphers. This lowers limits on dh key.
+
+\fBApplies to TLS v1.2 or lower only.\fR
+.TP
+\fB\-\-pppd\-use\-peerdns=\fI<bool>\fR, \fB\-\-pppd\-no\-peerdns\fR
+Whether to ask peer ppp server for DNS server addresses and let pppd
+rewrite /etc/resolv.conf. There is no mechanism to tell the dns\-suffix
+to pppd. If the DNS server addresses are requested,
+also \fB\-\-set\-dns=\fI1\fR may race with the mechanisms in pppd.
+
+\fB\-\-pppd\-no\-peerdns\fR is the same as \fB\-\-pppd\-use\-peerdns=\fI0\fR.
+.TP
+\fB\-\-pppd\-log=\fI<file>\fR
+Set pppd in debug mode and save its logs into \fI<file>\fR.
+.TP
+\fB\-\-pppd\-plugin=\fI<file>\fR
+Use specified pppd plugin instead of configuring the resolver and routes
+directly.
+.TP
+\fB\-\-pppd\-ipparam=\fI<string>\fR
+Provides an extra parameter to the ip\-up, ip\-pre\-up and ip\-down scripts. See man
+.BR pppd(8)
+for further details
+.TP
+\fB\-\-pppd\-ifname=\fI<string>\fR
+Set the ppp interface name. Only if supported by pppd. Patched versions of pppd
+implement this option but may not be available on your platform.
+.TP
+\fB\-\-pppd\-call=\fI<name>\fR
+Drop usual arguments from pppd command line and add `call <name>' instead.
+This can be useful on Debian and Ubuntu, where unprivileged users in
+group `dip' can invoke `pppd call <name>' to make pppd read and apply
+options from /etc/ppp/peers/<name> (including privileged ones).
+.TP
+\fB\-\-pppd\-accept\-remote=\fI<bool>\fR
+Whether to invoke pppd with `ipcp-accept-remote'. Enabling this option breaks
+pppd < 2.5.0 but is required by newer pppd versions.
+.TP
+\fB\-\-ppp\-system=\fI<string>\fR
+Only available if compiled for ppp user space client (e.g. on FreeBSD).
+Connect to the specified system as defined in /etc/ppp/ppp.conf
+.TP
+\fB\-\-persistent\=\fI<interval>\fR
+Run the VPN persistently in an endless loop and try to reconnect forever.
+The reconnect interval may be specified in seconds, where 0 means
+no reconnect is done (this is the default).
+.TP
+\fB\-v\fR
+Increase verbosity. Can be used multiple times to be even more verbose.
+.TP
+\fB\-q\fR
+Decrease verbosity. Can be used multiple times to be even less verbose.
+
+.SH ENVIRONMENT and proxy support
+.B openfortivpn
+can be run behind an HTTP proxy that supports the HTTP connect command.
+It checks if one of the environment variables
+.B https_proxy HTTPS_PROXY all_proxy ALL_PROXY
+is set which are supposed to contain a string of the format
+.br
+.B http://[host]:[port]
+.br
+where
+.B [host]
+is the ip or the fully qualified host name of the proxy server
+.B [port]
+is the TCP port number where the proxy is listening for
+incoming connections. If one of these variables is defined,
+.B openfortivpn
+tries to first establish a TCP connection to this proxy (plain HTTP, not encrypted),
+and then makes a request to connect to the VPN host as given on the command line
+or in the configuration file. The proxy is supposed to forward any subsequent packets
+transparently to the VPN host, so that the TLS layer of the connection effectively
+is established between the client and the VPN host, and the proxy just acts as a
+forwarding instance on the lower level of the TCP connection.
+
+The following environment variables are set by
+.B openfortivpn
+and
+.BR pppd(8)
+or its scripts can obtain information this way:
+.br
+VPN_GATEWAY the ip of the gateway host
+.br
+and for each route three variables are set up, where an integer number
+is appended to the variable names, denoting the number of the current route:
+.br
+VPN_ROUTE_DEST_... the destination network of the route
+.br
+VPN_ROUTE_MASK_... the network mask for this route
+.br
+VPN_ROUTE_GATEWAY_... the gateway for the current route entry
+
+If not compiled for pppd the pppd options and features that rely on them are not
+available. On FreeBSD \fB\-\-ppp\-system\fR is available instead.
+
+.SH CONFIGURATION
+Options can be taken from a configuration file. Options passed in the command
+line will override those from the configuration file, though. The default
+configuration file is @SYSCONFDIR@/openfortivpn/config, but this can be set
+using the \fB\-c\fR option.
+An empty template for the configuration file is installed to
+@DATADIR@/config.template
+
+.TP
+A configuration file looks like:
+# this is a comment
+.br
+host = vpn\-gateway
+.br
+port = 443
+.br
+username = foo
+.br
+# Password in plain text.
+.br
+# For a secure alternative, use pinentry or let openfortivpn prompt for the password.
+.br
+# password = bar
+.br
+# The pinentry program to use. Allows supplying the password in a secure manner.
+.br
+# pinentry = pinentry-mac
+.br
+# realm = some-realm
+.br
+# useful for a gui that passes a configuration file to openfortivpn
+.br
+# otp = 123456
+.br
+# otp\-delay = 0
+.br
+# otp\-prompt = Please
+.br
+# This would disable FTM push notification support, and use OTP instead
+.br
+# no\-ftm\-push = 1
+.br
+user\-cert = @SYSCONFDIR@/openfortivpn/user\-cert.pem
+.br
+# user\-cert = pkcs1: # use smartcard as client certificate
+.br
+user\-key = @SYSCONFDIR@/openfortivpn/user\-key.pem
+.br
+pem\-passphrase = baz
+.br
+# the sha256 digest of the trusted host certs obtained by
+.br
+# openssl dgst -sha256 server\-cert.crt:
+.br
+trusted\-cert = certificatedigest4daa8c5fe6c...
+.br
+trusted\-cert = othercertificatedigest6631bf...
+.br
+# This would specify a ca bundle instead of system-wide store
+.br
+# ca\-file = @SYSCONFDIR@/openfortivpn/ca\-bundle.pem
+.br
+set\-dns = 0
+.br
+use\-resolvconf = 1
+.br
+set\-routes = 1
+.br
+half\-internet\-routes = 0
+.br
+pppd\-use\-peerdns = 1
+.br
+# alternatively, use a specific pppd plugin instead
+.br
+# pppd\-plugin = /usr/lib/pppd/default/some\-plugin.so
+.br
+# for debugging pppd write logs here
+.br
+# pppd\-log = /var/log/pppd.log
+.br
+# pass ppp interface name to pppd (if supported by a patched pppd)
+.br
+# pppd\-ifname = ppp1
+.br
+# pass an ipparam string to pppd, e.g. the device name (a similar use case)
+.br
+# pppd\-ipparam = 'device=$DEVICE'
+.br
+# instruct pppd to call a script instead of passing arguments (if pppd supports it)
+.br
+# pppd\-call = script
+.br
+# use\-syslog = 0
+.br
+insecure\-ssl = 0
+.br
+cipher\-list = HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4
+.br
+persistent = 0
+.br
+seclevel-1 = 0
+
+.SH SEE ALSO
+
+The \fBopenfortivpn\fR home page
+(\fIhttps://github.com/adrienverge/openfortivpn\fR)
+provides a short introduction in the \fBREADME\fR file and additional
+information under the \fBWiki\fR tab.
