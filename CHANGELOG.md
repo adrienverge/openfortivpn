@@ -14,8 +14,9 @@ Releases
 This high level changelog is usually updated when a release is tagged.
 On the master branch there may be changes that are not (yet) described here.
 
-### unreleased
+### 1.22.0
 
+* [-] make sure Homebrew packages for macOS are built with --enable-legacy-pppd
 * [~] do not print TLS socket options in log (revert change from 1.16.0)
 * [+] add option to specify SNI
 * [~] change most occurrences of "SSL" to "TLS" in user-visible text
