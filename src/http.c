@@ -275,7 +275,7 @@ static int do_http_request(struct tunnel *tunnel,
 	                        "Host: %s:%d\r\n"
 	                        "User-Agent: %s\r\n"
 	                        "Accept: */*\r\n"
-	                        "Accept-Encoding: gzip, deflate, br\r\n"
+	                        "Accept-Encoding: identity\r\n"
 	                        "Pragma: no-cache\r\n"
 	                        "Cache-Control: no-store, no-cache, must-revalidate\r\n"
 	                        "If-Modified-Since: Sat, 1 Jan 2000 00:00:00 GMT\r\n"
