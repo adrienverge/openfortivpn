@@ -87,6 +87,8 @@ const struct vpn_config invalid_cfg = {
 	.user_agent = NULL,
 	.hostcheck = NULL,
 	.check_virtual_desktop = NULL,
+	.auth_id = NULL,
+	.listen_port = 0
 };
 
 /*
@@ -533,6 +535,13 @@ void merge_config(struct vpn_config *dst, struct vpn_config *src)
 	if (src->cookie != invalid_cfg.cookie) {
 		free(dst->cookie);
 		dst->cookie = src->cookie;
+	}
+	if (src->auth_id != invalid_cfg.auth_id) {
+		free(dst->auth_id);
+		dst->auth_id = src->auth_id;
+	}
+	if (src->listen_port != invalid_cfg.listen_port) {
+		dst->listen_port = src->listen_port;
 	}
 	if (src->pinentry) {
 		free(dst->pinentry);

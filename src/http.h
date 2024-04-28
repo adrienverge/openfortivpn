@@ -21,6 +21,7 @@
 #include "tunnel.h"
 
 #include <stdint.h>
+#include <ctype.h>
 
 #define ERR_HTTP_INVALID	-1
 #define ERR_HTTP_TOO_LONG	-2
@@ -30,6 +31,34 @@
 #define ERR_HTTP_BAD_RES_CODE	-5
 #define ERR_HTTP_PERMISSION	-6
 #define ERR_HTTP_NO_COOKIE	-7
+
+
+/*
+ * URL-encodes a string for HTTP requests.
+ *
+ * The dest buffer size MUST be at least strlen(str) * 3 + 1.
+ *
+ * @param[out] dest  the buffer to write the URL-encoded string
+ * @param[in]  str   the input string to be escaped
+ */
+static void url_encode(char *dest, const char *str)
+{
+	while (*str != '\0') {
+		if (isalnum(*str) || *str == '-' || *str == '_' ||
+		    *str == '.' || *str == '~') {
+			*dest++ = *str;
+		} else {
+			static const char hex[] = "0123456789ABCDEF";
+
+			*dest++ = '%';
+			*dest++ = hex[(unsigned char)*str >> 4];
+			*dest++ = hex[(unsigned char)*str & 15];
+		}
+		str++;
+	}
+	*dest = '\0';
+}
+
 
 static inline const char *err_http_str(int code)
 {

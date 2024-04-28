@@ -40,33 +40,6 @@
 
 
 /*
- * URL-encodes a string for HTTP requests.
- *
- * The dest buffer size MUST be at least strlen(str) * 3 + 1.
- *
- * @param[out] dest  the buffer to write the URL-encoded string
- * @param[in]  str   the input string to be escaped
- */
-static void url_encode(char *dest, const char *str)
-{
-	while (*str != '\0') {
-		if (isalnum(*str) || *str == '-' || *str == '_' ||
-		    *str == '.' || *str == '~') {
-			*dest++ = *str;
-		} else {
-			static const char hex[] = "0123456789ABCDEF";
-
-			*dest++ = '%';
-			*dest++ = hex[(unsigned char)*str >> 4];
-			*dest++ = hex[(unsigned char)*str & 15];
-		}
-		str++;
-	}
-	*dest = '\0';
-}
-
-
-/*
  * Sends data to the HTTP server.
  *
  * @param[in] request  the data to send to the server
@@ -649,8 +622,16 @@ int auth_log_in(struct tunnel *tunnel)
 	url_encode(realm, tunnel->config->realm);
 
 	tunnel->cookie[0] = '\0';
-
-	if (username[0] == '\0' && tunnel->config->password[0] == '\0') {
+	if (tunnel->config->auth_id != NULL) {
+		char empty_data[0];
+		char urlBuf[256];
+		urlBuf[0] = '\0';
+		char *request_url = urlBuf;
+		sprintf(request_url, "/remote/saml/auth_id?id=%s",
+				tunnel->config->auth_id);
+		ret = http_request(tunnel, "GET", request_url, empty_data, &res,
+				&response_size);
+	}else if (username[0] == '\0' && tunnel->config->password[0] == '\0') {
 		snprintf(data, sizeof(data), "cert=&nup=1");
 		ret = http_request(tunnel, "GET", "/remote/login",
 		                   data, &res, &response_size);
