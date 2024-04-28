@@ -39,32 +39,6 @@
 #define HTTP_BUFFER_SIZE 0x10000
 
 
-/*
- * URL-encodes a string for HTTP requests.
- *
- * The dest buffer size MUST be at least strlen(str) * 3 + 1.
- *
- * @param[out] dest  the buffer to write the URL-encoded string
- * @param[in]  str   the input string to be escaped
- */
-static void url_encode(char *dest, const char *str)
-{
-	while (*str != '\0') {
-		if (isalnum(*str) || *str == '-' || *str == '_' ||
-		    *str == '.' || *str == '~') {
-			*dest++ = *str;
-		} else {
-			static const char hex[] = "0123456789ABCDEF";
-
-			*dest++ = '%';
-			*dest++ = hex[(unsigned char)*str >> 4];
-			*dest++ = hex[(unsigned char)*str & 15];
-		}
-		str++;
-	}
-	*dest = '\0';
-}
-
 
 /*
  * Sends data to the HTTP server.

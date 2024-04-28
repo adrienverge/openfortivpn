@@ -19,7 +19,7 @@
 #include "tunnel.h"
 #include "userinput.h"
 #include "log.h"
-
+#include "cookieRetriever.h"
 #include <openssl/ssl.h>
 
 #include <unistd.h>
@@ -225,6 +225,8 @@ int main(int argc, char *argv[])
 		.password = {'\0'},
 		.password_set = 0,
 		.cookie = NULL,
+		.listen_port =0,
+		.auth_id = NULL,
 		.otp = {'\0'},
 		.otp_prompt = NULL,
 		.otp_delay = 0,
@@ -286,6 +288,8 @@ int main(int argc, char *argv[])
 		{"password",             required_argument, NULL, 'p'},
 		{"cookie",               required_argument, NULL, 0},
 		{"cookie-on-stdin",      no_argument, NULL, 0},
+		{"ext-browser-saml",     optional_argument,NULL,0},
+		{"auth-id",              required_argument,NULL,0},
 		{"otp",                  required_argument, NULL, 'o'},
 		{"otp-prompt",           required_argument, NULL, 0},
 		{"otp-delay",            required_argument, NULL, 0},
@@ -604,6 +608,24 @@ int main(int argc, char *argv[])
 				free(cookie);
 				break;
 			}
+			if (strcmp(long_options[option_index].name,
+					"ext-browser-saml") == 0) {
+				long port = 8020;
+				if (optarg != NULL) {
+					port = strtol(optarg, NULL, 0);
+					if (port < 1 || port > 65535) {
+						log_error("Specify a valid listen port or omit for parameter ext-browser-saml.\n");
+						goto user_error;
+					}
+				}
+				cli_cfg.listen_port = (uint16_t)port;
+				break;
+			}
+			if (strcmp(long_options[option_index].name, "auth-id") == 0) {
+				free(cli_cfg.auth_id);
+				cli_cfg.auth_id = strdup(optarg);
+				break;
+			}
 			goto user_error;
 		case 'h':
 			printf("%s%s%s%s%s%s%s", usage, summary,
@@ -706,11 +728,11 @@ int main(int argc, char *argv[])
 		log_error("Specify a valid host:port couple.\n");
 		goto user_error;
 	}
-	// Check username
-	if (cfg.username[0] == '\0' && !cfg.cookie)
+	// Check authentication method
+	if (cfg.username[0] == '\0' && !cfg.cookie && !cfg.auth_id && cfg.listen_port==0)
 		// Need either username or cert
 		if (cfg.user_cert == NULL) {
-			log_error("Specify a username.\n");
+			log_error("Specify a authentication method.\n");
 			goto user_error;
 		}
 	// If username but no password given, interactively ask user
@@ -731,7 +753,17 @@ int main(int argc, char *argv[])
 	log_debug_all("Configuration password = \"%s\"\n", cfg.password);
 	if (cfg.otp[0] != '\0')
 		log_debug("One-time password = \"%s\"\n", cfg.otp);
-
+	if (cfg.auth_id[0] != '\0'){
+		log_debug("Login id = \"%s\"\n", cfg.auth_id);
+		free(cfg.cookie);
+		cfg.cookie = retrieve_cookie_from_id(&cfg);
+	}
+	if (cfg.listen_port != 0){
+		log_debug("Will listen on port \"%d\" for authentication id \n", cfg.listen_port);
+		free(cfg.cookie);
+		cfg.cookie = retrieve_cookie_with_external_browser(&cfg);
+	}
+	
 	if (geteuid() != 0) {
 		log_error("This process was not spawned with root privileges, which are required.\n");
 		ret = EXIT_FAILURE;
