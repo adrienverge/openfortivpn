@@ -756,12 +756,12 @@ int main(int argc, char *argv[])
 	if (cfg.auth_id[0] != '\0'){
 		log_debug("Login id = \"%s\"\n", cfg.auth_id);
 		free(cfg.cookie);
-		cfg.cookie = retrieve_cookie_from_id(&cfg);
+		cfg.cookie = strdup_with_prefix(retrieve_cookie_from_id(&cfg), "SVPNCOOKIE=");
 	}
 	if (cfg.listen_port != 0){
 		log_debug("Will listen on port \"%d\" for authentication id \n", cfg.listen_port);
 		free(cfg.cookie);
-		cfg.cookie = retrieve_cookie_with_external_browser(&cfg);
+		cfg.cookie = strdup_with_prefix(retrieve_cookie_with_external_browser(&cfg), "SVPNCOOKIE=");
 	}
 	
 	if (geteuid() != 0) {

@@ -13,8 +13,7 @@ openfortivpn_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" \
 			-DREVISION=\"@REVISION@\" \
 			 $(OPENSSL_CFLAGS) $(LIBSYSTEMD_CFLAGS)
 openfortivpn_CFLAGS = -Wall -pedantic
-openfortivpn_LDADD = $(OPENSSL_LIBS) $(LIBSYSTEMD_LIBS)
-
+openfortivpn_LDADD = $(OPENSSL_LIBS) $(LIBSYSTEMD_LIBS) -lcurl
 PATHFILES =
 CLEAN_LOCALS =
 EXTRA_DIST = \
