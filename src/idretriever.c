@@ -16,17 +16,28 @@
 #define MAX_REQUEST_SIZE 4096
 // Function to parse HTTP request and extract parameter "id"
 char* parse_request(const char *request) {
-	char *id = NULL;
-	char *token = strtok((char*) request, " ");
-	while (token != NULL) {
-		if (strstr(token, "id=") != NULL) {
-			// Found "id=" parameter
-			id = strchr(token, '=') + 1;
-			break;
+	char *id_param;
+	char *query_start = strchr(request, '?');
+	if (query_start != NULL) {
+		id_param = strstr(query_start, "id=");
+		if (id_param != NULL) {
+			id_param += 3; // Length of "id="
+			char *id_end = strchr(id_param, '&');
+			if (id_end == NULL) {
+				id_end = strchr(id_param, ' ');
+			}
+			if (id_end == NULL) {
+				id_end = strchr(id_param, '\r');
+			}
+			if (id_end == NULL) {
+				id_end = id_param + strlen(id_param); // End of string
+			}
+			*id_end = '\0'; // Null-terminate the string
+			return id_param;
+
 		}
-		token = strtok(NULL, " ");
 	}
-	return id;
+	return NULL;
 }
 
 // Function to send HTTP response
@@ -40,22 +51,22 @@ void send_response(int sockfd, const char *message) {
 }
 
 char* retrieve_id_with_external_browser(struct vpn_config *cfg) {
-	int sockfd, newsockfd, clilen;
+	int sockfd, newsockfd;
 	struct sockaddr_in serv_addr, cli_addr;
+	socklen_t clilen;
 	char buffer[MAX_REQUEST_SIZE];
 
 	// Create socket
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	if (sockfd < 0) {
-		perror("Error opening socket");
+		log_error("Error opening socket");
 		exit(1);
 	}
-
 
 	// Initialize server address structure
 	bzero((char*) &serv_addr, sizeof(serv_addr));
 	serv_addr.sin_family = AF_INET;
-	serv_addr.sin_addr.s_addr = INADDR_ANY; //sametimes INADDR_LOOPBACK does not work
+	serv_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);;
 	serv_addr.sin_port = htons(cfg->listen_port);
 
 	// Bind socket to address
@@ -64,16 +75,17 @@ char* retrieve_id_with_external_browser(struct vpn_config *cfg) {
 		exit(1);
 	}
 
-	if(setsockopt(sockfd,SOL_SOCKET,SO_REUSEPORT,&(int){1},sizeof(int))<0){
-		log_error("error set SO_REUSEPORT");
-	}
-	if(setsockopt(sockfd,SOL_SOCKET,SO_REUSEADDR,&(int){1},sizeof(int))<0){
-		log_error("error set SO_REUSEADDR");
+	int opt = 1;
+//	if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(int))
+//			< 0) {
+//		log_error("error set SO_REUSEPORT");
+//	}
+	if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
+		log_error("Error setting SO_REUSEADDR");
 	}
 
 	// Listen for incoming connections
 	listen(sockfd, 5);
-	clilen = sizeof(cli_addr);
 
 	log_debug("Server listening on port %d to retrieve the id\n",
 			cfg->listen_port);
@@ -91,11 +103,13 @@ char* retrieve_id_with_external_browser(struct vpn_config *cfg) {
 	log_info("open this address: %s\n", url);
 
 	// Accept incoming connections
-	newsockfd = accept(sockfd, (struct sockaddr*) &cli_addr, &clilen);
+	clilen = sizeof(cli_addr);
+	newsockfd = accept(sockfd, &cli_addr, &clilen);
 	if (newsockfd < 0) {
 		log_error("Error on accept");
 		return NULL;
 	}
+	close(sockfd);
 
 	// Read HTTP request from client
 	bzero(buffer, MAX_REQUEST_SIZE);
@@ -115,10 +129,7 @@ char* retrieve_id_with_external_browser(struct vpn_config *cfg) {
 		send_response(newsockfd,
 				"<html><body><h1>ERROR! id not found</h1></body></html>");
 	}
-
-	// Close sockets
 	close(newsockfd);
-	close(sockfd);
 
 	return id;
 }

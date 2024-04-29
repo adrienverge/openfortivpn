@@ -650,13 +650,10 @@ int auth_log_in(struct tunnel *tunnel)
 
 	tunnel->cookie[0] = '\0';
 	if (tunnel->config->auth_id != NULL) {
-		char empty_data[0];
-		char urlBuf[256];
-		urlBuf[0] = '\0';
-		char *request_url = urlBuf;
-		sprintf(request_url, "/remote/saml/auth_id?id=%s",
+		char url[256];
+		snprintf(url,sizeof(url), "/remote/saml/auth_id?id=%s",
 				tunnel->config->auth_id);
-		ret = http_request(tunnel, "GET", request_url, empty_data, &res,
+		ret = http_request(tunnel, "GET", url, "", &res,
 				&response_size);
 	}else if (username[0] == '\0' && tunnel->config->password[0] == '\0') {
 		snprintf(data, sizeof(data), "cert=&nup=1");

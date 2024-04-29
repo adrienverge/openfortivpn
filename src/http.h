@@ -21,7 +21,6 @@
 #include "tunnel.h"
 
 #include <stdint.h>
-#include <ctype.h>
 
 #define ERR_HTTP_INVALID	-1
 #define ERR_HTTP_TOO_LONG	-2

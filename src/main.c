@@ -118,7 +118,9 @@ PPPD_USAGE \
 "  -p <pass>, --password=<pass>  VPN account password.\n" \
 "  --cookie=<cookie>             A valid session cookie (SVPNCOOKIE).\n" \
 "  --cookie-on-stdin             Read the cookie (SVPNCOOKIE) from standard input.\n" \
-"  --ext-browser-saml[=<port>]   Print an http address and start listen to recieve the autentication id to proceed the connection\n"\
+"  --ext-browser-saml[=<port>]   Print an http address and start listen to recieve \n"\
+"  							   	 the autentication id to proceed the connection \n"\
+"  							   	 the default port if omitted is 8020\n"\
 "  --auth-id=<id>   			 login with this id on address /remote/saml/auth_id?id=<id>\n"\
 "  -o <otp>, --otp=<otp>         One-Time-Password.\n" \
 "  --otp-prompt=<prompt>         Search for the OTP prompt starting with this string.\n" \
@@ -617,7 +619,7 @@ int main(int argc, char *argv[])
 				if (optarg != NULL) {
 					port = strtol(optarg, NULL, 0);
 					if (port < 1 || port > 65535) {
-						log_error("Specify a valid listen port or omit for parameter ext-browser-saml.\n");
+						log_error("Specify a valid listen port or omit for parameter ext-browser-saml\n");
 						goto user_error;
 					}
 				}
@@ -758,8 +760,11 @@ int main(int argc, char *argv[])
 		log_debug("One-time password = \"%s\"\n", cfg.otp);
 
 	if (cfg.listen_port != 0){
+	    if(cfg.auth_id){
+	    	log_warn("auth-id will be ignored conflict with --ext-browser-saml");
+	    }
 		log_debug("Will listen on port \"%d\" for authentication id \n", cfg.listen_port);
-		free(cfg.cookie);
+		free(cfg.auth_id);
 		cfg.auth_id = retrieve_id_with_external_browser(&cfg);
 	}
 	
