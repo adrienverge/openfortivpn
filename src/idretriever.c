@@ -29,6 +29,16 @@ char* parse_request(const char *request) {
 	return id;
 }
 
+// Function to send HTTP response
+void send_response(int sockfd, const char *message) {
+	char response[MAX_REQUEST_SIZE];
+	sprintf(response, "HTTP/1.1 200 OK\r\n"
+			"Content-Length: %lu\r\n"
+			"Content-Type: text/html\r\n\r\n"
+			"%s", strlen(message), message);
+	write(sockfd, response, strlen(response));
+}
+
 char* retrieve_id_with_external_browser(struct vpn_config *cfg) {
 	int sockfd, newsockfd, clilen;
 	struct sockaddr_in serv_addr, cli_addr;
@@ -87,9 +97,16 @@ char* retrieve_id_with_external_browser(struct vpn_config *cfg) {
 	char *id = strdup(parse_request(buffer));
 	if (id != NULL) {
 		log_debug("Extracted id: %s\n", id);
+		// Send response to client
+		send_response(newsockfd,
+				"<html><body><h1>ID retrieved. Connecting...!</h1></body></html>");
+
 	} else {
 		log_error("id parameter not found\n");
+		send_response(newsockfd,
+				"<html><body><h1>ERROR! id not found</h1></body></html>");
 	}
+
 	// Close sockets
 	close(newsockfd);
 	close(sockfd);
