@@ -119,6 +119,7 @@ PPPD_USAGE \
 "  --cookie=<cookie>             A valid session cookie (SVPNCOOKIE).\n" \
 "  --cookie-on-stdin             Read the cookie (SVPNCOOKIE) from standard input.\n" \
 "  --ext-browser-saml[=<port>]   Print an http address and start listen to recieve the autentication id to proceed the connection\n"\
+"  --auth-id[=<id>]   			 login with this id on address /remote/saml/auth_id?id=<id>\n"\
 "  -o <otp>, --otp=<otp>         One-Time-Password.\n" \
 "  --otp-prompt=<prompt>         Search for the OTP prompt starting with this string.\n" \
 "  --otp-delay=<delay>           Wait <delay> seconds before sending the OTP.\n" \

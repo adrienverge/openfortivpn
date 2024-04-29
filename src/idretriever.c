@@ -50,16 +50,25 @@ char* retrieve_id_with_external_browser(struct vpn_config *cfg) {
 		perror("Error opening socket");
 		exit(1);
 	}
+
+
 	// Initialize server address structure
 	bzero((char*) &serv_addr, sizeof(serv_addr));
 	serv_addr.sin_family = AF_INET;
-	serv_addr.sin_addr.s_addr = INADDR_ANY;
+	serv_addr.sin_addr.s_addr = INADDR_LOOPBACK;
 	serv_addr.sin_port = htons(cfg->listen_port);
 
 	// Bind socket to address
 	if (bind(sockfd, (struct sockaddr*) &serv_addr, sizeof(serv_addr)) < 0) {
 		perror("Error on binding");
 		exit(1);
+	}
+
+	if(setsockopt(sockfd,SOL_SOCKET,SO_REUSEPORT,&(int){1},sizeof(int))<0){
+		log_error("error set SO_REUSEPORT");
+	}
+	if(setsockopt(sockfd,SOL_SOCKET,SO_REUSEADDR,&(int){1},sizeof(int))<0){
+		log_error("error set SO_REUSEADDR");
 	}
 
 	// Listen for incoming connections
