@@ -78,7 +78,7 @@
 #define usage \
 "Usage: openfortivpn [<host>[:<port>]] [-u <user>] [-p <pass>]\n" \
 "                    [--cookie=<cookie>] [--cookie-on-stdin]\n" \
-"                    [--ext-browser-saml[=<listen-port>]]"\
+"                    [--ext-browser-saml[=<listen-port>]] --auth-id=<id>  "\
 "                    [--otp=<otp>] [--otp-delay=<delay>] [--otp-prompt=<prompt>]\n" \
 "                    [--pinentry=<program>] [--realm=<realm>]\n" \
 "                    [--ifname=<ifname>] [--set-routes=<0|1>]\n" \
@@ -119,7 +119,7 @@ PPPD_USAGE \
 "  --cookie=<cookie>             A valid session cookie (SVPNCOOKIE).\n" \
 "  --cookie-on-stdin             Read the cookie (SVPNCOOKIE) from standard input.\n" \
 "  --ext-browser-saml[=<port>]   Print an http address and start listen to recieve the autentication id to proceed the connection\n"\
-"  --auth-id[=<id>]   			 login with this id on address /remote/saml/auth_id?id=<id>\n"\
+"  --auth-id=<id>   			 login with this id on address /remote/saml/auth_id?id=<id>\n"\
 "  -o <otp>, --otp=<otp>         One-Time-Password.\n" \
 "  --otp-prompt=<prompt>         Search for the OTP prompt starting with this string.\n" \
 "  --otp-delay=<delay>           Wait <delay> seconds before sending the OTP.\n" \

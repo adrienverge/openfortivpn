@@ -41,23 +41,8 @@
  * @param[out] dest  the buffer to write the URL-encoded string
  * @param[in]  str   the input string to be escaped
  */
-static void url_encode(char *dest, const char *str)
-{
-	while (*str != '\0') {
-		if (isalnum(*str) || *str == '-' || *str == '_' ||
-		    *str == '.' || *str == '~') {
-			*dest++ = *str;
-		} else {
-			static const char hex[] = "0123456789ABCDEF";
+void url_encode(char *dest, const char *str);
 
-			*dest++ = '%';
-			*dest++ = hex[(unsigned char)*str >> 4];
-			*dest++ = hex[(unsigned char)*str & 15];
-		}
-		str++;
-	}
-	*dest = '\0';
-}
 
 
 static inline const char *err_http_str(int code)
