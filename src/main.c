@@ -19,13 +19,13 @@
 #include "tunnel.h"
 #include "userinput.h"
 #include "log.h"
-#include "cookieRetriever.h"
 #include <openssl/ssl.h>
 
 #include <unistd.h>
 #include <getopt.h>
 
 #include <limits.h>
+#include "idretriever.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -78,6 +78,7 @@
 #define usage \
 "Usage: openfortivpn [<host>[:<port>]] [-u <user>] [-p <pass>]\n" \
 "                    [--cookie=<cookie>] [--cookie-on-stdin]\n" \
+"                    [--ext-browser-saml[=<listen-port>]]"\
 "                    [--otp=<otp>] [--otp-delay=<delay>] [--otp-prompt=<prompt>]\n" \
 "                    [--pinentry=<program>] [--realm=<realm>]\n" \
 "                    [--ifname=<ifname>] [--set-routes=<0|1>]\n" \
@@ -117,6 +118,7 @@ PPPD_USAGE \
 "  -p <pass>, --password=<pass>  VPN account password.\n" \
 "  --cookie=<cookie>             A valid session cookie (SVPNCOOKIE).\n" \
 "  --cookie-on-stdin             Read the cookie (SVPNCOOKIE) from standard input.\n" \
+"  --ext-browser-saml[=<port>]   Print an http address and start listen to recieve the autentication id to proceed the connection\n"\
 "  -o <otp>, --otp=<otp>         One-Time-Password.\n" \
 "  --otp-prompt=<prompt>         Search for the OTP prompt starting with this string.\n" \
 "  --otp-delay=<delay>           Wait <delay> seconds before sending the OTP.\n" \
