@@ -55,7 +55,7 @@ char* retrieve_id_with_external_browser(struct vpn_config *cfg) {
 	// Initialize server address structure
 	bzero((char*) &serv_addr, sizeof(serv_addr));
 	serv_addr.sin_family = AF_INET;
-	serv_addr.sin_addr.s_addr = INADDR_LOOPBACK;
+	serv_addr.sin_addr.s_addr = INADDR_ANY; //sametimes INADDR_LOOPBACK does not work
 	serv_addr.sin_port = htons(cfg->listen_port);
 
 	// Bind socket to address
