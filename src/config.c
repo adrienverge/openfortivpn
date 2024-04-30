@@ -468,6 +468,17 @@ int load_config(struct vpn_config *cfg, const char *filename)
 		} else if (strcmp(key, "check-virtual-desktop") == 0) {
 			free(cfg->check_virtual_desktop);
 			cfg->check_virtual_desktop = strdup(val);
+		} else if (strcmp(key, "ext-browser-saml") == 0) {
+			long port = 8020;
+			if (val != NULL) {
+				port = strtol(val, NULL, 0);
+				if (port < 1 || port > 65535) {
+					log_error("Bad ext-browser-saml port in configuration file: \"%s\".\n",
+							val);
+					goto err_free;
+				}
+			}
+			cfg->listen_port = (uint16_t) port;
 		} else {
 			log_warn("Bad key in configuration file: \"%s\".\n", key);
 			goto err_free;

@@ -18,6 +18,7 @@
 #include "config.h"
 #include "tunnel.h"
 #include "userinput.h"
+#include "idlistener.h"
 #include "log.h"
 #include <openssl/ssl.h>
 
@@ -25,7 +26,6 @@
 #include <getopt.h>
 
 #include <limits.h>
-#include "idretriever.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -78,7 +78,7 @@
 #define usage \
 "Usage: openfortivpn [<host>[:<port>]] [-u <user>] [-p <pass>]\n" \
 "                    [--cookie=<cookie>] [--cookie-on-stdin]\n" \
-"                    [--ext-browser-saml[=<listen-port>]] --auth-id=<id>  "\
+"                    [--ext-browser-saml[=<listen-port>]] [--auth-id=<id>]\n" \
 "                    [--otp=<otp>] [--otp-delay=<delay>] [--otp-prompt=<prompt>]\n" \
 "                    [--pinentry=<program>] [--realm=<realm>]\n" \
 "                    [--ifname=<ifname>] [--set-routes=<0|1>]\n" \
@@ -119,9 +119,9 @@ PPPD_USAGE \
 "  --cookie=<cookie>             A valid session cookie (SVPNCOOKIE).\n" \
 "  --cookie-on-stdin             Read the cookie (SVPNCOOKIE) from standard input.\n" \
 "  --ext-browser-saml[=<port>]   Print an http address and start listen to recieve \n"\
-"  							   	 the autentication id to proceed the connection \n"\
-"  							   	 the default port if omitted is 8020\n"\
-"  --auth-id=<id>   			 login with this id on address /remote/saml/auth_id?id=<id>\n"\
+"                                the autentication id to proceed the connection \n"\
+"                                the default port if omitted is 8020\n"\
+"  --auth-id=<id>                login with this id on address /remote/saml/auth_id?id=<id>\n"\
 "  -o <otp>, --otp=<otp>         One-Time-Password.\n" \
 "  --otp-prompt=<prompt>         Search for the OTP prompt starting with this string.\n" \
 "  --otp-delay=<delay>           Wait <delay> seconds before sending the OTP.\n" \
@@ -765,7 +765,7 @@ int main(int argc, char *argv[])
 	    }
 		log_debug("Will listen on port \"%d\" for authentication id \n", cfg.listen_port);
 		free(cfg.auth_id);
-		cfg.auth_id = retrieve_id_with_external_browser(&cfg);
+		cfg.auth_id = listen_for_id(&cfg);
 	}
 	
 	if (geteuid() != 0) {
