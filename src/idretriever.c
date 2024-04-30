@@ -85,18 +85,17 @@ char* retrieve_id_with_external_browser(struct vpn_config *cfg) {
 	}
 
 	// Listen for incoming connections
-	listen(sockfd, 5);
+	listen(sockfd, 1);
 
 	log_debug("Server listening on port %d to retrieve the id\n",
 			cfg->listen_port);
 
-	char data[512];
-	char *url = data;
-	sprintf(url, "https://%s:%d/remote/saml/start?redirect=1",
+	char url[512];
+	snprintf(url,sizeof(url), "https://%s:%d/remote/saml/start?redirect=1",
 			cfg->gateway_host, cfg->gateway_port);
 
 	if (cfg->realm[0] != '\0') {
-		strcat(url, "&realm=");
+		strncat(url, "&realm=",sizeof(url)-1);
 		char *dt = url + strlen(url);
 		url_encode(dt, cfg->realm);
 	}
@@ -111,7 +110,7 @@ char* retrieve_id_with_external_browser(struct vpn_config *cfg) {
 	}
 	close(sockfd);
 
-	// Read HTTP request from client
+	// Read HTTP request from client512
 	bzero(buffer, MAX_REQUEST_SIZE);
 	read(newsockfd, buffer, MAX_REQUEST_SIZE - 1);
 	log_debug("Received HTTP request:\n%s\n", buffer);
