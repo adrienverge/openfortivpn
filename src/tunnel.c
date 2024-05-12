@@ -1275,6 +1275,9 @@ int run_tunnel(struct vpn_config *config)
 	// cookie
 	if (config->cookie)
 		ret = auth_set_cookie(&tunnel, config->cookie);
+	else if(config->saml_port){
+		ret = saml_login(&tunnel);
+	}
 	else
 		ret = auth_log_in(&tunnel);
 	if (ret != 1) {

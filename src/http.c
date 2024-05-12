@@ -627,6 +627,42 @@ static int try_otp_auth(struct tunnel *tunnel, const char *buffer,
  * @return  1   in case of success
  *          < 0 in case of error
  */
+int saml_login(struct tunnel *tunnel)
+{
+	log_debug("SAML login\n");
+
+	int ret;
+	ssl_connect(tunnel);
+
+	char uri[1024];
+	snprintf(uri, sizeof(uri), "/remote/saml/auth_id?id=%s", tunnel->config->saml_session_id);
+	char *response;
+	uint32_t response_size = 0;
+	ret = http_request(tunnel, "GET", uri, "", &response, &response_size);
+	if(ret != 1 || response_size <= 15) return ret;
+	if (memcmp(response, "HTTP/1.1 200 OK", 15) != 0){
+		log_error("SAML login failed: %s\n", response);
+		return ret;
+	}
+	auth_get_cookie(tunnel, response, response_size);
+	if (ret == ERR_HTTP_NO_COOKIE){
+		log_error("SAML login failed: no cookie\n");
+		return ret;
+	}	
+
+	// free(response);
+
+
+
+	return ret;
+}
+
+/*
+ * Authenticates to gateway by sending username and password.
+ *
+ * @return  1   in case of success
+ *          < 0 in case of error
+ */
 int auth_log_in(struct tunnel *tunnel)
 {
 	int ret;

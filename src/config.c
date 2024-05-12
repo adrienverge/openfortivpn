@@ -417,6 +417,10 @@ int load_config(struct vpn_config *cfg, const char *filename)
 			cfg->user_cert = strdup(val);
 			if (strncmp(cfg->user_cert, "pkcs11:", 7) == 0)
 				cfg->use_engine = 1;
+		} else if (strcmp(key, "saml-login") == 0) {
+			free(cfg->saml_port);
+			cfg->saml_port = atol(val);
+			continue;
 		} else if (strcmp(key, "user-key") == 0) {
 			free(cfg->user_key);
 			cfg->user_key = strdup(val);
@@ -533,6 +537,9 @@ void merge_config(struct vpn_config *dst, struct vpn_config *src)
 	if (src->cookie != invalid_cfg.cookie) {
 		free(dst->cookie);
 		dst->cookie = src->cookie;
+	}
+	if(src->saml_port != 0){
+		dst->saml_port = src->saml_port;
 	}
 	if (src->pinentry) {
 		free(dst->pinentry);

@@ -19,6 +19,7 @@
 #include "tunnel.h"
 #include "userinput.h"
 #include "log.h"
+#include "http_server.h"
 
 #include <openssl/ssl.h>
 
@@ -77,7 +78,7 @@
 
 #define usage \
 "Usage: openfortivpn [<host>[:<port>]] [-u <user>] [-p <pass>]\n" \
-"                    [--cookie=<cookie>] [--cookie-on-stdin]\n" \
+"                    [--cookie=<cookie>] [--cookie-on-stdin] [--saml-login]\n" \
 "                    [--otp=<otp>] [--otp-delay=<delay>] [--otp-prompt=<prompt>]\n" \
 "                    [--pinentry=<program>] [--realm=<realm>]\n" \
 "                    [--ifname=<ifname>] [--set-routes=<0|1>]\n" \
@@ -117,6 +118,7 @@ PPPD_USAGE \
 "  -p <pass>, --password=<pass>  VPN account password.\n" \
 "  --cookie=<cookie>             A valid session cookie (SVPNCOOKIE).\n" \
 "  --cookie-on-stdin             Read the cookie (SVPNCOOKIE) from standard input.\n" \
+"  --saml-login[=port]            Run a http server to handle SAML login requests\n" \
 "  -o <otp>, --otp=<otp>         One-Time-Password.\n" \
 "  --otp-prompt=<prompt>         Search for the OTP prompt starting with this string.\n" \
 "  --otp-delay=<delay>           Wait <delay> seconds before sending the OTP.\n" \
@@ -225,6 +227,8 @@ int main(int argc, char *argv[])
 		.password = {'\0'},
 		.password_set = 0,
 		.cookie = NULL,
+		.saml_port = 0,
+		.saml_session_id = NULL,
 		.otp = {'\0'},
 		.otp_prompt = NULL,
 		.otp_delay = 0,
@@ -286,6 +290,7 @@ int main(int argc, char *argv[])
 		{"password",             required_argument, NULL, 'p'},
 		{"cookie",               required_argument, NULL, 0},
 		{"cookie-on-stdin",      no_argument, NULL, 0},
+		{"saml-login",			 optional_argument, NULL, 0},
 		{"otp",                  required_argument, NULL, 'o'},
 		{"otp-prompt",           required_argument, NULL, 0},
 		{"otp-delay",            required_argument, NULL, 0},
@@ -604,6 +609,19 @@ int main(int argc, char *argv[])
 				free(cookie);
 				break;
 			}
+			if (strcmp(long_options[option_index].name,
+			           "saml-login") == 0) {
+				long port = 8020;
+				if(optarg != NULL){
+					port =	strtol(optarg, NULL, 0);
+				}
+				if (port < 0 || port > UINT_MAX) {
+					log_warn("Invalid saml listen port: %s! Default port is 8020 \n", optarg);
+					break;
+				}
+				cli_cfg.saml_port = port;
+				break;
+			}
 			goto user_error;
 		case 'h':
 			printf("%s%s%s%s%s%s%s", usage, summary,
@@ -707,7 +725,7 @@ int main(int argc, char *argv[])
 		goto user_error;
 	}
 	// Check username
-	if (cfg.username[0] == '\0' && !cfg.cookie)
+	if (cfg.username[0] == '\0' && !cfg.cookie && !cfg.saml_port)
 		// Need either username or cert
 		if (cfg.user_cert == NULL) {
 			log_error("Specify a username.\n");
@@ -735,6 +753,19 @@ int main(int argc, char *argv[])
 	if (geteuid() != 0) {
 		log_error("This process was not spawned with root privileges, which are required.\n");
 		ret = EXIT_FAILURE;
+		goto exit;
+	}
+
+	if(cfg.saml_port != 0) {
+		pthread_t server_thread;
+
+		if(pthread_create(&server_thread, NULL, start_http_server, &cfg) != 0){
+			log_error("Failed to create saml login server thread\n");
+			// ret = EXIT_FAILURE;
+			goto exit;
+		}
+		// log_debug("Running http server on port %d\n", cfg.saml_port);
+		while(get_sig_received() == 0);
 		goto exit;
 	}
 
