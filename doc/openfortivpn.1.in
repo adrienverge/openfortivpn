@@ -10,6 +10,7 @@ openfortivpn \- Client for PPP+TLS VPN tunnel services
 [\fB\-p\fR \fI<pass>\fR]
 [\fB\-\-cookie=\fI<cookie>\fR]
 [\fB\-\-cookie\-on\-stdin\fR]
+[\fB\-\-saml\-login[=\fI<port>\fR]]
 [\fB\-\-pinentry=\fI<name>\fR]
 [\fB\-\-otp=\fI<otp>\fR]
 [\fB\-\-otp\-prompt=\fI<prompt>\fR]
@@ -80,6 +81,14 @@ A valid cookie (SVPNCOOKIE) to use in place of username and password.
 .TP
 \fB\-\-cookie\-on\-stdin\fR
 Read the cookie (SVPNCOOKIE) from standard input.
+.TP
+\fB\-\-saml\-login[=\fI<port>\fR]
+Create a temporary web server to receive a local SAML redirect operation.
+To login using SAML you just have to open
+`<your-vpn-domain>/remote/saml/start?redirect=1' and follow the login steps.
+At the end of the login process, the page will be redirected to
+`http://127.0.0.1:8020/?id=<session-id>'. The actual URL to use for the login,
+including the optional realm, is printed to the terminal when the web server it started.
 .TP
 \fB\-\-pinentry=\fI<name>\fR
 The pinentry program to use. Allows supplying the password in a secure manner.

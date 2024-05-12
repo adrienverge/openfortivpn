@@ -64,6 +64,7 @@ pthread.h \
 strings.h \
 sys/ioctl.h \
 syslog.h \
+sys/select.h \
 sys/socket.h \
 sys/stat.h \
 sys/types.h \
