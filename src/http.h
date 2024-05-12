@@ -31,6 +31,16 @@
 #define ERR_HTTP_PERMISSION	-6
 #define ERR_HTTP_NO_COOKIE	-7
 
+/*
+ * URL-encodes a string for HTTP requests.
+ *
+ * The dest buffer size MUST be at least strlen(str) * 3 + 1.
+ *
+ * @param[out] dest  the buffer to write the URL-encoded string
+ * @param[in]  str   the input string to be escaped
+ */
+void url_encode(char *dest, const char *str);
+
 static inline const char *err_http_str(int code)
 {
 	if (code > 0)

@@ -45,6 +45,8 @@ const struct vpn_config invalid_cfg = {
 	.password = {'\0'},
 	.password_set = 0,
 	.cookie = NULL,
+	.saml_port = 0,
+	.saml_session_id = {'\0'},
 	.otp = {'\0'},
 	.otp_prompt = NULL,
 	.otp_delay = -1,
@@ -417,6 +419,14 @@ int load_config(struct vpn_config *cfg, const char *filename)
 			cfg->user_cert = strdup(val);
 			if (strncmp(cfg->user_cert, "pkcs11:", 7) == 0)
 				cfg->use_engine = 1;
+		} else if (strcmp(key, "saml-login") == 0) {
+			long port = strtol(val, NULL, 0);
+
+			if (port < 1 || port > 65535) {
+				log_error("Bad SAML listen port: \"%s\".\n", val);
+				goto err_free;
+			}
+			cfg->saml_port = (uint16_t)port;
 		} else if (strcmp(key, "user-key") == 0) {
 			free(cfg->user_key);
 			cfg->user_key = strdup(val);
@@ -534,6 +544,8 @@ void merge_config(struct vpn_config *dst, struct vpn_config *src)
 		free(dst->cookie);
 		dst->cookie = src->cookie;
 	}
+	if (src->saml_port != 0)
+		dst->saml_port = src->saml_port;
 	if (src->pinentry) {
 		free(dst->pinentry);
 		dst->pinentry = src->pinentry;

@@ -47,7 +47,7 @@
  * @param[out] dest  the buffer to write the URL-encoded string
  * @param[in]  str   the input string to be escaped
  */
-static void url_encode(char *dest, const char *str)
+void url_encode(char *dest, const char *str)
 {
 	while (*str != '\0') {
 		if (isalnum(*str) || *str == '-' || *str == '_' ||
@@ -667,7 +667,29 @@ int auth_log_in(struct tunnel *tunnel)
 
 	tunnel->cookie[0] = '\0';
 
-	if (username[0] == '\0' && tunnel->config->password[0] == '\0') {
+	if (strlen(tunnel->config->saml_session_id) > 0) {
+		// SAML login
+		static const char uri_pattern[] = "/remote/saml/auth_id?id=%s";
+		int required_size = snprintf(NULL,
+		                             0,
+		                             uri_pattern,
+		                             tunnel->config->saml_session_id)
+		                    + 1;
+		char *uri = malloc(required_size);
+
+		if (!uri) {
+			ret = -1;
+			log_error("malloc: %s\n", strerror(errno));
+			goto end;
+		}
+		snprintf(uri,
+		         required_size,
+		         uri_pattern,
+		         tunnel->config->saml_session_id);
+		log_debug("Using SAML authentication URL %s\n", uri);
+		ret = http_request(tunnel, "GET", uri, "", &res, &response_size);
+		free(uri);
+	} else if (username[0] == '\0' && tunnel->config->password[0] == '\0') {
 		ret = http_request(tunnel, "GET", "/remote/login",
 		                   data, &res, &response_size);
 	} else {
