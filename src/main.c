@@ -758,7 +758,7 @@ int main(int argc, char *argv[])
 
 	if(cfg.saml_port != 0) {
 		pthread_t server_thread;
-		if(pthread_create(&server_thread, NULL, start_http_server, &cfg) != 0){
+		if(pthread_create(&server_thread, NULL, start_http_server, cfg.saml_port) != 0){
 			log_error("Failed to create saml login server thread\n");
 			// ret = EXIT_FAILURE;
 			goto exit;

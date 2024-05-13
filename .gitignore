@@ -20,3 +20,4 @@ config.guess
 openfortivpn@.service
 test.sh
 .vscode
+configure~

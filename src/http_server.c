@@ -15,8 +15,8 @@ void* process_request(int new_socket) {
     return NULL;
 }
 
-void* start_http_server(int saml_port) {
-    log_info("Starting saml login server on port: %d\n", saml_port);
+void* start_http_server(long saml_port) {
+    
 
     int server_fd, new_socket;
     struct sockaddr_in address;
@@ -49,6 +49,7 @@ void* start_http_server(int saml_port) {
         log_error("Failed to listen on socket\n");
         return NULL;
     }
+    log_info("Listening for saml login on port: %d\n", saml_port);
     int running = 1;
     while(running) {
         if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen)) < 0) {
