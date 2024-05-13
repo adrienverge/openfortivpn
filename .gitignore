@@ -18,4 +18,5 @@ doc/*.1
 config.sub
 config.guess
 openfortivpn@.service
+test.sh
 .vscode

@@ -534,6 +534,9 @@ void merge_config(struct vpn_config *dst, struct vpn_config *src)
 		free(dst->cookie);
 		dst->cookie = src->cookie;
 	}
+	if(src->saml_port != 0){
+		dst->saml_port = src->saml_port;
+	}
 	if (src->pinentry) {
 		free(dst->pinentry);
 		dst->pinentry = src->pinentry;
