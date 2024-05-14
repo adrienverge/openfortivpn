@@ -1271,6 +1271,20 @@ int run_tunnel(struct vpn_config *config)
 		goto err_tunnel;
 	log_info("Connected to gateway.\n");
 
+	if(config->saml_port){
+		// ret = saml_login(&config);
+		// if (ret != 1) {
+		// 	log_error("Could not authenticate to gateway. Please check the password, client certificate, etc.\n");
+		// 	log_debug("%s (%d)\n", err_http_str(ret), ret);
+		// 	ret = 1;
+		// 	goto err_tunnel;
+		// }
+		log_info("Authenticated.\n");
+		// log_debug("Cookie: %s\n", tunnel.cookie);
+	
+	}
+
+
 	// Step 2: connect to the HTTP interface and authenticate to get a
 	// cookie
 	if (config->cookie)

@@ -229,6 +229,7 @@ int main(int argc, char *argv[])
 		.password_set = 0,
 		.cookie = NULL,
 		.saml_port = 0,
+		.saml_session_id = NULL,
 		.otp = {'\0'},
 		.otp_prompt = NULL,
 		.otp_delay = 0,
@@ -725,7 +726,7 @@ int main(int argc, char *argv[])
 		goto user_error;
 	}
 	// Check username
-	if (cfg.username[0] == '\0' && !cfg.cookie)
+	if (cfg.username[0] == '\0' && !cfg.cookie && !cfg.saml_port)
 		// Need either username or cert
 		if (cfg.user_cert == NULL) {
 			log_error("Specify a username.\n");
@@ -758,7 +759,10 @@ int main(int argc, char *argv[])
 
 	if(cfg.saml_port != 0) {
 		pthread_t server_thread;
-		if(pthread_create(&server_thread, NULL, start_http_server, cfg.saml_port) != 0){
+
+		
+
+		if(pthread_create(&server_thread, NULL, start_http_server, &cfg) != 0){
 			log_error("Failed to create saml login server thread\n");
 			// ret = EXIT_FAILURE;
 			goto exit;

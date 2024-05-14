@@ -627,6 +627,25 @@ static int try_otp_auth(struct tunnel *tunnel, const char *buffer,
  * @return  1   in case of success
  *          < 0 in case of error
  */
+int saml_login(struct vpn_config *config)
+{
+	log_debug("SAML login\n");
+	// char uri[1024];
+	// snprintf(uri, sizeof(uri), "/remote/saml/auth_id?id=%s", tunnel->saml_session_id);
+	// int ret = http_request(tunnel, "GET", uri ,uri, NULL, NULL);
+	log_debug("SAML login\n");
+	// int ret = http_request(tunnel, "GET", uri ,NULL, NULL, NULL);
+	// if (ret != 1)
+		// return ret;
+}
+
+
+/*
+ * Authenticates to gateway by sending username and password.
+ *
+ * @return  1   in case of success
+ *          < 0 in case of error
+ */
 int auth_log_in(struct tunnel *tunnel)
 {
 	int ret;

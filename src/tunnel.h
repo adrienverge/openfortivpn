@@ -75,6 +75,7 @@ struct tunnel {
 
 	int (*on_ppp_if_up)(struct tunnel *tunnel);
 	int (*on_ppp_if_down)(struct tunnel *tunnel);
+	
 };
 
 struct token {

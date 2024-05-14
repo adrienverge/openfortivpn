@@ -1,3 +1,3 @@
+#include "config.h"
 
-
-void* start_http_server(long saml_port);
+void* start_http_server(struct vpn_config *config);
