@@ -82,15 +82,10 @@ char* listen_for_id(struct vpn_config *cfg) {
 	}
 
 	struct sockaddr_in serv_addr;
-	bzero((char*) &serv_addr, sizeof(serv_addr));
+	
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 	serv_addr.sin_port = htons(cfg->listen_port);
-
-	if (bind(sockfd, (struct sockaddr*) &serv_addr, sizeof(serv_addr)) < 0) {
-		perror("Error on binding");
-		exit(1);
-	}
 
 	int opt = 1;
 	if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
@@ -100,6 +95,13 @@ char* listen_for_id(struct vpn_config *cfg) {
 		log_error("error set SO_REUSEPORT");
 	}
 
+	if (bind(sockfd, (struct sockaddr*) &serv_addr, sizeof(serv_addr)) < 0) {
+		perror("Error on binding");
+		exit(1);
+	}
+
+
+	
 	listen(sockfd, 1);
 	log_debug("Server listening on port %d to retrieve the id\n",
 			cfg->listen_port);
