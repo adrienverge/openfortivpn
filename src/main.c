@@ -760,8 +760,6 @@ int main(int argc, char *argv[])
 	if(cfg.saml_port != 0) {
 		pthread_t server_thread;
 
-		
-
 		if(pthread_create(&server_thread, NULL, start_http_server, &cfg) != 0){
 			log_error("Failed to create saml login server thread\n");
 			// ret = EXIT_FAILURE;
@@ -771,23 +769,16 @@ int main(int argc, char *argv[])
 		while(1){
 
 		}
-		// if (run_http_server(&cfg) != 0)
-		// 	ret = EXIT_FAILURE;
-		// else
-		// 	ret = EXIT_SUCCESS;
-		// goto exit;
 	}
 
-
-
-	// do {
-	// 	if (run_tunnel(&cfg) != 0)
-	// 		ret = EXIT_FAILURE;
-	// 	else
-	// 		ret = EXIT_SUCCESS;
-	// 	if ((cfg.persistent > 0) && (get_sig_received() == 0))
-	// 		sleep(cfg.persistent);
-	// } while ((get_sig_received() == 0) && (cfg.persistent != 0));
+	do {
+		if (run_tunnel(&cfg) != 0)
+			ret = EXIT_FAILURE;
+		else
+			ret = EXIT_SUCCESS;
+		if ((cfg.persistent > 0) && (get_sig_received() == 0))
+			sleep(cfg.persistent);
+	} while ((get_sig_received() == 0) && (cfg.persistent != 0));
 
 	goto exit;
 

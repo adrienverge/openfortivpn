@@ -1,3 +1,3 @@
 #include "config.h"
 
-void* start_http_server(struct vpn_config *config);
+void* start_http_server(void *void_config);

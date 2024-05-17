@@ -92,7 +92,7 @@ struct vpn_config {
 	char			otp[OTP_SIZE + 1];
 	char			*cookie;
 	int			    saml_port;
-	char			*saml_session_id;
+	char			saml_session_id[1024];
 	char			*otp_prompt;
 	unsigned int		otp_delay;
 	int			no_ftm_push;

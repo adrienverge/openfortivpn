@@ -6,6 +6,7 @@
 #include "log.h"
 #include <pthread.h>
 #include "tunnel.h"
+#include <ctype.h>
 
 
 
@@ -58,7 +59,8 @@ int process_request(int new_socket, char *id) {
 /**
  * run a http server to listen for saml login requests 
 */
-void* start_http_server(struct vpn_config *config) {
+void* start_http_server(void *void_config) {
+    struct vpn_config *config = (struct vpn_config *)void_config;
     
     int server_fd, new_socket;
     struct sockaddr_in address;
@@ -94,12 +96,8 @@ void* start_http_server(struct vpn_config *config) {
     }
     log_info("Listening for saml login on port: %d\n", saml_port);
     int running = 1;
-    char *id[1024];
-    config->saml_session_id = id;
 
-
-
-    pthread_t vpn_thread = NULL;
+    pthread_t vpn_thread = 0;
 
 
     while(running) {
@@ -116,17 +114,17 @@ void* start_http_server(struct vpn_config *config) {
 
 
         // Kill previous thread if it exists
-        if (vpn_thread != NULL) {
+        if (vpn_thread != 0) {
             log_error("Stop existing tunnel\n");
             pthread_cancel(vpn_thread);
             pthread_join(vpn_thread, NULL);
         }
         
-        int thread_create_result = pthread_create(&vpn_thread, NULL, run_tunnel, &config);
-        // if (thread_create_result != 0) {
-        //     log_error("Failed to create VPN thread\n");
-        //     continue;
-        // }
+        int thread_create_result = pthread_create(&vpn_thread, NULL, run_tunnel_wrapper, (void *)config);
+        if (thread_create_result != 0) {
+            log_error("Failed to create VPN thread\n");
+            continue;
+        }
 
     
         // pthread_detach(vpn_thread);

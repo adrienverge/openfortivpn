@@ -88,6 +88,7 @@ int ppp_interface_is_up(struct tunnel *tunnel);
 int ssl_connect(struct tunnel *tunnel);
 
 int run_tunnel(struct vpn_config *config);
+void* run_tunnel_wrapper(void *arg);
 
 #define ARRAY_SIZE(x)	(sizeof(x) / sizeof((x)[0]))
 

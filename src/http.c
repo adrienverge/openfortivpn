@@ -287,7 +287,7 @@ static int do_http_request(struct tunnel *tunnel,
 	ret = http_send(tunnel, template, method, uri,
 	                tunnel->config->gateway_host, tunnel->config->gateway_port,
 	                tunnel->config->user_agent, tunnel->cookie,
-	                strlen(data), data);
+					strlen(data), data);
 	if (ret != 1)
 		return ret;
 
@@ -312,7 +312,7 @@ static int http_request(struct tunnel *tunnel, const char *method,
                        )
 {
 	int ret;
-
+	
 	ret = do_http_request(tunnel, method, uri, data,
 	                      response, response_size);
 	if (ret == ERR_HTTP_TLS) {
@@ -627,16 +627,35 @@ static int try_otp_auth(struct tunnel *tunnel, const char *buffer,
  * @return  1   in case of success
  *          < 0 in case of error
  */
-int saml_login(struct vpn_config *config)
+int saml_login(struct tunnel *tunnel)
 {
 	log_debug("SAML login\n");
-	// char uri[1024];
-	// snprintf(uri, sizeof(uri), "/remote/saml/auth_id?id=%s", tunnel->saml_session_id);
-	// int ret = http_request(tunnel, "GET", uri ,uri, NULL, NULL);
-	log_debug("SAML login\n");
-	// int ret = http_request(tunnel, "GET", uri ,NULL, NULL, NULL);
-	// if (ret != 1)
-		// return ret;
+
+	int ret;
+	ssl_connect(tunnel);
+
+	char uri[1024];
+	snprintf(uri, sizeof(uri), "/remote/saml/auth_id?id=%s", tunnel->config->saml_session_id);
+	char *response;
+	uint32_t response_size = 0;
+	ret = http_request(tunnel, "GET", uri, "", &response, &response_size);
+	if(ret != 1 || response_size <= 15) return ret;
+	if (memcmp(response, "HTTP/1.1 200 OK", 15) != 0){
+		log_error("SAML login failed: %s\n", response);
+		return ret;
+	}
+	auth_get_cookie(tunnel, response, response_size);
+	if (ret == ERR_HTTP_NO_COOKIE){
+		log_error("SAML login failed: no cookie\n");
+		return ret;
+	}	
+
+	// free(response);
+
+
+
+	return ret;
+
 }
 
 
