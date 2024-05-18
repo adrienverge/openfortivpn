@@ -28,6 +28,7 @@
 
 #include "config.h"
 #include "log.h"
+#include "ipv4.h"
 
 #include <openssl/x509.h>  /* work around OpenSSL bug: missing definition of STACK_OF */
 #include <openssl/tls1.h>
@@ -37,6 +38,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 
 const struct vpn_config invalid_cfg = {
 	.gateway_host = {'\0'},
@@ -54,7 +56,9 @@ const struct vpn_config invalid_cfg = {
 	.iface_name = {'\0'},
 	.sni = {'\0'},
 	.set_routes = -1,
+	.routes = NULL,
 	.set_dns = -1,
+	.dns = NULL,
 	.pppd_use_peerdns = -1,
 #if HAVE_RESOLVCONF
 	.use_resolvconf = -1,
@@ -88,6 +92,9 @@ const struct vpn_config invalid_cfg = {
 	.hostcheck = NULL,
 	.check_virtual_desktop = NULL,
 };
+
+
+
 
 /*
  * Adds a sha256 digest to the list of trusted certificates.
@@ -417,6 +424,23 @@ int load_config(struct vpn_config *cfg, const char *filename)
 			cfg->user_cert = strdup(val);
 			if (strncmp(cfg->user_cert, "pkcs11:", 7) == 0)
 				cfg->use_engine = 1;
+		} else if (strcmp(key, "dns") == 0) {
+			Node *newNode = (Node *)malloc(sizeof(Node));
+			newNode->value = val;
+			newNode->next = cfg->dns;
+			cfg->dns = newNode;
+			continue;
+		} else if (strcmp(key, "route") == 0) {			
+    		Node *newNode = (Node *)malloc(sizeof(Node));
+			newNode->value = cidr_to_ip_mask(val);
+			newNode->next = cfg->routes;
+			cfg->routes = newNode;
+			log_warn("add route: %s\n", val);
+			continue;
+		} else if (strcmp(key, "saml-login") == 0) {
+			free(cfg->saml_port);
+			cfg->saml_port = strdup(val);
+			continue;
 		} else if (strcmp(key, "user-key") == 0) {
 			free(cfg->user_key);
 			cfg->user_key = strdup(val);

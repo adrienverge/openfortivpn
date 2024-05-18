@@ -1,6 +1,13 @@
 ### configuration file for openfortivpn, see man openfortivpn(1) ###
 
+
+saml-login
+
+
 host = vpn.example.org
 port = 443
 username = vpnuser
 password = VPNpassw0rd
+
+route = 10.0.0.1/16
+route = 172.17.5.43

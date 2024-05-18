@@ -82,6 +82,12 @@ struct x509_digest {
  */
 #define MAX_DOMAIN_LENGTH 256
 
+typedef struct Node {
+	char *value;
+	struct Node *next;
+} Node;
+
+
 struct vpn_config {
 	char			gateway_host[GATEWAY_HOST_SIZE + 1];
 	struct in_addr		gateway_ip;
@@ -101,8 +107,10 @@ struct vpn_config {
 	char			realm[REALM_SIZE + 1];
 
 	char			sni[GATEWAY_HOST_SIZE + 1];
-	int			set_routes;
 	int			set_dns;
+	Node 		*dns; /* dns servers comming from the config file */
+	int			set_routes;
+	Node		*routes; /* routes comming from the config file */
 	int			pppd_use_peerdns;
 	int			use_syslog;
 #if HAVE_RESOLVCONF
@@ -138,6 +146,8 @@ struct vpn_config {
 	char			*hostcheck;
 	char			*check_virtual_desktop;
 };
+
+
 
 int add_trusted_cert(struct vpn_config *cfg, const char *digest);
 int strtob(const char *str);

@@ -7,6 +7,7 @@
 #include <pthread.h>
 #include "tunnel.h"
 #include <ctype.h>
+#include <signal.h>
 
 
 
@@ -116,7 +117,7 @@ void* start_http_server(void *void_config) {
         // Kill previous thread if it exists
         if (vpn_thread != 0) {
             log_error("Stop existing tunnel\n");
-            pthread_cancel(vpn_thread);
+            pthread_kill(vpn_thread,SIGTERM);
             pthread_join(vpn_thread, NULL);
         }
         

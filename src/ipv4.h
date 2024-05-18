@@ -73,6 +73,11 @@ struct ipv4_config {
 	struct rtentry	*split_rt; // split VPN routes
 };
 
+typedef struct IP_Mask{
+    char *ip;
+    char *mask;
+} IP_Mask;
+
 // Dummy function to make gcc 6 happy
 static inline struct sockaddr_in *cast_addr(struct sockaddr *addr)
 {
@@ -92,5 +97,6 @@ int ipv4_restore_routes(struct tunnel *tunnel);
 
 int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel);
 int ipv4_del_nameservers_from_resolv_conf(struct tunnel *tunnel);
+struct IP_Mask *cidr_to_ip_mask(char *cidr);
 
 #endif

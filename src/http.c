@@ -870,6 +870,9 @@ static int parse_xml_config(struct tunnel *tunnel, const char *buffer)
 	if (!gateway)
 		log_warn("No gateway address, using interface for routing\n");
 
+
+	
+
 	// The dns search string
 	val = buffer;
 	while ((val = xml_find('<', "dns", val, 2))) {
@@ -882,9 +885,20 @@ static int parse_xml_config(struct tunnel *tunnel, const char *buffer)
 		}
 	}
 
+	Node *route = tunnel->config->routes;
+	while(route){
+		Node *next =  route->next;
+		IP_Mask *_route = (IP_Mask *)route->value;
+		ipv4_add_split_vpn_route(tunnel, _route->ip, _route->mask, gateway);
+		route = next;
+	
+	}
+
+
+
 	// The dns servers
 	val = buffer;
-	while ((val = xml_find('<', "dns", val, 2))) {
+	while ((val = xml_find('<', "dns", val, 2)) && !tunnel->config->dns) {
 		if (xml_find(' ', "ip=", val, 1)) {
 			dns_server = xml_get(xml_find(' ', "ip=", val, 1));
 			log_debug("Found dns server %s in xml config\n", dns_server);
@@ -898,7 +912,7 @@ static int parse_xml_config(struct tunnel *tunnel, const char *buffer)
 
 	// Routes the tunnel wants to push
 	val = xml_find('<', "split-tunnel-info", buffer, 1);
-	while ((val = xml_find('<', "addr", val, 2))) {
+	while ((val = xml_find('<', "addr", val, 2)) && !tunnel->config->routes) {
 		char *dest, *mask;
 
 		dest = xml_get(xml_find(' ', "ip=", val, 1));
