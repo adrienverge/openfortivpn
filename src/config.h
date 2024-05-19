@@ -111,6 +111,7 @@ struct vpn_config {
 	Node 		*dns; /* dns servers comming from the config file */
 	int			set_routes;
 	Node		*routes; /* routes comming from the config file */
+	char		*domain_suffix;
 	int			pppd_use_peerdns;
 	int			use_syslog;
 #if HAVE_RESOLVCONF

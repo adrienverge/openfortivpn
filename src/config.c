@@ -59,6 +59,7 @@ const struct vpn_config invalid_cfg = {
 	.routes = NULL,
 	.set_dns = -1,
 	.dns = NULL,
+	.domain_suffix = {'\0'},
 	.pppd_use_peerdns = -1,
 #if HAVE_RESOLVCONF
 	.use_resolvconf = -1,
@@ -425,6 +426,10 @@ int load_config(struct vpn_config *cfg, const char *filename)
 			if (strncmp(cfg->user_cert, "pkcs11:", 7) == 0)
 				cfg->use_engine = 1;
 		} else if (strcmp(key, "dns") == 0) {
+			free(cfg->domain_suffix);
+			cfg->domain_suffix = val;
+			continue;
+		} else if (strcmp(key, "dns") == 0) {
 			Node *newNode = (Node *)malloc(sizeof(Node));
 			newNode->value = val;
 			newNode->next = cfg->dns;
@@ -435,11 +440,10 @@ int load_config(struct vpn_config *cfg, const char *filename)
 			newNode->value = cidr_to_ip_mask(val);
 			newNode->next = cfg->routes;
 			cfg->routes = newNode;
-			log_warn("add route: %s\n", val);
 			continue;
 		} else if (strcmp(key, "saml-login") == 0) {
 			free(cfg->saml_port);
-			cfg->saml_port = strdup(val);
+			cfg->saml_port = atol(val);
 			continue;
 		} else if (strcmp(key, "user-key") == 0) {
 			free(cfg->user_key);

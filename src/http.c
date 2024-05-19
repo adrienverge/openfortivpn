@@ -875,7 +875,7 @@ static int parse_xml_config(struct tunnel *tunnel, const char *buffer)
 
 	// The dns search string
 	val = buffer;
-	while ((val = xml_find('<', "dns", val, 2))) {
+	while ((val = xml_find('<', "dns", val, 2)) && !tunnel->config->domain_suffix) {
 		if (xml_find(' ', "domain=", val, 1)) {
 			tunnel->ipv4.dns_suffix
 			        = xml_get(xml_find(' ', "domain=", val, 1));
@@ -889,12 +889,21 @@ static int parse_xml_config(struct tunnel *tunnel, const char *buffer)
 	while(route){
 		Node *next =  route->next;
 		IP_Mask *_route = (IP_Mask *)route->value;
+		log_info("add route: %s %s\n", _route->ip, _route->mask );
 		ipv4_add_split_vpn_route(tunnel, _route->ip, _route->mask, gateway);
 		route = next;
-	
 	}
 
-
+	Node *dns = tunnel->config->dns;
+	while(dns){
+		Node *next =  dns->next;
+		log_warn("add dns: %s\n", dns->value);
+		if (!tunnel->ipv4.ns1_addr.s_addr)
+			tunnel->ipv4.ns1_addr.s_addr = inet_addr(dns->value);
+		else if (!tunnel->ipv4.ns2_addr.s_addr)
+			tunnel->ipv4.ns2_addr.s_addr = inet_addr(dns->value);
+		dns = next;
+	}
 
 	// The dns servers
 	val = buffer;

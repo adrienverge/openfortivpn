@@ -32,8 +32,8 @@ int process_request(int new_socket, char *id) {
     ssize_t write_result = write(new_socket, response, buffer_size);
     (void)write_result;
 
-    dup2(new_socket, STDOUT_FILENO);
-    dup2(new_socket, STDERR_FILENO);
+    // dup2(new_socket, STDOUT_FILENO);
+    // dup2(new_socket, STDERR_FILENO);
 
 
 

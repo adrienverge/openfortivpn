@@ -1,13 +1,22 @@
 ### configuration file for openfortivpn, see man openfortivpn(1) ###
 
 
-saml-login
 
 
-host = vpn.example.org
-port = 443
-username = vpnuser
-password = VPNpassw0rd
+# host = vpn.example.org
+# port = 443
+# username = vpnuser
+# password = VPNpassw0rd
 
-route = 10.0.0.1/16
-route = 172.17.5.43
+# trusted-cert = site-certificate
+
+# saml-login = 8020
+# route = 10.0.0.1/16
+# route = 172.17.5.43
+
+### dns servers, only last two lines will be used
+# dns = 4.4.4.4
+# dns = 8.8.8.8
+
+### dns suffix, only last line will be used 
+# domain = example.com

@@ -766,9 +766,8 @@ int main(int argc, char *argv[])
 			goto exit;
 		}
 		// log_debug("Running http server on port %d\n", cfg.saml_port);
-		while(1){
-
-		}
+		while(get_sig_received() == 0);
+		goto exit;
 	}
 
 	do {
