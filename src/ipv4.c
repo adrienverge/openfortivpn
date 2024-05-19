@@ -1399,44 +1399,6 @@ err_close:
 	return ret;
 }
 
-
-// char* cidr_to_ip_mask(char* cidr) {
-	
-// 	char* result = malloc(32);
-// 	memset(result, ' ', 31);
-// 	int dots = 0;
-// 	int cidrLen = strlen(cidr);
-// 	if(cidrLen > 32) cidrLen = 32;
-// 	for (int i = 0; i <= cidrLen; i++) {
-// 		result[i] = cidr[i];
-// 		if (cidr[i] != '.') continue;
-// 		dots++;
-// 	}
-// 	result[31] = '\0';
-// 	if(dots == 8) return result;
-	
-// 	struct in_addr mask_addr;
-// 	mask_addr.s_addr = 0xFFFFFFFF; // 255.255.255.255
-   
-// 	char* ip_str = strtok(cidr, "/");
-// 	char* mask_len_str = strtok(NULL, "/");
-// 	int mask_len = 0;
-// 	if (mask_len_str) {
-// 		mask_len = atoi(mask_len_str);
-// 	}
-// 	if(mask_len){
-// 		mask_addr.s_addr = htonl(~((1 << (32 - mask_len)) - 1));
-// 	}
-// 	char* mask_str = inet_ntoa(mask_addr);
-// 	snprintf(result, 32, "%-15s %s%d", ip_str, mask_str );
-// 	int mask_str_len = strlen(mask_str);
-// 	result[15] = '\0';
-// 	result[16 + mask_str_len] = '\0';
-// 	return result;
-    
-// }
-
-
 struct IP_Mask *cidr_to_ip_mask(char* cidr) {
     struct IP_Mask *result = malloc(sizeof(IP_Mask));
    
