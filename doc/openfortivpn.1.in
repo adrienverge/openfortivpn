@@ -82,7 +82,7 @@ A valid cookie (SVPNCOOKIE) to use in place of username and password.
 \fB\-\-cookie\-on\-stdin\fR
 Read the cookie (SVPNCOOKIE) from standard input.
 .TP
-\fB\-\-saml\-login=[\fI<port>\fR]
+\fB\-\-saml\-login[=\fI<port>\fR]
 Create http server and accept requests for SAML login
 .TP
 \fB\-\-pinentry=\fI<name>\fR
