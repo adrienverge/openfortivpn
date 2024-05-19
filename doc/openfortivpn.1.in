@@ -10,7 +10,7 @@ openfortivpn \- Client for PPP+TLS VPN tunnel services
 [\fB\-p\fR \fI<pass>\fR]
 [\fB\-\-cookie=\fI<cookie>\fR]
 [\fB\-\-cookie\-on\-stdin\fR]
-[\fB\-\-saml\-login=\fI<port>\fR]
+[\fB\-\-saml\-login[=\fI<port>\fR]]
 [\fB\-\-pinentry=\fI<name>\fR]
 [\fB\-\-otp=\fI<otp>\fR]
 [\fB\-\-otp\-prompt=\fI<prompt>\fR]
