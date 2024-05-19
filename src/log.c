@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <fcntl.h>
 
 static pthread_mutex_t mutex;
 static int do_syslog; //static variables are initialized to zero in C99
@@ -40,6 +41,9 @@ struct log_param_s {
 	int syslog_prio;
 };
 
+static int std_out;
+static int std_err;
+
 static const struct log_param_s log_params[OFV_LOG_DEBUG_ALL + 1] = {
 	{ "        ", "",           LOG_ERR},
 	{ "ERROR:  ", "\033[0;31m", LOG_ERR},
@@ -49,6 +53,11 @@ static const struct log_param_s log_params[OFV_LOG_DEBUG_ALL + 1] = {
 	{ "DEBUG:  ", "\033[0;90m", LOG_DEBUG},
 	{ "DEBUG:  ", "\033[0;90m", LOG_DEBUG},
 };
+int is_valid_fd(int fd)
+{
+    return fcntl(fd, F_GETFL) != -1 || errno != EBADF;
+}
+
 
 void init_logging(void)
 {
@@ -72,6 +81,8 @@ void init_logging(void)
 	if (e)
 		fprintf(stderr, "ERROR:  pthread_mutex_init: %s\n",
 		        strerror(e));
+	std_out = dup(STDOUT_FILENO);
+	std_err = dup(STDERR_FILENO);
 }
 
 void set_syslog(int use_syslog)
@@ -99,6 +110,15 @@ void do_log(int verbosity, const char *format, ...)
 	va_list args;
 	const struct log_param_s *lp = NULL;
 	int e;
+
+	if (!is_valid_fd(STDOUT_FILENO)) {
+		dup2(std_out, STDOUT_FILENO);
+	}
+	if (!is_valid_fd(STDERR_FILENO)) {
+		dup2(std_out, STDERR_FILENO);
+	}
+
+
 
 	e = pthread_mutex_lock(&mutex);
 	if (e)

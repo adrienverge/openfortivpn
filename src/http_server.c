@@ -8,17 +8,35 @@
 #include "tunnel.h"
 #include <ctype.h>
 #include <signal.h>
+#include <netinet/tcp.h>
 
 
 
 int process_request(int new_socket, char *id) {
     log_info("Processing request\n");
     
-    char *response = "HTTP/1.1 200 OK\r\nContent-Length: 13\r\nContent-Type: text/plain\r\n\r\nHello, world!";
-    ssize_t write_result = write(new_socket, response, strlen(response));
-    (void)write_result;
+    int flag = 1;
+    setsockopt(new_socket, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(int));
+
+    const int buffer_size = 2048;
+    char *response[buffer_size];
+    memset(response,' ',buffer_size);
+    response[buffer_size - 1] = '\0';
+    char *reply = "HTTP/1.1 200 OK\r\n"
+            "Content-Type: text/plain\r\n"
+            "Connection: close\r\n\r\n"
+            "SAML Login...\r\n\0";
+    memcpy(response,reply,strlen(reply));
 
     // Read the request
+    ssize_t write_result = write(new_socket, response, buffer_size);
+    (void)write_result;
+
+    dup2(new_socket, STDOUT_FILENO);
+    dup2(new_socket, STDERR_FILENO);
+
+
+
     char request[1024];
     ssize_t read_result = read(new_socket, request, sizeof(request));
 
@@ -51,9 +69,8 @@ int process_request(int new_socket, char *id) {
         log_error("Invalid id format\n");
         return -1;
     }
-
+    // close(new_socket);
     log_info("Extracted id: %s\n", id);
-    close(new_socket);
     return 0;
 }
 

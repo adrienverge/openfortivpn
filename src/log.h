@@ -41,6 +41,7 @@ void increase_verbosity(void);
 void decrease_verbosity(void);
 
 void do_log(int verbosity, const char *format, ...);
+int is_valid_fd(int fd);
 
 #define log_level(verbosity, ...) \
 	do { \
