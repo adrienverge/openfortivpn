@@ -9,7 +9,7 @@ Documentation=https://github.com/adrienverge/openfortivpn/wiki
 [Service]
 Type=notify
 PrivateTmp=true
-ExecStart=@BINDIR@/openfortivpn -c @SYSCONFDIR@/openfortivpn/%I.conf
+ExecStart=@BINDIR@/openfortivpn -c @SYSCONFDIR@/openfortivpn/%I
 Restart=on-failure
 OOMScoreAdjust=-100
 
