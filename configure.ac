@@ -58,7 +58,6 @@ fcntl.h \
 getopt.h \
 ifaddrs.h \
 netdb.h \
-net/if.h \
 netinet/in.h \
 netinet/tcp.h \
 pthread.h \
@@ -74,7 +73,8 @@ unistd.h \
 ], [], AC_MSG_ERROR([Required header not found]))
 
 # Checks for header files with prerequisites of other headers.
-AC_CHECK_HEADERS([net/route.h], [], AC_MSG_ERROR([Required header not found]), [#include <net/if.h>])
+AC_CHECK_HEADERS([net/if.h], [], AC_MSG_ERROR([Required header not found]), [#include <sys/socket.h>])
+AC_CHECK_HEADERS([net/route.h], [], AC_MSG_ERROR([Required header not found]), [#include <sys/socket.h>], [#include <net/if.h>])
 
 # Checks for optional header files.
 AC_CHECK_HEADERS([ \
@@ -86,7 +86,7 @@ util.h \
 ])
 
 # Checks for optional header files with prerequisites of other headers.
-AC_CHECK_HEADERS([net/if_var.h],[],[],[#include <net/if.h>])
+AC_CHECK_HEADERS([net/if_var.h],[],[],[#include <sys/socket.h>],[#include <net/if.h>])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
