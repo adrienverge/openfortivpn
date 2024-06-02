@@ -85,9 +85,6 @@ semaphore.h \
 util.h \
 ])
 
-# Checks for optional header files with prerequisites of other headers.
-AC_CHECK_HEADERS([net/if_var.h],[],[],[#include <net/if.h>])
-
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
 AC_C_INLINE
