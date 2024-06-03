@@ -166,7 +166,11 @@ write \
 ], [], AC_MSG_ERROR([Required function not found]))
 
 # Checks for optional functions.
-AC_CHECK_FUNCS([pthread_mutexattr_setrobust])
+AC_CHECK_FUNCS([ \
+pthread_mutexattr_setrobust \
+vdprintf \
+])
+
 # Use PKG_CHECK_MODULES compiler/linker flags
 save_openssl_CPPFLAGS="${CPPFLAGS}"
 save_openssl_LIBS="${LIBS}"

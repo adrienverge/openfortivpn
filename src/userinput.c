@@ -167,6 +167,22 @@ static int pinentry_read(int from, char **retstr)
 	return -1;
 }
 
+#ifndef HAVE_VDPRINTF
+static int vdprintf(int fd, const char *format, va_list ap)
+{
+	char buffer[2049];
+	int size = vsnprintf(buffer, sizeof(buffer), format, ap);
+
+	if (size < 0)
+		return size;
+
+	if (size >= sizeof(buffer)) // silently discard beyond the buffer size
+		size = sizeof(buffer) - 1;
+
+	return (int) write(fd, buffer, size);
+}
+#endif
+
 static int pinentry_exchange(int to, int from, char **retstr,
                              const char *format, ...)
 {
