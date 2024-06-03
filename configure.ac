@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT([openfortivpn], [1.22.0])
+AC_INIT([openfortivpn], [1.22.1])
 AC_CONFIG_SRCDIR([src/main.c])
 AM_INIT_AUTOMAKE([foreign subdir-objects])
 
@@ -84,9 +84,6 @@ pty.h \
 semaphore.h \
 util.h \
 ])
-
-# Checks for optional header files with prerequisites of other headers.
-AC_CHECK_HEADERS([net/if_var.h],[],[],[#include <sys/socket.h>],[#include <net/if.h>])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
