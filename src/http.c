@@ -47,7 +47,7 @@
  * @param[out] dest  the buffer to write the URL-encoded string
  * @param[in]  str   the input string to be escaped
  */
-static void url_encode(char *dest, const char *str)
+void url_encode(char *dest, const char *str)
 {
 	while (*str != '\0') {
 		if (isalnum(*str) || *str == '-' || *str == '_' ||
@@ -649,8 +649,13 @@ int auth_log_in(struct tunnel *tunnel)
 	url_encode(realm, tunnel->config->realm);
 
 	tunnel->cookie[0] = '\0';
-
-	if (username[0] == '\0' && tunnel->config->password[0] == '\0') {
+	if (tunnel->config->auth_id != NULL) {
+		char url[256];
+		snprintf(url,sizeof(url), "/remote/saml/auth_id?id=%s",
+				tunnel->config->auth_id);
+		ret = http_request(tunnel, "GET", url, "", &res,
+				&response_size);
+	}else if (username[0] == '\0' && tunnel->config->password[0] == '\0') {
 		snprintf(data, sizeof(data), "cert=&nup=1");
 		ret = http_request(tunnel, "GET", "/remote/login",
 		                   data, &res, &response_size);

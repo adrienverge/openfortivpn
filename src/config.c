@@ -87,6 +87,8 @@ const struct vpn_config invalid_cfg = {
 	.user_agent = NULL,
 	.hostcheck = NULL,
 	.check_virtual_desktop = NULL,
+	.auth_id = NULL,
+	.listen_port = 0
 };
 
 /*
@@ -466,6 +468,17 @@ int load_config(struct vpn_config *cfg, const char *filename)
 		} else if (strcmp(key, "check-virtual-desktop") == 0) {
 			free(cfg->check_virtual_desktop);
 			cfg->check_virtual_desktop = strdup(val);
+		} else if (strcmp(key, "ext-browser-saml") == 0) {
+			long port = 8020;
+			if (val != NULL) {
+				port = strtol(val, NULL, 0);
+				if (port < 1 || port > 65535) {
+					log_error("Bad ext-browser-saml port in configuration file: \"%s\".\n",
+							val);
+					goto err_free;
+				}
+			}
+			cfg->listen_port = (uint16_t) port;
 		} else {
 			log_warn("Bad key in configuration file: \"%s\".\n", key);
 			goto err_free;
@@ -533,6 +546,13 @@ void merge_config(struct vpn_config *dst, struct vpn_config *src)
 	if (src->cookie != invalid_cfg.cookie) {
 		free(dst->cookie);
 		dst->cookie = src->cookie;
+	}
+	if (src->auth_id != invalid_cfg.auth_id) {
+		free(dst->auth_id);
+		dst->auth_id = src->auth_id;
+	}
+	if (src->listen_port != invalid_cfg.listen_port) {
+		dst->listen_port = src->listen_port;
 	}
 	if (src->pinentry) {
 		free(dst->pinentry);
