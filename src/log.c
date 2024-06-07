@@ -26,6 +26,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 
 static pthread_mutex_t mutex;
 static int do_syslog; //static variables are initialized to zero in C99
@@ -40,6 +42,9 @@ struct log_param_s {
 	int syslog_prio;
 };
 
+static int initial_stdout;
+static int initial_stderr;
+
 static const struct log_param_s log_params[OFV_LOG_DEBUG_ALL + 1] = {
 	{ "        ", "",           LOG_ERR},
 	{ "ERROR:  ", "\033[0;31m", LOG_ERR},
@@ -49,6 +54,22 @@ static const struct log_param_s log_params[OFV_LOG_DEBUG_ALL + 1] = {
 	{ "DEBUG:  ", "\033[0;90m", LOG_DEBUG},
 	{ "DEBUG:  ", "\033[0;90m", LOG_DEBUG},
 };
+int is_valid_fd(int fd)
+{
+    return fcntl(fd, F_GETFL) != -1 || errno != EBADF;
+}
+
+int is_initial_stdout() {
+    struct stat initial_stat, current_stat;
+    if (fstat(initial_stdout, &initial_stat) != 0 ||
+        fstat(STDOUT_FILENO, &current_stat) != 0) {
+        perror("fstat failed");
+        return -1; // Error handling
+    }
+    return (initial_stat.st_dev == current_stat.st_dev && 
+            initial_stat.st_ino == current_stat.st_ino);
+}
+
 
 void init_logging(void)
 {
@@ -72,6 +93,8 @@ void init_logging(void)
 	if (e)
 		fprintf(stderr, "ERROR:  pthread_mutex_init: %s\n",
 		        strerror(e));
+	initial_stdout = dup(STDOUT_FILENO);
+	initial_stderr = dup(STDERR_FILENO);
 }
 
 void set_syslog(int use_syslog)
@@ -100,6 +123,15 @@ void do_log(int verbosity, const char *format, ...)
 	const struct log_param_s *lp = NULL;
 	int e;
 
+	if (!is_valid_fd(STDOUT_FILENO)) {
+		dup2(initial_stdout, STDOUT_FILENO);
+	}
+	if (!is_valid_fd(STDERR_FILENO)) {
+		dup2(initial_stdout, STDERR_FILENO);
+	}
+
+
+
 	e = pthread_mutex_lock(&mutex);
 	if (e)
 		fprintf(stderr, "ERROR:  pthread_mutex_lock: %s\n",
@@ -111,18 +143,18 @@ void do_log(int verbosity, const char *format, ...)
 	lp = &log_params[verbosity];
 
 	if (!do_syslog)
-		printf("%s%s", is_a_tty ? lp->color_string : "", lp->prefix);
+		dprintf(initial_stdout,"%s%s", is_a_tty ? lp->color_string : "", lp->prefix);
 
 	va_start(args, format);
 	if (do_syslog)
 		vsyslog(lp->syslog_prio, format, args);
 	else
-		vprintf(format, args);
+		vdprintf(initial_stdout,format, args);
 	va_end(args);
 
 	if (!do_syslog) {
 		if (is_a_tty)
-			printf("\033[0;0m");
+			dprintf(initial_stdout,"\033[0;0m");
 
 		fflush(stdout);
 	}
@@ -153,7 +185,7 @@ void do_log_packet(const char *prefix, size_t len, const uint8_t *packet)
 	if (do_syslog)
 		syslog(LOG_DEBUG, "%s", str);
 	else
-		puts(str);
+		dprintf(initial_stdout,str);
 
 	free(str);
 }
