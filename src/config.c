@@ -62,6 +62,7 @@ const struct vpn_config invalid_cfg = {
 	.use_syslog = -1,
 	.half_internet_routes = -1,
 	.persistent = -1,
+	.allow_nonroot = -1,
 #if HAVE_USR_SBIN_PPPD
 	.pppd_log = NULL,
 	.pppd_plugin = NULL,
@@ -331,6 +332,15 @@ int load_config(struct vpn_config *cfg, const char *filename)
 				continue;
 			}
 			cfg->persistent = persistent;
+		} else if (strcmp(key, "allow-nonroot") == 0) {
+			int allow_nonroot = strtob(val);
+
+			if (allow_nonroot < 0) {
+				log_warn("Bad allow-nonroot in configuration file: \"%s\".\n",
+				         val);
+				continue;
+			}
+			cfg->allow_nonroot = allow_nonroot;
 #if HAVE_USR_SBIN_PPPD
 		} else if (strcmp(key, "pppd-use-peerdns") == 0) {
 			int pppd_use_peerdns = strtob(val);
@@ -560,6 +570,8 @@ void merge_config(struct vpn_config *dst, struct vpn_config *src)
 		dst->half_internet_routes = src->half_internet_routes;
 	if (src->persistent != invalid_cfg.persistent)
 		dst->persistent = src->persistent;
+	if (src->allow_nonroot != invalid_cfg.allow_nonroot)
+		dst->allow_nonroot = src->allow_nonroot;
 #if HAVE_USR_SBIN_PPPD
 	if (src->pppd_log) {
 		free(dst->pppd_log);
