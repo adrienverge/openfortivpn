@@ -16,6 +16,7 @@ openfortivpn \- Client for PPP+TLS VPN tunnel services
 [\fB\-\-otp\-delay=\fI<delay>\fR]
 [\fB\-\-no\-ftm\-push\fR]
 [\fB\-\-realm=\fI<realm>\fR]
+[\fB\-\-tun=\fI<bool>\fR]
 [\fB\-\-ifname=\fI<interface>\fR]
 [\fB\-\-set\-routes=\fI<bool>\fR]
 [\fB\-\-no\-routes\fR]
@@ -106,6 +107,9 @@ authentication based on OTP will be used instead.
 Connect to the specified authentication realm. Defaults to empty, which
 is usually what you want.
 .TP
+\fB\-\-tun=\fI<bool>\fR
+Set to create a TUN device and use internal PPP code (experimental).
+.TP
 \fB\-\-ifname=\fI<interface>\fR
 Bind the connection to the specified network interface.
 .TP
@@ -182,9 +186,9 @@ OpenSSL ciphers to use. If default does not work, you can try alternatives
 such as HIGH:!MD5:!RC4 or as suggested by the Cipher: line in the output of
 \fBopenssl\fP(1) (e.g. AES256-GCM-SHA384):
 
-$ openssl s_client -connect \fI<host:port>\fR
+  $ openssl s_client -connect \fI<host:port>\fR
 
-(default: HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4)
+  (default: HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4)
 
 \fBApplies to TLS v1.2 or lower only, not to be used with TLS v1.3 ciphers.\fR
 .TP
