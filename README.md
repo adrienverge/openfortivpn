@@ -37,6 +37,11 @@ Examples
   openfortivpn vpn-gateway:8443 --username= --password= --user-cert=cert.pem --user-key=key.pem
   ```
 
+* Connect using SAML login:
+  ```shell
+  openfortivpn vpn-gateway:8443 --saml-login
+  ```
+
 * Don't set IP routes and don't add VPN nameservers to `/etc/resolv.conf`:
   ```shell
   openfortivpn vpn-gateway:8443 -u foo --no-routes --no-dns --pppd-no-peerdns
@@ -229,6 +234,14 @@ web browser such as
 to authenticate and retrieve a session cookie. This cookie can be fed
 to openfortivpn using option `--cookie-on-stdin`. Obviously, such a
 solution requires a graphic session.
+
+When started using `--saml-login` the program creates a web server that
+accepts SAML login requests. To login using SAML you just have to open
+`<your-vpn-domain>/remote/saml/start?redirect=1` and follow the login steps.
+At the end of the login process the page will be redirected to 
+`http://127.0.0.1:8020/?id=<session-id>`
+
+
 
 Contributing
 ------------

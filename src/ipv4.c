@@ -1398,3 +1398,32 @@ err_close:
 		         strerror(errno));
 	return ret;
 }
+
+struct IP_Mask *cidr_to_ip_mask(char* cidr) {
+    struct IP_Mask *result = malloc(sizeof(IP_Mask));
+   
+
+    result->ip = malloc(16);
+    result->mask = malloc(16);
+    
+    struct in_addr mask_addr;
+    mask_addr.s_addr = 0xFFFFFFFF; // 255.255.255.255
+   
+    char* ip_str = strtok(cidr, "/");
+    char* mask_len_str = strtok(NULL, "/");
+    int mask_len = 0;
+    if (mask_len_str) {
+        mask_len = atoi(mask_len_str);
+    }
+    if(mask_len){
+        mask_addr.s_addr = htonl(~((1 << (32 - mask_len)) - 1));
+    }
+    char* mask_str = inet_ntoa(mask_addr);
+    
+    strncpy(result->ip, ip_str, 16);
+    result->ip[15] = '\0';
+    strncpy(result->mask, mask_str, 15);
+    result->mask[15] = '\0';
+    
+    return result;
+}

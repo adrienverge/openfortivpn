@@ -287,7 +287,7 @@ static int do_http_request(struct tunnel *tunnel,
 	ret = http_send(tunnel, template, method, uri,
 	                tunnel->config->gateway_host, tunnel->config->gateway_port,
 	                tunnel->config->user_agent, tunnel->cookie,
-	                strlen(data), data);
+					strlen(data), data);
 	if (ret != 1)
 		return ret;
 
@@ -312,7 +312,7 @@ static int http_request(struct tunnel *tunnel, const char *method,
                        )
 {
 	int ret;
-
+	
 	ret = do_http_request(tunnel, method, uri, data,
 	                      response, response_size);
 	if (ret == ERR_HTTP_TLS) {
@@ -627,6 +627,44 @@ static int try_otp_auth(struct tunnel *tunnel, const char *buffer,
  * @return  1   in case of success
  *          < 0 in case of error
  */
+int saml_login(struct tunnel *tunnel)
+{
+	log_debug("SAML login\n");
+
+	int ret;
+	ssl_connect(tunnel);
+
+	char uri[1024];
+	snprintf(uri, sizeof(uri), "/remote/saml/auth_id?id=%s", tunnel->config->saml_session_id);
+	char *response;
+	uint32_t response_size = 0;
+	ret = http_request(tunnel, "GET", uri, "", &response, &response_size);
+	if(ret != 1 || response_size <= 15) return ret;
+	if (memcmp(response, "HTTP/1.1 200 OK", 15) != 0){
+		log_error("SAML login failed: %s\n", response);
+		return ret;
+	}
+	auth_get_cookie(tunnel, response, response_size);
+	if (ret == ERR_HTTP_NO_COOKIE){
+		log_error("SAML login failed: no cookie\n");
+		return ret;
+	}	
+
+	// free(response);
+
+
+
+	return ret;
+
+}
+
+
+/*
+ * Authenticates to gateway by sending username and password.
+ *
+ * @return  1   in case of success
+ *          < 0 in case of error
+ */
 int auth_log_in(struct tunnel *tunnel)
 {
 	int ret;
@@ -848,9 +886,12 @@ static int parse_xml_config(struct tunnel *tunnel, const char *buffer)
 	if (!gateway)
 		log_warn("No gateway address, using interface for routing\n");
 
+
+	
+
 	// The dns search string
 	val = buffer;
-	while ((val = xml_find('<', "dns", val, 2))) {
+	while ((val = xml_find('<', "dns", val, 2)) && !tunnel->config->domain_suffix) {
 		if (xml_find(' ', "domain=", val, 1)) {
 			tunnel->ipv4.dns_suffix
 			        = xml_get(xml_find(' ', "domain=", val, 1));
@@ -860,9 +901,29 @@ static int parse_xml_config(struct tunnel *tunnel, const char *buffer)
 		}
 	}
 
+	Node *route = tunnel->config->routes;
+	while(route){
+		Node *next =  route->next;
+		IP_Mask *_route = (IP_Mask *)route->value;
+		log_info("add route: %s %s\n", _route->ip, _route->mask );
+		ipv4_add_split_vpn_route(tunnel, _route->ip, _route->mask, gateway);
+		route = next;
+	}
+
+	Node *dns = tunnel->config->dns;
+	while(dns){
+		Node *next =  dns->next;
+		log_warn("add dns: %s\n", dns->value);
+		if (!tunnel->ipv4.ns1_addr.s_addr)
+			tunnel->ipv4.ns1_addr.s_addr = inet_addr(dns->value);
+		else if (!tunnel->ipv4.ns2_addr.s_addr)
+			tunnel->ipv4.ns2_addr.s_addr = inet_addr(dns->value);
+		dns = next;
+	}
+
 	// The dns servers
 	val = buffer;
-	while ((val = xml_find('<', "dns", val, 2))) {
+	while ((val = xml_find('<', "dns", val, 2)) && !tunnel->config->dns) {
 		if (xml_find(' ', "ip=", val, 1)) {
 			dns_server = xml_get(xml_find(' ', "ip=", val, 1));
 			log_debug("Found dns server %s in xml config\n", dns_server);
@@ -876,7 +937,7 @@ static int parse_xml_config(struct tunnel *tunnel, const char *buffer)
 
 	// Routes the tunnel wants to push
 	val = xml_find('<', "split-tunnel-info", buffer, 1);
-	while ((val = xml_find('<', "addr", val, 2))) {
+	while ((val = xml_find('<', "addr", val, 2)) && !tunnel->config->routes) {
 		char *dest, *mask;
 
 		dest = xml_get(xml_find(' ', "ip=", val, 1));

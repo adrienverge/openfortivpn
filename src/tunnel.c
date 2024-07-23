@@ -1242,6 +1242,13 @@ err_tcp_connect:
 	return 1;
 }
 
+void* run_tunnel_wrapper(void *arg) {
+    struct vpn_config *config = (struct vpn_config *)arg;
+    int result = run_tunnel(config);
+    return (void *)(long)result;
+}
+
+
 int run_tunnel(struct vpn_config *config)
 {
 	int ret;
@@ -1275,6 +1282,9 @@ int run_tunnel(struct vpn_config *config)
 	// cookie
 	if (config->cookie)
 		ret = auth_set_cookie(&tunnel, config->cookie);
+	else if(config->saml_port){
+		ret = saml_login(&tunnel);
+	}
 	else
 		ret = auth_log_in(&tunnel);
 	if (ret != 1) {
@@ -1285,7 +1295,6 @@ int run_tunnel(struct vpn_config *config)
 	}
 	log_info("Authenticated.\n");
 	log_debug("Cookie: %s\n", tunnel.cookie);
-
 	ret = auth_request_vpn_allocation(&tunnel);
 	if (ret != 1) {
 		log_error("VPN allocation request failed (%s).\n",
