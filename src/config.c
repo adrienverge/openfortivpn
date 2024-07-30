@@ -51,6 +51,7 @@ const struct vpn_config invalid_cfg = {
 	.no_ftm_push = -1,
 	.pinentry = NULL,
 	.realm = {'\0'},
+	.tun = -1,
 	.iface_name = {'\0'},
 	.sni = {'\0'},
 	.set_routes = -1,
@@ -538,6 +539,8 @@ void merge_config(struct vpn_config *dst, struct vpn_config *src)
 		free(dst->pinentry);
 		dst->pinentry = src->pinentry;
 	}
+	if (src->tun != invalid_cfg.tun)
+		dst->tun = src->tun;
 	if (src->realm[0])
 		strcpy(dst->realm, src->realm);
 	if (src->iface_name[0])
