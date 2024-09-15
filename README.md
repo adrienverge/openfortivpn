@@ -241,8 +241,6 @@ accepts SAML login requests. To login using SAML you just have to open
 At the end of the login process the page will be redirected to 
 `http://127.0.0.1:8020/?id=<session-id>`
 
-
-
 Contributing
 ------------
 

@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT([openfortivpn], [1.22.0])
+AC_INIT([openfortivpn], [1.22.1])
 AC_CONFIG_SRCDIR([src/main.c])
 AM_INIT_AUTOMAKE([foreign subdir-objects])
 
@@ -58,7 +58,6 @@ fcntl.h \
 getopt.h \
 ifaddrs.h \
 netdb.h \
-net/if.h \
 netinet/in.h \
 netinet/tcp.h \
 pthread.h \
@@ -74,7 +73,8 @@ unistd.h \
 ], [], AC_MSG_ERROR([Required header not found]))
 
 # Checks for header files with prerequisites of other headers.
-AC_CHECK_HEADERS([net/route.h], [], AC_MSG_ERROR([Required header not found]), [#include <net/if.h>])
+AC_CHECK_HEADERS([net/if.h], [], AC_MSG_ERROR([Required header not found]), [#include <sys/socket.h>])
+AC_CHECK_HEADERS([net/route.h], [], AC_MSG_ERROR([Required header not found]), [#include <sys/socket.h>], [#include <net/if.h>])
 
 # Checks for optional header files.
 AC_CHECK_HEADERS([ \
@@ -84,9 +84,6 @@ pty.h \
 semaphore.h \
 util.h \
 ])
-
-# Checks for optional header files with prerequisites of other headers.
-AC_CHECK_HEADERS([net/if_var.h],[],[],[#include <net/if.h>])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -169,7 +166,11 @@ write \
 ], [], AC_MSG_ERROR([Required function not found]))
 
 # Checks for optional functions.
-AC_CHECK_FUNCS([pthread_mutexattr_setrobust])
+AC_CHECK_FUNCS([ \
+pthread_mutexattr_setrobust \
+vdprintf \
+])
+
 # Use PKG_CHECK_MODULES compiler/linker flags
 save_openssl_CPPFLAGS="${CPPFLAGS}"
 save_openssl_LIBS="${LIBS}"

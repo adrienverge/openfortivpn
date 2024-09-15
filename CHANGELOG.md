@@ -14,6 +14,10 @@ Releases
 This high level changelog is usually updated when a release is tagged.
 On the master branch there may be changes that are not (yet) described here.
 
+### 1.22.1
+
+* [-] do not advertise we talk compressed HTTP - we don't
+
 ### 1.22.0
 
 * [-] make sure Homebrew packages for macOS are built with --enable-legacy-pppd

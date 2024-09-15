@@ -634,12 +634,15 @@ int saml_login(struct tunnel *tunnel)
 	int ret;
 	ssl_connect(tunnel);
 
-	char uri[1024];
-	snprintf(uri, sizeof(uri), "/remote/saml/auth_id?id=%s", tunnel->config->saml_session_id);
+	char uri_pattern[] =  "/remote/saml/auth_id?id=%s";
+	int required_size = snprintf(NULL, 0, uri_pattern, tunnel->config->saml_session_id) + 1;
+	char *uri = alloca(required_size);
+	snprintf(uri, required_size, uri_pattern, tunnel->config->saml_session_id);
+
 	char *response;
 	uint32_t response_size = 0;
 	ret = http_request(tunnel, "GET", uri, "", &response, &response_size);
-	if(ret != 1 || response_size <= 15) return ret;
+	if(ret != 1 || response_size <= 15) return -1;
 	if (memcmp(response, "HTTP/1.1 200 OK", 15) != 0){
 		log_error("SAML login failed: %s\n", response);
 		return ret;
@@ -648,16 +651,12 @@ int saml_login(struct tunnel *tunnel)
 	if (ret == ERR_HTTP_NO_COOKIE){
 		log_error("SAML login failed: no cookie\n");
 		return ret;
-	}	
+	}
 
-	// free(response);
-
-
+	free(response);
 
 	return ret;
-
 }
-
 
 /*
  * Authenticates to gateway by sending username and password.
@@ -677,7 +676,24 @@ int auth_log_in(struct tunnel *tunnel)
 	char portal[64] = { '\0' };
 	char magic[32] = {'\0' };
 	char peer[32]  = { '\0' };
-	char data[9 + 3 * USERNAME_SIZE + 12 + 3 * PASSWORD_SIZE + 7 + 3 * REALM_SIZE + 7 + 1];
+#define OFV_MAX(a, b) ((a) > (b) ? a : b)
+	char data[OFV_MAX(
+	                  // username=%s&realm=%s&ajax=1&...&just_logged_in=1
+	                  sizeof("username=") +
+	                  3 * USERNAME_SIZE +
+	                  sizeof("realm=") +
+	                  3 * REALM_SIZE +
+	                  sizeof("ajax=1&redir=%%2Fremote%%2Findex&just_logged_in=1"),
+	                  // "username=%s&credential=%s&realm=%s&ajax=1
+	                  sizeof("username=") +
+	                  3 * USERNAME_SIZE +
+	                  sizeof("realm=") +
+	                  3 * REALM_SIZE +
+	                  sizeof("credential=") +
+	                  3 * PASSWORD_SIZE +
+	                  sizeof("ajax=1")
+	          )] = { '\0' };
+#undef OFV_MAX
 	char token[128], tokenresponse[256], tokenparams[320];
 	char action_url[1024] = { '\0' };
 	char *res = NULL;
@@ -689,7 +705,6 @@ int auth_log_in(struct tunnel *tunnel)
 	tunnel->cookie[0] = '\0';
 
 	if (username[0] == '\0' && tunnel->config->password[0] == '\0') {
-		snprintf(data, sizeof(data), "cert=&nup=1");
 		ret = http_request(tunnel, "GET", "/remote/login",
 		                   data, &res, &response_size);
 	} else {
