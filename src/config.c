@@ -45,6 +45,8 @@ const struct vpn_config invalid_cfg = {
 	.password = {'\0'},
 	.password_set = 0,
 	.cookie = NULL,
+	.saml_port = 0,
+	.saml_session_id = {'\0'},
 	.otp = {'\0'},
 	.otp_prompt = NULL,
 	.otp_delay = -1,
@@ -418,9 +420,7 @@ int load_config(struct vpn_config *cfg, const char *filename)
 			if (strncmp(cfg->user_cert, "pkcs11:", 7) == 0)
 				cfg->use_engine = 1;
 		} else if (strcmp(key, "saml-login") == 0) {
-			free(cfg->saml_port);
-			cfg->saml_port = atol(val);
-			continue;
+			cfg->saml_port = atoi(val);
 		} else if (strcmp(key, "user-key") == 0) {
 			free(cfg->user_key);
 			cfg->user_key = strdup(val);

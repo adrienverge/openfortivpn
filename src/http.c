@@ -634,12 +634,15 @@ int saml_login(struct tunnel *tunnel)
 	int ret;
 	ssl_connect(tunnel);
 
-	char uri[1024];
-	snprintf(uri, sizeof(uri), "/remote/saml/auth_id?id=%s", tunnel->config->saml_session_id);
+	char uri_pattern[] =  "/remote/saml/auth_id?id=%s";
+	int required_size = snprintf(NULL, 0, uri_pattern, tunnel->config->saml_session_id) + 1;
+	char *uri = alloca(required_size);
+	snprintf(uri, required_size, uri_pattern, tunnel->config->saml_session_id);
+
 	char *response;
 	uint32_t response_size = 0;
 	ret = http_request(tunnel, "GET", uri, "", &response, &response_size);
-	if(ret != 1 || response_size <= 15) return ret;
+	if(ret != 1 || response_size <= 15) return -1;
 	if (memcmp(response, "HTTP/1.1 200 OK", 15) != 0){
 		log_error("SAML login failed: %s\n", response);
 		return ret;
@@ -648,11 +651,9 @@ int saml_login(struct tunnel *tunnel)
 	if (ret == ERR_HTTP_NO_COOKIE){
 		log_error("SAML login failed: no cookie\n");
 		return ret;
-	}	
+	}
 
-	// free(response);
-
-
+	free(response);
 
 	return ret;
 }

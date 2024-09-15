@@ -19,7 +19,6 @@
 #define OPENFORTIVPN_HTTP_H
 
 #include "tunnel.h"
-#include "config.h"
 
 #include <stdint.h>
 

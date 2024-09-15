@@ -81,6 +81,7 @@ struct x509_digest {
  * We believe we are on the safe side using this value.
  */
 #define MAX_DOMAIN_LENGTH 256
+#define MAX_SAML_SESSION_ID_LENGTH 1024
 
 struct vpn_config {
 	char			gateway_host[GATEWAY_HOST_SIZE + 1];
@@ -91,8 +92,8 @@ struct vpn_config {
 	int			password_set;
 	char			otp[OTP_SIZE + 1];
 	char			*cookie;
-	int			    saml_port;
-	char			saml_session_id[1024];
+	int			saml_port;
+	char			saml_session_id[MAX_SAML_SESSION_ID_LENGTH];
 	char			*otp_prompt;
 	unsigned int		otp_delay;
 	int			no_ftm_push;

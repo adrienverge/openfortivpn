@@ -228,7 +228,7 @@ int main(int argc, char *argv[])
 		.password_set = 0,
 		.cookie = NULL,
 		.saml_port = 0,
-		.saml_session_id = NULL,
+		.saml_session_id = {'\0'},
 		.otp = {'\0'},
 		.otp_prompt = NULL,
 		.otp_delay = 0,
@@ -290,7 +290,7 @@ int main(int argc, char *argv[])
 		{"password",             required_argument, NULL, 'p'},
 		{"cookie",               required_argument, NULL, 0},
 		{"cookie-on-stdin",      no_argument, NULL, 0},
-		{"saml-login",			 optional_argument, NULL, 0},
+		{"saml-login",           optional_argument, NULL, 0},
 		{"otp",                  required_argument, NULL, 'o'},
 		{"otp-prompt",           required_argument, NULL, 0},
 		{"otp-delay",            required_argument, NULL, 0},
@@ -615,7 +615,7 @@ int main(int argc, char *argv[])
 				if(optarg != NULL){
 					port =	strtol(optarg, NULL, 0);
 				}
-				if (port < 0 || port > UINT_MAX) {
+				if (port < 0 || port > 65535) {
 					log_warn("Invalid saml listen port: %s! Default port is 8020 \n", optarg);
 					break;
 				}
@@ -732,7 +732,7 @@ int main(int argc, char *argv[])
 			goto user_error;
 		}
 	// If username but no password given, interactively ask user
-	if (!cfg.password_set && cfg.username[0] != '\0' && !cfg.cookie) {
+	if (!cfg.password_set && cfg.username[0] != '\0' && !cfg.cookie && !cfg.saml_port) {
 		char hint[USERNAME_SIZE + 1 + REALM_SIZE + 1 + GATEWAY_HOST_SIZE + 10];
 
 		sprintf(hint, "%s_%s_%s_password",
@@ -761,12 +761,16 @@ int main(int argc, char *argv[])
 
 		if(pthread_create(&server_thread, NULL, start_http_server, &cfg) != 0){
 			log_error("Failed to create saml login server thread\n");
-			// ret = EXIT_FAILURE;
+			ret = EXIT_FAILURE;
 			goto exit;
 		}
-		// log_debug("Running http server on port %d\n", cfg.saml_port);
-		while(get_sig_received() == 0);
-		goto exit;
+		log_debug("Running http server on port %d\n", cfg.saml_port);
+		pthread_join(server_thread, NULL);
+
+		if (strlen(cfg.saml_session_id) == 0) {
+			log_error("Failed to receive SAML session id\n");
+			goto exit;
+		}
 	}
 
 	do {
