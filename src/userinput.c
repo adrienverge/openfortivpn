@@ -332,7 +332,7 @@ void read_password(const char *pinentry, const char *hint,
 {
 	int masked = 0;
 	struct termios oldt, newt;
-	int i;
+	size_t i;
 
 	if (pinentry && *pinentry) {
 		pinentry_read_password(pinentry, hint, prompt, pass, len);
