@@ -773,7 +773,7 @@ static int tcp_connect(struct tunnel *tunnel)
 		const char *response = NULL;
 
 		memset(&(request), 0, sizeof(request));
-		for (int j = 0; response == NULL; j++) {
+		for (unsigned int j = 0; response == NULL; j++) {
 			if (j >= ARRAY_SIZE(request) - 1) {
 				log_error("Proxy response is unexpectedly large and cannot fit in the %lu-bytes buffer.\n",
 				          ARRAY_SIZE(request));
@@ -819,7 +819,7 @@ static int tcp_connect(struct tunnel *tunnel)
 				};
 				const char *eol = NULL;
 
-				for (int i = 0; (i < ARRAY_SIZE(HTTP_EOL)) &&
+				for (unsigned int i = 0; (i < ARRAY_SIZE(HTTP_EOL)) &&
 				     (eol == NULL); i++)
 					eol = strstr(response, HTTP_EOL[i]);
 				response = eol;
