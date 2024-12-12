@@ -105,6 +105,7 @@ Some Linux distributions provide `openfortivpn` packages:
 * [Debian](https://packages.debian.org/stable/openfortivpn)
 * [Ubuntu](https://packages.ubuntu.com/search?keywords=openfortivpn)
 * [Solus](https://dev.getsol.us/source/openfortivpn/)
+* [Alpine Linux](https://pkgs.alpinelinux.org/package/edge/testing/x86_64/openfortivpn)
 
 On macOS both [Homebrew](https://formulae.brew.sh/formula/openfortivpn) and
 [MacPorts](https://ports.macports.org/port/openfortivpn)
