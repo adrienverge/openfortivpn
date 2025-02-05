@@ -168,6 +168,9 @@ PPPD_USAGE \
 "  --seclevel-1                  If --cipher-list is not specified, add @SECLEVEL=1 to\n" \
 "                                (compiled in) list of ciphers. This lowers limits on\n" \
 "                                dh key." help_seclevel_1 "\n" \
+"  --ifup-hook=<command>         Execute the supplied command once the tunnel has been\n" \
+"                                established and routes and DNS have been configured (if\n" \
+"                                applicable).\n" \
 "  --persistent=<interval>       Run the vpn persistently in a loop and try to re-\n" \
 "                                connect every <interval> seconds when dropping out.\n" \
 "  -v                            Increase verbosity. Can be used multiple times\n" \
@@ -313,6 +316,7 @@ int main(int argc, char *argv[])
 		{"cipher-list",          required_argument, NULL, 0},
 		{"min-tls",              required_argument, NULL, 0},
 		{"seclevel-1",           no_argument, &cli_cfg.seclevel_1, 1},
+		{"ifup-hook",			 required_argument, NULL, 0},
 #if HAVE_USR_SBIN_PPPD
 		{"pppd-use-peerdns",     required_argument, NULL, 0},
 		{"pppd-no-peerdns",      no_argument, &cli_cfg.pppd_use_peerdns, 0},
@@ -511,6 +515,12 @@ int main(int argc, char *argv[])
 				} else {
 					cli_cfg.min_tls = min_tls;
 				}
+				break;
+			}
+			if (strcmp(long_options[option_index].name,
+						"ifup-hook") == 0) {
+				free(cli_cfg.ifup_hook);
+				cli_cfg.ifup_hook = strdup(optarg);
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
