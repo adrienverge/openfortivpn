@@ -128,11 +128,11 @@ static int on_ppp_if_up(struct tunnel *tunnel)
 
 	if (tunnel->config->ifup_hook) {
 		log_info("Executing ifup hook...\n");
-		
+
 		int code = system(tunnel->config->ifup_hook);
-		if (code != 0) {
+
+		if (code != 0)
 			log_warn("ifup hook failed with exit code %i\n", code);
-		}
 	}
 
 	log_info("Tunnel is up and running.\n");

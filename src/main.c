@@ -518,7 +518,7 @@ int main(int argc, char *argv[])
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
-						"ifup-hook") == 0) {
+			           "ifup-hook") == 0) {
 				free(cli_cfg.ifup_hook);
 				cli_cfg.ifup_hook = strdup(optarg);
 				break;
