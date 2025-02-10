@@ -140,7 +140,10 @@ static int process_request(int new_socket, char *id)
 
 	int flag = 1;
 
-	setsockopt(new_socket, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(int));
+	if (setsockopt(new_socket, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(flag))) {
+		log_error("Failed to set socket options\n");
+		return -1;
+	}
 
 	// Read the request
 	char request[1024];
