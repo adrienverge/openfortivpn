@@ -126,8 +126,10 @@ static void send_status_response(int socket, const char *userMessage)
 
 	// Using two separate writes here to make the code not more complicated assembling
 	// the buffers.
-	write(socket, replyHeaderBuffer, strlen(replyHeaderBuffer));
-	write(socket, replyBodyBuffer, strlen(replyBodyBuffer));
+	if (write(socket, replyHeaderBuffer, strlen(replyHeaderBuffer)) < 0)
+		log_warn("Failed to write: %s\n", strerror(errno));
+	if (write(socket, replyBodyBuffer, strlen(replyBodyBuffer)) < 0)
+		log_warn("Failed to write: %s\n", strerror(errno));
 
 end:
 	free(replyBodyBuffer);
