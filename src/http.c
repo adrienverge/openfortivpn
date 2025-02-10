@@ -474,6 +474,7 @@ static int try_otp_auth(struct tunnel *tunnel, const char *buffer,
 	const char *s = buffer;
 	char *d = data;
 	const char *p = NULL;
+	int ret;
 	/* Length-check for destination buffer */
 #define SPACE_AVAILABLE(sz) (sizeof(data) - (d - data) >= (sz))
 	/* Get the form action */
@@ -616,7 +617,9 @@ static int try_otp_auth(struct tunnel *tunnel, const char *buffer,
 	if (!SPACE_AVAILABLE(1))
 		return -1;
 	*d++ = '\0';
-	return http_request(tunnel, "POST", path, data, res, response_size);
+	ret = http_request(tunnel, "POST", path, data, res, response_size);
+	memset(tunnel->config->otp, '\0', OTP_SIZE + 1); // clear OTP for next run
+	return ret;
 #undef SPACE_AVAILABLE
 }
 
