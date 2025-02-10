@@ -231,7 +231,7 @@ int wait_for_http_request(struct vpn_config *config)
 
 	// Creating socket file descriptor
 	server_fd = socket(AF_INET, SOCK_STREAM, 0);
-	if (server_fd == 0) {
+	if (server_fd < 0) {
 		log_error("Failed to create socket\n");
 		return -1;
 	}
