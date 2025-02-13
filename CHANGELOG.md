@@ -14,6 +14,10 @@ Releases
 This high level changelog is usually updated when a release is tagged.
 On the master branch there may be changes that are not (yet) described here.
 
+### 1.23.1
+
+* [-] fix a few coverity warnings
+
 ### 1.23.0
 
 * [-] Support older mac0S versions that lack vdprintf()
