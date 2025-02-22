@@ -166,7 +166,20 @@ For other distros, you'll need to build and install from source:
     export PKG_CONFIG_PATH="/usr/local/opt/openssl/lib/pkgconfig:$PKG_CONFIG_PATH"
     ```
 
-2.  Build and install.
+2. Clone the repository
+```shell
+git clone https://github.com/adrienverge/openfortivpn
+```
+Enter into cloned directory
+```shell
+cd openfortivpn
+```
+If any doubts that current version does not work (replace version number with actual version):
+```shell
+git checkout v1.23.1
+```
+
+3.  Build and install.
 
     ```shell
     ./autogen.sh
