@@ -119,6 +119,7 @@ PPPD_USAGE \
 "  --cookie=<cookie>             A valid session cookie (SVPNCOOKIE).\n" \
 "  --cookie-on-stdin             Read the cookie (SVPNCOOKIE) from standard input.\n" \
 "  --saml-login[=port]           Run a http server to handle SAML login requests\n" \
+"  --saml-host=<host>            Listen for SAML login requests on different host \n" \
 "  -o <otp>, --otp=<otp>         One-Time-Password.\n" \
 "  --otp-prompt=<prompt>         Search for the OTP prompt starting with this string.\n" \
 "  --otp-delay=<delay>           Wait <delay> seconds before sending the OTP.\n" \
@@ -227,6 +228,7 @@ int main(int argc, char *argv[])
 		.password = {'\0'},
 		.password_set = 0,
 		.cookie = NULL,
+		.saml_host = NULL,
 		.saml_port = 0,
 		.saml_session_id = {'\0'},
 		.otp = {'\0'},
@@ -291,6 +293,7 @@ int main(int argc, char *argv[])
 		{"cookie",               required_argument, NULL, 0},
 		{"cookie-on-stdin",      no_argument, NULL, 0},
 		{"saml-login",           optional_argument, NULL, 0},
+		{"saml-host",            optional_argument, NULL, 0},
 		{"otp",                  required_argument, NULL, 'o'},
 		{"otp-prompt",           required_argument, NULL, 0},
 		{"otp-delay",            required_argument, NULL, 0},
@@ -607,6 +610,13 @@ int main(int argc, char *argv[])
 				free(cli_cfg.cookie);
 				cli_cfg.cookie = strdup_with_prefix(cookie, "SVPNCOOKIE=");
 				free(cookie);
+				break;
+			}
+			if (strcmp(long_options[option_index].name,
+			           "saml-host") == 0) {
+				free(cli_cfg.saml_host);
+				strncpy(cli_cfg.saml_host, optarg, GATEWAY_HOST_SIZE);
+				cli_cfg.saml_host[GATEWAY_HOST_SIZE] = '\0';
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
