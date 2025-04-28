@@ -322,7 +322,6 @@ int main(int argc, char *argv[])
 		{"pppd-ifname",          required_argument, NULL, 0},
 		{"pppd-call",            required_argument, NULL, 0},
 		{"pppd-accept-remote",   optional_argument, NULL, 0},
-		{"plugin",               required_argument, NULL, 0}, // deprecated
 #endif
 #if HAVE_USR_SBIN_PPP
 		{"ppp-system",           required_argument, NULL, 0},
@@ -348,7 +347,7 @@ int main(int argc, char *argv[])
 
 		switch (c) {
 		case 0:
-			/* If this option set a flag, do nothing else now. */
+			/* If this option sets a flag, do nothing else now. */
 			if (long_options[option_index].flag != 0)
 				break;
 			if (strcmp(long_options[option_index].name,
@@ -416,16 +415,6 @@ int main(int argc, char *argv[])
 				} else {
 					cli_cfg.pppd_accept_remote = 1;
 				}
-				break;
-			}
-			// --plugin is deprecated, use --pppd-plugin
-			if (cli_cfg.pppd_plugin == NULL &&
-			    strcmp(long_options[option_index].name,
-			           "plugin") == 0) {
-				log_warn("Option --%s is deprecated, use --pppd-plugin\n",
-				         long_options[option_index].name);
-				free(cli_cfg.pppd_plugin);
-				cli_cfg.pppd_plugin = strdup(optarg);
 				break;
 			}
 #endif

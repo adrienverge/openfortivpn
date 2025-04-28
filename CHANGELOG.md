@@ -14,16 +14,20 @@ Releases
 This high level changelog is usually updated when a release is tagged.
 On the master branch there may be changes that are not (yet) described here.
 
+### not released yet
+
+* [~] remove deprecated option "plugin"
+
 ### 1.23.1
 
 * [-] fix a few coverity warnings
 
 ### 1.23.0
 
-* [-] Support older mac0S versions that lack vdprintf()
-* [-] Patch certificate login error for FortiOS 7.4.4
-* [-] Clear OTP after run
-* [+] Support SAML login authentication
+* [-] support older mac0S versions that lack vdprintf()
+* [-] patch certificate login error for FortiOS 7.4.4
+* [-] clear OTP after run
+* [+] support SAML login authentication
 
 ### 1.22.1
 
