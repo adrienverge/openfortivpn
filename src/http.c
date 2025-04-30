@@ -899,6 +899,40 @@ static int parse_xml_config(struct tunnel *tunnel, const char *buffer)
 		}
 	}
 
+	// The it could be split-dns instead of global dns
+	val = buffer;
+	while ((val = xml_find('<', "split-dns", val, 2))) {
+		char *domains, *dnsserver1, *dnsserver2;
+
+		domains = xml_get(xml_find(' ', "domains=", val, 1));
+		if (!domains) {
+			log_warn("No domain names for a split-dns\n");
+			continue;
+		}
+
+		dnsserver1 = xml_get(xml_find(' ', "dnsserver1=", val, 1));
+		if (!dnsserver1) {
+			log_warn("No dnsserver1 for a split-dns\n");
+			free(domains);
+			continue;
+		}
+
+		dnsserver2 = xml_get(xml_find(' ', "dnsserver2=", val, 1));
+		if (!dnsserver2) {
+			log_warn("No dnsserver2 for a split-dns\n");
+			free(dnsserver1);
+			free(domains);
+			continue;
+		}
+
+		ipv4_add_split_dns(tunnel, domains, dnsserver1, dnsserver2);
+
+		free(domains);
+		free(dnsserver1);
+		free(dnsserver2);
+
+	}
+
 	// Routes the tunnel wants to push
 	val = xml_find('<', "split-tunnel-info", buffer, 1);
 	while ((val = xml_find('<', "addr", val, 2))) {
