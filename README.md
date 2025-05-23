@@ -105,11 +105,11 @@ Some Linux distributions provide `openfortivpn` packages:
 * [Fedora / CentOS](https://packages.fedoraproject.org/pkgs/openfortivpn)
 * [openSUSE / SLE](https://software.opensuse.org/package/openfortivpn)
 * [Gentoo](https://packages.gentoo.org/packages/net-vpn/openfortivpn)
-* [NixOS](https://github.com/NixOS/nixpkgs/tree/master/pkgs/tools/networking/openfortivpn)
+* [NixOS](https://github.com/NixOS/nixpkgs/tree/master/pkgs/by-name/op/openfortivpn)
 * [Arch Linux](https://archlinux.org/packages/extra/x86_64/openfortivpn)
 * [Debian](https://packages.debian.org/stable/openfortivpn)
 * [Ubuntu](https://packages.ubuntu.com/search?keywords=openfortivpn)
-* [Solus](https://dev.getsol.us/source/openfortivpn/)
+* [Solus](https://github.com/getsolus/packages/tree/main/packages/o/openfortivpn)
 * [Alpine Linux](https://pkgs.alpinelinux.org/package/edge/testing/x86_64/openfortivpn)
 
 On macOS both [Homebrew](https://formulae.brew.sh/formula/openfortivpn) and
