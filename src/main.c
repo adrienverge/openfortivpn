@@ -168,6 +168,8 @@ PPPD_USAGE \
 "  --seclevel-1                  If --cipher-list is not specified, add @SECLEVEL=1 to\n" \
 "                                (compiled in) list of ciphers. This lowers limits on\n" \
 "                                dh key." help_seclevel_1 "\n" \
+"  --allow-nonroot               Permit running without root privileges.\n" \
+"                                Requires system/ppp configuration.\n" \
 "  --persistent=<interval>       Run the vpn persistently in a loop and try to re-\n" \
 "                                connect every <interval> seconds when dropping out.\n" \
 "  -v                            Increase verbosity. Can be used multiple times\n" \
@@ -242,6 +244,7 @@ int main(int argc, char *argv[])
 		.use_syslog = 0,
 		.half_internet_routes = 0,
 		.persistent = 0,
+                .allow_nonroot = 0,
 #if HAVE_RESOLVCONF
 		.use_resolvconf = USE_RESOLVCONF,
 #endif
@@ -313,6 +316,7 @@ int main(int argc, char *argv[])
 		{"cipher-list",          required_argument, NULL, 0},
 		{"min-tls",              required_argument, NULL, 0},
 		{"seclevel-1",           no_argument, &cli_cfg.seclevel_1, 1},
+		{"allow-nonroot",        no_argument, &cli_cfg.allow_nonroot, 1},
 #if HAVE_USR_SBIN_PPPD
 		{"pppd-use-peerdns",     required_argument, NULL, 0},
 		{"pppd-no-peerdns",      no_argument, &cli_cfg.pppd_use_peerdns, 0},
@@ -742,8 +746,8 @@ int main(int argc, char *argv[])
 	if (cfg.otp[0] != '\0')
 		log_debug("One-time password = \"%s\"\n", cfg.otp);
 
-	if (geteuid() != 0) {
-		log_error("This process was not spawned with root privileges, which are required.\n");
+	if (!cfg.allow_nonroot && (geteuid() != 0)) {
+		log_error("This process was not spawned with root privileges, which are normally required. If your system is configured, use --allow-nonroot.\n");
 		ret = EXIT_FAILURE;
 		goto exit;
 	}
