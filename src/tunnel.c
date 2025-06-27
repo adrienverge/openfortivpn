@@ -30,17 +30,14 @@
 #include "http.h"
 #include "log.h"
 #include "userinput.h"
-#include "config.h"
 
 #include <openssl/err.h>
-#if OPENSSL_VERSION_NUMBER < 0x30000000L
 #ifndef OPENSSL_NO_ENGINE
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
 #include <openssl/engine.h>
-#endif
-#endif
-#if OPENSSL_VERSION_NUMBER >= 0x30000000L
-#include <openssl/provider.h>
+#else // OPENSSL_VERSION_NUMBER >= 0x30000000L
 #include <openssl/store.h>
+#endif
 #endif
 #include <openssl/ui.h>
 #include <openssl/x509v3.h>
@@ -72,7 +69,7 @@
 #include <signal.h>
 #include <string.h>
 #include <assert.h>
-#include <stdio.h>
+
 
 struct ofv_varr {
 	unsigned int cap;	// current capacity
@@ -1003,12 +1000,12 @@ int ssl_connect(struct tunnel *tunnel)
 	SSL_library_init();
 
 	tunnel->ssl_context = SSL_CTX_new(SSLv23_client_method());
-#else // OPENSSL_VERSION_NUMBER >= 0x10100000L
+#else
 	tunnel->ssl_context = SSL_CTX_new(TLS_client_method());
 #endif
 	if (tunnel->ssl_context == NULL) {
-		log_error("SSL_CTX_new failed: %s\n",
-				  ERR_error_string(ERR_peek_last_error(), NULL));
+		log_error("SSL_CTX_new: %s\n",
+		          ERR_error_string(ERR_peek_last_error(), NULL));
 		goto err_ssl_socket;
 	}
 
@@ -1097,74 +1094,65 @@ int ssl_connect(struct tunnel *tunnel)
 
 #ifndef OPENSSL_NO_ENGINE
 #if OPENSSL_VERSION_NUMBER < 0x30000000L
-    /* Use PKCS11 engine for PIV if user-cert config starts with pkcs11 URI: */
-    if (tunnel->config->use_engine > 0) {
-        ENGINE *e;
+	/* Use PKCS11 engine for PIV if user-cert config starts with pkcs11 URI: */
+	if (tunnel->config->use_engine > 0) {
+		ENGINE *e;
 
-        ENGINE_load_builtin_engines();
-        e = ENGINE_by_id("pkcs11");
-        if (!e) {
-            log_error("Could not load pkcs11 Engine: %s\n",
-                      ERR_error_string(ERR_peek_last_error(), NULL));
-            goto err_ssl_context;
-        }
-        if (!ENGINE_init(e)) {
-            log_error("Could not init pkcs11 Engine: %s\n",
-                      ERR_error_string(ERR_peek_last_error(), NULL));
-            ENGINE_free(e);
-            goto err_ssl_context;
-        }
-        if (!ENGINE_set_default_RSA(e))
-            abort();
+		ENGINE_load_builtin_engines();
+		e = ENGINE_by_id("pkcs11");
+		if (!e) {
+			log_error("Could not load pkcs11 Engine: %s\n",
+			          ERR_error_string(ERR_peek_last_error(), NULL));
+			goto err_ssl_context;
+		}
+		if (!ENGINE_init(e)) {
+			log_error("Could not init pkcs11 Engine: %s\n",
+			          ERR_error_string(ERR_peek_last_error(), NULL));
+			ENGINE_free(e);
+			goto err_ssl_context;
+		}
+		if (!ENGINE_set_default_RSA(e))
+			abort();
 
-        struct token parms;
-        parms.uri = tunnel->config->user_cert;
-        parms.cert = NULL;
+		ENGINE_finish(e);
+		ENGINE_free(e);
 
-        if (!ENGINE_ctrl_cmd(e, "LOAD_CERT_CTRL", 0, &parms, NULL, 1)) {
-            log_error("PKCS11 ENGINE_ctrl_cmd: %s\n",
-                      ERR_error_string(ERR_peek_last_error(), NULL));
-            ENGINE_finish(e);
-            ENGINE_free(e);
-            goto err_ssl_context;
-        }
+		struct token parms;
 
-        if (!SSL_CTX_use_certificate(tunnel->ssl_context, parms.cert)) {
-            log_error("PKCS11 SSL_CTX_use_certificate: %s\n",
-                      ERR_error_string(ERR_peek_last_error(), NULL));
-            ENGINE_finish(e);
-            ENGINE_free(e);
-            goto err_ssl_context;
-        }
+		parms.uri = tunnel->config->user_cert;
+		parms.cert = NULL;
 
-        EVP_PKEY * privkey = ENGINE_load_private_key(
-                                     e, parms.uri, UI_OpenSSL(), NULL);
-        if (!privkey) {
-            log_error("PKCS11 ENGINE_load_private_key: %s\n",
-                      ERR_error_string(ERR_peek_last_error(), NULL));
-            ENGINE_finish(e);
-            ENGINE_free(e);
-            goto err_ssl_context;
-        }
+		if (!ENGINE_ctrl_cmd(e, "LOAD_CERT_CTRL", 0, &parms, NULL, 1)) {
+			log_error("PKCS11 ENGINE_ctrl_cmd: %s\n",
+			          ERR_error_string(ERR_peek_last_error(), NULL));
+			goto err_ssl_context;
+		}
 
-        if (!SSL_CTX_use_PrivateKey(tunnel->ssl_context, privkey)) {
-            log_error("PKCS11 SSL_CTX_use_PrivateKey_file: %s\n",
-                      ERR_error_string(ERR_peek_last_error(), NULL));
-            ENGINE_finish(e);
-            ENGINE_free(e);
-            goto err_ssl_context;
-        }
+		if (!SSL_CTX_use_certificate(tunnel->ssl_context, parms.cert)) {
+			log_error("PKCS11 SSL_CTX_use_certificate: %s\n",
+			          ERR_error_string(ERR_peek_last_error(), NULL));
+			goto err_ssl_context;
+		}
 
-        if (!SSL_CTX_check_private_key(tunnel->ssl_context)) {
-            log_error("PKCS11 SSL_CTX_check_private_key: %s\n",
-                      ERR_error_string(ERR_peek_last_error(), NULL));
-            ENGINE_finish(e);
-            ENGINE_free(e);
-            goto err_ssl_context;
-        }
+		EVP_PKEY * privkey = ENGINE_load_private_key(
+		                             e, parms.uri, UI_OpenSSL(), NULL);
+		if (!privkey) {
+			log_error("PKCS11 ENGINE_load_private_key: %s\n",
+			          ERR_error_string(ERR_peek_last_error(), NULL));
+			goto err_ssl_context;
+		}
 
-        ENGINE_finish(e);
-        ENGINE_free(e);
+		if (!SSL_CTX_use_PrivateKey(tunnel->ssl_context, privkey)) {
+			log_error("PKCS11 SSL_CTX_use_PrivateKey_file: %s\n",
+			          ERR_error_string(ERR_peek_last_error(), NULL));
+			goto err_ssl_context;
+		}
+
+		if (!SSL_CTX_check_private_key(tunnel->ssl_context)) {
+			log_error("PKCS11 SSL_CTX_check_private_key: %s\n",
+			          ERR_error_string(ERR_peek_last_error(), NULL));
+			goto err_ssl_context;
+		}
 	} else { /* end PKCS11 engine */
 #else // OPENSSL_VERSION_NUMBER >= 0x30000000L
     /* OpenSSL 3.0+ provider-based PKCS#11 support */
