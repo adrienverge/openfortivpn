@@ -1155,84 +1155,94 @@ int ssl_connect(struct tunnel *tunnel)
 		}
 	} else { /* end PKCS11 engine */
 #else // OPENSSL_VERSION_NUMBER >= 0x30000000L
-    /* OpenSSL 3.0+ provider-based PKCS#11 support */
-    if (tunnel->config->use_engine > 0) {
-        // Debug: Print the certificate path/URI being used
-        log_debug_details("Attempting to load certificate from: %s\n", tunnel->config->user_cert);
-        
-        // Use OSSL_STORE to load certificate and private key from PKCS#11
-        OSSL_STORE_CTX *store_ctx = OSSL_STORE_open(tunnel->config->user_cert, NULL, NULL, NULL, NULL);
-        if (!store_ctx) {
-            log_error("PKCS11 OSSL_STORE_open failed: %s\n",
-                      ERR_error_string(ERR_peek_last_error(), NULL));
-            goto err_ssl_context;
-        }
+	/* OpenSSL 3.0+ provider-based PKCS#11 support */
+	if (tunnel->config->use_engine > 0) {
+		// Debug: Print the certificate path/URI being used
+		log_debug_details("Attempting to load certificate from: %s\n", tunnel->config->user_cert);
 
-        X509 *cert = NULL;
-        EVP_PKEY *pkey = NULL;
-        OSSL_STORE_INFO *info;
+		// Use OSSL_STORE to load certificate and private key from PKCS#11
+		OSSL_STORE_CTX *store_ctx = OSSL_STORE_open(tunnel->config->user_cert, NULL, NULL, NULL, NULL);
+		if (!store_ctx) {
+			log_error("PKCS11 OSSL_STORE_open failed: %s\n",
+			          ERR_error_string(ERR_peek_last_error(), NULL));
+			goto err_ssl_context;
+		}
 
-        // Load all objects from the store
-        while ((info = OSSL_STORE_load(store_ctx)) != NULL) {
-            int type = OSSL_STORE_INFO_get_type(info);
-            
-            if (type == OSSL_STORE_INFO_CERT && !cert) {
-                cert = OSSL_STORE_INFO_get1_CERT(info);
-                log_debug_details("Loaded certificate from PKCS#11 store\n");
-            } else if (type == OSSL_STORE_INFO_PKEY && !pkey) {
-                pkey = OSSL_STORE_INFO_get1_PKEY(info);
-                log_debug_details("Loaded private key from PKCS#11 store\n");
-            }
-            
-            OSSL_STORE_INFO_free(info);
-            
-            // Stop if we have both certificate and private key
-            if (cert && pkey) {
-                break;
-            }
-        }
+		X509 *cert = NULL;
+		EVP_PKEY *pkey = NULL;
+		OSSL_STORE_INFO *info;
 
-        OSSL_STORE_close(store_ctx);
+		// Load all objects from the store
+		while ((info = OSSL_STORE_load(store_ctx)) != NULL) {
+			int type = OSSL_STORE_INFO_get_type(info);
 
-        // Check if we successfully loaded both certificate and private key
-        if (!cert) {
-            log_error("PKCS11: Could not load certificate from store\n");
-            goto err_ssl_context;
-        }
-        if (!pkey) {
-            log_error("PKCS11: Could not load private key from store\n");
-            X509_free(cert);
-            goto err_ssl_context;
-        }
+			if (type == OSSL_STORE_INFO_CERT) {
+				if (!cert) {
+					cert = OSSL_STORE_INFO_get1_CERT(info);
+					log_debug_details("Loaded certificate from PKCS#11 store\n");
+				} else {
+					// Found a second certificate - this indicates multiple certs
+					log_error("PKCS11: Multiple certificates found in store. Please specify more specific URL parameters (e.g., ?id=... or ?label=...) to select the desired certificate.\n");
+					OSSL_STORE_INFO_free(info);
+					goto err_ssl_context;
+				}
+			} else if (type == OSSL_STORE_INFO_PKEY) {
+				if (!pkey) {
+					pkey = OSSL_STORE_INFO_get1_PKEY(info);
+					log_debug_details("Loaded private key from PKCS#11 store\n");
+				} else {
+					// Found a second private key - this indicates multiple keys
+					log_error("PKCS11: Multiple private keys found in store. Please specify more specific URL parameters (e.g., ?id=... or ?label=...) to select the desired private key.\n");
+					OSSL_STORE_INFO_free(info);
+					goto err_ssl_context;
+				}
+			}
 
-        // Use the loaded certificate and private key
-        if (!SSL_CTX_use_certificate(tunnel->ssl_context, cert)) {
-            log_error("PKCS11 SSL_CTX_use_certificate failed: %s\n",
-                      ERR_error_string(ERR_peek_last_error(), NULL));
-            X509_free(cert);
-            EVP_PKEY_free(pkey);
-            goto err_ssl_context;
-        }
+			OSSL_STORE_INFO_free(info);
+		}
 
-        if (!SSL_CTX_use_PrivateKey(tunnel->ssl_context, pkey)) {
-            log_error("PKCS11 SSL_CTX_use_PrivateKey failed: %s\n",
-                      ERR_error_string(ERR_peek_last_error(), NULL));
-            X509_free(cert);
-            EVP_PKEY_free(pkey);
-            goto err_ssl_context;
-        }
+		OSSL_STORE_close(store_ctx);
 
-        if (!SSL_CTX_check_private_key(tunnel->ssl_context)) {
-            log_error("PKCS11 SSL_CTX_check_private_key: %s\n",
-                      ERR_error_string(ERR_peek_last_error(), NULL));
-            X509_free(cert);
-            EVP_PKEY_free(pkey);
-            goto err_ssl_context;
-        }
+		// Check if we successfully loaded both certificate and private key
+		if (!cert) {
+			log_error("PKCS11: Could not load certificate from store\n");
+			EVP_PKEY_free(pkey);  // Free pkey if it was loaded but cert failed
+			goto err_ssl_context;
+		}
+		if (!pkey) {
+			log_error("PKCS11: Could not load private key from store\n");
+			X509_free(cert);  // Free cert if it was loaded but pkey failed
+			goto err_ssl_context;
+		}
 
-        // Clean up
-        X509_free(cert);
-        EVP_PKEY_free(pkey);
+		// Use the loaded certificate and private key
+		if (!SSL_CTX_use_certificate(tunnel->ssl_context, cert)) {
+			log_error("PKCS11 SSL_CTX_use_certificate failed: %s\n",
+			          ERR_error_string(ERR_peek_last_error(), NULL));
+			X509_free(cert);
+			EVP_PKEY_free(pkey);
+			goto err_ssl_context;
+		}
+
+		if (!SSL_CTX_use_PrivateKey(tunnel->ssl_context, pkey)) {
+			log_error("PKCS11 SSL_CTX_use_PrivateKey failed: %s\n",
+			          ERR_error_string(ERR_peek_last_error(), NULL));
+			X509_free(cert);
+			EVP_PKEY_free(pkey);
+			goto err_ssl_context;
+		}
+
+		if (!SSL_CTX_check_private_key(tunnel->ssl_context)) {
+			log_error("PKCS11 SSL_CTX_check_private_key: %s\n",
+			          ERR_error_string(ERR_peek_last_error(), NULL));
+			X509_free(cert);
+			EVP_PKEY_free(pkey);
+			goto err_ssl_context;
+		}
+
+		// Clean up
+		X509_free(cert);
+		EVP_PKEY_free(pkey);
 	} else { /* end PKCS11 engine */
 #endif // OPENSSL_VERSION_NUMBER >= 0x30000000L
 #endif // OPENSSL_NO_ENGINE
