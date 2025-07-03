@@ -1162,6 +1162,7 @@ int ssl_connect(struct tunnel *tunnel)
 
 		// Use OSSL_STORE to load certificate and private key from PKCS#11
 		OSSL_STORE_CTX *store_ctx = OSSL_STORE_open(tunnel->config->user_cert, NULL, NULL, NULL, NULL);
+
 		if (!store_ctx) {
 			log_error("PKCS11 OSSL_STORE_open failed: %s\n",
 			          ERR_error_string(ERR_peek_last_error(), NULL));
