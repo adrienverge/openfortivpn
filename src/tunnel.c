@@ -1158,10 +1158,12 @@ int ssl_connect(struct tunnel *tunnel)
 	/* OpenSSL 3.0+ provider-based PKCS#11 support */
 	if (tunnel->config->use_engine > 0) {
 		// Debug: Print the certificate path/URI being used
-		log_debug_details("Attempting to load certificate from: %s\n", tunnel->config->user_cert);
+		log_debug_details("Attempting to load certificate from: %s\n",
+		                  tunnel->config->user_cert);
 
 		// Use OSSL_STORE to load certificate and private key from PKCS#11
-		OSSL_STORE_CTX *store_ctx = OSSL_STORE_open(tunnel->config->user_cert, NULL, NULL, NULL, NULL);
+		OSSL_STORE_CTX *store_ctx = OSSL_STORE_open(tunnel->config->user_cert,
+		                            NULL, NULL, NULL, NULL);
 
 		if (!store_ctx) {
 			log_error("PKCS11 OSSL_STORE_open failed: %s\n",
@@ -1182,7 +1184,7 @@ int ssl_connect(struct tunnel *tunnel)
 					cert = OSSL_STORE_INFO_get1_CERT(info);
 					log_debug_details("Loaded certificate from PKCS#11 store\n");
 				} else {
-					// Found a second certificate - this indicates multiple certs
+					// Second certificate - indicates multiple certs
 					log_error("PKCS11: Multiple certificates found in store. Please specify more specific URL parameters (e.g., ?id=... or ?label=...) to select the desired certificate.\n");
 					OSSL_STORE_INFO_free(info);
 					goto err_ssl_context;
@@ -1192,7 +1194,7 @@ int ssl_connect(struct tunnel *tunnel)
 					pkey = OSSL_STORE_INFO_get1_PKEY(info);
 					log_debug_details("Loaded private key from PKCS#11 store\n");
 				} else {
-					// Found a second private key - this indicates multiple keys
+					// Second private key - indicates multiple keys
 					log_error("PKCS11: Multiple private keys found in store. Please specify more specific URL parameters (e.g., ?id=... or ?label=...) to select the desired private key.\n");
 					OSSL_STORE_INFO_free(info);
 					goto err_ssl_context;
@@ -1207,12 +1209,12 @@ int ssl_connect(struct tunnel *tunnel)
 		// Check if we successfully loaded both certificate and private key
 		if (!cert) {
 			log_error("PKCS11: Could not load certificate from store\n");
-			EVP_PKEY_free(pkey);  // Free pkey if it was loaded but cert failed
+			EVP_PKEY_free(pkey); // Free pkey if it was loaded but cert failed
 			goto err_ssl_context;
 		}
 		if (!pkey) {
 			log_error("PKCS11: Could not load private key from store\n");
-			X509_free(cert);  // Free cert if it was loaded but pkey failed
+			X509_free(cert); // Free cert if it was loaded but pkey failed
 			goto err_ssl_context;
 		}
 
