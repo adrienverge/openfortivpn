@@ -832,6 +832,23 @@ static void add_text_route(struct tunnel *tunnel, const char *dest,
 }
 #endif
 
+int ipv4_add_split_dns(struct tunnel *tunnel, char *domains, char *server1,
+                             char *server2)
+{
+	char env_var[32]; // strlen("VPN_SPLITDNS_SERVER1_") + strlen("65535") + 1
+
+	sprintf(env_var, "VPN_SPLITDNS_DOMAIN_%d", tunnel->ipv4.split_dns);
+	setenv(env_var, domains, 0);
+	sprintf(env_var, "VPN_SPLITDNS_SERVER1_%d", tunnel->ipv4.split_dns);
+	setenv(env_var, server1, 0);
+	if (server2 != NULL) {
+		sprintf(env_var, "VPN_SPLITDNS_SERVER2_%d", tunnel->ipv4.split_dns);
+		setenv(env_var, server2, 0);
+	}
+	tunnel->ipv4.split_dns++;
+	return 0;
+}
+
 int ipv4_add_split_vpn_route(struct tunnel *tunnel, char *dest, char *mask,
                              char *gateway)
 {
