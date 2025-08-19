@@ -44,7 +44,19 @@ void url_encode(char *dest, const char *str);
 static inline const char *err_http_str(int code)
 {
 	if (code > 0)
-		return "HTTP status code";
+		switch(code) 
+		{
+			case 400:
+				return "HTTP status code: 400 - Bad Request";
+			case 401:
+				return "HTTP status code: 401 - Unauthorized";
+			case 403:
+				return "HTTP status code: 403 - Forbidden";
+			case 500:
+				return "HTTP status code: 500 - Internal Server Error";
+			default: return "HTTP status code";
+		}
+	}
 	else if (code == ERR_HTTP_INVALID)
 		return "Invalid input";
 	else if (code == ERR_HTTP_TOO_LONG)
