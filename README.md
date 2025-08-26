@@ -76,6 +76,11 @@ The pkcs11-engine from libp11 needs to be compiled with p11-kit-devel installed.
 Check [#464](https://github.com/adrienverge/openfortivpn/issues/464) for a discussion
 of known issues in this area.
 
+Building on Fedora since [this
+update](https://src.fedoraproject.org/rpms/openssl/c/13b583a535e62d12521cfeb5088a68e5811eb6e6?branch=rawhide)
+will NOT include engine support unless `openssl-devel-engine` is installed. Try
+first to use `pkcs11-provider` on OpenSSL >= 3.0.
+
 To make use of your smartcard put at least `pkcs11:` to the user-cert config or commandline
 option. It takes the full or a partial PKCS#11 token URI.
 

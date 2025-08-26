@@ -32,13 +32,13 @@
 #include "userinput.h"
 
 #include <openssl/err.h>
-#ifndef OPENSSL_NO_ENGINE
 #if OPENSSL_VERSION_NUMBER < 0x30000000L
+#ifndef OPENSSL_NO_ENGINE
 #include <openssl/engine.h>
+#endif // OPENSSL_NO_ENGINE
 #else // OPENSSL_VERSION_NUMBER >= 0x30000000L
 #include <openssl/store.h>
-#endif
-#endif
+#endif // OPENSSL_VERSION_NUMBER
 #include <openssl/ui.h>
 #include <openssl/x509v3.h>
 #if HAVE_SYSTEMD
@@ -1092,8 +1092,8 @@ int ssl_connect(struct tunnel *tunnel)
 	}
 #endif
 
-#ifndef OPENSSL_NO_ENGINE
 #if OPENSSL_VERSION_NUMBER < 0x30000000L
+#ifndef OPENSSL_NO_ENGINE
 	/* Use PKCS11 engine for PIV if user-cert config starts with pkcs11 URI: */
 	if (tunnel->config->use_engine > 0) {
 		ENGINE *e;
@@ -1154,6 +1154,7 @@ int ssl_connect(struct tunnel *tunnel)
 			goto err_ssl_context;
 		}
 	} else { /* end PKCS11 engine */
+#endif // OPENSSL_NO_ENGINE
 #else // OPENSSL_VERSION_NUMBER >= 0x30000000L
 	/* OpenSSL 3.0+ provider-based PKCS#11 support */
 	if (tunnel->config->use_engine > 0) {
@@ -1248,7 +1249,6 @@ int ssl_connect(struct tunnel *tunnel)
 		EVP_PKEY_free(pkey);
 	} else { /* end PKCS11 engine */
 #endif // OPENSSL_VERSION_NUMBER >= 0x30000000L
-#endif // OPENSSL_NO_ENGINE
 		if (tunnel->config->user_cert) {
 			if (!SSL_CTX_use_certificate_chain_file(
 			            tunnel->ssl_context, tunnel->config->user_cert)) {
@@ -1275,9 +1275,7 @@ int ssl_connect(struct tunnel *tunnel)
 				goto err_ssl_context;
 			}
 		}
-#ifndef OPENSSL_NO_ENGINE
 	}
-#endif
 
 	tunnel->ssl_handle = SSL_new(tunnel->ssl_context);
 	if (tunnel->ssl_handle == NULL) {
