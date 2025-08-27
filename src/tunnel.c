@@ -113,6 +113,14 @@ static int on_ppp_if_up(struct tunnel *tunnel)
 {
 	log_info("Interface %s is UP.\n", tunnel->ppp_iface);
 
+	{
+		/* Drop invalid route by pppd (or tun) in all cases. */
+		int ret = ipv4_drop_wrong_route(tunnel);
+
+		if (ret != 0)
+			log_warn("Issue occurs while checking for wrong route, continuing anyway.\n");
+	}
+
 	if (tunnel->config->set_routes) {
 		int ret;
 
