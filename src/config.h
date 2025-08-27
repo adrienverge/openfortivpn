@@ -99,6 +99,7 @@ struct vpn_config {
 	int			no_ftm_push;
 	char			*pinentry;
 	int			tun;
+	char			*tun_ifname;
 	char			iface_name[IF_NAMESIZE];
 	char			realm[REALM_SIZE + 1];
 

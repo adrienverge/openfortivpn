@@ -54,6 +54,7 @@ const struct vpn_config invalid_cfg = {
 	.pinentry = NULL,
 	.realm = {'\0'},
 	.tun = -1,
+	.tun_ifname = NULL,
 	.iface_name = {'\0'},
 	.sni = {'\0'},
 	.set_routes = -1,
@@ -498,6 +499,7 @@ void destroy_vpn_config(struct vpn_config *cfg)
 	free(cfg->otp_prompt);
 	free(cfg->pinentry);
 	free(cfg->cookie);
+	free(cfg->tun_ifname);
 #if HAVE_USR_SBIN_PPPD
 	free(cfg->pppd_log);
 	free(cfg->pppd_plugin);
@@ -553,6 +555,10 @@ void merge_config(struct vpn_config *dst, struct vpn_config *src)
 	}
 	if (src->tun != invalid_cfg.tun)
 		dst->tun = src->tun;
+	if (src->tun_ifname) {
+		free(dst->tun_ifname);
+		dst->tun_ifname = src->tun_ifname;
+	}
 	if (src->realm[0])
 		strcpy(dst->realm, src->realm);
 	if (src->iface_name[0])
