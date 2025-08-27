@@ -726,6 +726,43 @@ static int ipv4_del_route(struct rtentry *route)
 	return 0;
 }
 
+/*
+ * This is a workaround for wrongly configured pppd with ip-accept-remote
+ * If the FortiGate is configured to send its own external address
+ * pppd will create a route to self for it, killing everything ...
+ * So this method tests this and drops the wrongly configured route.
+ * And no more silently to help troubleshooting!
+ */
+int ipv4_drop_wrong_route(struct tunnel *tunnel)
+{
+	struct rtentry *gtw_rt = &tunnel->ipv4.gtw_rt;
+	int ret;
+
+	route_init(gtw_rt);
+	// Set up a route to the tunnel gateway
+	route_dest(gtw_rt).s_addr = tunnel->config->gateway_ip.s_addr;
+	route_mask(gtw_rt).s_addr = inet_addr("255.255.255.255");
+	route_iface(gtw_rt) = malloc(strlen(tunnel->ppp_iface) + 2);
+	if (!route_iface(gtw_rt)) {
+		log_error("malloc: %s\n", strerror(errno));
+		return ERR_IPV4_SEE_ERRNO;
+	}
+	sprintf(route_iface(gtw_rt), "%s", tunnel->ppp_iface);
+	ret = ipv4_get_route(gtw_rt);
+	/* The route is not here, all is fine */
+	if (ret == ERR_IPV4_NO_SUCH_ROUTE)
+		return 0;
+
+	if ((ret == 0)
+	    && (route_dest(gtw_rt).s_addr == tunnel->config->gateway_ip.s_addr)
+	    && (route_mask(gtw_rt).s_addr == inet_addr("255.255.255.255"))) {
+		log_warn("Removing wrong route to vpn server...\n");
+		log_debug("ip route show %s\n", ipv4_show_route(gtw_rt));
+		ret = ipv4_del_route(gtw_rt);
+	}
+	return ret;
+}
+
 int ipv4_protect_tunnel_route(struct tunnel *tunnel)
 {
 	struct rtentry *gtw_rt = &tunnel->ipv4.gtw_rt;
@@ -760,15 +797,6 @@ int ipv4_protect_tunnel_route(struct tunnel *tunnel)
 	if (!route_iface(gtw_rt)) {
 		log_error("malloc: %s\n", strerror(errno));
 		return ERR_IPV4_SEE_ERRNO;
-	}
-	sprintf(route_iface(gtw_rt), "%s", tunnel->ppp_iface);
-	ret = ipv4_get_route(gtw_rt);
-	if ((ret == 0)
-	    && (route_dest(gtw_rt).s_addr == tunnel->config->gateway_ip.s_addr)
-	    && (route_mask(gtw_rt).s_addr == inet_addr("255.255.255.255"))) {
-		log_debug("Removing wrong route to vpn server...\n");
-		log_debug("ip route show %s\n", ipv4_show_route(gtw_rt));
-		ipv4_del_route(gtw_rt);
 	}
 	sprintf(route_iface(gtw_rt), "!%s", tunnel->ppp_iface);
 	ret = ipv4_get_route(gtw_rt);
