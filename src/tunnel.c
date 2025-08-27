@@ -262,6 +262,10 @@ static int tun_setup(struct tunnel *tunnel)
 		.ifr_flags = IFF_TUN | IFF_NO_PI,
 	};
 
+	/* Renamme the interface by default if asked to do so */
+	if (tunnel->config->tun_ifname)
+		strncpy(ifreq.ifr_name, tunnel->config->tun_ifname, IFNAMSIZ - 1);
+
 	tun_fd = tun_open(&ifreq);
 	if (tun_fd < 0) {
 		log_error("tun_open failed: %s\n", strerror(errno));
