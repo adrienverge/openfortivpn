@@ -81,7 +81,7 @@
 "                    [--cookie=<cookie>] [--cookie-on-stdin] [--saml-login]\n" \
 "                    [--otp=<otp>] [--otp-delay=<delay>] [--otp-prompt=<prompt>]\n" \
 "                    [--pinentry=<program>] [--realm=<realm>]\n" \
-"                    [--tun=<0|1>] [--ifname=<ifname>] [--set-routes=<0|1>]\n" \
+"                    [--tun=<0|1>] [--tun-ifname=<ifname>] [--ifname=<ifname>] [--set-routes=<0|1>]\n" \
 "                    [--half-internet-routes=<0|1>] [--set-dns=<0|1>]\n" \
 PPPD_USAGE \
 "                    " RESOLVCONF_USAGE "[--ca-file=<file>]\n" \
@@ -126,6 +126,8 @@ PPPD_USAGE \
 "  --pinentry=<program>          Use the program to supply a secret instead of asking for it.\n" \
 "  --realm=<realm>               Use specified authentication realm.\n" \
 "  --tun=[01]                    Create a TUN device and use internal PPP code (experimental).\n" \
+"  --tun-ifname=<ifname>         Choose the tunX interface name to ease custom scripts routing\n" \
+"                                handling (experimental).\n" \
 "  --ifname=<interface>          Bind to interface.\n" \
 "  --set-routes=[01]             Set if openfortivpn should configure routes\n" \
 "                                when tunnel is up.\n"               \
@@ -297,6 +299,7 @@ int main(int argc, char *argv[])
 		{"otp-delay",            required_argument, NULL, 0},
 		{"no-ftm-push",          no_argument, &cli_cfg.no_ftm_push, 1},
 		{"tun",                  required_argument, NULL, 0},
+		{"tun-ifname",           required_argument, NULL, 0},
 		{"ifname",               required_argument, NULL, 0},
 		{"set-routes",	         required_argument, NULL, 0},
 		{"sni",                  required_argument, NULL, 0},
@@ -520,6 +523,12 @@ int main(int argc, char *argv[])
 					break;
 				}
 				cli_cfg.tun = tun;
+				break;
+			}
+			if (strcmp(long_options[option_index].name,
+			           "tun-ifname") == 0) {
+				free(cli_cfg.tun_ifname);
+				cli_cfg.tun_ifname = strdup(optarg);
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
