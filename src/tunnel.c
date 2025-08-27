@@ -1445,6 +1445,7 @@ err_tunnel:
 	} else {
 		auth_log_out(&tunnel);
 		log_info("Logged out.\n");
+		ssl_disconnect(&tunnel);
 	}
 
 	// explicitly free the buffer allocated for split routes of the ipv4 configuration
