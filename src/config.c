@@ -296,6 +296,18 @@ int load_config(struct vpn_config *cfg, const char *filename)
 		} else if (strcmp(key, "realm") == 0) {
 			strncpy(cfg->realm, val, REALM_SIZE);
 			cfg->realm[REALM_SIZE] = '\0';
+		} else if (strcmp(key, "tun") == 0) {
+			long tun = strtol(val, NULL, 0);
+
+			if (tun < 0 || tun > 1) {
+				log_warn("Bad tun option in configuration file: \"%ld\".\n",
+				         tun);
+				continue;
+			}
+			cfg->tun = tun;
+		} else if (strcmp(key, "tun-ifname") == 0) {
+			free(cfg->tun_ifname);
+			cfg->tun_ifname = strdup(val);
 		} else if (strcmp(key, "set-dns") == 0) {
 			int set_dns = strtob(val);
 
