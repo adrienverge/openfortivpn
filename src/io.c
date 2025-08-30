@@ -36,7 +36,9 @@
 #include <arpa/inet.h>
 #include <netinet/tcp.h>
 
+#include <assert.h>
 #include <errno.h>
+#include <limits.h>
 #include <signal.h>
 #include <string.h>
 
@@ -405,9 +407,10 @@ static void debug_bad_packet(struct tunnel *tunnel, uint8_t *header)
 
 	memcpy(buffer, header, 6 * sizeof(uint8_t));
 
-	size = safe_ssl_read(tunnel->ssl_handle, &buffer[6], 256 - 6);
+	size = safe_ssl_read(tunnel->ssl_handle, &buffer[6], sizeof(buffer) - 6);
 	if (size < 0)
 		return;
+	assert(size <= INT_MAX - 6);
 	size += 6;
 
 	// Print hex dump
