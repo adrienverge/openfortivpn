@@ -369,14 +369,14 @@ char *read_from_stdin(size_t count)
 {
 	char *buf;
 	char *output;
-	int bytes_read;
+	ssize_t bytes_read;
 
 	buf = malloc(count + 1);
 	if (buf == NULL)
 		return NULL;
 
 	bytes_read = read(STDIN_FILENO, buf, count);
-	if (bytes_read == -1) {
+	if (bytes_read < 0) {
 		free(buf);
 		return NULL;
 	}
