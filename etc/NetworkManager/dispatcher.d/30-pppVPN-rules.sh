@@ -1,6 +1,6 @@
 #!/bin/bash
 # Sample script to add in the /etc/NetworkManager/dispatcher.d folder.
-# Allowing you to properly configure additionnal routes if needed
+# Allowing you to properly configure additional routes if needed
 # There might be better way to do this, but I'm not aware of them in my specific case.
 
 
@@ -22,7 +22,7 @@ if [ "$INTERFACE" = "$TARGET_INTERFACE" ]; then
         up)
             # This code runs when the connection comes up
             logger "NetworkManager Dispatcher: Applying custom rules for $INTERFACE"
-            # Add specific ressources route rules here (more easy than the +ipv4.route using the via which could be random):
+            # Add specific resources route rules here (more easy than the +ipv4.route using the via which could be random):
             #ip route add 10.10.10.0/24 dev $TARGET_INTERFACE scope link
             #ip route add 10.10.20.0/24 dev $TARGET_INTERFACE scope link
             #ip route add 10.10.30.120/32 dev $TARGET_INTERFACE scope link
