@@ -27,6 +27,7 @@
 #include <sys/ioctl.h>
 #include <sys/stat.h>
 
+#include <assert.h>
 #include <errno.h>
 #include <limits.h>
 #include <stdio.h>
@@ -173,10 +174,11 @@ static int ipv4_get_route(struct rtentry *route)
 		goto end;
 	}
 
-	int bytes_read;
+	ssize_t bytes_read;
 
 	while ((bytes_read = read(fd, buffer + total_bytes_read,
 	                          buffer_size - total_bytes_read - 1)) > 0) {
+		assert(bytes_read <= UINT32_MAX - total_bytes_read);
 		total_bytes_read += bytes_read;
 
 		if ((buffer_size - total_bytes_read) < 1) {
