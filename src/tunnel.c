@@ -1575,10 +1575,9 @@ err_start_tunnel:
 		ret = pppd_terminate(&tunnel);
 		log_info("Terminated %s.\n", PPP_DAEMON);
 	} else {
-		if (tunnel.pppd_pty > 0)
-			if (tun_close(tunnel.pppd_pty))
-				log_error("Cannot properly close tun interface (%d)",
-				          errno);
+		if (tunnel.pppd_pty >= 0 && tun_close(tunnel.pppd_pty))
+			log_error("Cannot properly close tun interface (%d)",
+			          errno);
 		tunnel.pppd_pty = -1;
 		log_info("Closing tun interface.\n");
 	}
