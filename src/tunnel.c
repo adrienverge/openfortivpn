@@ -1575,12 +1575,13 @@ err_start_tunnel:
 		ret = pppd_terminate(&tunnel);
 		log_info("Terminated %s.\n", PPP_DAEMON);
 	} else {
-		if (tunnel.pppd_pty > 0)
+		if (tunnel.pppd_pty >= 0) {
+			log_info("Closing tun interface.\n");
 			if (tun_close(tunnel.pppd_pty))
-				log_error("Cannot properly close tun interface (%d)",
+				log_error("Cannot properly close tun interface (%d).\n",
 				          errno);
+		}
 		tunnel.pppd_pty = -1;
-		log_info("Closing tun interface.\n");
 	}
 err_tunnel:
 	log_info("Closed connection to gateway.\n");
