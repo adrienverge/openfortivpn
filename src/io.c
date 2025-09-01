@@ -1232,7 +1232,7 @@ static void *pppd_write(void *arg)
 
 	while (1) {
 		struct ppp_packet *packet;
-		ssize_t hdlc_bufsize, len, n, written;
+		ssize_t len, n, written;
 		uint8_t *hdlc_buffer;
 
 		// This waits until a packet has arrived from the gateway
@@ -1241,7 +1241,7 @@ static void *pppd_write(void *arg)
 		if (tunnel->config->tun) {
 			void *pkt_type = pkt_data(packet);
 
-			hdlc_bufsize = len = packet->len;
+			len = packet->len;
 			switch (ntohs(*(uint16_t *)pkt_type)) {
 			case PPP_LCP:
 				lcp_packet(tunnel, pkt_data(packet) + 2, len - 2);
@@ -1264,7 +1264,8 @@ static void *pppd_write(void *arg)
 
 			memcpy(hdlc_buffer, pkt_data(packet) + 2, packet->len - 2);
 		} else {
-			hdlc_bufsize = estimated_encoded_size(packet->len);
+			size_t hdlc_bufsize = estimated_encoded_size(packet->len);
+
 			hdlc_buffer = malloc(hdlc_bufsize);
 			if (hdlc_buffer == NULL) {
 				log_error("malloc: %s\n", strerror(errno));
