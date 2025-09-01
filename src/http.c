@@ -875,7 +875,10 @@ static int parse_xml_config(struct tunnel *tunnel, const char *buffer)
 		log_warn("No gateway address, using interface for routing\n");
 
 	if (tunnel->config->tun) {
-		tunnel->ipv4.ip_addr.s_addr = inet_addr(gateway);
+		if (!gateway)
+			tunnel->ipv4.ip_addr.s_addr = inet_addr("192.0.2.2");
+		else
+			tunnel->ipv4.ip_addr.s_addr = inet_addr(gateway);
 		tunnel->ipv4.peer_addr.s_addr = inet_addr("192.0.2.1");
 	}
 
