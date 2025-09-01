@@ -759,8 +759,8 @@ int ipcp_option_send(struct tunnel *tunnel, int id, int code,
 	int ret = -1;
 
 	if (optlist && optlist->head) {
-		uint8_t *packet = (uint8_t *)optlist->head;
-		struct ipcp_header *header = ((struct ipcp_header *)packet) - 1;
+		uint8_t *ppacket = (uint8_t *)optlist->head;
+		struct ipcp_header *header = ((struct ipcp_header *)ppacket) - 1;
 		unsigned short *ppp_type = ((unsigned short *)header) - 1;
 		const size_t hdrlen = sizeof(struct ipcp_header) + sizeof(uint16_t);
 		const int len = conf_option_length(optlist);
@@ -799,7 +799,7 @@ out:
 
 int ipcp_packet(struct tunnel *tunnel, void *packet, int len)
 {
-	int ret = 0;
+	int ret = -1;
 	struct ipcp_header *header = packet;
 
 	log_debug("packet %s\n", ipcp_code_name[header->code]);
@@ -846,7 +846,6 @@ int ipcp_packet(struct tunnel *tunnel, void *packet, int len)
 			co = (struct conf_option *)((uint8_t *)co + co->length);
 		}
 		if (header->code == IPCP_CONF_REQUEST) {
-			int ret = -1;
 
 			ret = ipcp_option_send(tunnel, header->id, IPCP_CONF_ACK,
 			                       &ack, 0);
