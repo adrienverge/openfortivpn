@@ -1241,14 +1241,14 @@ static void *pppd_write(void *arg)
 		if (tunnel->config->tun) {
 			void *pkt_type = pkt_data(packet);
 
-			len = packet->len;
+			len = packet->len - 2;
 			switch (ntohs(*(uint16_t *)pkt_type)) {
 			case PPP_LCP:
-				lcp_packet(tunnel, pkt_data(packet) + 2, len - 2);
+				lcp_packet(tunnel, pkt_data(packet) + 2, len);
 				free(packet);
 				continue;
 			case PPP_IPCP:
-				ipcp_packet(tunnel, pkt_data(packet) + 2, len - 2);
+				ipcp_packet(tunnel, pkt_data(packet) + 2, len);
 				free(packet);
 				continue;
 			case PPP_IP:
@@ -1258,13 +1258,13 @@ static void *pppd_write(void *arg)
 				goto out_free_packet;
 			}
 
-			hdlc_buffer = malloc(packet->len);
+			hdlc_buffer = malloc(len);
 			if (hdlc_buffer == NULL) {
 				log_error("malloc: %s\n", strerror(errno));
 				break;
 			}
 
-			memcpy(hdlc_buffer, pkt_data(packet) + 2, packet->len - 2);
+			memcpy(hdlc_buffer, pkt_data(packet) + 2, len);
 		} else {
 			size_t hdlc_bufsize = estimated_encoded_size(packet->len);
 
