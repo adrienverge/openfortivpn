@@ -752,8 +752,10 @@ int ipv4_drop_wrong_route(struct tunnel *tunnel)
 	sprintf(route_iface(gtw_rt), "%s", tunnel->ppp_iface);
 	ret = ipv4_get_route(gtw_rt);
 	/* The route is not here, all is fine */
-	if (ret == ERR_IPV4_NO_SUCH_ROUTE)
-		return 0;
+	if (ret == ERR_IPV4_NO_SUCH_ROUTE) {
+		ret = 0;
+		goto cleanandout;
+	}
 
 	if ((ret == 0)
 	    && (route_dest(gtw_rt).s_addr == tunnel->config->gateway_ip.s_addr)
@@ -762,6 +764,8 @@ int ipv4_drop_wrong_route(struct tunnel *tunnel)
 		log_debug("ip route show %s\n", ipv4_show_route(gtw_rt));
 		ret = ipv4_del_route(gtw_rt);
 	}
+cleanandout:
+	route_destroy(gtw_rt);
 	return ret;
 }
 
