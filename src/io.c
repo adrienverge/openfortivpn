@@ -1052,6 +1052,7 @@ int ipcp_packet(struct tunnel *tunnel, void *packet, int len)
 				          errno, strerror(errno));
 				exit(EXIT_FAILURE);
 			}
+			conf_option_free(&request);
 		} while (0);
 		break;
 	}
