@@ -24,8 +24,10 @@
 #include <sys/wait.h>
 #include <termios.h>
 
+#include <assert.h>
 #include <ctype.h>
 #include <errno.h>
+#include <limits.h>
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -371,6 +373,7 @@ char *read_from_stdin(size_t count)
 	char *output;
 	ssize_t bytes_read;
 
+	assert(count < SIZE_MAX - 1);
 	buf = malloc(count + 1);
 	if (buf == NULL)
 		return NULL;
@@ -382,8 +385,5 @@ char *read_from_stdin(size_t count)
 	}
 
 	buf[bytes_read] = '\0';
-	output = realloc(buf, bytes_read + 1);
-
-	// Just keep using the larger buffer if realloc() fails.
-	return output ? output : buf;
+	return buf;
 }
