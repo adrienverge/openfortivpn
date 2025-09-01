@@ -128,6 +128,10 @@ int get_sig_received(void)
  * Warning: for performance reasons, this function does not check if the packet
  * is already present in the list. If it is, there will be a loop in the list
  * and this will result in an unpredictable behavior.
+ *
+ * Warning: Once a packet is added with pool_push, consider it to be freed from
+ * your perspective! You don't know when it will be really released by the
+ * thread which pool_pop it in parallel.
  */
 static void pool_push(struct ppp_packet_pool *pool, struct ppp_packet *new)
 {
@@ -490,7 +494,6 @@ static void *ssl_read(void *arg)
 
 		log_debug("gateway ---> %s (%lu bytes)\n", PPP_DAEMON, packet->len);
 		log_packet("gtw:    ", packet->len, pkt_data(packet));
-		pool_push(&tunnel->ssl_to_pty_pool, packet);
 
 		if (tunnel->state == STATE_CONNECTING) {
 			if (packet_is_ip_plus_dns(packet)) {
@@ -516,6 +519,8 @@ static void *ssl_read(void *arg)
 				SEM_POST(&sem_if_config);
 			}
 		}
+
+		pool_push(&tunnel->ssl_to_pty_pool, packet);
 	}
 
 	// Send message to main thread to stop other threads
