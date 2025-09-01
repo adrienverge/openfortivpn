@@ -1245,9 +1245,11 @@ static void *pppd_write(void *arg)
 			switch (ntohs(*(uint16_t *)pkt_type)) {
 			case PPP_LCP:
 				lcp_packet(tunnel, pkt_data(packet) + 2, len - 2);
+				free(packet);
 				continue;
 			case PPP_IPCP:
 				ipcp_packet(tunnel, pkt_data(packet) + 2, len - 2);
+				free(packet);
 				continue;
 			case PPP_IP:
 			case PPP_IPV6:
