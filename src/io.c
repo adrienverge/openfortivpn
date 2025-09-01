@@ -935,7 +935,6 @@ int ipcp_packet(struct tunnel *tunnel, void *packet, int len)
 		}
 
 		tun_ifup(tunnel->tun_iface, ip_address, peer_address);
-		ipv4_set_tunnel_routes(tunnel);
 		break;
 	}
 	case IPCP_CONF_NAK: {
