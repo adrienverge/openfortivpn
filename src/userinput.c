@@ -370,7 +370,6 @@ void read_password(const char *pinentry, const char *hint,
 char *read_from_stdin(size_t count)
 {
 	char *buf;
-	char *output;
 	ssize_t bytes_read;
 
 	assert(count < SIZE_MAX - 1);
