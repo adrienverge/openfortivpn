@@ -755,8 +755,8 @@ int ipcp_option_send(struct tunnel *tunnel, int id, int code,
 	int ret = -1;
 
 	if (optlist && optlist->head) {
-		uint8_t *packet = (uint8_t *)optlist->head;
-		struct ipcp_header *header = ((struct ipcp_header *)packet) - 1;
+		uint8_t *ppacket = (uint8_t *)optlist->head;
+		struct ipcp_header *header = ((struct ipcp_header *)ppacket) - 1;
 		unsigned short *ppp_type = ((unsigned short *)header) - 1;
 		const size_t hdrlen = sizeof(struct ipcp_header) + sizeof(uint16_t);
 		const int len = conf_option_length(optlist);
@@ -795,7 +795,7 @@ out:
 
 int ipcp_packet(struct tunnel *tunnel, void *packet, int len)
 {
-	int ret = 0;
+	int ret = -1;
 	struct ipcp_header *header = packet;
 
 	log_debug("packet %s\n", ipcp_code_name[header->code]);
@@ -842,7 +842,6 @@ int ipcp_packet(struct tunnel *tunnel, void *packet, int len)
 			co = (struct conf_option *)((uint8_t *)co + co->length);
 		}
 		if (header->code == IPCP_CONF_REQUEST) {
-			int ret = -1;
 
 			ret = ipcp_option_send(tunnel, header->id, IPCP_CONF_ACK,
 			                       &ack, 0);
@@ -931,7 +930,6 @@ int ipcp_packet(struct tunnel *tunnel, void *packet, int len)
 		}
 
 		tun_ifup(tunnel->tun_iface, ip_address, peer_address);
-		ipv4_set_tunnel_routes(tunnel);
 		break;
 	}
 	case IPCP_CONF_NAK: {
@@ -1050,6 +1048,7 @@ int ipcp_packet(struct tunnel *tunnel, void *packet, int len)
 				          errno, strerror(errno));
 				exit(EXIT_FAILURE);
 			}
+			conf_option_free(&request);
 		} while (0);
 		break;
 	}
@@ -1229,7 +1228,7 @@ static void *pppd_write(void *arg)
 
 	while (1) {
 		struct ppp_packet *packet;
-		ssize_t hdlc_bufsize, len, n, written;
+		ssize_t len, n, written;
 		uint8_t *hdlc_buffer;
 
 		// This waits until a packet has arrived from the gateway
@@ -1238,13 +1237,15 @@ static void *pppd_write(void *arg)
 		if (tunnel->config->tun) {
 			void *pkt_type = pkt_data(packet);
 
-			hdlc_bufsize = len = packet->len;
+			len = packet->len - 2;
 			switch (ntohs(*(uint16_t *)pkt_type)) {
 			case PPP_LCP:
-				lcp_packet(tunnel, pkt_data(packet) + 2, len - 2);
+				lcp_packet(tunnel, pkt_data(packet) + 2, len);
+				free(packet);
 				continue;
 			case PPP_IPCP:
-				ipcp_packet(tunnel, pkt_data(packet) + 2, len - 2);
+				ipcp_packet(tunnel, pkt_data(packet) + 2, len);
+				free(packet);
 				continue;
 			case PPP_IP:
 			case PPP_IPV6:
@@ -1253,15 +1254,16 @@ static void *pppd_write(void *arg)
 				goto out_free_packet;
 			}
 
-			hdlc_buffer = malloc(packet->len);
+			hdlc_buffer = malloc(len);
 			if (hdlc_buffer == NULL) {
 				log_error("malloc: %s\n", strerror(errno));
 				break;
 			}
 
-			memcpy(hdlc_buffer, pkt_data(packet) + 2, packet->len - 2);
+			memcpy(hdlc_buffer, pkt_data(packet) + 2, len);
 		} else {
-			hdlc_bufsize = estimated_encoded_size(packet->len);
+			ssize_t hdlc_bufsize = estimated_encoded_size(packet->len);
+
 			hdlc_buffer = malloc(hdlc_bufsize);
 			if (hdlc_buffer == NULL) {
 				log_error("malloc: %s\n", strerror(errno));
