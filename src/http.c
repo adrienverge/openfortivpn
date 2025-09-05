@@ -178,6 +178,7 @@ int http_receive(struct tunnel *tunnel,
 			return ERR_HTTP_TLS;
 		}
 		bytes_read += n;
+		buffer[bytes_read] = '\0';
 
 		log_debug_details("%s:\n%s\n", __func__, buffer);
 
