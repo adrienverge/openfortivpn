@@ -759,7 +759,7 @@ static int tcp_connect(struct tunnel *tunnel)
 	}
 
 	if (env_proxy != NULL) {
-		char request[128];
+		char request[4096];
 
 		// https://tools.ietf.org/html/rfc7231#section-4.3.6
 		sprintf(request, "CONNECT %s:%u HTTP/1.1\r\nHost: %s:%u\r\n\r\n",
@@ -783,8 +783,8 @@ static int tcp_connect(struct tunnel *tunnel)
 		memset(&(request), 0, sizeof(request));
 		for (size_t j = 0; response == NULL; j++) {
 			if (j >= ARRAY_SIZE(request) - 1) {
-				log_error("Proxy response is unexpectedly large and cannot fit in the %lu-bytes buffer.\n",
-				          ARRAY_SIZE(request));
+				log_error("Proxy response is unexpectedly large (%lu bytes) and cannot fit in the %lu-bytes buffer.\n",
+				          j, ARRAY_SIZE(request));
 				goto err_proxy_response;
 			}
 
