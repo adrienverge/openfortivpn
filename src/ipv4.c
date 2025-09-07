@@ -162,10 +162,11 @@ static int ipv4_get_route(struct rtentry *route)
 	route_mask(route).s_addr = inet_addr("0.0.0.0");
 	route_gtw(route).s_addr = inet_addr("0.0.0.0");
 
+	size_t total_bytes_read = 0;
 #if HAVE_PROC_NET_ROUTE
 	/* this is not present on Mac OS X and FreeBSD */
 	int fd;
-	uint32_t total_bytes_read = 0;
+	ssize_t bytes_read;
 
 	// Cannot stat, mmap not lseek this special /proc file
 	fd = open("/proc/net/route", O_RDONLY);
@@ -174,14 +175,14 @@ static int ipv4_get_route(struct rtentry *route)
 		goto end;
 	}
 
-	ssize_t bytes_read;
-
 	while ((bytes_read = read(fd, buffer + total_bytes_read,
 	                          buffer_size - total_bytes_read - 1)) > 0) {
-		assert(bytes_read <= UINT32_MAX - total_bytes_read);
+		assert(SIZE_MAX - total_bytes_read >= bytes_read);
 		total_bytes_read += bytes_read;
 
 		if ((buffer_size - total_bytes_read) < 1) {
+			assert(SIZE_MAX - buffer_size
+			       >= IPV4_GET_ROUTE_BUFFER_CHUNK_SIZE);
 			buffer_size += IPV4_GET_ROUTE_BUFFER_CHUNK_SIZE;
 
 			realloc_buffer = realloc(buffer, buffer_size);
@@ -208,7 +209,6 @@ cleanup:
 
 #else
 	FILE *fp;
-	uint32_t total_bytes_read = 0;
 
 	char *saveptr3 = NULL;
 	int have_ref = 0;
@@ -232,11 +232,14 @@ cleanup:
 	line = buffer;
 	// Read the output a line at a time
 	while (fgets(line, buffer_size - total_bytes_read - 1, fp) != NULL) {
-		uint32_t bytes_read = strlen(line);
+		size_t bytes_read = strlen(line);
 
+		assert(SIZE_MAX - total_bytes_read >= bytes_read);
 		total_bytes_read += bytes_read;
 
 		if (bytes_read > 0 && line[bytes_read - 1] != '\n') {
+			assert(SIZE_MAX - buffer_size
+			       >= IPV4_GET_ROUTE_BUFFER_CHUNK_SIZE);
 			buffer_size += IPV4_GET_ROUTE_BUFFER_CHUNK_SIZE;
 
 			realloc_buffer = realloc(buffer, buffer_size);
