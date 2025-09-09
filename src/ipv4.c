@@ -36,7 +36,6 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-#include <assert.h>
 
 #define IPV4_GET_ROUTE_BUFFER_CHUNK_SIZE 65536
 #define SHOW_ROUTE_BUFFER_SIZE 128
@@ -179,7 +178,7 @@ static int ipv4_get_route(struct rtentry *route)
 
 	while ((bytes_read = read(fd, buffer + total_bytes_read,
 	                          buffer_size - total_bytes_read - 1)) > 0) {
-		assert(SIZE_MAX - total_bytes_read >= bytes_read);
+		assert(SIZE_MAX - total_bytes_read - 1 >= bytes_read);
 		total_bytes_read += bytes_read;
 
 		if ((buffer_size - total_bytes_read) < 1) {
