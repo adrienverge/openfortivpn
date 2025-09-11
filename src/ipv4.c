@@ -178,7 +178,7 @@ static int ipv4_get_route(struct rtentry *route)
 
 	while ((bytes_read = read(fd, buffer + total_bytes_read,
 	                          buffer_size - total_bytes_read - 1)) > 0) {
-		assert(SIZE_MAX - total_bytes_read - 1 >= bytes_read);
+		assert(buffer_size - total_bytes_read > bytes_read);
 		total_bytes_read += bytes_read;
 
 		if ((buffer_size - total_bytes_read) < 1) {
