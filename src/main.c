@@ -289,7 +289,7 @@ int main(int argc, char *argv[])
 		{"username",             required_argument, NULL, 'u'},
 		{"password",             required_argument, NULL, 'p'},
 		{"cookie",               required_argument, NULL, 0},
-		{"cookie-on-stdin",      no_argument, NULL, 0},
+		{"cookie-on-stdin",      no_argument,       NULL, 0},
 		{"saml-login",           optional_argument, NULL, 0},
 		{"otp",                  required_argument, NULL, 'o'},
 		{"otp-prompt",           required_argument, NULL, 0},
