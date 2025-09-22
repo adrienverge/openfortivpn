@@ -155,13 +155,13 @@ with a certificate.
 .TP
 \fB\-\-user-cert=\fIpkcs11:\fR
 Use at least the string pkcs11: for using a smartcard. It takes the full
-or a partial PKCS11-URI (p11tool --list-token-urls)
+or a partial PKCS11-URI (p11tool \-\-list-token-urls)
 
-  --user-cert = pkcs11:
+  \-\-user-cert=pkcs11:
 
-  --user-cert = pkcs11:token=someuser
+  \-\-user-cert=pkcs11:token=someuser
 
-  --user-cert = pkcs11:model=PKCS%2315%20emulated;manufacturer=piv_II;serial=012345678;token=someuser
+  \-\-user-cert=pkcs11:model=PKCS%2315%20emulated;manufacturer=piv_II;serial=012345678;token=someuser
 
 \fBThis feature requires the OpenSSL PKCS engine!
 .TP
