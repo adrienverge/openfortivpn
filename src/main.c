@@ -668,7 +668,7 @@ int main(int argc, char *argv[])
 			log_debug("Loaded configuration file \"%s\".\n", config_file);
 		else
 			log_warn("Could not load configuration file \"%s\" (%s).\n",
-			         config_file, err_cfg_str(ret));
+			         config_file, strerror(-ret));
 	}
 	if (cli_cfg.password_set) {
 		if (cli_cfg.password[0] == '\0')

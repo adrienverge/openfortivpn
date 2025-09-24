@@ -25,25 +25,6 @@
 #include <stdint.h>
 #include <string.h>
 
-#define ERR_CFG_UNKNOWN		-1
-#define ERR_CFG_SEE_ERRNO	-2
-#define ERR_CFG_EMPTY_FILE	-3
-#define ERR_CFG_NO_MEM		-4
-#define ERR_CFG_CANNOT_READ	-5
-
-static inline const char *err_cfg_str(int code)
-{
-	if (code == ERR_CFG_SEE_ERRNO)
-		return strerror(errno);
-	else if (code == ERR_CFG_EMPTY_FILE)
-		return "Empty file";
-	else if (code == ERR_CFG_NO_MEM)
-		return "Not enough memory";
-	else if (code == ERR_CFG_CANNOT_READ)
-		return "Cannot read file";
-	return "unknown";
-}
-
 #if HAVE_USR_SBIN_PPPD
 #define PPP_DAEMON "pppd"
 #else
