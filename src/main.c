@@ -77,7 +77,7 @@
 #endif
 
 #define usage \
-"Usage: openfortivpn [<host>[:<port>]] [-u <user>] [-p <pass>]\n" \
+"Usage: openfortivpn [<host>[:<port>]] [-u <user>] [-p <pass>] [--password-on-stdin]\n" \
 "                    [--cookie=<cookie>] [--cookie-on-stdin] [--saml-login]\n" \
 "                    [--otp=<otp>] [--otp-delay=<delay>] [--otp-prompt=<prompt>]\n" \
 "                    [--pinentry=<program>] [--realm=<realm>]\n" \
@@ -116,6 +116,7 @@ PPPD_USAGE \
 "                                " SYSCONFDIR "/openfortivpn/config).\n" \
 "  -u <user>, --username=<user>  VPN account username.\n" \
 "  -p <pass>, --password=<pass>  VPN account password.\n" \
+"  --password-on-stdin           Read password from standard input. Incompatible with '--password'\n" \
 "  --cookie=<cookie>             A valid session cookie (SVPNCOOKIE).\n" \
 "  --cookie-on-stdin             Read the cookie (SVPNCOOKIE) from standard input.\n" \
 "  --saml-login[=port]           Run a http server to handle SAML login requests\n" \
@@ -219,6 +220,7 @@ int main(int argc, char *argv[])
 	const char *config_file = SYSCONFDIR "/openfortivpn/config";
 	const char *host;
 	char *port_str;
+	int password_from_stdin = 0;
 
 	struct vpn_config cfg = {
 		.gateway_host = {'\0'},
@@ -288,6 +290,7 @@ int main(int argc, char *argv[])
 		{"realm",                required_argument, NULL, 0},
 		{"username",             required_argument, NULL, 'u'},
 		{"password",             required_argument, NULL, 'p'},
+		{"password-on-stdin",    no_argument, NULL, 0},
 		{"cookie",               required_argument, NULL, 0},
 		{"cookie-on-stdin",      no_argument,       NULL, 0},
 		{"saml-login",           optional_argument, NULL, 0},
@@ -613,6 +616,11 @@ int main(int argc, char *argv[])
 				cli_cfg.saml_port = port;
 				break;
 			}
+			if (strcmp(long_options[option_index].name,
+			           "password-on-stdin") == 0) {
+				password_from_stdin = 1;
+				break;
+			}
 			goto user_error;
 		case 'h':
 			printf("%s%s%s%s%s%s%s", usage, summary,
@@ -652,8 +660,13 @@ int main(int argc, char *argv[])
 	if (optind < argc - 1 || optind > argc)
 		goto user_error;
 
-	if (cli_cfg.password[0] != '\0')
-		log_warn("You should not pass the password on the command line. Type it interactively or use a configuration file instead.\n");
+	if (cli_cfg.password[0] != '\0' ) {
+		if (password_from_stdin) {
+			log_error("Option '--password' and '--password_from_stdin' are incompatible.\n");
+			goto user_error;
+		} else
+			log_warn("You should not pass the password on the command line. Type it interactively or use a configuration file instead.\n");
+	}
 
 	log_debug_all("ATTENTION: the output contains sensitive information such as the THE CLEAR TEXT PASSWORD.\n");
 
@@ -670,6 +683,21 @@ int main(int argc, char *argv[])
 			log_warn("Could not load configuration file \"%s\" (%s).\n",
 			         config_file, err_cfg_str(ret));
 	}
+
+	if (password_from_stdin) {
+		char *password = read_from_stdin(PASSWORD_SIZE);
+
+		if (password == NULL) {
+			log_error("Could not read password from stdin");
+			goto exit;
+		}
+		strncpy(cli_cfg.password, password, PASSWORD_SIZE);
+		cli_cfg.password[PASSWORD_SIZE] = '\0';
+		cli_cfg.password_set = 1;
+		memset(password, 0, PASSWORD_SIZE);
+		free(password);
+	}
+
 	if (cli_cfg.password_set) {
 		if (cli_cfg.password[0] == '\0')
 			log_debug("Disabled password due to empty command-line option\n");
