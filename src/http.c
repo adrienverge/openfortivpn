@@ -714,8 +714,17 @@ int auth_log_in(struct tunnel *tunnel)
 	if (ret != 1)
 		goto end;
 
-	/* Probably one-time password required */
+	/* Probably one-time password required or password change */
 	if (strncmp(res, "HTTP/1.1 401 Authorization Required\r\n", 37) == 0) {
+		/* Check if this is a password change prompt */
+		if (strstr(res, "Change your password") != NULL ||
+		    strstr(res, "change your password") != NULL ||
+		    strstr(res, "password will expire") != NULL ||
+		    strstr(res, "days-to-expire=") != NULL) {
+			ret = ERR_HTTP_PASSWORD_EXPIRED;
+			goto end;
+		}
+
 		delay_otp(tunnel);
 
 		ret = try_otp_auth(tunnel, res, &res, &response_size);
@@ -746,6 +755,21 @@ int auth_log_in(struct tunnel *tunnel)
 		 * SVPNCOOKIE, it means our authentication attempt was
 		 * rejected.
 		 */
+
+		/* Check for password change/expiry indicators */
+		char pwd_status[128] = {'\0'};
+		if (get_value_from_response(res, "password=", pwd_status, 128) == 1 ||
+		    get_value_from_response(res, "pwd=", pwd_status, 128) == 1 ||
+		    get_value_from_response(res, "password_expired=", pwd_status, 128) == 1 ||
+		    get_value_from_response(res, "password_change=", pwd_status, 128) == 1 ||
+		    strstr(res, "password will expire") != NULL ||
+		    strstr(res, "password expired") != NULL ||
+		    strstr(res, "change your password") != NULL ||
+		    strstr(res, "renew password") != NULL) {
+			log_warn("Password expired or change required by gateway\n");
+			ret = ERR_HTTP_PASSWORD_EXPIRED;
+			goto end;
+		}
 
 		ret = get_value_from_response(res, "tokeninfo=", token, 128);
 		if (ret != 1) {
@@ -804,6 +828,74 @@ int auth_log_in(struct tunnel *tunnel)
 		if (ret != 1)
 			goto end;
 
+		/* Check if server returns 401 for password change after OTP */
+		if (strncmp(res, "HTTP/1.1 401 Authorization Required\r\n", 37) == 0) {
+			if (strstr(res, "Change your password") != NULL ||
+			    strstr(res, "change your password") != NULL ||
+			    strstr(res, "password will expire") != NULL ||
+			    strstr(res, "days-to-expire=") != NULL) {
+				/* Save password change context from the HTML form */
+				tunnel->has_pwd_change_context = 0;
+
+				/* Parse hidden fields from HTML form */
+				const char *magic_field = strstr(res, "NAME=\"magic\"");
+				if (magic_field) {
+					const char *value_start = strstr(magic_field, "VALUE=\"");
+					if (value_start) {
+						value_start += 7;
+						const char *value_end = strchr(value_start, '"');
+						if (value_end && value_end - value_start < sizeof(tunnel->pwd_change_magic)) {
+							strncpy(tunnel->pwd_change_magic, value_start, value_end - value_start);
+							tunnel->pwd_change_magic[value_end - value_start] = '\0';
+							tunnel->has_pwd_change_context = 1;
+						}
+					}
+				}
+
+				const char *reqid_field = strstr(res, "NAME=\"reqid\"");
+				if (reqid_field) {
+					const char *value_start = strstr(reqid_field, "VALUE=\"");
+					if (value_start) {
+						value_start += 7;
+						const char *value_end = strchr(value_start, '"');
+						if (value_end && value_end - value_start < sizeof(tunnel->pwd_change_reqid)) {
+							strncpy(tunnel->pwd_change_reqid, value_start, value_end - value_start);
+							tunnel->pwd_change_reqid[value_end - value_start] = '\0';
+						}
+					}
+				}
+
+				const char *grpid_field = strstr(res, "NAME=\"grpid\"");
+				if (grpid_field) {
+					const char *value_start = strstr(grpid_field, "VALUE=\"");
+					if (value_start) {
+						value_start += 7;
+						const char *value_end = strchr(value_start, '"');
+						if (value_end && value_end - value_start < sizeof(tunnel->pwd_change_grpid)) {
+							strncpy(tunnel->pwd_change_grpid, value_start, value_end - value_start);
+							tunnel->pwd_change_grpid[value_end - value_start] = '\0';
+						}
+					}
+				}
+
+				const char *username_field = strstr(res, "NAME=\"username\"");
+				if (username_field) {
+					const char *value_start = strstr(username_field, "VALUE=\"");
+					if (value_start) {
+						value_start += 7;
+						const char *value_end = strchr(value_start, '"');
+						if (value_end && value_end - value_start < sizeof(tunnel->pwd_change_username)) {
+							strncpy(tunnel->pwd_change_username, value_start, value_end - value_start);
+							tunnel->pwd_change_username[value_end - value_start] = '\0';
+						}
+					}
+				}
+
+				ret = ERR_HTTP_PASSWORD_EXPIRED;
+				goto end;
+			}
+		}
+
 		if (strncmp(res, "HTTP/1.1 200 OK\r\n", 17)) {
 			char word[17];
 
@@ -813,6 +905,23 @@ int auth_log_in(struct tunnel *tunnel)
 		}
 
 		ret = auth_get_cookie(tunnel, res, response_size);
+
+		/* Check for password expiry after OTP authentication */
+		if (ret == ERR_HTTP_NO_COOKIE) {
+			char pwd_status[128] = {'\0'};
+			if (get_value_from_response(res, "password=", pwd_status, 128) == 1 ||
+			    get_value_from_response(res, "pwd=", pwd_status, 128) == 1 ||
+			    get_value_from_response(res, "password_expired=", pwd_status, 128) == 1 ||
+			    get_value_from_response(res, "password_change=", pwd_status, 128) == 1 ||
+			    strstr(res, "password will expire") != NULL ||
+			    strstr(res, "password expired") != NULL ||
+			    strstr(res, "change your password") != NULL ||
+			    strstr(res, "renew password") != NULL) {
+				log_warn("Password expired or change required after OTP authentication\n");
+				ret = ERR_HTTP_PASSWORD_EXPIRED;
+				goto end;
+			}
+		}
 	}
 
 	/*
@@ -942,4 +1051,283 @@ int auth_get_config(struct tunnel *tunnel)
 	}
 
 	return ret;
+}
+
+
+/*
+ * Changes the user's password when prompted by the gateway.
+ *
+ * @param[in] tunnel        the current VPN tunnel
+ * @param[in] old_password  the current password (may be NULL)
+ * @param[in] new_password  the new password to set
+ * @return    1             on success
+ *            < 0           on error
+ */
+int auth_change_password(struct tunnel *tunnel, const char *old_password,
+                         const char *new_password)
+{
+	int ret;
+	char username[3 * USERNAME_SIZE + 1];
+	char password[3 * PASSWORD_SIZE + 1];
+	char realm[3 * REALM_SIZE + 1];
+	char data[512];
+	char *res = NULL;
+	uint32_t response_size;
+	char reqid[64] = {'\0'};
+	char polid[64] = {'\0'};
+	char group[128] = {'\0'};
+	char portal[64] = {'\0'};
+	char magic[64] = {'\0'};
+	char peer[32] = {'\0'};
+
+	log_info("Attempting to change password...\n");
+
+	url_encode(username, tunnel->config->username);
+	url_encode(realm, tunnel->config->realm);
+	url_encode(password, old_password ? old_password : tunnel->config->password);
+
+	/* Check if we have a saved password change context from OTP authentication */
+	if (tunnel->has_pwd_change_context) {
+		log_debug("Using saved password change context from OTP flow\n");
+
+		/* Use the saved form parameters */
+		strncpy(magic, tunnel->pwd_change_magic, sizeof(magic) - 1);
+		magic[sizeof(magic) - 1] = '\0';
+		strncpy(reqid, tunnel->pwd_change_reqid, sizeof(reqid) - 1);
+		reqid[sizeof(reqid) - 1] = '\0';
+		strncpy(group, tunnel->pwd_change_grpid, sizeof(group) - 1);
+		group[sizeof(group) - 1] = '\0';
+
+		/* URL-encode the new password */
+		char new_pwd[3 * PASSWORD_SIZE + 1];
+		url_encode(new_pwd, new_password);
+
+		/* Build and submit password change request using saved context */
+		snprintf(data, sizeof(data),
+		         "magic=%s&username=%s&reqid=%s&grpid=%s&credential=%s&credential2=%s",
+		         magic, tunnel->pwd_change_username, reqid, group, new_pwd, new_pwd);
+
+		ret = http_request(tunnel, "POST", "/remote/logincheck",
+		                   data, &res, &response_size);
+
+		/* Clear the saved context after use */
+		tunnel->has_pwd_change_context = 0;
+
+		if (ret == 1) {
+			/* Check for success */
+			if (strncmp(res, "HTTP/1.1 200 OK\r\n", 17) == 0 ||
+			    strncmp(res, "HTTP/1.1 302", 12) == 0 ||
+			    auth_get_cookie(tunnel, res, response_size) == 1) {
+				log_info("Password changed successfully\n");
+				/* Update stored password */
+				strncpy(tunnel->config->password, new_password, PASSWORD_SIZE);
+				tunnel->config->password[PASSWORD_SIZE] = '\0';
+				free(res);
+				return 1;
+			} else {
+				log_error("Password change may have failed - unexpected response\n");
+			}
+		}
+
+		free(res);
+		return ret;
+	}
+
+	/* No saved context, try to authenticate with old password to get the password change form */
+	snprintf(data, sizeof(data),
+	         "username=%s&credential=%s&realm=%s&ajax=1",
+	         username, password, realm);
+
+	ret = http_request(tunnel, "POST", "/remote/logincheck",
+	                   data, &res, &response_size);
+
+	if (ret != 1) {
+		log_error("Failed to get password change form\n");
+		free(res);
+		return ret;
+	}
+
+	/* Check if we need 2FA first */
+	if (strncmp(res, "HTTP/1.1 200 OK\r\n", 17) == 0) {
+		/* Check for tokeninfo (2FA required) */
+		char token[128];
+		char tokenresponse[256];
+		char tokenparams[320];
+		struct vpn_config *cfg = tunnel->config;
+
+		ret = get_value_from_response(res, "tokeninfo=", token, 128);
+		if (ret == 1) {
+			/* 2FA required, get the parameters */
+			get_value_from_response(res, "grp=", group, 128);
+			get_value_from_response(res, "reqid=", reqid, 64);
+			get_value_from_response(res, "polid=", polid, 64);
+			get_value_from_response(res, "portal=", portal, 64);
+			get_value_from_response(res, "magic=", magic, 64);
+			get_value_from_response(res, "peer=", peer, 32);
+
+			if (cfg->otp[0] == '\0') {
+				char hint[USERNAME_SIZE + 1 + REALM_SIZE + 1 + GATEWAY_HOST_SIZE + 5];
+				sprintf(hint, "%s_%s_%s_2fa",
+				        cfg->username, cfg->realm, cfg->gateway_host);
+				read_password(cfg->pinentry, hint,
+				              "Two-factor authentication token: ",
+				              cfg->otp, OTP_SIZE);
+				if (cfg->otp[0] == '\0') {
+					log_error("No token specified\n");
+					free(res);
+					return 0;
+				}
+			}
+
+			url_encode(tokenresponse, cfg->otp);
+			snprintf(tokenparams, sizeof(tokenparams),
+			         "code=%s&code2=&magic=%s",
+			         tokenresponse, magic);
+
+			snprintf(data, sizeof(data),
+			         "username=%s&realm=%s&reqid=%s&polid=%s&grp=%s&portal=%s&peer=%s&%s",
+			         username, realm, reqid, polid, group, portal, peer,
+			         tokenparams);
+
+			free(res);
+			res = NULL;
+
+			delay_otp(tunnel);
+			ret = http_request(tunnel, "POST", "/remote/logincheck",
+			                   data, &res, &response_size);
+
+			if (ret != 1) {
+				log_error("2FA failed during password change\n");
+				free(res);
+				return ret;
+			}
+		}
+	}
+
+	/* Now check if we have the password change form (HTTP 401) */
+	if (strncmp(res, "HTTP/1.1 401 Authorization Required\r\n", 37) == 0) {
+		/* Parse hidden fields from HTML form */
+		const char *magic_field = strstr(res, "NAME=\"magic\"");
+		if (magic_field) {
+			const char *value_start = strstr(magic_field, "VALUE=\"");
+			if (value_start) {
+				value_start += 7;
+				const char *value_end = strchr(value_start, '"');
+				if (value_end && value_end - value_start < sizeof(magic)) {
+					strncpy(magic, value_start, value_end - value_start);
+					magic[value_end - value_start] = '\0';
+				}
+			}
+		}
+
+		const char *reqid_field = strstr(res, "NAME=\"reqid\"");
+		if (reqid_field) {
+			const char *value_start = strstr(reqid_field, "VALUE=\"");
+			if (value_start) {
+				value_start += 7;
+				const char *value_end = strchr(value_start, '"');
+				if (value_end && value_end - value_start < sizeof(reqid)) {
+					strncpy(reqid, value_start, value_end - value_start);
+					reqid[value_end - value_start] = '\0';
+				}
+			}
+		}
+
+		const char *grpid_field = strstr(res, "NAME=\"grpid\"");
+		if (grpid_field) {
+			const char *value_start = strstr(grpid_field, "VALUE=\"");
+			if (value_start) {
+				value_start += 7;
+				const char *value_end = strchr(value_start, '"');
+				if (value_end && value_end - value_start < sizeof(group)) {
+					strncpy(group, value_start, value_end - value_start);
+					group[value_end - value_start] = '\0';
+				}
+			}
+		}
+
+		/* URL-encode the new password */
+		char new_pwd[3 * PASSWORD_SIZE + 1];
+		url_encode(new_pwd, new_password);
+
+		/* Build and submit password change request */
+		if (magic[0] != '\0') {
+			snprintf(data, sizeof(data),
+			         "magic=%s&username=%s&reqid=%s&grpid=%s&credential=%s&credential2=%s",
+			         magic, username, reqid, group, new_pwd, new_pwd);
+		} else {
+			/* Fallback if parsing failed */
+			snprintf(data, sizeof(data),
+			         "username=%s&credential=%s&credential2=%s",
+			         username, new_pwd, new_pwd);
+		}
+
+		free(res);
+		res = NULL;
+
+		ret = http_request(tunnel, "POST", "/remote/logincheck",
+		                   data, &res, &response_size);
+
+		if (ret == 1) {
+			/* Check for success */
+			if (strncmp(res, "HTTP/1.1 200 OK\r\n", 17) == 0 ||
+			    strncmp(res, "HTTP/1.1 302", 12) == 0 ||
+			    auth_get_cookie(tunnel, res, response_size) == 1) {
+				log_info("Password changed successfully\n");
+				/* Update stored password */
+				strncpy(tunnel->config->password, new_password, PASSWORD_SIZE);
+				tunnel->config->password[PASSWORD_SIZE] = '\0';
+				free(res);
+				return 1;
+			} else {
+				log_error("Password change may have failed - unexpected response\n");
+			}
+		}
+
+		free(res);
+		return ret;
+	}
+
+	/* If we didn't get a 401, try standard password change endpoints */
+	char old_pwd[3 * PASSWORD_SIZE + 1];
+	char new_pwd[3 * PASSWORD_SIZE + 1];
+	url_encode(old_pwd, old_password ? old_password : tunnel->config->password);
+	url_encode(new_pwd, new_password);
+
+	/* Try multiple common endpoints for password change */
+	const char *endpoints[] = {
+		"/remote/changepassword",
+		"/remote/password_change",
+		NULL
+	};
+
+	for (int i = 0; endpoints[i] != NULL; i++) {
+		/* Construct password change request with various parameter names */
+		snprintf(data, sizeof(data),
+		         "username=%s&realm=%s&old_password=%s&new_password=%s&confirm_password=%s&ajax=1",
+		         username, realm, old_pwd, new_pwd, new_pwd);
+
+		ret = http_request(tunnel, "POST", endpoints[i],
+		                   data, &res, &response_size);
+
+		if (ret == 1 && strncmp(res, "HTTP/1.1 200 OK\r\n", 17) == 0) {
+			if (strstr(res, "password changed") != NULL ||
+			    strstr(res, "password updated") != NULL ||
+			    strstr(res, "success") != NULL ||
+			    auth_get_cookie(tunnel, res, response_size) == 1) {
+				log_info("Password changed successfully\n");
+				strncpy(tunnel->config->password, new_password, PASSWORD_SIZE);
+				tunnel->config->password[PASSWORD_SIZE] = '\0';
+				free(res);
+				return 1;
+			}
+		}
+
+		free(res);
+		res = NULL;
+	}
+
+	log_error("Failed to change password\n");
+	free(res);
+	return ERR_HTTP_BAD_RES_CODE;
 }

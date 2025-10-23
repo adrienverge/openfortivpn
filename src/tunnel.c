@@ -1378,7 +1378,57 @@ int run_tunnel(struct vpn_config *config)
 		ret = auth_set_cookie(&tunnel, config->cookie);
 	else
 		ret = auth_log_in(&tunnel);
-	if (ret != 1) {
+	if (ret == ERR_HTTP_PASSWORD_EXPIRED) {
+		char new_password[PASSWORD_SIZE + 1];
+		char new_password_confirm[PASSWORD_SIZE + 1];
+		char hint[USERNAME_SIZE + 1 + REALM_SIZE + 1 + GATEWAY_HOST_SIZE + 10];
+
+		log_warn("Password expired or change required.\n");
+
+		/* Prompt for new password */
+		sprintf(hint, "%s_%s_%s_new_pwd",
+		        config->username, config->realm, config->gateway_host);
+		read_password(config->pinentry, hint,
+		              "New password: ",
+		              new_password, PASSWORD_SIZE);
+
+		if (new_password[0] == '\0') {
+			log_error("No new password specified\n");
+			ret = 1;
+			goto err_tunnel;
+		}
+
+		/* Prompt for confirmation */
+		sprintf(hint, "%s_%s_%s_confirm_pwd",
+		        config->username, config->realm, config->gateway_host);
+		read_password(config->pinentry, hint,
+		              "Confirm new password: ",
+		              new_password_confirm, PASSWORD_SIZE);
+
+		if (strcmp(new_password, new_password_confirm) != 0) {
+			log_error("Passwords do not match\n");
+			ret = 1;
+			goto err_tunnel;
+		}
+
+		/* Attempt to change password */
+		ret = auth_change_password(&tunnel, config->password, new_password);
+		if (ret != 1) {
+			log_error("Failed to change password. %s\n", err_http_str(ret));
+			ret = 1;
+			goto err_tunnel;
+		}
+
+		/* Re-authenticate with new password */
+		log_info("Password changed, re-authenticating...\n");
+		ret = auth_log_in(&tunnel);
+		if (ret != 1) {
+			log_error("Could not re-authenticate with new password.\n");
+			log_debug("%s (%d)\n", err_http_str(ret), ret);
+			ret = 1;
+			goto err_tunnel;
+		}
+	} else if (ret != 1) {
 		log_error("Could not authenticate to gateway. Please check the password, client certificate, etc.\n");
 		log_debug("%s (%d)\n", err_http_str(ret), ret);
 		ret = 1;

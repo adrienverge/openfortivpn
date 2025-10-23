@@ -30,6 +30,7 @@
 #define ERR_HTTP_BAD_RES_CODE	-5
 #define ERR_HTTP_PERMISSION	-6
 #define ERR_HTTP_NO_COOKIE	-7
+#define ERR_HTTP_PASSWORD_EXPIRED	-8
 
 /*
  * URL-encodes a string for HTTP requests.
@@ -59,6 +60,8 @@ static inline const char *err_http_str(int code)
 		return "Permission denied";
 	else if (code == ERR_HTTP_NO_COOKIE)
 		return "No cookie given";
+	else if (code == ERR_HTTP_PASSWORD_EXPIRED)
+		return "Password expired or change required";
 	return "unknown";
 }
 
@@ -70,5 +73,6 @@ int auth_log_out(struct tunnel *tunnel);
 int auth_request_vpn_allocation(struct tunnel *tunnel);
 int auth_get_config(struct tunnel *tunnel);
 int auth_set_cookie(struct tunnel *tunnel, const char *line);
+int auth_change_password(struct tunnel *tunnel, const char *old_password, const char *new_password);
 
 #endif

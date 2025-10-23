@@ -73,6 +73,13 @@ struct tunnel {
 
 	struct ipv4_config ipv4;
 
+	/* Password change context (saved from OTP + password change flow) */
+	char pwd_change_magic[64];
+	char pwd_change_reqid[64];
+	char pwd_change_grpid[128];
+	char pwd_change_username[64];
+	int has_pwd_change_context;
+
 	int (*on_ppp_if_up)(struct tunnel *tunnel);
 	int (*on_ppp_if_down)(struct tunnel *tunnel);
 };
