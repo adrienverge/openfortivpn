@@ -664,6 +664,7 @@ int auth_log_in(struct tunnel *tunnel)
 	char token[128], tokenresponse[256], tokenparams[320];
 	char action_url[1024] = { '\0' };
 	char *res = NULL;
+	const char *errmsg_start;
 	uint32_t response_size;
 
 	url_encode(username, tunnel->config->username);
@@ -713,6 +714,18 @@ int auth_log_in(struct tunnel *tunnel)
 
 	if (ret != 1)
 		goto end;
+
+	/* Errors are provided as HTML comments like <!--sslvpnerrmsg=Foo--> */
+	errmsg_start = strstr(res, "<!--sslvpnerrmsg=");
+	if (errmsg_start) {
+		const char *errmsg_end = strstr(errmsg_start, "-->");
+
+		if (errmsg_end) {
+			log_error("Received error message: \"%.*s\"\n",
+				  errmsg_end - errmsg_start - 17,
+				  errmsg_start + 17);
+		}
+	}
 
 	/* Probably one-time password required */
 	if (strncmp(res, "HTTP/1.1 401 Authorization Required\r\n", 37) == 0) {
