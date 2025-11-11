@@ -718,10 +718,29 @@ int auth_log_in(struct tunnel *tunnel)
 	ret = get_value_from_response(res, "ret=", auth_ret_text, 8);
 	if (ret == 1) {
 		int auth_ret = strtol(auth_ret_text, NULL, 10);
+		char redir[128];
 
 		switch (auth_ret) {
 		case 0:
 			log_error("Authentication failed\n");
+
+			ret = get_value_from_response(res, "redir=", redir, 128);
+			if (ret == 1) {
+				const char *err_start;
+
+				log_debug("Received redirection: \"%s\"\n", redir);
+
+				/* Check for error value in the redirection URL */
+				err_start = strstr(redir, "err=");
+				if (err_start) {
+					const char *err_end = strstr(err_start, "&");
+
+					log_error("Authentication ended up in redirection with error value: \"%.*s\"\n",
+					          err_end ? err_end - err_start - 4 : -1,
+					          err_start + 4);
+				}
+			}
+
 			ret = ERR_HTTP_PERMISSION;
 			goto end;
 		case 1:
