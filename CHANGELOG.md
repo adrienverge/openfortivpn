@@ -14,9 +14,19 @@ Releases
 This high level changelog is usually updated when a release is tagged.
 On the master branch there may be changes that are not (yet) described here.
 
-### not released yet
+### 1.24.0
 
-* [~] remove deprecated option "plugin"
+* [+] add OpenSSL 3.0+ PKCS#11 support using OSSL_STORE API
+* [+] add OpenSSL Engine support (with OpenSSL < 3.0)
+* [+] update package links for distros in README
+* [~] remove deprecated option `--plugin`
+* [~] increase the maximum size of the proxy response
+* [~] route: always remove wrong pppd route to self
+* [-] fix several Coverity warnings
+* [-] fix a memory leak in new ipv4_drop_wrong_route method
+* [-] HTTP: fixes missing '\0' in debug
+* [-] IO: fixes a RC use after free
+* [-] SSL: Avoid leaking SSL context
 
 ### 1.23.1
 
