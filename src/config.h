@@ -64,6 +64,7 @@ struct x509_digest {
 #define OTP_SIZE	64
 #define REALM_SIZE	63
 #define PEM_PASSPHRASE_SIZE	31
+#define AUTH_RET_SIZE	3	/* Numeric value (e.g. "0", "1", "6") */
 
 /*
  * RFC 6265 does not limit the size of cookies:
