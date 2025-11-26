@@ -718,6 +718,7 @@ int auth_log_in(struct tunnel *tunnel)
 	ret = get_value_from_response(res, "ret=", auth_ret_text, 8);
 	if (ret == 1) {
 		int auth_ret = strtol(auth_ret_text, NULL, 10);
+		char chal_msg[128];
 
 		switch (auth_ret) {
 		case 0:
@@ -728,7 +729,14 @@ int auth_log_in(struct tunnel *tunnel)
 			log_debug("Authentication succeeded\n");
 			break;
 		case 6:
-			log_error("Gateway replied to authentication with a challenge that is unsupported right now\n");
+			log_info("Gateway replied to authentication with a challenge\n");
+
+			ret = get_value_from_response(res, "chal_msg=", chal_msg, 128);
+			if (ret == 1)
+				log_info("Challenge message: \"%s\"\n", chal_msg);
+
+			log_error("Challenges are unsupported right now\n");
+
 			ret = ERR_HTTP_PERMISSION;
 			goto end;
 		default:
