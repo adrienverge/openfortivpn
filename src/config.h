@@ -46,6 +46,7 @@ struct x509_digest {
 #define REALM_SIZE	63
 #define PEM_PASSPHRASE_SIZE	31
 #define AUTH_RET_SIZE	3	/* Numeric value (e.g. "0", "1", "6") */
+#define CHAL_MSG_SIZE	128	/* E.g. "Your password will expire in 3 days. Would you like to change it?" */
 
 /*
  * RFC 6265 does not limit the size of cookies:
