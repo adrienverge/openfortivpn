@@ -357,6 +357,10 @@ static int pppd_run(struct tunnel *tunnel)
 			}
 		}
 		if (tunnel->config->pppd_plugin) {
+			if (ofv_append_varr(&pppd_args, "plugin")) {
+				free(pppd_args.data);
+				return 1;
+			}
 			if (ofv_append_varr(&pppd_args, tunnel->config->pppd_plugin)) {
 				free(pppd_args.data);
 				return 1;
