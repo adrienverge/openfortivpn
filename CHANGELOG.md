@@ -14,6 +14,10 @@ Releases
 This high level changelog is usually updated when a release is tagged.
 On the master branch there may be changes that are not (yet) described here.
 
+### 1.24.1
+
+* [-] fix regression where the `plugin` was not passed to pppd
+
 ### 1.24.0
 
 * [+] add OpenSSL 3.0+ PKCS#11 support using OSSL_STORE API
