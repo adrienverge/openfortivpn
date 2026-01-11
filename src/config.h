@@ -112,6 +112,7 @@ struct vpn_config {
 	int			half_internet_routes;
 
 	unsigned int		persistent;
+	int     		allow_nonroot;
 
 #if HAVE_USR_SBIN_PPPD
 	char			*pppd_log;
