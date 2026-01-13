@@ -18,6 +18,7 @@
 #ifndef OPENFORTIVPN_CONFIG_H
 #define OPENFORTIVPN_CONFIG_H
 
+#include <sys/param.h>
 #include <netinet/in.h>
 #include <net/if.h>
 
@@ -100,6 +101,7 @@ struct vpn_config {
 	char			*pinentry;
 	char			iface_name[IF_NAMESIZE];
 	char			realm[REALM_SIZE + 1];
+	char			ifup_script[MAXPATHLEN + 1];
 
 	char			sni[GATEWAY_HOST_SIZE + 1];
 	int			set_routes;
