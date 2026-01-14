@@ -637,6 +637,7 @@ int auth_log_in(struct tunnel *tunnel)
 	char username[3 * USERNAME_SIZE + 1];
 	char password[3 * PASSWORD_SIZE + 1];
 	char realm[3 * REALM_SIZE + 1];
+	char auth_ret_text[8];
 	char reqid[32] = { '\0' };
 	char polid[32] = { '\0' };
 	char group[128] = { '\0' };
@@ -713,6 +714,47 @@ int auth_log_in(struct tunnel *tunnel)
 
 	if (ret != 1)
 		goto end;
+
+	ret = get_value_from_response(res, "ret=", auth_ret_text, 8);
+	if (ret == 1) {
+		int auth_ret = strtol(auth_ret_text, NULL, 10);
+		char redir[128];
+
+		switch (auth_ret) {
+		case 0:
+			log_error("Authentication failed\n");
+
+			ret = get_value_from_response(res, "redir=", redir, 128);
+			if (ret == 1) {
+				const char *err_start;
+
+				log_debug("Received redirection: \"%s\"\n", redir);
+
+				/* Check for error value in the redirection URL */
+				err_start = strstr(redir, "err=");
+				if (err_start) {
+					const char *err_end = strstr(err_start, "&");
+
+					log_error("Authentication ended up in redirection with error value: \"%.*s\"\n",
+					          err_end ? err_end - err_start - 4 : -1,
+					          err_start + 4);
+				}
+			}
+
+			ret = ERR_HTTP_PERMISSION;
+			goto end;
+		case 1:
+			log_debug("Authentication succeeded\n");
+			break;
+		case 6:
+			log_error("Gateway replied to authentication with a challenge that is unsupported right now\n");
+			ret = ERR_HTTP_PERMISSION;
+			goto end;
+		default:
+			log_warn("Unknown authentication result: %d\n", auth_ret);
+			break;
+		}
+	}
 
 	/* Probably one-time password required */
 	if (strncmp(res, "HTTP/1.1 401 Authorization Required\r\n", 37) == 0) {
