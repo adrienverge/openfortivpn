@@ -1385,11 +1385,22 @@ int run_tunnel(struct vpn_config *config)
 	if (ret != 1) {
 		log_error("Could not authenticate to gateway. Please check the password, client certificate, etc.\n");
 		log_debug("%s (%d)\n", err_http_str(ret), ret);
+		/* We should do a back off attempt here no ? */
+		/* As FortiGate kick us after 3 attempts just increase quickly the */
+		/* tries. */
+		/* Maybe we should force the exit or reask for password ? */
+		if (tunnel.config->persistent != 0) {
+			if (tunnel.config->backoff_sleep <= 3600)
+				tunnel.config->backoff_sleep += 60;
+			sleep(tunnel.config->backoff_sleep);
+		}
 		ret = 1;
 		goto err_tunnel;
 	}
 	log_info("Authenticated.\n");
 	log_debug("Cookie: %s\n", tunnel.cookie);
+	/* Reset backoff timing */
+	tunnel.config->backoff_sleep = 0;
 
 	ret = auth_request_vpn_allocation(&tunnel);
 	if (ret != 1) {
