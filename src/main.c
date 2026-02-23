@@ -242,6 +242,7 @@ int main(int argc, char *argv[])
 		.use_syslog = 0,
 		.half_internet_routes = 0,
 		.persistent = 0,
+		.backoff_sleep = 0,
 #if HAVE_RESOLVCONF
 		.use_resolvconf = USE_RESOLVCONF,
 #endif

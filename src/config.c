@@ -64,6 +64,7 @@ const struct vpn_config invalid_cfg = {
 	.use_syslog = -1,
 	.half_internet_routes = -1,
 	.persistent = -1,
+	.backoff_sleep = UINT_MAX,
 #if HAVE_USR_SBIN_PPPD
 	.pppd_log = NULL,
 	.pppd_plugin = NULL,
