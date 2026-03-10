@@ -79,6 +79,7 @@
 #define usage \
 "Usage: openfortivpn [<host>[:<port>]] [-u <user>] [-p <pass>]\n" \
 "                    [--cookie=<cookie>] [--cookie-on-stdin] [--saml-login]\n" \
+"                    [--saml-auto-open] [--saml-instant-close]\n" \
 "                    [--otp=<otp>] [--otp-delay=<delay>] [--otp-prompt=<prompt>]\n" \
 "                    [--pinentry=<program>] [--realm=<realm>]\n" \
 "                    [--ifname=<ifname>] [--set-routes=<0|1>]\n" \
@@ -119,6 +120,10 @@ PPPD_USAGE \
 "  --cookie=<cookie>             A valid session cookie (SVPNCOOKIE).\n" \
 "  --cookie-on-stdin             Read the cookie (SVPNCOOKIE) from standard input.\n" \
 "  --saml-login[=port]           Run a http server to handle SAML login requests\n" \
+"  --saml-auto-open              Automatically open the SAML authentication URL\n" \
+"                                in the default browser.\n" \
+"  --saml-instant-close          Close the browser tab immediately after SAML\n" \
+"                                authentication instead of waiting 5 seconds.\n" \
 "  -o <otp>, --otp=<otp>         One-Time-Password.\n" \
 "  --otp-prompt=<prompt>         Search for the OTP prompt starting with this string.\n" \
 "  --otp-delay=<delay>           Wait <delay> seconds before sending the OTP.\n" \
@@ -228,6 +233,8 @@ int main(int argc, char *argv[])
 		.password_set = 0,
 		.cookie = NULL,
 		.saml_port = 0,
+		.saml_auto_open = 0,
+		.saml_instant_close = 0,
 		.saml_session_id = {'\0'},
 		.otp = {'\0'},
 		.otp_prompt = NULL,
@@ -291,6 +298,8 @@ int main(int argc, char *argv[])
 		{"cookie",               required_argument, NULL, 0},
 		{"cookie-on-stdin",      no_argument,       NULL, 0},
 		{"saml-login",           optional_argument, NULL, 0},
+		{"saml-auto-open",       no_argument, &cli_cfg.saml_auto_open, 1},
+		{"saml-instant-close",   no_argument, &cli_cfg.saml_instant_close, 1},
 		{"otp",                  required_argument, NULL, 'o'},
 		{"otp-prompt",           required_argument, NULL, 0},
 		{"otp-delay",            required_argument, NULL, 0},

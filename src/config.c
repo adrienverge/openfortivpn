@@ -46,6 +46,8 @@ const struct vpn_config invalid_cfg = {
 	.password_set = 0,
 	.cookie = NULL,
 	.saml_port = 0,
+	.saml_auto_open = -1,
+	.saml_instant_close = -1,
 	.saml_session_id = {'\0'},
 	.otp = {'\0'},
 	.otp_prompt = NULL,
@@ -427,6 +429,24 @@ int load_config(struct vpn_config *cfg, const char *filename)
 				goto err_free;
 			}
 			cfg->saml_port = (uint16_t)port;
+		} else if (strcmp(key, "saml-auto-open") == 0) {
+			int saml_auto_open = strtob(val);
+
+			if (saml_auto_open < 0) {
+				log_warn("Bad saml-auto-open in configuration file: \"%s\".\n",
+				         val);
+				continue;
+			}
+			cfg->saml_auto_open = saml_auto_open;
+		} else if (strcmp(key, "saml-instant-close") == 0) {
+			int saml_instant_close = strtob(val);
+
+			if (saml_instant_close < 0) {
+				log_warn("Bad saml-instant-close in configuration file: \"%s\".\n",
+				         val);
+				continue;
+			}
+			cfg->saml_instant_close = saml_instant_close;
 		} else if (strcmp(key, "user-key") == 0) {
 			free(cfg->user_key);
 			cfg->user_key = strdup(val);
@@ -546,6 +566,10 @@ void merge_config(struct vpn_config *dst, struct vpn_config *src)
 	}
 	if (src->saml_port != 0)
 		dst->saml_port = src->saml_port;
+	if (src->saml_auto_open != invalid_cfg.saml_auto_open)
+		dst->saml_auto_open = src->saml_auto_open;
+	if (src->saml_instant_close != invalid_cfg.saml_instant_close)
+		dst->saml_instant_close = src->saml_instant_close;
 	if (src->pinentry) {
 		free(dst->pinentry);
 		dst->pinentry = src->pinentry;
