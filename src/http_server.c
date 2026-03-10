@@ -27,6 +27,7 @@
 #include <unistd.h>
 
 #include <ctype.h>
+#include <stdlib.h>
 #include <string.h>
 
 static void print_url(const struct vpn_config *cfg)
@@ -79,6 +80,54 @@ static void print_url(const struct vpn_config *cfg)
 	         encoded_realm);
 
 	log_info("Authenticate at '%s'\n", url);
+
+	if (cfg->saml_auto_open && url) {
+		log_info("Opening URL in default browser...\n");
+#if defined(__APPLE__)
+		// When running with sudo, use the original user's browser settings
+		const char *sudo_user = getenv("SUDO_USER");
+		if (sudo_user && sudo_user[0] != '\0') {
+			char *cmd = malloc(strlen(url) + strlen(sudo_user) + 32);
+			if (cmd) {
+				sprintf(cmd, "sudo -u %s open '%s'", sudo_user, url);
+				system(cmd);
+				free(cmd);
+			}
+		} else {
+			char *cmd = malloc(strlen(url) + 16);
+			if (cmd) {
+				sprintf(cmd, "open '%s'", url);
+				system(cmd);
+				free(cmd);
+			}
+		}
+#elif defined(_WIN32)
+		char *cmd = malloc(strlen(url) + 16);
+		if (cmd) {
+			sprintf(cmd, "start '%s'", url);
+			system(cmd);
+			free(cmd);
+		}
+#else
+		// When running with sudo, use the original user's browser settings
+		const char *sudo_user = getenv("SUDO_USER");
+		if (sudo_user && sudo_user[0] != '\0') {
+			char *cmd = malloc(strlen(url) + strlen(sudo_user) + 48);
+			if (cmd) {
+				sprintf(cmd, "sudo -u %s xdg-open '%s' 2>/dev/null", sudo_user, url);
+				system(cmd);
+				free(cmd);
+			}
+		} else {
+			char *cmd = malloc(strlen(url) + 32);
+			if (cmd) {
+				sprintf(cmd, "xdg-open '%s' 2>/dev/null", url);
+				system(cmd);
+				free(cmd);
+			}
+		}
+#endif
+	}
 
 end:
 	free(url);
@@ -136,7 +185,7 @@ end:
 	free(replyHeaderBuffer);
 }
 
-static int process_request(int new_socket, char *id)
+static int process_request(int new_socket, char *id, const struct vpn_config *cfg)
 {
 	log_info("Processing HTTP SAML request\n");
 
@@ -210,13 +259,22 @@ static int process_request(int new_socket, char *id)
 		return -1;
 	}
 
-	send_status_response(new_socket,
-	                     "SAML session id received from Fortinet server. VPN will be established...<br>\r\n"
-	                     "You may close this browser tab now.<br>\r\n"
-	                     "<script>\r\n"
-	                     "window.setTimeout(() => { window.close(); }, 5000);\r\n"
-	                     "document.write(\"<br>This window will close automatically in 5 seconds.\");\r\n"
-	                     "</script>\r\n");
+	if (cfg->saml_instant_close) {
+		send_status_response(new_socket,
+		                     "SAML session id received from Fortinet server. VPN will be established...<br>\r\n"
+		                     "You may close this browser tab now.<br>\r\n"
+		                     "<script>\r\n"
+		                     "window.close();\r\n"
+		                     "</script>\r\n");
+	} else {
+		send_status_response(new_socket,
+		                     "SAML session id received from Fortinet server. VPN will be established...<br>\r\n"
+		                     "You may close this browser tab now.<br>\r\n"
+		                     "<script>\r\n"
+		                     "window.setTimeout(() => { window.close(); }, 5000);\r\n"
+		                     "document.write(\"<br>This window will close automatically in 5 seconds.\");\r\n"
+		                     "</script>\r\n");
+	}
 	return 0;
 }
 
@@ -299,7 +357,7 @@ int wait_for_http_request(struct vpn_config *config)
 			continue;
 		}
 
-		int result = process_request(new_socket, config->saml_session_id);
+		int result = process_request(new_socket, config->saml_session_id, config);
 
 		close(new_socket);
 		if (result == 0)
