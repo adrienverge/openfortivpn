@@ -38,7 +38,7 @@
 #include <string.h>
 
 #if HAVE_SYSTEMCONFIGURATION
-#include <SystemConfiguration/SCDynamicStore.h>
+#include <SystemConfiguration/SystemConfiguration.h>
 #include <CoreFoundation/CoreFoundation.h>
 #endif
 
@@ -1444,36 +1444,36 @@ err_close:
 
 #if HAVE_SYSTEMCONFIGURATION
 /*
- * On macOS, DNS is managed by configd via SCDynamicStore, not /etc/resolv.conf.
+ * macOS DNS via SCDynamicStore
  *
- * We register a supplemental resolver under our own key with
- * SupplementalMatchDomains set to [""] (empty string = match all domains).
- * This routes all DNS queries to the VPN nameservers without binding them to
- * a specific network interface, so they are reachable over the ppp0 split
- * routes even though ppp0 is not the primary interface.
+ * macOS ignores /etc/resolv.conf — DNS is managed by configd through
+ * SCDynamicStore.  We register a supplemental resolver under our own key.
  *
- * macOS only applies SearchDomains for short hostname expansion from the
- * primary (non-supplemental) resolver, which is tied to the primary network
- * interface. To enable "ping host" → "host.corp" expansion, we add
- * SearchDomains to the primary service's static DNS configuration
- * (Setup: prefix). This key is stable across DHCP renewals. The original
- * value is saved and fully restored on disconnect.
+ * When dns_suffix is available (e.g. "corp.com"):
+ *   Split-DNS — only *.corp.com queries go to the VPN nameservers.
+ *   configd automatically adds "corp.com" to the default resolver's
+ *   search domain list, so "ping host" expands to "host.corp.com".
+ *   Non-matching queries (google.com) keep using normal DNS.
+ *
+ * When dns_suffix is NOT available but DNS servers are provided:
+ *   Full-tunnel DNS — SupplementalMatchDomains is set to "" (empty
+ *   string = match all domains) so every query goes to the VPN.
+ *   Note: configd does not add search domains in this mode, so short
+ *   hostname expansion will not work.  This is a macOS limitation.
+ *
+ * Cleanup is a single key removal.  If the process crashes, only the
+ * supplemental entry is orphaned — normal DNS continues to work since
+ * the primary service is never modified.
  */
 
 #define OPENFORTIVPN_DNS_KEY \
 	CFSTR("State:/Network/Service/openfortivpn/DNS")
-
-static CFStringRef saved_primary_dns_key = NULL;
-static CFDictionaryRef saved_primary_dns = NULL;
 
 int ipv4_set_dns_scf(struct tunnel *tunnel)
 {
 	SCDynamicStoreRef store = NULL;
 	CFMutableDictionaryRef dns_dict = NULL;
 	CFMutableArrayRef servers = NULL;
-	CFStringRef suffix = NULL;
-	CFArrayRef domains = NULL;
-	CFArrayRef match_all = NULL;
 	int ret = 1;
 
 	store = SCDynamicStoreCreate(NULL, CFSTR("openfortivpn"), NULL, NULL);
@@ -1485,16 +1485,14 @@ int ipv4_set_dns_scf(struct tunnel *tunnel)
 	dns_dict = CFDictionaryCreateMutable(NULL, 0,
 		&kCFTypeDictionaryKeyCallBacks,
 		&kCFTypeDictionaryValueCallBacks);
-	if (!dns_dict)
-		goto out;
-
 	servers = CFArrayCreateMutable(NULL, 2, &kCFTypeArrayCallBacks);
-	if (!servers)
+	if (!dns_dict || !servers)
 		goto out;
 
 	if (tunnel->ipv4.ns1_addr.s_addr) {
 		CFStringRef s = CFStringCreateWithCString(NULL,
-			inet_ntoa(tunnel->ipv4.ns1_addr), kCFStringEncodingASCII);
+			inet_ntoa(tunnel->ipv4.ns1_addr),
+			kCFStringEncodingASCII);
 		if (s) {
 			CFArrayAppendValue(servers, s);
 			CFRelease(s);
@@ -1502,105 +1500,59 @@ int ipv4_set_dns_scf(struct tunnel *tunnel)
 	}
 	if (tunnel->ipv4.ns2_addr.s_addr) {
 		CFStringRef s = CFStringCreateWithCString(NULL,
-			inet_ntoa(tunnel->ipv4.ns2_addr), kCFStringEncodingASCII);
+			inet_ntoa(tunnel->ipv4.ns2_addr),
+			kCFStringEncodingASCII);
 		if (s) {
 			CFArrayAppendValue(servers, s);
 			CFRelease(s);
 		}
 	}
-	if (CFArrayGetCount(servers) > 0)
-		CFDictionarySetValue(dns_dict, CFSTR("ServerAddresses"), servers);
-
-	if (tunnel->ipv4.dns_suffix) {
-		suffix = CFStringCreateWithCString(NULL,
-			tunnel->ipv4.dns_suffix, kCFStringEncodingUTF8);
-		if (suffix) {
-			domains = CFArrayCreate(NULL,
-				(const void **)&suffix, 1,
-				&kCFTypeArrayCallBacks);
-			if (domains)
-				CFDictionarySetValue(dns_dict,
-					CFSTR("SearchDomains"), domains);
-		}
-	}
-
-	if (CFDictionaryGetCount(dns_dict) == 0) {
-		log_debug("No DNS data to write to SCDynamicStore.\n");
+	if (CFArrayGetCount(servers) == 0) {
+		log_debug("No DNS servers to configure.\n");
 		ret = 0;
 		goto out;
 	}
-
-	/* Empty string = match all — unbound queries follow the routing table */
-	CFStringRef empty = CFSTR("");
-	match_all = CFArrayCreate(NULL,
-		(const void **)&empty, 1, &kCFTypeArrayCallBacks);
-	if (match_all)
-		CFDictionarySetValue(dns_dict,
-			CFSTR("SupplementalMatchDomains"), match_all);
-
-	if (!SCDynamicStoreSetValue(store, OPENFORTIVPN_DNS_KEY, dns_dict)) {
-		log_warn("Could not write DNS to SCDynamicStore.\n");
-		goto out;
-	}
-	log_info("DNS configuration written to macOS System Configuration.\n");
-	ret = 0;
+	CFDictionarySetValue(dns_dict, CFSTR("ServerAddresses"), servers);
 
 	/*
-	 * Add SearchDomains to the primary service's static (Setup:) DNS
-	 * entry so that the system resolver expands short hostnames.
-	 * We save the original value and restore it on disconnect.
+	 * Split-DNS vs Full-tunnel:
+	 *   suffix present  → SupplementalMatchDomains: ["corp.com"]
+	 *   suffix absent   → SupplementalMatchDomains: [""]
 	 */
-	if (domains) {
-		CFDictionaryRef global_ipv4 = SCDynamicStoreCopyValue(store,
-			CFSTR("State:/Network/Global/IPv4"));
-		if (global_ipv4) {
-			CFStringRef uuid = CFDictionaryGetValue(global_ipv4,
-				CFSTR("PrimaryService"));
-			if (uuid) {
-				saved_primary_dns_key = CFStringCreateWithFormat(
-					NULL, NULL,
-					CFSTR("Setup:/Network/Service/%@/DNS"),
-					uuid);
-				if (saved_primary_dns_key) {
-					saved_primary_dns = SCDynamicStoreCopyValue(
-						store, saved_primary_dns_key);
+	CFStringRef match_domain;
+	if (tunnel->ipv4.dns_suffix)
+		match_domain = CFStringCreateWithCString(NULL,
+			tunnel->ipv4.dns_suffix, kCFStringEncodingUTF8);
+	else
+		match_domain = CFStringCreateCopy(NULL, CFSTR(""));
 
-					CFMutableDictionaryRef new_dns;
-					if (saved_primary_dns)
-						new_dns = CFDictionaryCreateMutableCopy(
-							NULL, 0, saved_primary_dns);
-					else
-						new_dns = CFDictionaryCreateMutable(
-							NULL, 0,
-							&kCFTypeDictionaryKeyCallBacks,
-							&kCFTypeDictionaryValueCallBacks);
-
-					if (new_dns) {
-						CFDictionarySetValue(new_dns,
-							CFSTR("SearchDomains"),
-							domains);
-						if (!SCDynamicStoreSetValue(store,
-								saved_primary_dns_key,
-								new_dns))
-							log_warn("Could not add "
-								"SearchDomains to "
-								"primary service "
-								"DNS.\n");
-						CFRelease(new_dns);
-					}
-				}
-			}
-			CFRelease(global_ipv4);
+	if (match_domain) {
+		CFArrayRef match_domains = CFArrayCreate(NULL,
+			(const void **)&match_domain, 1,
+			&kCFTypeArrayCallBacks);
+		if (match_domains) {
+			CFDictionarySetValue(dns_dict,
+				CFSTR("SupplementalMatchDomains"),
+				match_domains);
+			CFRelease(match_domains);
 		}
+		CFRelease(match_domain);
+	}
+
+	if (SCDynamicStoreSetValue(store, OPENFORTIVPN_DNS_KEY, dns_dict)) {
+		if (tunnel->ipv4.dns_suffix)
+			log_info("Split-DNS for '%s' written to macOS System "
+			         "Configuration.\n",
+			         tunnel->ipv4.dns_suffix);
+		else
+			log_info("Full-tunnel DNS written to macOS System "
+			         "Configuration.\n");
+		ret = 0;
+	} else {
+		log_warn("Could not write DNS to SCDynamicStore.\n");
 	}
 
 out:
-	if (match_all)
-		CFRelease(match_all);
-	if (domains)
-		CFRelease(domains);
-	if (suffix)
-		CFRelease(suffix);
 	if (servers)
 		CFRelease(servers);
 	if (dns_dict)
@@ -1613,7 +1565,6 @@ out:
 int ipv4_clear_dns_scf(void)
 {
 	SCDynamicStoreRef store;
-	int ret = 1;
 
 	store = SCDynamicStoreCreate(NULL, CFSTR("openfortivpn"), NULL, NULL);
 	if (!store) {
@@ -1621,25 +1572,8 @@ int ipv4_clear_dns_scf(void)
 		return 1;
 	}
 
-	if (SCDynamicStoreRemoveValue(store, OPENFORTIVPN_DNS_KEY))
-		ret = 0;
-	else
-		log_warn("Could not remove DNS from SCDynamicStore.\n");
-
-	if (saved_primary_dns_key) {
-		if (saved_primary_dns) {
-			SCDynamicStoreSetValue(store, saved_primary_dns_key,
-				saved_primary_dns);
-			CFRelease(saved_primary_dns);
-			saved_primary_dns = NULL;
-		} else {
-			SCDynamicStoreRemoveValue(store, saved_primary_dns_key);
-		}
-		CFRelease(saved_primary_dns_key);
-		saved_primary_dns_key = NULL;
-	}
-
+	SCDynamicStoreRemoveValue(store, OPENFORTIVPN_DNS_KEY);
 	CFRelease(store);
-	return ret;
+	return 0;
 }
 #endif
