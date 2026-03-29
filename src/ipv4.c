@@ -37,6 +37,11 @@
 #include <stdint.h>
 #include <string.h>
 
+#if HAVE_SYSTEMCONFIGURATION
+#include <SystemConfiguration/SCDynamicStore.h>
+#include <CoreFoundation/CoreFoundation.h>
+#endif
+
 #define IPV4_GET_ROUTE_BUFFER_CHUNK_SIZE 65536
 #define SHOW_ROUTE_BUFFER_SIZE 128
 
@@ -1436,3 +1441,134 @@ err_close:
 		         strerror(errno));
 	return ret;
 }
+
+#if HAVE_SYSTEMCONFIGURATION
+/*
+ * On macOS, DNS is managed by configd via SCDynamicStore, not /etc/resolv.conf.
+ * We register a supplemental resolver with SupplementalMatchDomains set to [""]
+ * (empty string = match all domains), so all DNS queries are sent to the VPN
+ * nameservers. The search domain is also set for short hostname resolution.
+ */
+
+#define OPENFORTIVPN_DNS_KEY \
+	CFSTR("State:/Network/Service/openfortivpn/DNS")
+
+int ipv4_set_dns_scf(struct tunnel *tunnel)
+{
+	SCDynamicStoreRef store = NULL;
+	CFMutableDictionaryRef dns_dict = NULL;
+	CFMutableArrayRef servers = NULL;
+	CFStringRef suffix = NULL;
+	CFArrayRef domains = NULL;
+	CFArrayRef match_all = NULL;
+	int ret = 1;
+
+	store = SCDynamicStoreCreate(NULL, CFSTR("openfortivpn"), NULL, NULL);
+	if (!store) {
+		log_warn("SCDynamicStore could not be opened.\n");
+		return 1;
+	}
+
+	dns_dict = CFDictionaryCreateMutable(NULL, 0,
+		&kCFTypeDictionaryKeyCallBacks,
+		&kCFTypeDictionaryValueCallBacks);
+	if (!dns_dict)
+		goto out;
+
+	/* Nameservers */
+	servers = CFArrayCreateMutable(NULL, 2, &kCFTypeArrayCallBacks);
+	if (!servers)
+		goto out;
+
+	if (tunnel->ipv4.ns1_addr.s_addr) {
+		CFStringRef s = CFStringCreateWithCString(NULL,
+			inet_ntoa(tunnel->ipv4.ns1_addr),
+			kCFStringEncodingASCII);
+		if (s) {
+			CFArrayAppendValue(servers, s);
+			CFRelease(s);
+		}
+	}
+	if (tunnel->ipv4.ns2_addr.s_addr) {
+		CFStringRef s = CFStringCreateWithCString(NULL,
+			inet_ntoa(tunnel->ipv4.ns2_addr),
+			kCFStringEncodingASCII);
+		if (s) {
+			CFArrayAppendValue(servers, s);
+			CFRelease(s);
+		}
+	}
+	if (CFArrayGetCount(servers) > 0)
+		CFDictionarySetValue(dns_dict, CFSTR("ServerAddresses"), servers);
+
+	/* Search domain for short hostname resolution */
+	if (tunnel->ipv4.dns_suffix) {
+		suffix = CFStringCreateWithCString(NULL,
+			tunnel->ipv4.dns_suffix, kCFStringEncodingUTF8);
+		if (suffix) {
+			domains = CFArrayCreate(NULL,
+				(const void **)&suffix, 1,
+				&kCFTypeArrayCallBacks);
+			if (domains)
+				CFDictionarySetValue(dns_dict,
+					CFSTR("SearchDomains"), domains);
+		}
+	}
+
+	if (CFDictionaryGetCount(dns_dict) == 0) {
+		log_debug("No DNS data to write to SCDynamicStore.\n");
+		ret = 0;
+		goto out;
+	}
+
+	/* Empty string = match all domains, so all queries use VPN DNS */
+	CFStringRef empty = CFSTR("");
+	match_all = CFArrayCreate(NULL,
+		(const void **)&empty, 1, &kCFTypeArrayCallBacks);
+	if (match_all)
+		CFDictionarySetValue(dns_dict,
+			CFSTR("SupplementalMatchDomains"), match_all);
+
+	if (SCDynamicStoreSetValue(store, OPENFORTIVPN_DNS_KEY, dns_dict)) {
+		log_info("DNS configuration written to macOS System Configuration.\n");
+		ret = 0;
+	} else {
+		log_warn("Could not write DNS to SCDynamicStore.\n");
+	}
+
+out:
+	if (match_all)
+		CFRelease(match_all);
+	if (domains)
+		CFRelease(domains);
+	if (suffix)
+		CFRelease(suffix);
+	if (servers)
+		CFRelease(servers);
+	if (dns_dict)
+		CFRelease(dns_dict);
+	if (store)
+		CFRelease(store);
+	return ret;
+}
+
+int ipv4_clear_dns_scf(void)
+{
+	SCDynamicStoreRef store;
+	int ret = 1;
+
+	store = SCDynamicStoreCreate(NULL, CFSTR("openfortivpn"), NULL, NULL);
+	if (!store) {
+		log_warn("SCDynamicStore could not be opened.\n");
+		return 1;
+	}
+
+	if (SCDynamicStoreRemoveValue(store, OPENFORTIVPN_DNS_KEY))
+		ret = 0;
+	else
+		log_warn("Could not remove DNS from SCDynamicStore.\n");
+
+	CFRelease(store);
+	return ret;
+}
+#endif
