@@ -1445,13 +1445,26 @@ err_close:
 #if HAVE_SYSTEMCONFIGURATION
 /*
  * On macOS, DNS is managed by configd via SCDynamicStore, not /etc/resolv.conf.
- * We register a supplemental resolver with SupplementalMatchDomains set to [""]
- * (empty string = match all domains), so all DNS queries are sent to the VPN
- * nameservers. The search domain is also set for short hostname resolution.
+ *
+ * We register a supplemental resolver under our own key with
+ * SupplementalMatchDomains set to [""] (empty string = match all domains).
+ * This routes all DNS queries to the VPN nameservers without binding them to
+ * a specific network interface, so they are reachable over the ppp0 split
+ * routes even though ppp0 is not the primary interface.
+ *
+ * macOS only applies SearchDomains for short hostname expansion from the
+ * primary (non-supplemental) resolver, which is tied to the primary network
+ * interface. To enable "ping host" → "host.corp" expansion, we add
+ * SearchDomains to the primary service's static DNS configuration
+ * (Setup: prefix). This key is stable across DHCP renewals. The original
+ * value is saved and fully restored on disconnect.
  */
 
 #define OPENFORTIVPN_DNS_KEY \
 	CFSTR("State:/Network/Service/openfortivpn/DNS")
+
+static CFStringRef saved_primary_dns_key = NULL;
+static CFDictionaryRef saved_primary_dns = NULL;
 
 int ipv4_set_dns_scf(struct tunnel *tunnel)
 {
@@ -1475,15 +1488,13 @@ int ipv4_set_dns_scf(struct tunnel *tunnel)
 	if (!dns_dict)
 		goto out;
 
-	/* Nameservers */
 	servers = CFArrayCreateMutable(NULL, 2, &kCFTypeArrayCallBacks);
 	if (!servers)
 		goto out;
 
 	if (tunnel->ipv4.ns1_addr.s_addr) {
 		CFStringRef s = CFStringCreateWithCString(NULL,
-			inet_ntoa(tunnel->ipv4.ns1_addr),
-			kCFStringEncodingASCII);
+			inet_ntoa(tunnel->ipv4.ns1_addr), kCFStringEncodingASCII);
 		if (s) {
 			CFArrayAppendValue(servers, s);
 			CFRelease(s);
@@ -1491,8 +1502,7 @@ int ipv4_set_dns_scf(struct tunnel *tunnel)
 	}
 	if (tunnel->ipv4.ns2_addr.s_addr) {
 		CFStringRef s = CFStringCreateWithCString(NULL,
-			inet_ntoa(tunnel->ipv4.ns2_addr),
-			kCFStringEncodingASCII);
+			inet_ntoa(tunnel->ipv4.ns2_addr), kCFStringEncodingASCII);
 		if (s) {
 			CFArrayAppendValue(servers, s);
 			CFRelease(s);
@@ -1501,7 +1511,6 @@ int ipv4_set_dns_scf(struct tunnel *tunnel)
 	if (CFArrayGetCount(servers) > 0)
 		CFDictionarySetValue(dns_dict, CFSTR("ServerAddresses"), servers);
 
-	/* Search domain for short hostname resolution */
 	if (tunnel->ipv4.dns_suffix) {
 		suffix = CFStringCreateWithCString(NULL,
 			tunnel->ipv4.dns_suffix, kCFStringEncodingUTF8);
@@ -1521,7 +1530,7 @@ int ipv4_set_dns_scf(struct tunnel *tunnel)
 		goto out;
 	}
 
-	/* Empty string = match all domains, so all queries use VPN DNS */
+	/* Empty string = match all — unbound queries follow the routing table */
 	CFStringRef empty = CFSTR("");
 	match_all = CFArrayCreate(NULL,
 		(const void **)&empty, 1, &kCFTypeArrayCallBacks);
@@ -1529,11 +1538,60 @@ int ipv4_set_dns_scf(struct tunnel *tunnel)
 		CFDictionarySetValue(dns_dict,
 			CFSTR("SupplementalMatchDomains"), match_all);
 
-	if (SCDynamicStoreSetValue(store, OPENFORTIVPN_DNS_KEY, dns_dict)) {
-		log_info("DNS configuration written to macOS System Configuration.\n");
-		ret = 0;
-	} else {
+	if (!SCDynamicStoreSetValue(store, OPENFORTIVPN_DNS_KEY, dns_dict)) {
 		log_warn("Could not write DNS to SCDynamicStore.\n");
+		goto out;
+	}
+	log_info("DNS configuration written to macOS System Configuration.\n");
+	ret = 0;
+
+	/*
+	 * Add SearchDomains to the primary service's static (Setup:) DNS
+	 * entry so that the system resolver expands short hostnames.
+	 * We save the original value and restore it on disconnect.
+	 */
+	if (domains) {
+		CFDictionaryRef global_ipv4 = SCDynamicStoreCopyValue(store,
+			CFSTR("State:/Network/Global/IPv4"));
+		if (global_ipv4) {
+			CFStringRef uuid = CFDictionaryGetValue(global_ipv4,
+				CFSTR("PrimaryService"));
+			if (uuid) {
+				saved_primary_dns_key = CFStringCreateWithFormat(
+					NULL, NULL,
+					CFSTR("Setup:/Network/Service/%@/DNS"),
+					uuid);
+				if (saved_primary_dns_key) {
+					saved_primary_dns = SCDynamicStoreCopyValue(
+						store, saved_primary_dns_key);
+
+					CFMutableDictionaryRef new_dns;
+					if (saved_primary_dns)
+						new_dns = CFDictionaryCreateMutableCopy(
+							NULL, 0, saved_primary_dns);
+					else
+						new_dns = CFDictionaryCreateMutable(
+							NULL, 0,
+							&kCFTypeDictionaryKeyCallBacks,
+							&kCFTypeDictionaryValueCallBacks);
+
+					if (new_dns) {
+						CFDictionarySetValue(new_dns,
+							CFSTR("SearchDomains"),
+							domains);
+						if (!SCDynamicStoreSetValue(store,
+								saved_primary_dns_key,
+								new_dns))
+							log_warn("Could not add "
+								"SearchDomains to "
+								"primary service "
+								"DNS.\n");
+						CFRelease(new_dns);
+					}
+				}
+			}
+			CFRelease(global_ipv4);
+		}
 	}
 
 out:
@@ -1567,6 +1625,19 @@ int ipv4_clear_dns_scf(void)
 		ret = 0;
 	else
 		log_warn("Could not remove DNS from SCDynamicStore.\n");
+
+	if (saved_primary_dns_key) {
+		if (saved_primary_dns) {
+			SCDynamicStoreSetValue(store, saved_primary_dns_key,
+				saved_primary_dns);
+			CFRelease(saved_primary_dns);
+			saved_primary_dns = NULL;
+		} else {
+			SCDynamicStoreRemoveValue(store, saved_primary_dns_key);
+		}
+		CFRelease(saved_primary_dns_key);
+		saved_primary_dns_key = NULL;
+	}
 
 	CFRelease(store);
 	return ret;
