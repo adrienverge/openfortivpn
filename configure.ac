@@ -7,6 +7,7 @@ AC_CONFIG_SRCDIR([src/main.c])
 AM_INIT_AUTOMAKE([foreign subdir-objects])
 
 # Checks for programs.
+AC_CANONICAL_HOST
 AC_PROG_CC
 AC_PROG_MKDIR_P
 AC_PROG_SED
