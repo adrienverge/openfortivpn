@@ -792,7 +792,24 @@ int auth_log_in(struct tunnel *tunnel)
 			 * but only try this if the OTP is not provided by the config
 			 * file or command line.
 			 */
-			snprintf(tokenparams, sizeof(tokenparams), "ftmpush=1");
+			if (cfg->ftm_push_otp_prompt) {
+				char hint[USERNAME_SIZE + 1 + REALM_SIZE + 1 + GATEWAY_HOST_SIZE + 5];
+
+				sprintf(hint, "%s_%s_%s_2fa",
+				        cfg->username, cfg->realm, cfg->gateway_host);
+				read_password(cfg->pinentry, hint,
+				              "Two-factor authentication token (leave empty to use FTM push): ",
+				              cfg->otp, OTP_SIZE);
+			}
+
+			if (cfg->otp[0] == '\0') {
+				snprintf(tokenparams, sizeof(tokenparams), "ftmpush=1");
+			} else {
+				url_encode(tokenresponse, cfg->otp);
+				snprintf(tokenparams, sizeof(tokenparams),
+				         "code=%s&code2=&magic=%s",
+				         tokenresponse, magic);
+			}
 		} else {
 			if (cfg->otp[0] == '\0') {
 				// Interactively ask user for 2FA token

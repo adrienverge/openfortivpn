@@ -16,6 +16,7 @@ openfortivpn \- Client for PPP+TLS VPN tunnel services
 [\fB\-\-otp\-prompt=\fI<prompt>\fR]
 [\fB\-\-otp\-delay=\fI<delay>\fR]
 [\fB\-\-no\-ftm\-push\fR]
+[\fB\-\-ftm\-push\-otp\-prompt\fR]
 [\fB\-\-realm=\fI<realm>\fR]
 [\fB\-\-ifname=\fI<interface>\fR]
 [\fB\-\-set\-routes=\fI<bool>\fR]
@@ -110,6 +111,12 @@ Do not use FTM push if the server provides the option.
 The server may be configured to allow two factor authentication through a
 push notification to the mobile application. If this option is provided,
 authentication based on OTP will be used instead.
+.TP
+\fB\-\-ftm\-push\-otp\-prompt\fR
+Prompt for an OTP before falling back to FTM push.
+When the server provides FTM push and no OTP was supplied through the
+configuration file or command line, openfortivpn will ask for an OTP.
+Leaving the OTP empty uses FTM push.
 .TP
 \fB\-\-realm=\fI<realm>\fR
 Connect to the specified authentication realm. Defaults to empty, which
@@ -340,6 +347,10 @@ username = foo
 # This would disable FTM push notification support, and use OTP instead
 .br
 # no\-ftm\-push = 1
+.br
+# Prompt for an OTP before using FTM push; leave OTP empty to use push
+.br
+# ftm\-push\-otp\-prompt = 1
 .br
 user\-cert = @SYSCONFDIR@/openfortivpn/user\-cert.pem
 .br

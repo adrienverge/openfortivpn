@@ -51,6 +51,7 @@ const struct vpn_config invalid_cfg = {
 	.otp_prompt = NULL,
 	.otp_delay = -1,
 	.no_ftm_push = -1,
+	.ftm_push_otp_prompt = -1,
 	.pinentry = NULL,
 	.realm = {'\0'},
 	.iface_name = {'\0'},
@@ -288,6 +289,15 @@ int load_config(struct vpn_config *cfg, const char *filename)
 				continue;
 			}
 			cfg->no_ftm_push = no_ftm_push;
+		} else if (strcmp(key, "ftm-push-otp-prompt") == 0) {
+			int ftm_push_otp_prompt = strtob(val);
+
+			if (ftm_push_otp_prompt < 0) {
+				log_warn("Bad ftm-push-otp-prompt in configuration file: \"%s\".\n",
+				         val);
+				continue;
+			}
+			cfg->ftm_push_otp_prompt = ftm_push_otp_prompt;
 		} else if (strcmp(key, "pinentry") == 0) {
 			free(cfg->pinentry);
 			cfg->pinentry = strdup(val);
@@ -540,6 +550,8 @@ void merge_config(struct vpn_config *dst, struct vpn_config *src)
 		dst->otp_delay = src->otp_delay;
 	if (src->no_ftm_push != invalid_cfg.no_ftm_push)
 		dst->no_ftm_push = src->no_ftm_push;
+	if (src->ftm_push_otp_prompt != invalid_cfg.ftm_push_otp_prompt)
+		dst->ftm_push_otp_prompt = src->ftm_push_otp_prompt;
 	if (src->cookie != invalid_cfg.cookie) {
 		free(dst->cookie);
 		dst->cookie = src->cookie;

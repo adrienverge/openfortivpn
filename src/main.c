@@ -80,6 +80,7 @@
 "Usage: openfortivpn [<host>[:<port>]] [-u <user>] [-p <pass>]\n" \
 "                    [--cookie=<cookie>] [--cookie-on-stdin] [--saml-login]\n" \
 "                    [--otp=<otp>] [--otp-delay=<delay>] [--otp-prompt=<prompt>]\n" \
+"                    [--no-ftm-push] [--ftm-push-otp-prompt]\n" \
 "                    [--pinentry=<program>] [--realm=<realm>]\n" \
 "                    [--ifname=<ifname>] [--set-routes=<0|1>]\n" \
 "                    [--half-internet-routes=<0|1>] [--set-dns=<0|1>]\n" \
@@ -123,6 +124,7 @@ PPPD_USAGE \
 "  --otp-prompt=<prompt>         Search for the OTP prompt starting with this string.\n" \
 "  --otp-delay=<delay>           Wait <delay> seconds before sending the OTP.\n" \
 "  --no-ftm-push                 Do not use FTM push if the server provides the option.\n" \
+"  --ftm-push-otp-prompt         Prompt for OTP before falling back to FTM push.\n" \
 "  --pinentry=<program>          Use the program to supply a secret instead of asking for it.\n" \
 "  --realm=<realm>               Use specified authentication realm.\n" \
 "  --ifname=<interface>          Bind to interface.\n" \
@@ -233,6 +235,7 @@ int main(int argc, char *argv[])
 		.otp_prompt = NULL,
 		.otp_delay = 0,
 		.no_ftm_push = 0,
+		.ftm_push_otp_prompt = 0,
 		.pinentry = NULL,
 		.realm = {'\0'},
 		.iface_name = {'\0'},
@@ -295,6 +298,7 @@ int main(int argc, char *argv[])
 		{"otp-prompt",           required_argument, NULL, 0},
 		{"otp-delay",            required_argument, NULL, 0},
 		{"no-ftm-push",          no_argument, &cli_cfg.no_ftm_push, 1},
+		{"ftm-push-otp-prompt",  no_argument, &cli_cfg.ftm_push_otp_prompt, 1},
 		{"ifname",               required_argument, NULL, 0},
 		{"set-routes",	         required_argument, NULL, 0},
 		{"sni",                  required_argument, NULL, 0},
