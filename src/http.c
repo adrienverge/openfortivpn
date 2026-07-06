@@ -276,11 +276,17 @@ int http_receive(struct tunnel *tunnel,
 		}
 	}
 
+	/*
+	 * Whenever the gateway embeds a human-readable reason in an HTML
+	 * comment, surface it to the user, even if we don't recognize the
+	 * specific error checked for below.
+	 */
+	log_gateway_error_message(buffer, bytes_read);
+
 	if (memmem(&buffer[header_size], bytes_read - header_size,
 	           "<!--sslvpnerrmsgkey=sslvpn_login_permission_denied-->", 53) ||
 	    memmem(buffer, header_size, "permission_denied denied", 24) ||
 	    memmem(buffer, header_size, "Permission denied", 17)) {
-		log_gateway_error_message(buffer, bytes_read);
 		free(buffer);
 		return ERR_HTTP_PERMISSION;
 	}
@@ -701,7 +707,7 @@ int auth_log_in(struct tunnel *tunnel)
 	char token[128], tokenresponse[256], tokenparams[320];
 	char action_url[1024] = { '\0' };
 	char *res = NULL;
-	uint32_t response_size = 0;
+	uint32_t response_size;
 
 	url_encode(username, tunnel->config->username);
 	url_encode(realm, tunnel->config->realm);
@@ -887,8 +893,6 @@ int auth_log_in(struct tunnel *tunnel)
 	}
 
 end:
-	if (ret != 1)
-		log_gateway_error_message(res, response_size);
 	free(res);
 	return ret;
 }
