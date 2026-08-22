@@ -1,0 +1,56 @@
+---
+name: "Manpage to Wiki conversion"
+
+on:
+  push:
+    branches: [master]
+    paths: [doc/openfortivpn.1.in, .github/workflows/doc-conversion.yml]
+
+concurrency:
+  group: wiki
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  publish_to_wiki:
+    name: Publish Manpage to GitHub Wiki
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v5
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get install -y pkg-config
+
+      - name: Build
+        run: |
+          ./autogen.sh
+          export PKG_CONFIG_PATH="$HOME/.openfortivpn-deps/lib/pkgconfig"
+          ./configure --prefix=/usr --sysconfdir=/etc
+          make doc/openfortivpn.1
+
+      - name: Convert to Markdown
+        uses: docker://pandoc/core:3.8
+        with:
+          args: -o doc/openfortivpn.1.md -t gfm doc/openfortivpn.1
+
+      - name: Checkout Wiki
+        uses: actions/checkout@v5
+        with:
+          repository: ${{github.repository}}.wiki
+          path: ${{github.repository}}.wiki
+
+      - name: Push to wiki
+        # The sed-command fixes an issue with '***'. GitHub Wiki does not recognize it
+        # as '**''*' and it is unclear if this is a pandoc or GitHub Wiki issue.
+        run: |
+          set -e
+          cd $GITHUB_WORKSPACE/${{github.repository}}.wiki
+          sed 's/\*\*\*\([^\]\)/**\&#x200B;*\1/' $GITHUB_WORKSPACE/doc/openfortivpn.1.md > Manpage.md
+          git config --local user.email "action@users.noreply.github.com"
+          git config --local user.name "GitHub Action"
+          git add Manpage.md
+          git diff-index --quiet HEAD || git commit -m "action: wiki sync" && git push
