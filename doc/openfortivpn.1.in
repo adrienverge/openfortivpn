@@ -33,6 +33,7 @@ openfortivpn \- Client for PPP+TLS VPN tunnel services
 [\fB\-\-cipher\-list=\fI<ciphers>\fR]
 [\fB\-\-min\-tls=\fI<version>\fR]
 [\fB\-\-seclevel\-1\fR]
+[\fB\-\-ifup\-hook=\fI<command>\fR]
 [\fB\-\-pppd\-use\-peerdns=\fI<bool>\fR]
 [\fB\-\-pppd\-no\-peerdns\fR]
 [\fB\-\-pppd\-log=\fI<file>\fR]
@@ -206,6 +207,10 @@ If \fB\-\-cipher-list\fR is not specified, add @SECLEVEL=1 to the list of
 ciphers. This lowers limits on dh key.
 
 \fBApplies to TLS v1.2 or lower only.\fR
+.TP
+\fB\-\-ifup\-hook=\fI<command>\fR
+Execute the supplied command once the tunnel has been established and
+routes and DNS have been configured (if applicable).
 .TP
 \fB\-\-pppd\-use\-peerdns=\fI<bool>\fR, \fB\-\-pppd\-no\-peerdns\fR
 Whether to ask peer ppp server for DNS server addresses and let pppd
@@ -400,6 +405,10 @@ cipher\-list = HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4
 persistent = 0
 .br
 seclevel-1 = 0
+.br
+# Invoke command once the tunnel has been established.
+.br
+# ifup-hook = command
 
 .SH SEE ALSO
 
