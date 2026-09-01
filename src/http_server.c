@@ -248,7 +248,10 @@ int wait_for_http_request(struct vpn_config *config)
 	}
 
 	address.sin_family = AF_INET;
-	address.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+	if (config->saml_host != NULL)
+		address.sin_addr.s_addr = inet_addr(config->saml_host);
+	else
+		address.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 	address.sin_port = htons(config->saml_port);
 
 	// Forcefully attaching socket to the port
