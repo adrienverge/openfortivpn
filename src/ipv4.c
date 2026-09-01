@@ -27,6 +27,10 @@
 #include <sys/ioctl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#if !HAVE_RT_ENTRY_WITH_RT_DST
+#include <spawn.h>
+#include <sys/wait.h>
+#endif
 
 #include <assert.h>
 #include <errno.h>
@@ -607,6 +611,69 @@ end:
 	return 0;
 }
 
+#if !HAVE_RT_ENTRY_WITH_RT_DST
+static int ipv4_run_route(struct rtentry *route, const char *action)
+{
+	char dest[INET_ADDRSTRLEN], mask[INET_ADDRSTRLEN], gtw[INET_ADDRSTRLEN];
+	char cmd[SHOW_ROUTE_BUFFER_SIZE];
+	char *args[12];
+	int i = 0;
+	int j;
+	pid_t pid;
+	int ret;
+
+	if (access("/sbin/route", F_OK) != 0) {
+		log_error("/sbin/route: %s.\n", strerror(errno));
+		return 1;
+	}
+
+	args[i++] = "/sbin/route";
+	args[i++] = "-n";
+	args[i++] = (char *)action;
+	args[i++] = (route->rt_flags & RTF_HOST) ? "-host" : "-net";
+
+	snprintf(dest, sizeof(dest), "%s", inet_ntoa(route_dest(route)));
+	args[i++] = dest;
+
+	if (!(route->rt_flags & RTF_HOST)) {
+		args[i++] = "-netmask";
+		snprintf(mask, sizeof(mask), "%s", inet_ntoa(route_mask(route)));
+		args[i++] = mask;
+	}
+
+	if (route->rt_flags & RTF_GATEWAY) {
+		snprintf(gtw, sizeof(gtw), "%s", inet_ntoa(route_gtw(route)));
+		args[i++] = gtw;
+	} else if (route_iface(route) != NULL) {
+		args[i++] = "-interface";
+		args[i++] = route_iface(route);
+	} else {
+		log_error("No gateway or interface for route.\n");
+		errno = EINVAL;
+		return ERR_IPV4_SEE_ERRNO;
+	}
+	args[i] = NULL;
+
+	cmd[0] = '\0';
+	for (j = 0; args[j] != NULL; j++) {
+		if (j > 0)
+			strncat(cmd, " ", sizeof(cmd) - strlen(cmd) - 1);
+		strncat(cmd, args[j], sizeof(cmd) - strlen(cmd) - 1);
+	}
+	log_debug("%s\n", cmd);
+
+	ret = posix_spawn(&pid, args[0], NULL, NULL, args, environ);
+	if (ret != 0) {
+		errno = ret;
+		return ERR_IPV4_SEE_ERRNO;
+	}
+	if (waitpid(pid, NULL, 0) == -1)
+		return ERR_IPV4_SEE_ERRNO;
+
+	return 0;
+}
+#endif
+
 static int ipv4_set_route(struct rtentry *route)
 {
 #ifdef HAVE_RT_ENTRY_WITH_RT_DST
@@ -628,39 +695,10 @@ static int ipv4_set_route(struct rtentry *route)
 		         strerror(errno));
 #else
 	/* we have to use the route command as tool for route manipulation */
-	char cmd[SHOW_ROUTE_BUFFER_SIZE];
+	int ret = ipv4_run_route(route, "add");
 
-	if (access("/sbin/route", F_OK) != 0) {
-		log_error("/sbin/route: %s.\n", strerror(errno));
-		return 1;
-	}
-
-	strcpy(cmd, "/sbin/route -n add ");
-	if (route->rt_flags & RTF_HOST)
-		strcat(cmd, "-host ");
-	else
-		strcat(cmd, "-net ");
-
-	strncat(cmd, inet_ntoa(route_dest(route)), 15);
-	if (!(route->rt_flags & RTF_HOST)) {
-		strcat(cmd, " -netmask ");
-		strncat(cmd, inet_ntoa(route_mask(route)), 15);
-	}
-	if (route->rt_flags & RTF_GATEWAY) {
-		strcat(cmd, " ");
-		strncat(cmd, inet_ntoa(route_gtw(route)), 15);
-	} else {
-		strcat(cmd, " -interface ");
-		strncat(cmd, route_iface(route),
-		        SHOW_ROUTE_BUFFER_SIZE - strlen(cmd) - 1);
-	}
-
-	log_debug("%s\n", cmd);
-
-	int res = system(cmd);
-
-	if (res == -1)
-		return ERR_IPV4_SEE_ERRNO;
+	if (ret != 0)
+		return ret;
 #endif
 
 	return 0;
@@ -695,39 +733,10 @@ static int ipv4_del_route(struct rtentry *route)
 		log_warn("Could not close socket for deleting route (%s).\n",
 		         strerror(errno));
 #else
-	char cmd[SHOW_ROUTE_BUFFER_SIZE];
+	int ret = ipv4_run_route(route, "delete");
 
-	if (access("/sbin/route", F_OK) != 0) {
-		log_error("/sbin/route: %s.\n", strerror(errno));
-		return 1;
-	}
-
-	strcpy(cmd, "/sbin/route -n delete ");
-	if (route->rt_flags & RTF_HOST)
-		strcat(cmd, "-host ");
-	else
-		strcat(cmd, "-net ");
-
-	strncat(cmd, inet_ntoa(route_dest(route)), 15);
-	if (!(route->rt_flags & RTF_HOST)) {
-		strcat(cmd, " -netmask ");
-		strncat(cmd, inet_ntoa(route_mask(route)), 15);
-	}
-	if (route->rt_flags & RTF_GATEWAY) {
-		strcat(cmd, " ");
-		strncat(cmd, inet_ntoa(route_gtw(route)), 15);
-	} else {
-		strcat(cmd, " -interface ");
-		strncat(cmd, route_iface(route),
-		        SHOW_ROUTE_BUFFER_SIZE - strlen(cmd) - 1);
-	}
-
-	log_debug("%s\n", cmd);
-
-	int res = system(cmd);
-
-	if (res == -1)
-		return ERR_IPV4_SEE_ERRNO;
+	if (ret != 0)
+		return ret;
 #endif
 	return 0;
 }

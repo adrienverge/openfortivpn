@@ -49,6 +49,8 @@ struct rtentry {
 	unsigned long   rt_window;      /* Window clamping              */
 	unsigned short  rt_irtt;        /* Initial RTT                  */
 };
+
+extern char **environ;
 #endif
 
 #define ROUTE_IFACE_LEN 32
