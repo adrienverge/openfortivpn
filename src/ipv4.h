@@ -18,10 +18,14 @@
 #ifndef OPENFORTIVPN_IPV4_H
 #define OPENFORTIVPN_IPV4_H
 
+#ifdef _WIN32
+#include "compat_win32.h"
+#else
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <net/route.h>
+#endif
 
 #if !HAVE_RT_ENTRY_WITH_RT_DST
 /*
@@ -93,5 +97,11 @@ int ipv4_restore_routes(struct tunnel *tunnel);
 
 int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel);
 int ipv4_del_nameservers_from_resolv_conf(struct tunnel *tunnel);
+
+#ifdef _WIN32
+#include <ifdef.h>
+void ipv4_win_set_tun_luid(NET_LUID *luid);
+void ipv4_apply_deferred_routes(void);
+#endif
 
 #endif

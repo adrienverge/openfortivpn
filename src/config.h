@@ -18,8 +18,15 @@
 #ifndef OPENFORTIVPN_CONFIG_H
 #define OPENFORTIVPN_CONFIG_H
 
+#ifdef _WIN32
+#include "compat_win32.h"
+#ifndef IF_NAMESIZE
+#define IF_NAMESIZE 256
+#endif
+#else
 #include <netinet/in.h>
 #include <net/if.h>
+#endif
 
 #include <errno.h>
 #include <stdint.h>
@@ -27,8 +34,10 @@
 
 #if HAVE_USR_SBIN_PPPD
 #define PPP_DAEMON "pppd"
-#else
+#elif HAVE_USR_SBIN_PPP
 #define PPP_DAEMON "ppp"
+#else
+#define PPP_DAEMON "wintun"
 #endif
 
 #define SHA256LEN	(256 / 8)
@@ -95,7 +104,8 @@ struct vpn_config {
 
 	unsigned int		persistent;
 
-#if HAVE_USR_SBIN_PPPD
+#if HAVE_USR_SBIN_PPPD || defined(_WIN32)
+	/* pppd options - on Windows, only pppd_use_peerdns is meaningful */
 	char			*pppd_log;
 	char			*pppd_plugin;
 	char			*pppd_ipparam;
