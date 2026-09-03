@@ -57,6 +57,7 @@ struct rtentry {
 
 struct ipv4_config {
 	struct in_addr	ip_addr;
+	struct in_addr	peer_addr;
 
 	struct in_addr	ns1_addr;
 	struct in_addr	ns2_addr;

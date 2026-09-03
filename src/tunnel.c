@@ -64,6 +64,9 @@
 #if HAVE_LIBUTIL_H
 #include <libutil.h>
 #endif
+#if HAVE_LINUX_IF_TUN_H
+#include <linux/if_tun.h>
+#endif
 
 #include <errno.h>
 #include <signal.h>
@@ -163,6 +166,126 @@ static int on_ppp_if_down(struct tunnel *tunnel)
 		log_info("Removing VPN nameservers...\n");
 		ipv4_del_nameservers_from_resolv_conf(tunnel);
 	}
+
+	return 0;
+}
+
+static const char TUN_PATH[] = "/dev/net/tun";
+
+#define TUN_ASSERT(cond, fmt, ...) do {                    \
+		if (!(cond)) {                             \
+			log_info(fmt "\n", ##__VA_ARGS__); \
+			exit(EXIT_FAILURE);                \
+		}                                          \
+	} while (0)
+
+static int tun_open(struct ifreq *ifr)
+{
+	int ret = 0;
+	int fd = -1;
+
+	fd = open(TUN_PATH, O_RDWR, 0);
+	if (fd >= 0) {
+		ret = ioctl(fd, TUNSETIFF, ifr);
+		if (ret < 0) {
+			log_error("ioctl: %s\n", strerror(errno));
+			close(fd);
+			return ret;
+		}
+		log_info("interface <%s> created\n", ifr->ifr_name);
+	} else {
+		log_error("fcntl: %s\n", strerror(errno));
+	}
+
+	return fd;
+}
+
+static int tun_close(int fd)
+{
+	return close(fd);
+}
+
+int tun_ifup(const char *ifname, uint32_t ip_addr, uint32_t peer_addr)
+{
+	struct ifreq ifreq = {
+		.ifr_flags = IFF_UP,
+	};
+	int fd = -1;
+	int ret = -1;
+
+	fd = socket(AF_INET, SOCK_DGRAM, 0);
+	if (fd < 0)
+		return fd;
+
+	TUN_ASSERT(strlen(ifname) < IFNAMSIZ, "ifname length");
+	strcpy(ifreq.ifr_name, ifname);
+
+	ret = ioctl(fd, SIOCGIFFLAGS, &ifreq);
+	TUN_ASSERT(ret == 0, "ioctl get ifflags");
+	if (ret == 0) {
+		ifreq.ifr_flags |= IFF_UP;
+		ret = ioctl(fd, SIOCSIFFLAGS, &ifreq);
+		TUN_ASSERT(ret == 0, "ioctl set ifflags");
+	}
+
+	if (ip_addr != 0) {
+		struct sockaddr_in *sin = (struct sockaddr_in *)&ifreq.ifr_addr;
+
+		sin->sin_family = AF_INET;
+		sin->sin_port = 0;
+		sin->sin_addr.s_addr = ip_addr;
+		ret = ioctl(fd, SIOCSIFADDR, &ifreq);
+		TUN_ASSERT(ret == 0, "ioctl set ifaddr err: %s", strerror(errno));
+		log_info("setup <%s> ip addr to %s\n", ifname, inet_ntoa(sin->sin_addr));
+	}
+
+	if (peer_addr != 0) {
+		struct sockaddr_in *sin = (struct sockaddr_in *)&ifreq.ifr_addr;
+
+		sin->sin_family = AF_INET;
+		sin->sin_port = 0;
+		sin->sin_addr.s_addr = peer_addr;
+		ret = ioctl(fd, SIOCSIFDSTADDR, &ifreq);
+		TUN_ASSERT(ret == 0, "ioctl set dst ifaddr");
+	}
+
+	close(fd);
+
+	return ret;
+}
+
+static int tun_setup(struct tunnel *tunnel)
+{
+	int flags = 0;
+	int tun_fd = -1;
+	struct ifreq ifreq = {
+		.ifr_flags = IFF_TUN | IFF_NO_PI,
+	};
+
+	/* Renamme the interface by default if asked to do so */
+	if (tunnel->config->tun_ifname)
+		strncpy(ifreq.ifr_name, tunnel->config->tun_ifname, IFNAMSIZ - 1);
+
+	tun_fd = tun_open(&ifreq);
+	if (tun_fd < 0) {
+		log_error("tun_open failed: %s\n", strerror(errno));
+		return 1;
+	}
+
+	flags = fcntl(tun_fd, F_GETFL, 0);
+	if (flags == -1)
+		flags = 0;
+	if (fcntl(tun_fd, F_SETFL, flags | O_NONBLOCK) == -1) {
+		log_error("fcntl failed: %s\n", strerror(errno));
+		tun_close(tun_fd);
+		return 1;
+	}
+
+	strcpy(tunnel->tun_iface, ifreq.ifr_name);
+	tun_ifup(tunnel->tun_iface, 0, 0);
+
+	tunnel->pppd_pid = -1;
+	tunnel->pppd_pty = tun_fd;
 
 	return 0;
 }
@@ -587,7 +710,8 @@ int ppp_interface_is_up(struct tunnel *tunnel)
 #if HAVE_USR_SBIN_PPPD
 		        ((tunnel->config->pppd_ifname &&
 		          strstr(ifa->ifa_name, tunnel->config->pppd_ifname) != NULL) ||
-		         strstr(ifa->ifa_name, "ppp") != NULL) &&
+		         strstr(ifa->ifa_name, "ppp") != NULL ||
+		         strstr(ifa->ifa_name, "tun") != NULL) &&
 #endif
 #if HAVE_USR_SBIN_PPP
 		        strstr(ifa->ifa_name, "tun") != NULL &&
@@ -671,6 +795,8 @@ static int tcp_connect(struct tunnel *tunnel)
 		    >= IF_NAMESIZE) {
 			log_error("interface name too long\n");
 			goto err_post_socket;
+		} else {
+			strcpy(ifr.ifr_name, tunnel->config->iface_name);
 		}
 		ifr.ifr_addr.sa_family = AF_INET;
 		if (ioctl(handle, SIOCGIFADDR, &ifr) == -1) {
@@ -1405,7 +1531,7 @@ int run_tunnel(struct vpn_config *config)
 		goto err_tunnel;
 
 	// Step 3: get configuration
-	log_debug("Retrieving configuration\n");
+	log_info("Retrieving configuration\n");
 	ret = auth_get_config(&tunnel);
 	if (ret != 1) {
 		log_error("Could not get VPN configuration (%s).\n",
@@ -1415,8 +1541,11 @@ int run_tunnel(struct vpn_config *config)
 	}
 
 	// Step 4: run a pppd process
-	log_debug("Establishing the tunnel\n");
-	ret = pppd_run(&tunnel);
+	log_info("Establishing the tunnel\n");
+	if (config->tun)
+		ret = tun_setup(&tunnel);
+	else
+		ret = pppd_run(&tunnel);
 	if (ret)
 		goto err_tunnel;
 
@@ -1446,8 +1575,18 @@ int run_tunnel(struct vpn_config *config)
 	tunnel.state = STATE_DISCONNECTING;
 
 err_start_tunnel:
-	ret = pppd_terminate(&tunnel);
-	log_info("Terminated %s.\n", PPP_DAEMON);
+	if (!config->tun) {
+		ret = pppd_terminate(&tunnel);
+		log_info("Terminated %s.\n", PPP_DAEMON);
+	} else {
+		if (tunnel.pppd_pty >= 0) {
+			log_info("Closing tun interface.\n");
+			if (tun_close(tunnel.pppd_pty))
+				log_error("Cannot properly close tun interface (%d).\n",
+				          errno);
+		}
+		tunnel.pppd_pty = -1;
+	}
 err_tunnel:
 	log_info("Closed connection to gateway.\n");
 	tunnel.state = STATE_DOWN;

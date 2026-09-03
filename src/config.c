@@ -53,6 +53,8 @@ const struct vpn_config invalid_cfg = {
 	.no_ftm_push = -1,
 	.pinentry = NULL,
 	.realm = {'\0'},
+	.tun = -1,
+	.tun_ifname = NULL,
 	.iface_name = {'\0'},
 	.sni = {'\0'},
 	.set_routes = -1,
@@ -294,6 +296,18 @@ int load_config(struct vpn_config *cfg, const char *filename)
 		} else if (strcmp(key, "realm") == 0) {
 			strncpy(cfg->realm, val, REALM_SIZE);
 			cfg->realm[REALM_SIZE] = '\0';
+		} else if (strcmp(key, "tun") == 0) {
+			long tun = strtol(val, NULL, 0);
+
+			if (tun < 0 || tun > 1) {
+				log_warn("Bad tun option in configuration file: \"%ld\".\n",
+				         tun);
+				continue;
+			}
+			cfg->tun = tun;
+		} else if (strcmp(key, "tun-ifname") == 0) {
+			free(cfg->tun_ifname);
+			cfg->tun_ifname = strdup(val);
 		} else if (strcmp(key, "set-dns") == 0) {
 			int set_dns = strtob(val);
 
@@ -497,6 +511,7 @@ void destroy_vpn_config(struct vpn_config *cfg)
 	free(cfg->otp_prompt);
 	free(cfg->pinentry);
 	free(cfg->cookie);
+	free(cfg->tun_ifname);
 #if HAVE_USR_SBIN_PPPD
 	free(cfg->pppd_log);
 	free(cfg->pppd_plugin);
@@ -549,6 +564,12 @@ void merge_config(struct vpn_config *dst, struct vpn_config *src)
 	if (src->pinentry) {
 		free(dst->pinentry);
 		dst->pinentry = src->pinentry;
+	}
+	if (src->tun != invalid_cfg.tun)
+		dst->tun = src->tun;
+	if (src->tun_ifname) {
+		free(dst->tun_ifname);
+		dst->tun_ifname = src->tun_ifname;
 	}
 	if (src->realm[0])
 		strcpy(dst->realm, src->realm);
