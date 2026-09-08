@@ -80,6 +80,7 @@
 "Usage: openfortivpn [<host>[:<port>]] [-u <user>] [-p <pass>]\n" \
 "                    [--cookie=<cookie>] [--cookie-on-stdin] [--saml-login]\n" \
 "                    [--otp=<otp>] [--otp-delay=<delay>] [--otp-prompt=<prompt>]\n" \
+"                    [--2fa-token-script=<path>]\n" \
 "                    [--pinentry=<program>] [--realm=<realm>]\n" \
 "                    [--ifname=<ifname>] [--set-routes=<0|1>]\n" \
 "                    [--half-internet-routes=<0|1>] [--set-dns=<0|1>]\n" \
@@ -122,6 +123,10 @@ PPPD_USAGE \
 "  -o <otp>, --otp=<otp>         One-Time-Password.\n" \
 "  --otp-prompt=<prompt>         Search for the OTP prompt starting with this string.\n" \
 "  --otp-delay=<delay>           Wait <delay> seconds before sending the OTP.\n" \
+"  --2fa-token-script=<path>     Path to an external script to retrieve the 2FA token.\n" \
+"                                The script must return 0 exit code and print the token to stdout.\n" \
+"                                Any output other than the token (e.g. logs) must be printed to stderr.\n" \
+"                                In case of error it must return a non 0 exit code.\n" \
 "  --no-ftm-push                 Do not use FTM push if the server provides the option.\n" \
 "  --pinentry=<program>          Use the program to supply a secret instead of asking for it.\n" \
 "  --realm=<realm>               Use specified authentication realm.\n" \
@@ -294,6 +299,7 @@ int main(int argc, char *argv[])
 		{"otp",                  required_argument, NULL, 'o'},
 		{"otp-prompt",           required_argument, NULL, 0},
 		{"otp-delay",            required_argument, NULL, 0},
+		{"2fa-token-script",     required_argument, NULL, 0},
 		{"no-ftm-push",          no_argument, &cli_cfg.no_ftm_push, 1},
 		{"ifname",               required_argument, NULL, 0},
 		{"set-routes",	         required_argument, NULL, 0},
@@ -506,6 +512,12 @@ int main(int argc, char *argv[])
 			           "otp-prompt") == 0) {
 				free(cli_cfg.otp_prompt);
 				cli_cfg.otp_prompt = strdup(optarg);
+				break;
+			}
+			if (strcmp(long_options[option_index].name,
+			           "2fa-token-script") == 0) {
+				free(cli_cfg.token_script);
+				cli_cfg.token_script = strdup(optarg);
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
