@@ -100,7 +100,7 @@ int add_trusted_cert(struct vpn_config *cfg, const char *digest)
 
 	new = malloc(sizeof(struct x509_digest));
 	if (new == NULL)
-		return ERR_CFG_NO_MEM;
+		return -errno;
 
 	new->next = NULL;
 	strncpy(new->data, digest, SHA256STRLEN - 1);
@@ -194,7 +194,7 @@ int load_config(struct vpn_config *cfg, const char *filename)
 
 	file = fopen(filename, "r");
 	if (file == NULL) {
-		ret = ERR_CFG_SEE_ERRNO;
+		ret = -errno;
 		goto err_return;
 	}
 
@@ -482,7 +482,7 @@ int load_config(struct vpn_config *cfg, const char *filename)
 		}
 	}
 	if (ferror(file))
-		ret = ERR_CFG_SEE_ERRNO;
+		ret = -errno;
 
 err_free:
 	free(line);

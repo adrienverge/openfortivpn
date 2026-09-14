@@ -289,7 +289,7 @@ int main(int argc, char *argv[])
 		{"username",             required_argument, NULL, 'u'},
 		{"password",             required_argument, NULL, 'p'},
 		{"cookie",               required_argument, NULL, 0},
-		{"cookie-on-stdin",      no_argument, NULL, 0},
+		{"cookie-on-stdin",      no_argument,       NULL, 0},
 		{"saml-login",           optional_argument, NULL, 0},
 		{"otp",                  required_argument, NULL, 'o'},
 		{"otp-prompt",           required_argument, NULL, 0},
@@ -668,7 +668,7 @@ int main(int argc, char *argv[])
 			log_debug("Loaded configuration file \"%s\".\n", config_file);
 		else
 			log_warn("Could not load configuration file \"%s\" (%s).\n",
-			         config_file, err_cfg_str(ret));
+			         config_file, strerror(-ret));
 	}
 	if (cli_cfg.password_set) {
 		if (cli_cfg.password[0] == '\0')

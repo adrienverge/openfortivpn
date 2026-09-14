@@ -26,14 +26,16 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 
+#include <assert.h>
 #include <errno.h>
 #include <limits.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-#include <assert.h>
 
 #define IPV4_GET_ROUTE_BUFFER_CHUNK_SIZE 65536
 #define SHOW_ROUTE_BUFFER_SIZE 128
@@ -161,10 +163,11 @@ static int ipv4_get_route(struct rtentry *route)
 	route_mask(route).s_addr = inet_addr("0.0.0.0");
 	route_gtw(route).s_addr = inet_addr("0.0.0.0");
 
+	size_t total_bytes_read = 0;
 #if HAVE_PROC_NET_ROUTE
 	/* this is not present on Mac OS X and FreeBSD */
 	int fd;
-	uint32_t total_bytes_read = 0;
+	ssize_t bytes_read;
 
 	// Cannot stat, mmap not lseek this special /proc file
 	fd = open("/proc/net/route", O_RDONLY);
@@ -173,13 +176,14 @@ static int ipv4_get_route(struct rtentry *route)
 		goto end;
 	}
 
-	int bytes_read;
-
 	while ((bytes_read = read(fd, buffer + total_bytes_read,
 	                          buffer_size - total_bytes_read - 1)) > 0) {
+		assert(buffer_size - total_bytes_read > bytes_read);
 		total_bytes_read += bytes_read;
 
 		if ((buffer_size - total_bytes_read) < 1) {
+			assert(SIZE_MAX - buffer_size
+			       >= IPV4_GET_ROUTE_BUFFER_CHUNK_SIZE);
 			buffer_size += IPV4_GET_ROUTE_BUFFER_CHUNK_SIZE;
 
 			realloc_buffer = realloc(buffer, buffer_size);
@@ -206,7 +210,6 @@ cleanup:
 
 #else
 	FILE *fp;
-	uint32_t total_bytes_read = 0;
 
 	char *saveptr3 = NULL;
 	int have_ref = 0;
@@ -230,11 +233,14 @@ cleanup:
 	line = buffer;
 	// Read the output a line at a time
 	while (fgets(line, buffer_size - total_bytes_read - 1, fp) != NULL) {
-		uint32_t bytes_read = strlen(line);
+		size_t bytes_read = strlen(line);
 
+		assert(SIZE_MAX - total_bytes_read >= bytes_read);
 		total_bytes_read += bytes_read;
 
 		if (bytes_read > 0 && line[bytes_read - 1] != '\n') {
+			assert(SIZE_MAX - buffer_size
+			       >= IPV4_GET_ROUTE_BUFFER_CHUNK_SIZE);
 			buffer_size += IPV4_GET_ROUTE_BUFFER_CHUNK_SIZE;
 
 			realloc_buffer = realloc(buffer, buffer_size);
@@ -726,6 +732,47 @@ static int ipv4_del_route(struct rtentry *route)
 	return 0;
 }
 
+/*
+ * This is a workaround for wrongly configured pppd with ip-accept-remote
+ * If the FortiGate is configured to send its own external address
+ * pppd will create a route to self for it, killing everything ...
+ * So this method tests this and drops the wrongly configured route.
+ * And no more silently to help troubleshooting!
+ */
+int ipv4_drop_wrong_route(struct tunnel *tunnel)
+{
+	struct rtentry *gtw_rt = &tunnel->ipv4.gtw_rt;
+	int ret;
+
+	route_init(gtw_rt);
+	// Set up a route to the tunnel gateway
+	route_dest(gtw_rt).s_addr = tunnel->config->gateway_ip.s_addr;
+	route_mask(gtw_rt).s_addr = inet_addr("255.255.255.255");
+	route_iface(gtw_rt) = malloc(strlen(tunnel->ppp_iface) + 2);
+	if (!route_iface(gtw_rt)) {
+		log_error("malloc: %s\n", strerror(errno));
+		return ERR_IPV4_SEE_ERRNO;
+	}
+	sprintf(route_iface(gtw_rt), "%s", tunnel->ppp_iface);
+	ret = ipv4_get_route(gtw_rt);
+	/* The route is not here, all is fine */
+	if (ret == ERR_IPV4_NO_SUCH_ROUTE) {
+		ret = 0;
+		goto cleanandout;
+	}
+
+	if ((ret == 0)
+	    && (route_dest(gtw_rt).s_addr == tunnel->config->gateway_ip.s_addr)
+	    && (route_mask(gtw_rt).s_addr == inet_addr("255.255.255.255"))) {
+		log_warn("Removing wrong route to vpn server...\n");
+		log_debug("ip route show %s\n", ipv4_show_route(gtw_rt));
+		ret = ipv4_del_route(gtw_rt);
+	}
+cleanandout:
+	route_destroy(gtw_rt);
+	return ret;
+}
+
 int ipv4_protect_tunnel_route(struct tunnel *tunnel)
 {
 	struct rtentry *gtw_rt = &tunnel->ipv4.gtw_rt;
@@ -760,15 +807,6 @@ int ipv4_protect_tunnel_route(struct tunnel *tunnel)
 	if (!route_iface(gtw_rt)) {
 		log_error("malloc: %s\n", strerror(errno));
 		return ERR_IPV4_SEE_ERRNO;
-	}
-	sprintf(route_iface(gtw_rt), "%s", tunnel->ppp_iface);
-	ret = ipv4_get_route(gtw_rt);
-	if ((ret == 0)
-	    && (route_dest(gtw_rt).s_addr == tunnel->config->gateway_ip.s_addr)
-	    && (route_mask(gtw_rt).s_addr == inet_addr("255.255.255.255"))) {
-		log_debug("Removing wrong route to vpn server...\n");
-		log_debug("ip route show %s\n", ipv4_show_route(gtw_rt));
-		ipv4_del_route(gtw_rt);
 	}
 	sprintf(route_iface(gtw_rt), "!%s", tunnel->ppp_iface);
 	ret = ipv4_get_route(gtw_rt);

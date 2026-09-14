@@ -24,8 +24,10 @@
 #include <sys/wait.h>
 #include <termios.h>
 
+#include <assert.h>
 #include <ctype.h>
 #include <errno.h>
+#include <limits.h>
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -368,22 +370,19 @@ void read_password(const char *pinentry, const char *hint,
 char *read_from_stdin(size_t count)
 {
 	char *buf;
-	char *output;
-	int bytes_read;
+	ssize_t bytes_read;
 
+	assert(count < SIZE_MAX - 1);
 	buf = malloc(count + 1);
 	if (buf == NULL)
 		return NULL;
 
 	bytes_read = read(STDIN_FILENO, buf, count);
-	if (bytes_read == -1) {
+	if (bytes_read < 0) {
 		free(buf);
 		return NULL;
 	}
 
 	buf[bytes_read] = '\0';
-	output = realloc(buf, bytes_read + 1);
-
-	// Just keep using the larger buffer if realloc() fails.
-	return output ? output : buf;
+	return buf;
 }

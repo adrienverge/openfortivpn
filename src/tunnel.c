@@ -32,9 +32,13 @@
 #include "userinput.h"
 
 #include <openssl/err.h>
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
 #ifndef OPENSSL_NO_ENGINE
 #include <openssl/engine.h>
-#endif
+#endif // OPENSSL_NO_ENGINE
+#else // OPENSSL_VERSION_NUMBER >= 0x30000000L
+#include <openssl/store.h>
+#endif // OPENSSL_VERSION_NUMBER
 #include <openssl/ui.h>
 #include <openssl/x509v3.h>
 #if HAVE_SYSTEMD
@@ -108,6 +112,14 @@ static int ofv_append_varr(struct ofv_varr *p, const char *x)
 static int on_ppp_if_up(struct tunnel *tunnel)
 {
 	log_info("Interface %s is UP.\n", tunnel->ppp_iface);
+
+	{
+		/* Drop invalid route by pppd (or tun) in all cases. */
+		int ret = ipv4_drop_wrong_route(tunnel);
+
+		if (ret != 0)
+			log_warn("Issue occurs while checking for wrong route, continuing anyway.\n");
+	}
 
 	if (tunnel->config->set_routes) {
 		int ret;
@@ -345,6 +357,10 @@ static int pppd_run(struct tunnel *tunnel)
 			}
 		}
 		if (tunnel->config->pppd_plugin) {
+			if (ofv_append_varr(&pppd_args, "plugin")) {
+				free(pppd_args.data);
+				return 1;
+			}
 			if (ofv_append_varr(&pppd_args, tunnel->config->pppd_plugin)) {
 				free(pppd_args.data);
 				return 1;
@@ -747,7 +763,7 @@ static int tcp_connect(struct tunnel *tunnel)
 	}
 
 	if (env_proxy != NULL) {
-		char request[128];
+		char request[4096];
 
 		// https://tools.ietf.org/html/rfc7231#section-4.3.6
 		sprintf(request, "CONNECT %s:%u HTTP/1.1\r\nHost: %s:%u\r\n\r\n",
@@ -771,8 +787,8 @@ static int tcp_connect(struct tunnel *tunnel)
 		memset(&(request), 0, sizeof(request));
 		for (size_t j = 0; response == NULL; j++) {
 			if (j >= ARRAY_SIZE(request) - 1) {
-				log_error("Proxy response is unexpectedly large and cannot fit in the %lu-bytes buffer.\n",
-				          ARRAY_SIZE(request));
+				log_error("Proxy response is unexpectedly large (%lu bytes) and cannot fit in the %lu-bytes buffer.\n",
+				          j, ARRAY_SIZE(request));
 				goto err_proxy_response;
 			}
 
@@ -1088,6 +1104,7 @@ int ssl_connect(struct tunnel *tunnel)
 	}
 #endif
 
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
 #ifndef OPENSSL_NO_ENGINE
 	/* Use PKCS11 engine for PIV if user-cert config starts with pkcs11 URI: */
 	if (tunnel->config->use_engine > 0) {
@@ -1149,7 +1166,101 @@ int ssl_connect(struct tunnel *tunnel)
 			goto err_ssl_context;
 		}
 	} else { /* end PKCS11 engine */
-#endif
+#endif // OPENSSL_NO_ENGINE
+#else // OPENSSL_VERSION_NUMBER >= 0x30000000L
+	/* OpenSSL 3.0+ provider-based PKCS#11 support */
+	if (tunnel->config->use_engine > 0) {
+		// Debug: Print the certificate path/URI being used
+		log_debug_details("Attempting to load certificate from: %s\n",
+		                  tunnel->config->user_cert);
+
+		// Use OSSL_STORE to load certificate and private key from PKCS#11
+		OSSL_STORE_CTX *store_ctx = OSSL_STORE_open(tunnel->config->user_cert,
+		                            NULL, NULL, NULL, NULL);
+
+		if (!store_ctx) {
+			log_error("PKCS11 OSSL_STORE_open failed: %s\n",
+			          ERR_error_string(ERR_peek_last_error(), NULL));
+			goto err_ssl_context;
+		}
+
+		X509 *cert = NULL;
+		EVP_PKEY *pkey = NULL;
+		OSSL_STORE_INFO *info;
+
+		// Load all objects from the store
+		while ((info = OSSL_STORE_load(store_ctx)) != NULL) {
+			int type = OSSL_STORE_INFO_get_type(info);
+
+			if (type == OSSL_STORE_INFO_CERT) {
+				if (!cert) {
+					cert = OSSL_STORE_INFO_get1_CERT(info);
+					log_debug_details("Loaded certificate from PKCS#11 store\n");
+				} else {
+					// Second certificate - indicates multiple certs
+					log_error("PKCS11: Multiple certificates found in store. Please specify more specific URL parameters (e.g., ?id=... or ?label=...) to select the desired certificate.\n");
+					OSSL_STORE_INFO_free(info);
+					goto err_ssl_context;
+				}
+			} else if (type == OSSL_STORE_INFO_PKEY) {
+				if (!pkey) {
+					pkey = OSSL_STORE_INFO_get1_PKEY(info);
+					log_debug_details("Loaded private key from PKCS#11 store\n");
+				} else {
+					// Second private key - indicates multiple keys
+					log_error("PKCS11: Multiple private keys found in store. Please specify more specific URL parameters (e.g., ?id=... or ?label=...) to select the desired private key.\n");
+					OSSL_STORE_INFO_free(info);
+					goto err_ssl_context;
+				}
+			}
+
+			OSSL_STORE_INFO_free(info);
+		}
+
+		OSSL_STORE_close(store_ctx);
+
+		// Check if we successfully loaded both certificate and private key
+		if (!cert) {
+			log_error("PKCS11: Could not load certificate from store\n");
+			EVP_PKEY_free(pkey); // Free pkey if it was loaded but cert failed
+			goto err_ssl_context;
+		}
+		if (!pkey) {
+			log_error("PKCS11: Could not load private key from store\n");
+			X509_free(cert); // Free cert if it was loaded but pkey failed
+			goto err_ssl_context;
+		}
+
+		// Use the loaded certificate and private key
+		if (!SSL_CTX_use_certificate(tunnel->ssl_context, cert)) {
+			log_error("PKCS11 SSL_CTX_use_certificate failed: %s\n",
+			          ERR_error_string(ERR_peek_last_error(), NULL));
+			X509_free(cert);
+			EVP_PKEY_free(pkey);
+			goto err_ssl_context;
+		}
+
+		if (!SSL_CTX_use_PrivateKey(tunnel->ssl_context, pkey)) {
+			log_error("PKCS11 SSL_CTX_use_PrivateKey failed: %s\n",
+			          ERR_error_string(ERR_peek_last_error(), NULL));
+			X509_free(cert);
+			EVP_PKEY_free(pkey);
+			goto err_ssl_context;
+		}
+
+		if (!SSL_CTX_check_private_key(tunnel->ssl_context)) {
+			log_error("PKCS11 SSL_CTX_check_private_key: %s\n",
+			          ERR_error_string(ERR_peek_last_error(), NULL));
+			X509_free(cert);
+			EVP_PKEY_free(pkey);
+			goto err_ssl_context;
+		}
+
+		// Clean up
+		X509_free(cert);
+		EVP_PKEY_free(pkey);
+	} else { /* end PKCS11 engine */
+#endif // OPENSSL_VERSION_NUMBER >= 0x30000000L
 		if (tunnel->config->user_cert) {
 			if (!SSL_CTX_use_certificate_chain_file(
 			            tunnel->ssl_context, tunnel->config->user_cert)) {
@@ -1176,9 +1287,7 @@ int ssl_connect(struct tunnel *tunnel)
 				goto err_ssl_context;
 			}
 		}
-#ifndef OPENSSL_NO_ENGINE
 	}
-#endif
 
 	tunnel->ssl_handle = SSL_new(tunnel->ssl_context);
 	if (tunnel->ssl_handle == NULL) {
@@ -1348,6 +1457,7 @@ err_tunnel:
 	} else {
 		auth_log_out(&tunnel);
 		log_info("Logged out.\n");
+		ssl_disconnect(&tunnel);
 	}
 
 	// explicitly free the buffer allocated for split routes of the ipv4 configuration
