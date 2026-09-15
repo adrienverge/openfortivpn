@@ -37,6 +37,11 @@
 #include <stdint.h>
 #include <string.h>
 
+#if HAVE_SYSTEMCONFIGURATION
+#include <SystemConfiguration/SystemConfiguration.h>
+#include <CoreFoundation/CoreFoundation.h>
+#endif
+
 #define IPV4_GET_ROUTE_BUFFER_CHUNK_SIZE 65536
 #define SHOW_ROUTE_BUFFER_SIZE 128
 
@@ -1436,3 +1441,139 @@ err_close:
 		         strerror(errno));
 	return ret;
 }
+
+#if HAVE_SYSTEMCONFIGURATION
+/*
+ * macOS DNS via SCDynamicStore
+ *
+ * macOS ignores /etc/resolv.conf — DNS is managed by configd through
+ * SCDynamicStore.  We register a supplemental resolver under our own key.
+ *
+ * When dns_suffix is available (e.g. "corp.com"):
+ *   Split-DNS — only *.corp.com queries go to the VPN nameservers.
+ *   configd automatically adds "corp.com" to the default resolver's
+ *   search domain list, so "ping host" expands to "host.corp.com".
+ *   Non-matching queries (google.com) keep using normal DNS.
+ *
+ * When dns_suffix is NOT available but DNS servers are provided:
+ *   Full-tunnel DNS — SupplementalMatchDomains is set to "" (empty
+ *   string = match all domains) so every query goes to the VPN.
+ *   Note: configd does not add search domains in this mode, so short
+ *   hostname expansion will not work.  This is a macOS limitation.
+ *
+ * Cleanup is a single key removal.  If the process crashes, only the
+ * supplemental entry is orphaned — normal DNS continues to work since
+ * the primary service is never modified.
+ */
+
+#define OPENFORTIVPN_DNS_KEY \
+	CFSTR("State:/Network/Service/openfortivpn/DNS")
+
+int ipv4_set_dns_scf(struct tunnel *tunnel)
+{
+	SCDynamicStoreRef store = NULL;
+	CFMutableDictionaryRef dns_dict = NULL;
+	CFMutableArrayRef servers = NULL;
+	int ret = 1;
+
+	store = SCDynamicStoreCreate(NULL, CFSTR("openfortivpn"), NULL, NULL);
+	if (!store) {
+		log_warn("SCDynamicStore could not be opened.\n");
+		return 1;
+	}
+
+	dns_dict = CFDictionaryCreateMutable(NULL, 0,
+		&kCFTypeDictionaryKeyCallBacks,
+		&kCFTypeDictionaryValueCallBacks);
+	servers = CFArrayCreateMutable(NULL, 2, &kCFTypeArrayCallBacks);
+	if (!dns_dict || !servers)
+		goto out;
+
+	if (tunnel->ipv4.ns1_addr.s_addr) {
+		CFStringRef s = CFStringCreateWithCString(NULL,
+			inet_ntoa(tunnel->ipv4.ns1_addr),
+			kCFStringEncodingASCII);
+		if (s) {
+			CFArrayAppendValue(servers, s);
+			CFRelease(s);
+		}
+	}
+	if (tunnel->ipv4.ns2_addr.s_addr) {
+		CFStringRef s = CFStringCreateWithCString(NULL,
+			inet_ntoa(tunnel->ipv4.ns2_addr),
+			kCFStringEncodingASCII);
+		if (s) {
+			CFArrayAppendValue(servers, s);
+			CFRelease(s);
+		}
+	}
+	if (CFArrayGetCount(servers) == 0) {
+		log_debug("No DNS servers to configure.\n");
+		ret = 0;
+		goto out;
+	}
+	CFDictionarySetValue(dns_dict, CFSTR("ServerAddresses"), servers);
+
+	/*
+	 * Split-DNS vs Full-tunnel:
+	 *   suffix present  → SupplementalMatchDomains: ["corp.com"]
+	 *   suffix absent   → SupplementalMatchDomains: [""]
+	 */
+	CFStringRef match_domain;
+	if (tunnel->ipv4.dns_suffix)
+		match_domain = CFStringCreateWithCString(NULL,
+			tunnel->ipv4.dns_suffix, kCFStringEncodingUTF8);
+	else
+		match_domain = CFStringCreateCopy(NULL, CFSTR(""));
+
+	if (match_domain) {
+		CFArrayRef match_domains = CFArrayCreate(NULL,
+			(const void **)&match_domain, 1,
+			&kCFTypeArrayCallBacks);
+		if (match_domains) {
+			CFDictionarySetValue(dns_dict,
+				CFSTR("SupplementalMatchDomains"),
+				match_domains);
+			CFRelease(match_domains);
+		}
+		CFRelease(match_domain);
+	}
+
+	if (SCDynamicStoreSetValue(store, OPENFORTIVPN_DNS_KEY, dns_dict)) {
+		if (tunnel->ipv4.dns_suffix)
+			log_info("Split-DNS for '%s' written to macOS System "
+			         "Configuration.\n",
+			         tunnel->ipv4.dns_suffix);
+		else
+			log_info("Full-tunnel DNS written to macOS System "
+			         "Configuration.\n");
+		ret = 0;
+	} else {
+		log_warn("Could not write DNS to SCDynamicStore.\n");
+	}
+
+out:
+	if (servers)
+		CFRelease(servers);
+	if (dns_dict)
+		CFRelease(dns_dict);
+	if (store)
+		CFRelease(store);
+	return ret;
+}
+
+int ipv4_clear_dns_scf(void)
+{
+	SCDynamicStoreRef store;
+
+	store = SCDynamicStoreCreate(NULL, CFSTR("openfortivpn"), NULL, NULL);
+	if (!store) {
+		log_warn("SCDynamicStore could not be opened.\n");
+		return 1;
+	}
+
+	SCDynamicStoreRemoveValue(store, OPENFORTIVPN_DNS_KEY);
+	CFRelease(store);
+	return 0;
+}
+#endif
