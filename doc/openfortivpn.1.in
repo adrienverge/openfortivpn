@@ -85,9 +85,9 @@ Read the cookie (SVPNCOOKIE) from standard input.
 \fB\-\-saml\-login[=\fI<port>\fR]
 Create a temporary web server to receive a local SAML redirect operation.
 To login using SAML you just have to open
-`<your-vpn-domain>/remote/saml/start?redirect=1' and follow the login steps.
+\fC'<your-vpn-domain>/remote/saml/start?redirect=1'\fR and follow the login steps.
 At the end of the login process, the page will be redirected to
-`http://127.0.0.1:8020/?id=<session-id>'. The actual URL to use for the login,
+\fC'http://127.0.0.1:8020/?id=<session-id>'\fR. The actual URL to use for the login,
 including the optional realm, is printed to the terminal when the web server it started.
 .TP
 \fB\-\-pinentry=\fI<name>\fR
@@ -155,13 +155,13 @@ with a certificate.
 .TP
 \fB\-\-user-cert=\fIpkcs11:\fR
 Use at least the string pkcs11: for using a smartcard. It takes the full
-or a partial PKCS11-URI (p11tool --list-token-urls)
+or a partial PKCS11-URI (p11tool \-\-list-token-urls)
 
-  --user-cert = pkcs11:
+  \-\-user-cert=pkcs11:
 
-  --user-cert = pkcs11:token=someuser
+  \-\-user-cert=pkcs11:token=someuser
 
-  --user-cert = pkcs11:model=PKCS%2315%20emulated;manufacturer=piv_II;serial=012345678;token=someuser
+  \-\-user-cert=pkcs11:model=PKCS%2315%20emulated;manufacturer=piv_II;serial=012345678;token=someuser
 
 \fBThis feature requires the OpenSSL PKCS engine!
 .TP
@@ -232,13 +232,13 @@ Set the ppp interface name. Only if supported by pppd. Patched versions of pppd
 implement this option but may not be available on your platform.
 .TP
 \fB\-\-pppd\-call=\fI<name>\fR
-Drop usual arguments from pppd command line and add `call <name>' instead.
+Drop usual arguments from pppd command line and add \fIcall <name>\fR instead.
 This can be useful on Debian and Ubuntu, where unprivileged users in
-group `dip' can invoke `pppd call <name>' to make pppd read and apply
+group \fIdip\fR can invoke \fIpppd call <name>\fR to make pppd read and apply
 options from /etc/ppp/peers/<name> (including privileged ones).
 .TP
 \fB\-\-pppd\-accept\-remote=\fI<bool>\fR
-Whether to invoke pppd with `ipcp-accept-remote'. Enabling this option breaks
+Whether to invoke pppd with \fIipcp-accept-remote\fR. Enabling this option breaks
 pppd < 2.5.0 but is required by newer pppd versions.
 .TP
 \fB\-\-ppp\-system=\fI<string>\fR
