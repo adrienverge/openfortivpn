@@ -50,6 +50,7 @@ const struct vpn_config invalid_cfg = {
 	.otp = {'\0'},
 	.otp_prompt = NULL,
 	.otp_delay = -1,
+	.token_script = NULL,
 	.no_ftm_push = -1,
 	.pinentry = NULL,
 	.realm = {'\0'},
@@ -266,6 +267,9 @@ int load_config(struct vpn_config *cfg, const char *filename)
 		} else if (strcmp(key, "otp-prompt") == 0) {
 			free(cfg->otp_prompt);
 			cfg->otp_prompt = strdup(val);
+		} else if (strcmp(key, "2fa-token-script") == 0) {
+			free(cfg->token_script);
+			cfg->token_script = strdup(val);
 		} else if (strcmp(key, "otp-delay") == 0) {
 			long otp_delay = strtol(val, NULL, 0);
 
@@ -495,6 +499,7 @@ err_return:
 void destroy_vpn_config(struct vpn_config *cfg)
 {
 	free(cfg->otp_prompt);
+	free(cfg->token_script);
 	free(cfg->pinentry);
 	free(cfg->cookie);
 #if HAVE_USR_SBIN_PPPD
@@ -538,6 +543,8 @@ void merge_config(struct vpn_config *dst, struct vpn_config *src)
 		strcpy(dst->otp, src->otp);
 	if (src->otp_delay != invalid_cfg.otp_delay)
 		dst->otp_delay = src->otp_delay;
+	if (src->token_script != invalid_cfg.token_script)
+		dst->token_script = src->token_script;
 	if (src->no_ftm_push != invalid_cfg.no_ftm_push)
 		dst->no_ftm_push = src->no_ftm_push;
 	if (src->cookie != invalid_cfg.cookie) {
