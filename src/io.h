@@ -18,7 +18,9 @@
 #ifndef OPENFORTIVPN_IO_H
 #define OPENFORTIVPN_IO_H
 
+#ifndef _WIN32
 #include <sys/types.h>
+#endif
 #include <pthread.h>
 
 #include <stddef.h>

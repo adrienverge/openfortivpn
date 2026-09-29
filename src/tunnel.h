@@ -36,7 +36,9 @@
 #include <openssl/ssl.h>
 #include <openssl/x509v3.h>
 
+#ifndef _WIN32
 #include <sys/types.h>
+#endif
 
 #ifdef __clang__
 /*
@@ -63,8 +65,14 @@ struct tunnel {
 	struct ppp_packet_pool ssl_to_pty_pool;
 	struct ppp_packet_pool pty_to_ssl_pool;
 
+#ifdef _WIN32
+	void	*tun_adapter;	/* WINTUN_ADAPTER_HANDLE */
+	void	*tun_session;	/* WINTUN_SESSION_HANDLE */
+	void	*ppp_ctx;	/* struct ppp_context * */
+#else
 	pid_t	pppd_pid;
 	pid_t	pppd_pty;
+#endif
 	char	ppp_iface[ROUTE_IFACE_LEN];
 
 	int	ssl_socket;

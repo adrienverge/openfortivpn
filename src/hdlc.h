@@ -18,7 +18,12 @@
 #ifndef OPENFORTIVPN_HDLC_H
 #define OPENFORTIVPN_HDLC_H
 
+#ifdef _WIN32
+#include "compat_win32.h"
+typedef long off_t;
+#else
 #include <sys/types.h>
+#endif
 
 #include <stddef.h>
 #include <stdint.h>

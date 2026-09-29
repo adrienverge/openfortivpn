@@ -48,10 +48,15 @@
 #ifndef ERESTART
 /*
  * ERESTART is one of the recoverable errors which might be returned.
- * However, in Mac OS X and BSD this constant is not defined in errno.h
- * so we define a dummy value here.
+ * However, in Mac OS X, BSD, and Windows this constant is not defined
+ * in errno.h so we define a dummy value here.
  */
 #define ERESTART -1
+#endif
+
+#ifndef EPIPE
+/* EPIPE is not defined on Windows */
+#define EPIPE 32
 #endif
 
 #define ERR_SSL_AGAIN		 0 // deprecated

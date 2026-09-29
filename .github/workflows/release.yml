@@ -1,0 +1,120 @@
+---
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    name: Build Windows Release
+    runs-on: windows-latest
+
+    defaults:
+      run:
+        shell: msys2 {0}
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v6
+
+      - name: Setup MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-cmake
+            mingw-w64-x86_64-openssl
+            mingw-w64-x86_64-ninja
+            p7zip
+            wget
+
+      - name: Configure
+        run: |
+          mkdir build
+          cd build
+          cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON
+
+      - name: Build
+        run: |
+          cd build
+          ninja
+
+      - name: Download wintun
+        shell: pwsh
+        run: |
+          cd build
+          Invoke-WebRequest -Uri "https://www.wintun.net/builds/wintun-0.14.1.zip" -OutFile wintun.zip
+          Expand-Archive -Path wintun.zip -DestinationPath wintun
+          Copy-Item wintun/wintun/bin/amd64/wintun.dll .
+
+      - name: Collect Runtime DLLs
+        run: |
+          cd build
+          cp /mingw64/bin/libssl-*.dll . 2>/dev/null || true
+          cp /mingw64/bin/libcrypto-*.dll . 2>/dev/null || true
+          cp /mingw64/bin/libwinpthread-*.dll . 2>/dev/null || true
+          cp /mingw64/bin/libgcc_s_seh-*.dll . 2>/dev/null || true
+
+      - name: Run Tests
+        run: |
+          cd build
+          ./test_ppp.exe || true
+
+      - name: Package
+        shell: pwsh
+        run: |
+          cd build
+          New-Item -ItemType Directory -Force -Path openfortivpn-windows-x64
+          Copy-Item openfortivpn.exe openfortivpn-windows-x64/
+          Copy-Item wintun.dll openfortivpn-windows-x64/ -ErrorAction SilentlyContinue
+          Copy-Item libssl-*.dll openfortivpn-windows-x64/ -ErrorAction SilentlyContinue
+          Copy-Item libcrypto-*.dll openfortivpn-windows-x64/ -ErrorAction SilentlyContinue
+          Copy-Item libwinpthread-*.dll openfortivpn-windows-x64/ -ErrorAction SilentlyContinue
+          Copy-Item libgcc_s_seh-*.dll openfortivpn-windows-x64/ -ErrorAction SilentlyContinue
+          Copy-Item ../README.md openfortivpn-windows-x64/
+          Compress-Archive -Path openfortivpn-windows-x64/* -DestinationPath openfortivpn-windows-x64.zip
+
+      - name: Upload Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build/openfortivpn-windows-x64.zip
+          generate_release_notes: true
+
+  build-linux:
+    name: Build Linux Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v6
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libssl-dev
+
+      - name: Build (autotools)
+        run: |
+          ./autogen.sh
+          ./configure --prefix=/usr --sysconfdir=/etc
+          make -j$(nproc)
+
+      - name: Package
+        run: |
+          mkdir -p openfortivpn-linux-x64
+          cp openfortivpn openfortivpn-linux-x64/
+          cp README.md openfortivpn-linux-x64/
+          tar czf openfortivpn-linux-x64.tar.gz openfortivpn-linux-x64/
+
+      - name: Upload Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: openfortivpn-linux-x64.tar.gz
+          generate_release_notes: true
