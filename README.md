@@ -196,6 +196,25 @@ For other distros, you'll need to build and install from source:
 
     Finally, install runtime dependency `ppp` or `pppd`.
 
+Docker
+----------------
+
+Build
+
+```bash
+docker build . -t openforticlient
+```
+Run
+```bash
+docker run --privileged --cap-add=NET_ADMIN --net host -d -v config:/etc/openfortivpn/config openforticlient
+```
+
+or with parameters
+
+```bash
+docker run --privileged --cap-add=NET_ADMIN --net host -d -v config:/etc/openfortivpn/config openforticlient -c /etc/openfortivpn/config --set-dns=0 --pppd-use-peerdns=1
+```
+
 Running as root?
 ----------------
 
