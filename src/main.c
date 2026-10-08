@@ -152,7 +152,8 @@ PPPD_USAGE \
 "                                certificate will be matched against this value.\n" \
 "                                <digest> is the X509 certificate's sha256 sum.\n" \
 "                                This option can be used multiple times to trust\n" \
-"                                several certificates.\n"
+"                                several certificates.\n" \
+"  --daemonize                   Run in daemon mode.\n"
 
 #define help_options_part2 \
 "  --insecure-ssl                Do not disable insecure TLS protocols/ciphers.\n" \
@@ -219,6 +220,7 @@ int main(int argc, char *argv[])
 	const char *config_file = SYSCONFDIR "/openfortivpn/config";
 	const char *host;
 	char *port_str;
+	pid_t process_id = 0;
 
 	struct vpn_config cfg = {
 		.gateway_host = {'\0'},
@@ -242,6 +244,7 @@ int main(int argc, char *argv[])
 		.use_syslog = 0,
 		.half_internet_routes = 0,
 		.persistent = 0,
+		.daemonize = 0,
 #if HAVE_RESOLVCONF
 		.use_resolvconf = USE_RESOLVCONF,
 #endif
@@ -313,6 +316,7 @@ int main(int argc, char *argv[])
 		{"cipher-list",          required_argument, NULL, 0},
 		{"min-tls",              required_argument, NULL, 0},
 		{"seclevel-1",           no_argument, &cli_cfg.seclevel_1, 1},
+		{"daemonize",            no_argument, &cli_cfg.daemonize, 1},
 #if HAVE_USR_SBIN_PPPD
 		{"pppd-use-peerdns",     required_argument, NULL, 0},
 		{"pppd-no-peerdns",      no_argument, &cli_cfg.pppd_use_peerdns, 0},
@@ -684,6 +688,24 @@ int main(int argc, char *argv[])
 
 	// Then apply CLI configuration
 	merge_config(&cfg, &cli_cfg);
+	if (cfg.daemonize) {
+		if (cfg.use_syslog == 0) {
+			log_info("Sorry, only syslog is available when running in Daemon mode");
+			cfg.use_syslog = 1;
+		}
+		process_id = fork();
+		// Indication of fork() failure
+		if (process_id < 0) {
+			printf("Forking failure! Cannot start daemon!\n");
+			exit(1);
+		}
+		// PARENT PROCESS. Need to kill it.
+		if (process_id > 0) {
+			printf("Started as daemon with PID: %u\n", process_id);
+			/* Killing parent process */
+			exit(0);
+		}
+	}
 	set_syslog(cfg.use_syslog);
 
 	// Set default UA
