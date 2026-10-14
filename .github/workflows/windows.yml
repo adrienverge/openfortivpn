@@ -1,0 +1,99 @@
+---
+name: Windows Build
+
+on:
+  push:
+
+  pull_request:
+    branches:
+      - master
+
+permissions:
+  contents: read
+
+jobs:
+  build-mingw:
+    name: Build (MinGW-w64)
+    runs-on: windows-latest
+
+    defaults:
+      run:
+        shell: msys2 {0}
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v6
+
+      - name: Setup MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-cmake
+            mingw-w64-x86_64-openssl
+            mingw-w64-x86_64-ninja
+            make
+
+      - name: Configure (CMake)
+        run: |
+          mkdir build
+          cd build
+          cmake .. -G Ninja -DBUILD_TESTING=ON
+
+      - name: Build
+        run: |
+          cd build
+          ninja
+
+      - name: Run PPP Unit Tests
+        run: |
+          cd build
+          ctest --output-on-failure
+
+      - name: Verify Binary
+        run: |
+          cd build
+          ./openfortivpn.exe --version
+
+  build-cmake-linux:
+    name: Build (CMake on Linux)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v6
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake libssl-dev pkg-config
+
+      - name: Configure (CMake)
+        run: |
+          mkdir build
+          cd build
+          cmake .. -DBUILD_TESTING=ON
+
+      - name: Build
+        run: |
+          cd build
+          make -j$(nproc)
+
+      - name: Run PPP Unit Tests
+        run: |
+          cd build
+          ctest --output-on-failure
+
+      - name: Verify Binary
+        run: |
+          cd build
+          ./openfortivpn --version
+
+      - name: Verify Autotools Build Still Works
+        run: |
+          make distclean 2>/dev/null || true
+          autoreconf -fi
+          ./configure --prefix=/usr --sysconfdir=/etc
+          make -j$(nproc)

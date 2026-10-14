@@ -64,7 +64,7 @@ const struct vpn_config invalid_cfg = {
 	.use_syslog = -1,
 	.half_internet_routes = -1,
 	.persistent = -1,
-#if HAVE_USR_SBIN_PPPD
+#if HAVE_USR_SBIN_PPPD || defined(_WIN32)
 	.pppd_log = NULL,
 	.pppd_plugin = NULL,
 	.pppd_ipparam = NULL,
@@ -333,7 +333,7 @@ int load_config(struct vpn_config *cfg, const char *filename)
 				continue;
 			}
 			cfg->persistent = persistent;
-#if HAVE_USR_SBIN_PPPD
+#if HAVE_USR_SBIN_PPPD || defined(_WIN32)
 		} else if (strcmp(key, "pppd-use-peerdns") == 0) {
 			int pppd_use_peerdns = strtob(val);
 
@@ -497,7 +497,7 @@ void destroy_vpn_config(struct vpn_config *cfg)
 	free(cfg->otp_prompt);
 	free(cfg->pinentry);
 	free(cfg->cookie);
-#if HAVE_USR_SBIN_PPPD
+#if HAVE_USR_SBIN_PPPD || defined(_WIN32)
 	free(cfg->pppd_log);
 	free(cfg->pppd_plugin);
 	free(cfg->pppd_ipparam);
@@ -572,7 +572,7 @@ void merge_config(struct vpn_config *dst, struct vpn_config *src)
 		dst->half_internet_routes = src->half_internet_routes;
 	if (src->persistent != invalid_cfg.persistent)
 		dst->persistent = src->persistent;
-#if HAVE_USR_SBIN_PPPD
+#if HAVE_USR_SBIN_PPPD || defined(_WIN32)
 	if (src->pppd_log) {
 		free(dst->pppd_log);
 		dst->pppd_log = src->pppd_log;

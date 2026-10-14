@@ -5,6 +5,9 @@ openfortivpn is a client for PPP+TLS VPN tunnel services.
 It spawns a pppd process and operates the communication between the gateway and
 this process.
 
+On Windows, it uses an in-process PPP engine with
+[wintun](https://www.wintun.net/) instead of pppd.
+
 It is compatible with Fortinet VPNs.
 
 Usage
@@ -137,6 +140,55 @@ sudo port install openfortivpn
 
 A more complete overview can be obtained from [repology](https://repology.org/project/openfortivpn/versions).
 
+### Windows
+
+Windows support uses [wintun](https://www.wintun.net/) (a lightweight TUN
+driver from the WireGuard project) instead of pppd. PPP negotiation is handled
+in-process.
+
+**Requirements:**
+* Windows 10 or later
+* Administrator privileges (for TUN adapter and route management)
+* [wintun.dll](https://www.wintun.net/) in the same directory as `openfortivpn.exe`
+  or in the system PATH
+
+**Building with MinGW-w64 (MSYS2):**
+
+1. Install [MSYS2](https://www.msys2.org/) and open a MinGW64 shell.
+2. Install dependencies:
+   ```shell
+   pacman -S mingw-w64-x86_64-gcc mingw-w64-x86_64-cmake mingw-w64-x86_64-openssl mingw-w64-x86_64-ninja
+   ```
+3. Build:
+   ```shell
+   mkdir build && cd build
+   cmake .. -G Ninja
+   ninja
+   ```
+
+**Building with MSVC:**
+
+1. Install [Visual Studio](https://visualstudio.microsoft.com/) with C/C++ workload.
+2. Install OpenSSL via [vcpkg](https://vcpkg.io/):
+   ```shell
+   vcpkg install openssl:x64-windows
+   ```
+3. Build:
+   ```shell
+   mkdir build && cd build
+   cmake .. -DCMAKE_TOOLCHAIN_FILE=[vcpkg root]/scripts/buildsystems/vcpkg.cmake
+   cmake --build . --config Release
+   ```
+
+**Running:**
+
+Download `wintun.dll` from https://www.wintun.net/ and place it next to
+`openfortivpn.exe`, then run from an **Administrator** command prompt:
+
+```shell
+openfortivpn vpn-gateway:8443 --username=foo
+```
+
 ### Building and installing from source
 
 For other distros, you'll need to build and install from source:
@@ -201,13 +253,18 @@ Running as root?
 
 openfortivpn needs elevated privileges at three steps during tunnel set up:
 
-* when spawning a `/usr/sbin/pppd` process;
+* when spawning a `/usr/sbin/pppd` process (Linux/macOS) or creating a TUN
+  adapter (Windows);
 * when setting IP routes through VPN (when the tunnel is up);
-* when adding nameservers to `/etc/resolv.conf` (when the tunnel is up).
+* when adding nameservers to `/etc/resolv.conf` (Linux/macOS) or configuring
+  DNS via netsh (Windows).
 
-For these reasons, you need to use `sudo openfortivpn`.
+On **Linux/macOS**, you need to use `sudo openfortivpn`.
 If you need it to be usable by non-sudoer users, you might consider adding an
 entry in `/etc/sudoers` or a file under `/etc/sudoers.d`.
+
+On **Windows**, run openfortivpn from an Administrator command prompt or
+PowerShell.
 
 For example:
 ```shell

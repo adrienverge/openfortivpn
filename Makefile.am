@@ -1,7 +1,8 @@
 # http://mij.oltrelinux.com/devel/autoconf-automake/
 
 bin_PROGRAMS = openfortivpn
-openfortivpn_SOURCES = src/config.c src/config.h src/hdlc.c src/hdlc.h \
+openfortivpn_SOURCES = src/config.c src/config.h src/event.c src/event.h \
+		       src/exit_codes.h src/hdlc.c src/hdlc.h \
 		       src/http.c src/http.h src/io.c src/io.h \
 			   src/http_server.c src/ipv4.c \
 		       src/ipv4.h src/log.c src/log.h src/tunnel.c \
