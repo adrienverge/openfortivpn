@@ -795,22 +795,69 @@ int auth_log_in(struct tunnel *tunnel)
 			snprintf(tokenparams, sizeof(tokenparams), "ftmpush=1");
 		} else {
 			if (cfg->otp[0] == '\0') {
-				// Interactively ask user for 2FA token
-				char hint[USERNAME_SIZE + 1 + REALM_SIZE + 1 + GATEWAY_HOST_SIZE + 5];
+				if (cfg->token_script != NULL && cfg->token_script[0] != '\0') {
+					// Use the script to retrieve the 2fa token
+					FILE *fp_script;
 
-				sprintf(hint, "%s_%s_%s_2fa",
-				        cfg->username, cfg->realm, cfg->gateway_host);
-				read_password(cfg->pinentry, hint,
-				              "Two-factor authentication token: ",
-				              cfg->otp, OTP_SIZE);
+					if (access(cfg->token_script, F_OK) != 0) {
+						log_error("2FA token script '%s' not found.\n", cfg->token_script);
+						return 0;
+					}
 
-				if (cfg->otp[0] == '\0') {
-					log_error("No token specified\n");
-					return 0;
+					if (access(cfg->token_script, X_OK) != 0) {
+						log_error("2FA token script '%s' does not have execution permission.\n", cfg->token_script);
+						return 0;
+					}
+
+					int status;
+
+					log_info("Executing 2FA token script: %s\n", cfg->token_script);
+					fp_script = popen(cfg->token_script, "r");
+					if (fp_script == NULL) {
+						log_error("Unable to execute the script.\n");
+						return 0;
+					}
+
+					char *fgets_ret = fgets(cfg->otp, OTP_SIZE, fp_script);
+
+					status = pclose(fp_script);
+
+					if (status == -1) {
+						log_error("Error while closing script process.\n");
+						return 0;
+					}
+
+					if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
+						log_error("2FA token script failed with exit code %d.\n", WEXITSTATUS(status));
+						return 0;
+					}
+
+					if (fgets_ret != NULL) {
+						cfg->otp[strcspn(cfg->otp, "\r\n ")] = 0;
+						log_info("2FA token successfully retrieved from script.\n");
+					} else {
+						log_error("The script terminated successfully but didn't output any token.\n");
+						return 0;
+					}
+				} else {
+					// Interactively ask user for 2FA token
+					char hint[USERNAME_SIZE + 1 + REALM_SIZE + 1 + GATEWAY_HOST_SIZE + 5];
+
+					sprintf(hint, "%s_%s_%s_2fa",
+							cfg->username, cfg->realm, cfg->gateway_host);
+					read_password(cfg->pinentry, hint,
+								  "Two-factor authentication token: ",
+								  cfg->otp, OTP_SIZE);
+
+					if (cfg->otp[0] == '\0') {
+						log_error("No token specified\n");
+						return 0;
+					}
 				}
 			}
 
 			url_encode(tokenresponse, cfg->otp);
+			memset(cfg->otp, '\0', OTP_SIZE + 1); // clear OTP for next run
 			snprintf(tokenparams, sizeof(tokenparams),
 			         "code=%s&code2=&magic=%s",
 			         tokenresponse, magic);

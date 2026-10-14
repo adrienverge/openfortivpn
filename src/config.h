@@ -77,6 +77,7 @@ struct vpn_config {
 	uint16_t		saml_port;
 	char			saml_session_id[MAX_SAML_SESSION_ID_LENGTH + 1];
 	char			*otp_prompt;
+	char			*token_script;
 	unsigned int		otp_delay;
 	int			no_ftm_push;
 	char			*pinentry;
