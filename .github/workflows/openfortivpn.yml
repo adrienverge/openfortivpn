@@ -48,6 +48,11 @@ jobs:
           sudo apt-get install -y pkg-config
           ./tests/ci/install_openssl.sh $HOME/.openfortivpn-deps
 
+      - name: 2FA form encoding tests
+        run: |
+          cc -std=c99 -Wall -Wextra -Werror tests/http_form_test.c src/http_form.c -o "$RUNNER_TEMP/http-form-test"
+          "$RUNNER_TEMP/http-form-test"
+
       - name: Build
         run: |
           ./autogen.sh
