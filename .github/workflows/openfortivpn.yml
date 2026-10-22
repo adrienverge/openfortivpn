@@ -43,6 +43,11 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v7
 
+      - name: HTTP status parser tests
+        run: |
+          cc -std=c99 -Wall -Wextra -Werror tests/http_status_test.c src/http_status.c -o "$RUNNER_TEMP/http-status-test"
+          "$RUNNER_TEMP/http-status-test"
+
       - name: Install Dependencies
         run: |
           sudo apt-get install -y pkg-config
