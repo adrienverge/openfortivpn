@@ -142,6 +142,41 @@ static const char *find_header(const char *res, const char *header,
 
 
 /*
+ * The gateway may embed the reason for refusing a connection in an HTML
+ * comment such as:
+ *     <!--sslvpnerrmsg=Permission denied.-->
+ *     <!--sslvpnerrmsgkey=sslvpn_login_permission_denied-->
+ * Show it to the user, otherwise it is only visible in the debug details.
+ */
+static void log_gateway_error_message(const char *response, uint32_t size)
+{
+	static const char prefix[] = "<!--sslvpnerrmsg";
+	const char *start, *end;
+	size_t remaining;
+
+	if (response == NULL)
+		return;
+
+	start = memmem(response, size, prefix, sizeof(prefix) - 1);
+	if (start == NULL)
+		return;
+	remaining = size - (start - response);
+
+	start = memchr(start, '=', remaining);
+	if (start == NULL)
+		return;
+	start++;
+	remaining = size - (start - response);
+
+	end = memmem(start, remaining, "-->", 3);
+	if (end == NULL || end == start || end - start > 256)
+		return;
+
+	log_error("Remote message: %.*s\n", (int)(end - start), start);
+}
+
+
+/*
  * Receives data from the HTTP server.
  *
  * @param[out] response  if not NULL, this pointer is set to reference
@@ -240,6 +275,13 @@ int http_receive(struct tunnel *tunnel,
 			buffer = new_buffer;
 		}
 	}
+
+	/*
+	 * Whenever the gateway embeds a human-readable reason in an HTML
+	 * comment, surface it to the user, even if we don't recognize the
+	 * specific error checked for below.
+	 */
+	log_gateway_error_message(buffer, bytes_read);
 
 	if (memmem(&buffer[header_size], bytes_read - header_size,
 	           "<!--sslvpnerrmsgkey=sslvpn_login_permission_denied-->", 53) ||
