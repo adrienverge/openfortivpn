@@ -93,7 +93,7 @@ static void init_ssl_locks(void)
 	for (int i = 0; i < CRYPTO_num_locks(); i++)
 		pthread_mutex_init(&lockarray[i], NULL);
 	CRYPTO_set_id_callback((unsigned long (*)()) thread_id);
-	CRYPTO_set_locking_callback((void (*)()) lock_callback);
+	CRYPTO_set_locking_callback(&lock_callback);
 }
 
 static void destroy_ssl_locks(void)
