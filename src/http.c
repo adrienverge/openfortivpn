@@ -16,6 +16,7 @@
  */
 
 #include "http.h"
+#include "http_form.h"
 #include "xml.h"
 #include "ssl.h"
 #include "ipv4.h"
@@ -663,6 +664,16 @@ int auth_log_in(struct tunnel *tunnel)
 	          )] = { '\0' };
 #undef OFV_MAX
 	char token[128], tokenresponse[256], tokenparams[320];
+	char otp_data[
+	        sizeof("username=") + 3 * USERNAME_SIZE +
+	        sizeof("&realm=") + 3 * REALM_SIZE +
+	        sizeof("&reqid=") + sizeof(reqid) - 1 +
+	        sizeof("&polid=") + sizeof(polid) - 1 +
+	        sizeof("&grp=") + 3 * (sizeof(group) - 1) +
+	        sizeof("&portal=") + 3 * (sizeof(portal) - 1) +
+	        sizeof("&peer=") + sizeof(peer) - 1 +
+	        sizeof("&") + sizeof(tokenparams)
+	] = { 0 };
 	char action_url[1024] = { '\0' };
 	char *res = NULL;
 	uint32_t response_size;
@@ -816,14 +827,16 @@ int auth_log_in(struct tunnel *tunnel)
 			         tokenresponse, magic);
 		}
 
-		snprintf(data, sizeof(data),
-		         "username=%s&realm=%s&reqid=%s&polid=%s&grp=%s&portal=%s&peer=%s&%s",
-		         username, realm, reqid, polid, group, portal, peer,
-		         tokenparams);
+		if (http_build_otp_form(otp_data, sizeof(otp_data),
+		                        username, realm, reqid, polid, group, portal,
+		                        peer, tokenparams) != 0) {
+			ret = ERR_HTTP_TOO_LONG;
+			goto end;
+		}
 
 		delay_otp(tunnel);
 		ret = http_request(tunnel, "POST", "/remote/logincheck",
-		                   data, &res, &response_size);
+		                   otp_data, &res, &response_size);
 		if (ret != 1)
 			goto end;
 
