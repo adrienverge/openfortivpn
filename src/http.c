@@ -17,6 +17,7 @@
 
 #include "http.h"
 #include "xml.h"
+#include "http_status.h"
 #include "ssl.h"
 #include "ipv4.h"
 #include "userinput.h"
@@ -738,7 +739,7 @@ int auth_log_in(struct tunnel *tunnel)
 	}
 
 	/* Probably one-time password required */
-	if (strncmp(res, "HTTP/1.1 401 Authorization Required\r\n", 37) == 0) {
+	if (http_response_status_code(res) == 401) {
 		delay_otp(tunnel);
 
 		ret = try_otp_auth(tunnel, res, &res, &response_size);
@@ -746,10 +747,9 @@ int auth_log_in(struct tunnel *tunnel)
 			goto end;
 	}
 
-	if (strncmp(res, "HTTP/1.1 200 OK\r\n", 17)) {
-		char word[17];
-
-		if (sscanf(res, "%16s %d", word, &ret) < 2)
+	ret = http_response_status_code(res);
+	if (ret != 200) {
+		if (ret < 0)
 			ret = ERR_HTTP_BAD_RES_CODE;
 		goto end;
 	}
@@ -827,10 +827,9 @@ int auth_log_in(struct tunnel *tunnel)
 		if (ret != 1)
 			goto end;
 
-		if (strncmp(res, "HTTP/1.1 200 OK\r\n", 17)) {
-			char word[17];
-
-			if (sscanf(res, "%16s %d", word, &ret) < 2)
+		ret = http_response_status_code(res);
+		if (ret != 200) {
+			if (ret < 0)
 				ret = ERR_HTTP_BAD_RES_CODE;
 			goto end;
 		}
@@ -880,13 +879,9 @@ static int parse_xml_config(struct tunnel *tunnel, const char *buffer)
 	char *dns_server;
 	int ret = 0;
 
-	if (strncmp(buffer, "HTTP/1.1 200 OK\r\n", 17)) {
-		char word[17];
-
-		if (sscanf(buffer, "%16s %d", word, &ret) < 2)
-			ret = ERR_HTTP_BAD_RES_CODE;
-		return ret;
-	}
+	ret = http_response_status_code(buffer);
+	if (ret != 200)
+		return ret < 0 ? ERR_HTTP_BAD_RES_CODE : ret;
 
 	// Skip the HTTP header
 	buffer = strstr(buffer, "\r\n\r\n");
