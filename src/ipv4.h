@@ -94,4 +94,11 @@ int ipv4_restore_routes(struct tunnel *tunnel);
 int ipv4_add_nameservers_to_resolv_conf(struct tunnel *tunnel);
 int ipv4_del_nameservers_from_resolv_conf(struct tunnel *tunnel);
 
+#if HAVE_SYSTEMCONFIGURATION
+
+int ipv4_set_dns_scf(struct tunnel *tunnel);
+int ipv4_clear_dns_scf(void);
+
+#endif
+
 #endif
