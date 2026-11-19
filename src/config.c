@@ -84,6 +84,7 @@ const struct vpn_config invalid_cfg = {
 	.cipher_list = NULL,
 	.min_tls = -1,
 	.seclevel_1 = -1,
+	.ifup_hook = NULL,
 	.cert_whitelist = NULL,
 	.use_engine = -1,
 	.user_agent = NULL,
@@ -476,6 +477,9 @@ int load_config(struct vpn_config *cfg, const char *filename)
 		} else if (strcmp(key, "check-virtual-desktop") == 0) {
 			free(cfg->check_virtual_desktop);
 			cfg->check_virtual_desktop = strdup(val);
+		} else if (strcmp(key, "ifup-hook") == 0) {
+			free(cfg->ifup_hook);
+			cfg->ifup_hook = strdup(val);
 		} else {
 			log_warn("Bad key in configuration file: \"%s\".\n", key);
 			goto err_free;
@@ -630,6 +634,10 @@ void merge_config(struct vpn_config *dst, struct vpn_config *src)
 		dst->min_tls = src->min_tls;
 	if (src->seclevel_1 != invalid_cfg.seclevel_1)
 		dst->seclevel_1 = src->seclevel_1;
+	if (src->ifup_hook) {
+		free(dst->ifup_hook);
+		dst->ifup_hook = src->ifup_hook;
+	}
 	if (src->cert_whitelist) {
 		while (dst->cert_whitelist != NULL) {
 			struct x509_digest *tmp = dst->cert_whitelist->next;
