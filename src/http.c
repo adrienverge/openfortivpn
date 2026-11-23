@@ -252,7 +252,11 @@ int http_receive(struct tunnel *tunnel,
 	if (response == NULL) {
 		free(buffer);
 	} else {
-		assert(bytes_read < capacity);
+		// A complete response of exactly `capacity` bytes leaves
+		// bytes_read == capacity: the body-end check breaks the loop before
+		// the buffer is grown. buffer has capacity + 1 bytes, so the
+		// terminator below is still in bounds.
+		assert(bytes_read <= capacity);
 		buffer[bytes_read] = '\0';
 		*response = buffer;
 
