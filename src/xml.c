@@ -81,6 +81,13 @@ char *xml_get(const char *buf)
 	for (i = 1; buf[i]; i++) {
 		if (buf[i] == quote)
 			break;
+		// Values are IP addresses and a DNS domain, so ASCII. They end up
+		// in log lines, in resolv.conf and in route commands; none of them
+		// may bring its own line breaks.
+		if (!printable_char(buf[i])) {
+			log_warn("Unexpected character in a value in config XML\n");
+			return NULL;
+		}
 		if (i == MAX_DOMAIN_LENGTH) {
 			log_warn("Value too long in config XML\n");
 			break;

@@ -903,8 +903,9 @@ static int parse_xml_config(struct tunnel *tunnel, const char *buffer)
 		if (xml_find(' ', "domain=", val, 1)) {
 			tunnel->ipv4.dns_suffix
 			        = xml_get(xml_find(' ', "domain=", val, 1));
-			log_debug("Found dns suffix %s in xml config\n",
-			          tunnel->ipv4.dns_suffix);
+			if (tunnel->ipv4.dns_suffix)
+				log_debug("Found dns suffix %s in xml config\n",
+				          tunnel->ipv4.dns_suffix);
 			break;
 		}
 	}
@@ -914,6 +915,8 @@ static int parse_xml_config(struct tunnel *tunnel, const char *buffer)
 	while ((val = xml_find('<', "dns", val, 2))) {
 		if (xml_find(' ', "ip=", val, 1)) {
 			dns_server = xml_get(xml_find(' ', "ip=", val, 1));
+			if (!dns_server)
+				continue;
 			log_debug("Found dns server %s in xml config\n", dns_server);
 			if (!tunnel->ipv4.ns1_addr.s_addr)
 				tunnel->ipv4.ns1_addr.s_addr = inet_addr(dns_server);
