@@ -7,6 +7,7 @@ AC_CONFIG_SRCDIR([src/main.c])
 AM_INIT_AUTOMAKE([foreign subdir-objects])
 
 # Checks for programs.
+AC_CANONICAL_HOST
 AC_PROG_CC
 AC_PROG_MKDIR_P
 AC_PROG_SED
@@ -179,6 +180,22 @@ CPPFLAGS="${OPENSSL_CFLAGS} ${CPPFLAGS}"
 LIBS="${OPENSSL_LIBS} ${LIBS}"
 CPPFLAGS="${save_openssl_CPPFLAGS}"
 LIBS="${save_openssl_LIBS}"
+
+# Link macOS DNS frameworks and expose a feature macro for SCDynamicStore support.
+AC_MSG_CHECKING([for macOS SystemConfiguration framework])
+case "$host_os" in
+	darwin*)
+		AC_DEFINE([HAVE_SYSTEMCONFIGURATION], [1],
+		          [Define to 1 on macOS for SCDynamicStore DNS support])
+		LIBS="$LIBS -framework SystemConfiguration -framework CoreFoundation"
+		AC_MSG_RESULT([yes])
+		;;
+	*)
+		AC_DEFINE([HAVE_SYSTEMCONFIGURATION], [0],
+		          [Define to 0 when macOS SystemConfiguration is unavailable])
+		AC_MSG_RESULT([no])
+		;;
+esac
 
 # Specialised checks for particular features.
 # When cross compile, don't run the tests.
