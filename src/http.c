@@ -392,6 +392,10 @@ static int get_action_url(const char *buf, const char *key,
 		if (strncmp(key, kv_pair, keylen) == 0) {
 			const char *val = strtok_r(NULL, "\"\r\n", &saveptr);
 
+			if (val == NULL) {  // key present but no value after it
+				ret = -1;
+				break;
+			}
 			if (strlen(val) > retbuflen - 1) {  // value too long
 				ret = -2;
 			} else {
