@@ -41,6 +41,7 @@
 #include <limits.h>
 #include <signal.h>
 #include <string.h>
+#include <sys/param.h>
 
 #if HAVE_MACH_MACH_H
 /* this is typical for mach kernel used on Mac OS X */
@@ -424,7 +425,10 @@ static void debug_bad_packet(struct tunnel *tunnel, uint8_t *header)
 	for (int i = 0; i < size; i++)
 		if (!printable_char((char) buffer[i]))
 			buffer[i] = '.';
-	buffer[size] = buffer[256 - 1] = '\0';
+	// safe_ssl_read() can fill the whole buffer (6 header bytes + up to
+	// sizeof(buffer) - 6 read bytes == sizeof(buffer)), so buffer[size] can be
+	// one past the end.
+	buffer[MIN(size, sizeof(buffer) - 1)] = '\0';
 
 	printf("  (raw) %s\n", (const char *) buffer);
 }
