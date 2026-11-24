@@ -37,6 +37,11 @@
  * Initial size of the buffer for incoming HTTP responses.
  */
 #define HTTP_BUFFER_SIZE 0x10000
+/*
+ * Gateway replies (login pages, the XML configuration) are kilobytes. Without
+ * a cap, a reply that never ends grows the buffer towards 4 GiB.
+ */
+#define HTTP_MAX_RESPONSE_SIZE (8U * 1024 * 1024)
 
 
 /*
@@ -226,7 +231,9 @@ int http_receive(struct tunnel *tunnel,
 		if (bytes_read == capacity) {
 			char *new_buffer;
 
-			if ((UINT32_MAX - 1) / capacity < 2) {
+			if (capacity >= HTTP_MAX_RESPONSE_SIZE) {
+				log_error("Response from the gateway is larger than %u bytes.\n",
+				          HTTP_MAX_RESPONSE_SIZE);
 				free(buffer);
 				return ERR_HTTP_TOO_LONG;
 			}
