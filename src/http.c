@@ -521,6 +521,13 @@ static int try_otp_auth(struct tunnel *tunnel, const char *buffer,
 			if (e - p + 1 < sizeof(prompt)) {
 				strncpy(prompt, p, e - p);
 				prompt[e - p] = '\0';
+				/*
+				 * The prompt is printed as-is: keep line breaks
+				 * and other control bytes from the gateway out.
+				 */
+				for (char *c = prompt; *c; c++)
+					if (!printable_char(*c))
+						*c = ' ';
 				p = prompt;
 			} else {
 				p = NULL;
