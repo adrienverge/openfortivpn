@@ -124,7 +124,25 @@ int get_sig_received(void)
 }
 
 /*
- * Adds a new packet to a pool.
+ * Upper bound on the memory held by each packet pool. Without it a gateway
+ * that sends faster than pppd reads (or a gateway that stops reading) makes
+ * the queue, and openfortivpn's memory, grow without limit. This bounds the
+ * backlog, not the throughput: the memory is only used while the consumer
+ * lags, and at 10 Gbit/s it absorbs a stall of over 50 ms.
+ */
+#define PKT_POOL_MAX_BYTES	(64 * 1024 * 1024)
+
+/*
+ * What a queued packet costs, counting the allocation and not only the data,
+ * so that a flood of tiny packets is bounded too.
+ */
+static inline size_t pool_packet_cost(const struct ppp_packet *packet)
+{
+	return sizeof(*packet) + 6 + packet->len;
+}
+
+/*
+ * Adds a new packet to a pool, or frees it if the pool is full.
  *
  * Warning: for performance reasons, this function does not check if the packet
  * is already present in the list. If it is, there will be a loop in the list
@@ -132,26 +150,54 @@ int get_sig_received(void)
  *
  * Warning: Once a packet is added with pool_push, consider it to be freed from
  * your perspective! You don't know when it will be really released by the
- * thread which pool_pop it in parallel.
+ * thread which pool_pop it in parallel, and it is freed at once if the pool
+ * is full.
  */
-static void pool_push(struct ppp_packet_pool *pool, struct ppp_packet *new)
+static void pool_push(struct ppp_packet_pool *pool, struct ppp_packet *new,
+                      const char *name)
 {
-	struct ppp_packet *current;
+	size_t cost = pool_packet_cost(new);
+	size_t limit;
+	int dropped = 0, first_drop = 0, resumed = 0;
 
 	pthread_mutex_lock(&pool->mutex);
 
-	new->next = NULL;
-	current = pool->list_head;
-	if (current == NULL) {
-		pool->list_head = new;
+	/*
+	 * Once dropping, keep dropping until half the queue has drained, so
+	 * that a queue sitting at its limit does not log twice per packet.
+	 */
+	limit = pool->dropping ? PKT_POOL_MAX_BYTES / 2 : PKT_POOL_MAX_BYTES;
+	if (pool->queued_bytes + cost > limit) {
+		/*
+		 * The consumer is not keeping up. Dropping is safe for PPP
+		 * (the protocols it carries recover from loss) and, unlike
+		 * blocking the producer, cannot deadlock the I/O threads.
+		 */
+		dropped = 1;
+		first_drop = !pool->dropping;
+		pool->dropping = 1;
 	} else {
-		while (current->next != NULL)
-			current = current->next;
-		current->next = new;
+		new->next = NULL;
+		if (pool->list_tail == NULL)
+			pool->list_head = new;
+		else
+			pool->list_tail->next = new;
+		pool->list_tail = new;
+		pool->queued_bytes += cost;
+		resumed = pool->dropping;
+		pool->dropping = 0;
+		pthread_cond_signal(&pool->new_data);
 	}
 
-	pthread_cond_signal(&pool->new_data);
 	pthread_mutex_unlock(&pool->mutex);
+
+	if (dropped) {
+		free(new);
+		if (first_drop)
+			log_warn("%s queue is full, dropping packets.\n", name);
+	} else if (resumed) {
+		log_warn("%s queue has drained, accepting packets again.\n", name);
+	}
 }
 
 /*
@@ -168,7 +214,10 @@ static struct ppp_packet *pool_pop(struct ppp_packet_pool *pool)
 
 	first = pool->list_head;
 	pool->list_head = first->next;
+	if (pool->list_head == NULL)
+		pool->list_tail = NULL;
 	first->next = NULL;
+	pool->queued_bytes -= pool_packet_cost(first);
 
 	pthread_mutex_unlock(&pool->mutex);
 
@@ -270,7 +319,7 @@ static void *pppd_read(void *arg)
 #else
 			log_packet("ppp:   ", packet->len, pkt_data(packet));
 #endif
-			pool_push(&tunnel->pty_to_ssl_pool, packet);
+			pool_push(&tunnel->pty_to_ssl_pool, packet, "pppd-to-gateway");
 
 			off_r += frm_len;
 		}
@@ -524,7 +573,7 @@ static void *ssl_read(void *arg)
 			}
 		}
 
-		pool_push(&tunnel->ssl_to_pty_pool, packet);
+		pool_push(&tunnel->ssl_to_pty_pool, packet, "gateway-to-pppd");
 	}
 
 	// Send message to main thread to stop other threads

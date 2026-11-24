@@ -42,6 +42,9 @@ struct ppp_packet_pool {
 	pthread_mutex_t mutex;
 	pthread_cond_t new_data;
 	struct ppp_packet *list_head;
+	struct ppp_packet *list_tail;
+	size_t queued_bytes; // memory held by the queued packets
+	int dropping; // set while packets are being dropped
 };
 
 #define init_ppp_packet_pool(pool) \
@@ -49,6 +52,9 @@ struct ppp_packet_pool {
 		pthread_mutex_init(&(pool)->mutex, NULL); \
 		pthread_cond_init(&(pool)->new_data, NULL); \
 		(pool)->list_head = NULL; \
+		(pool)->list_tail = NULL; \
+		(pool)->queued_bytes = 0; \
+		(pool)->dropping = 0; \
 	} while (0)
 
 #define destroy_ppp_packet_pool(pool) \
