@@ -69,4 +69,12 @@ void do_log(int verbosity, const char *format, ...);
 
 void do_log_packet(const char *prefix, size_t len, const uint8_t *packet);
 
+/*
+ * Printable ASCII only: no tabs or line breaks. Text from the gateway that is
+ * printed as-is must not be able to start a line of its own, because front
+ * ends read openfortivpn's output line by line.
+ */
+#define printable_char(c) \
+	((c) >= ' ' && (c) <= '~')
+
 #endif

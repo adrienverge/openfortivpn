@@ -401,9 +401,6 @@ static inline void set_tunnel_ips(struct tunnel *tunnel,
 	}
 }
 
-#define printable_char(c) \
-	(c == '\t' || c == '\n' || (c >= ' ' && c <= '~'))
-
 static void debug_bad_packet(struct tunnel *tunnel, uint8_t *header)
 {
 	uint8_t buffer[256];
@@ -420,7 +417,10 @@ static void debug_bad_packet(struct tunnel *tunnel, uint8_t *header)
 	// Print hex dump
 	do_log_packet("  (hex) ", size, buffer);
 
-	// then print the raw string, after escaping non-displayable chars
+	// then print the raw string, after escaping non-displayable chars.
+	// This goes to stdout with printf("%s"), which a front end reads line by
+	// line, so a gateway must not be able to inject line breaks (or tabs) and
+	// forge whole status lines of its own.
 	for (int i = 0; i < size; i++)
 		if (!printable_char((char) buffer[i]))
 			buffer[i] = '.';
