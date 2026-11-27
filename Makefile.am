@@ -2,7 +2,8 @@
 
 bin_PROGRAMS = openfortivpn
 openfortivpn_SOURCES = src/config.c src/config.h src/hdlc.c src/hdlc.h \
-		       src/http.c src/http.h src/io.c src/io.h \
+		       src/http.c src/http.h src/http_status.c src/http_status.h \
+		       src/io.c src/io.h \
 			   src/http_server.c src/ipv4.c \
 		       src/ipv4.h src/log.c src/log.h src/tunnel.c \
 		       src/tunnel.h src/main.c src/ssl.h src/xml.c \
@@ -24,6 +25,8 @@ EXTRA_DIST = \
 	LICENSE \
 	LICENSE.OpenSSL \
 	README.md
+
+EXTRA_DIST += tests/http_status_test.c
 
 DISTCHECK_CONFIGURE_FLAGS = \
 	CFLAGS=-Werror \
