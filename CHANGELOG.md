@@ -14,6 +14,18 @@ Releases
 This high level changelog is usually updated when a release is tagged.
 On the master branch there may be changes that are not (yet) described here.
 
+### 1.24.2
+
+* [+] Use gateway response to determine authentication status
+* [-] IO: do not let a bad packet forge whole lines in the raw dump
+* [-] XML: refuse non-printable characters in values, and handle a refused dns value
+* [-] HTTP: do not call strlen() on a missing action url value
+* [-] IO: fix one-byte out-of-bounds write when logging a bad packet
+* [-] HTTP: do not abort on a response that exactly fills the buffer
+* [-] IO: bound the packet queues between the TLS and pppd threads
+* [-] HTTP: cap the size of a gateway response at 8 MiB
+* [-] HTTP: keep only printable ASCII in the gateway's OTP prompt
+
 ### 1.24.1
 
 * [-] fix regression where the `plugin` was not passed to pppd
